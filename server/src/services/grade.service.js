@@ -1,0 +1,222 @@
+const Grade = require("../models/Grade");
+const Group = require("../models/Group");
+const Student = require("../models/Student");
+const { todayString, currentMonthString } = require("../utils/date.util");
+const emit = require("../utils/emitter.util");
+
+const DTO = (g) => ({
+  _id: String(g._id),
+  group: String(g.group),
+  student: String(g.student),
+  date: g.date,
+  value: g.value,
+  // Kim qo'ygani — UI "o'zinikini tahrirlash" qoidasi uchun.
+  teacher: g.teacher ? String(g.teacher) : null,
+  note: g.note || "",
+  createdAt: g.createdAt,
+});
+
+// Guruh shu clientniki ekanini (va o'qituvchi bo'lsa — o'ziniki ekanini)
+// tekshiradi. Ikkinchisini route darajasidagi `requireTeacherGroup` ham
+// qiladi, bu yerda servis mustaqil ishonchli bo'lishi uchun takrorlanadi.
+// Guruhga biriktirilish orqali cheklanadigan rollar (o'qituvchi va yordamchi
+// o'qituvchi) → Group'dagi mos maydon.
+const SCOPE_FIELD = { teacher: "teacher", assistant: "assistant" };
+
+// `scope` — { id, field } yoki null (cheklovsiz: Owner/Reception).
+const assertGroup = async (clientId, groupId, scope = null) => {
+  const group = await Group.findOne({ _id: groupId, client: clientId, isDeleted: false });
+  if (!group) throw new Error("group.notFound");
+  if (scope?.id && String(group[scope.field] || "") !== String(scope.id)) {
+    throw new Error("auth.forbidden");
+  }
+  return group;
+};
+
+// ─── Kim yoza oladi / o'chira oladi ──────────────────────────────────────
+// Baho va dars rejasi — O'QUV JARAYONI yozuvlari. Ularni faqat darsni
+// olib boruvchi kishi kiritadi: o'qituvchi va yordamchi o'qituvchi.
+// Resepshin faqat KO'RADI, Boshliq (Owner) esa faqat O'CHIRA oladi
+// (noto'g'ri yozuvni olib tashlash — nazorat huquqi).
+//
+// `staff` yo'q bo'lsa — bu Client Owner (mustaqil auth zanjiri).
+const WRITER_ROLES = ["teacher", "assistant"];
+
+const assertCanWrite = (staff) => {
+  if (!WRITER_ROLES.includes(staff?.role)) throw new Error("auth.forbidden");
+};
+
+// O'chirish: Owner — istalganini; o'qituvchi — o'z guruhidagi barchasini;
+// yordamchi — FAQAT o'zi yozganini; qolganlar — yo'q.
+const assertCanDelete = (staff, doc) => {
+  if (!staff) return; // Owner
+  if (staff.role === "teacher") return;
+  if (staff.role === "assistant" && String(doc.teacher || "") === String(staff._id)) return;
+  throw new Error("auth.forbidden");
+};
+
+// Staff obyektidan qamrov yasaydi (rol biriktirish talab qilmasa — null).
+const scopeOf = (staff) => {
+  const field = SCOPE_FIELD[staff?.role];
+  return field ? { id: staff._id, field } : null;
+};
+
+module.exports = {
+  // Oylik baholar — guruh bo'yicha barcha o'quvchilar (davomat matritsasi
+  // bilan bir xil shakl: student → { date: value }).
+  listByGroup: async (clientId, groupId, month, scope = null) => {
+    await assertGroup(clientId, groupId, scope);
+
+    const targetMonth = month || currentMonthString();
+    if (!/^\d{4}-\d{2}$/.test(targetMonth)) throw new Error("attendance.invalidMonth");
+
+    const grades = await Grade.find({
+      group: groupId,
+      date: { $gte: `${targetMonth}-01`, $lte: `${targetMonth}-31` },
+    });
+
+    const byStudent = {};
+    for (const g of grades) {
+      const sid = String(g.student);
+      if (!byStudent[sid]) byStudent[sid] = {};
+      byStudent[sid][g.date] = {
+        value: g.value,
+        note: g.note || "",
+        teacher: g.teacher ? String(g.teacher) : null,
+      };
+    }
+
+    // O'rtacha baho — o'quvchining shu oydagi barcha baholari bo'yicha.
+    const averages = {};
+    for (const [sid, map] of Object.entries(byStudent)) {
+      const values = Object.values(map).map((x) => x.value);
+      averages[sid] = values.length
+        ? Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10
+        : 0;
+    }
+
+    return { month: targetMonth, grades: byStudent, averages };
+  },
+
+  // Baho qo'yish/yangilash. Bitta kunda bitta o'quvchiga bitta baho —
+  // qayta qo'yilsa ustiga yoziladi (upsert).
+  set: async (clientId, groupId, body, staff = null) => {
+    // Baho qo'yish/tahrirlash — faqat o'qituvchi va yordamchi o'qituvchi.
+    assertCanWrite(staff);
+
+    const { studentId, value, note = "", date } = body;
+    const num = Number(value);
+    if (!Number.isInteger(num) || num < 1 || num > 5) throw new Error("grade.invalidValue");
+
+    const group = await assertGroup(clientId, groupId, scopeOf(staff));
+
+    const target = date || todayString();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(target)) throw new Error("group.invalidDate");
+    if (target > todayString()) throw new Error("grade.futureNotAllowed");
+
+    // O'quvchi shu guruhda faol bo'lishi shart.
+    const student = await Student.findOne({
+      _id: studentId,
+      isDeleted: false,
+      groups: { $elemMatch: { group: groupId, client: clientId, status: "active" } },
+    }).select("_id fullName");
+    if (!student) throw new Error("student.notInGroup");
+
+    // Mavjud bahoni USTIGA yozish ham "tahrirlash" — yordamchi boshqa
+    // kishi qo'ygan bahoga tega olmaydi.
+    const existing = await Grade.findOne({ group: groupId, student: studentId, date: target });
+    if (existing) assertCanDelete(staff, existing);
+
+    const grade = await Grade.findOneAndUpdate(
+      { group: groupId, student: studentId, date: target },
+      {
+        $set: {
+          client: clientId,
+          center: group.center,
+          teacher: staff?._id || null,
+          value: num,
+          note: String(note || "").trim().slice(0, 200),
+        },
+      },
+      { new: true, upsert: true, setDefaultsOnInsert: true },
+    );
+
+    emit(`client:${clientId}`, "grade:set", {
+      groupId: String(groupId),
+      studentId: String(studentId),
+      date: target,
+      value: num,
+      note: grade.note || "",
+      teacher: grade.teacher ? String(grade.teacher) : null,
+    });
+
+    return DTO(grade);
+  },
+
+  remove: async (clientId, groupId, gradeId, staff = null) => {
+    await assertGroup(clientId, groupId, scopeOf(staff));
+
+    const target = await Grade.findOne({ _id: gradeId, group: groupId, client: clientId });
+    if (!target) throw new Error("grade.notFound");
+    assertCanDelete(staff, target);
+
+    const grade = await Grade.findOneAndDelete({ _id: gradeId, group: groupId, client: clientId });
+
+    emit(`client:${clientId}`, "grade:removed", {
+      groupId: String(groupId),
+      studentId: String(grade.student),
+      date: grade.date,
+    });
+
+    return { _id: String(grade._id) };
+  },
+
+  // O'quvchi baholari XULOSASI — Student Detail sahifasi uchun.
+  // Har guruh bo'yicha: umumiy o'rtacha ("4.5 / 5") va FAQAT o'zi o'qigan
+  // oylar kesimida o'rtacha. Baho yo'q oylar ro'yxatga tushmaydi.
+  studentSummary: async (clientId, studentId) => {
+    const student = await Student.findOne({ _id: studentId, isDeleted: false }).select("groups");
+    if (!student) throw new Error("student.notFound");
+
+    // Faqat SHU clientning guruh yozuvlari (Student hujjati tenant'lararo umumiy).
+    const groupIds = student.groups
+      .filter((g) => String(g.client) === String(clientId))
+      .map((g) => g.group);
+    if (!groupIds.length) return [];
+
+    const grades = await Grade.find({ student: studentId, group: { $in: groupIds } }).sort({
+      date: 1,
+    });
+
+    const byGroup = new Map();
+    for (const g of grades) {
+      const gid = String(g.group);
+      if (!byGroup.has(gid)) byGroup.set(gid, { values: [], months: new Map() });
+      const bucket = byGroup.get(gid);
+      bucket.values.push(g.value);
+
+      const month = g.date.slice(0, 7);
+      if (!bucket.months.has(month)) bucket.months.set(month, []);
+      bucket.months.get(month).push(g.value);
+    }
+
+    const avg = (list) =>
+      list.length ? Math.round((list.reduce((a, b) => a + b, 0) / list.length) * 10) / 10 : 0;
+
+    return [...byGroup.entries()].map(([group, bucket]) => ({
+      group,
+      average: avg(bucket.values),
+      count: bucket.values.length,
+      months: [...bucket.months.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([month, values]) => ({ month, average: avg(values), count: values.length })),
+    }));
+  },
+
+  // Bitta o'quvchining shu guruhdagi barcha baholari (eng yangisi birinchi).
+  listByStudent: async (clientId, groupId, studentId, scope = null) => {
+    await assertGroup(clientId, groupId, scope);
+    const grades = await Grade.find({ group: groupId, student: studentId }).sort({ date: -1 });
+    return grades.map(DTO);
+  },
+};

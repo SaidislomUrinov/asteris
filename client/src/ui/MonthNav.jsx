@@ -1,0 +1,49 @@
+import { HiChevronLeft, HiChevronRight } from "react-icons/hi2";
+
+/**
+ * Kompakt oy tanlovi — "< Avgust 2026 >" bitta pill ichida. `month`/`onChange`
+ * "YYYY-MM" formatida ishlaydi, `max`dan keyingi oyga o'tish bloklanadi.
+ * `label` — chaqiruvchi tomondan `t("common.monthNames")` orqali tayyorlab
+ * beriladi (brauzer Intl'iga emas, loyiha i18n'iga tayanish uchun).
+ *
+ * @param {Object} props
+ * @param {string} props.month - "YYYY-MM"
+ * @param {string} props.label - ko'rinadigan matn, masalan "Avgust 2026"
+ * @param {(month: string) => void} props.onChange
+ * @param {string} [props.max] - "YYYY-MM", shu oydan keyin "keyingi" bosilmaydi
+ * @param {string} [props.className]
+ */
+function MonthNav({ month, label, onChange, max, className = "" }) {
+  const monthOf = (str) => Number(str.slice(5, 7)) - 1;
+  const yearOf = (str) => Number(str.slice(0, 4));
+  const shift = (delta) => {
+    const d = new Date(yearOf(month), monthOf(month) + delta, 1);
+    onChange(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  };
+  const disableNext = !!max && month >= max;
+
+  return (
+    <div className={`flex items-center gap-0.5 p-1 rounded-full bg-slate-50 ${className}`}>
+      <button
+        type="button"
+        onClick={() => shift(-1)}
+        className="flex items-center justify-center w-7 h-7 rounded-full text-slate-400 hover:bg-white hover:text-slate-700 hover:shadow-sm cursor-pointer transition-all"
+      >
+        <HiChevronLeft className="text-sm" />
+      </button>
+      <span className="min-w-24 text-center text-xs font-semibold text-slate-700 capitalize">
+        {label}
+      </span>
+      <button
+        type="button"
+        disabled={disableNext}
+        onClick={() => shift(1)}
+        className="flex items-center justify-center w-7 h-7 rounded-full text-slate-400 enabled:hover:bg-white enabled:hover:text-slate-700 enabled:hover:shadow-sm enabled:cursor-pointer disabled:opacity-25 transition-all"
+      >
+        <HiChevronRight className="text-sm" />
+      </button>
+    </div>
+  );
+}
+
+export default MonthNav;

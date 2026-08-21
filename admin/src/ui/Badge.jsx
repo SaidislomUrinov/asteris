@@ -1,0 +1,74 @@
+/**
+ * Badge component
+ *
+ * @param {Object} props
+ * @param {React.ReactNode} props.children - Badge o'ralgan element (Button, IconButton, va h.k.)
+ * @param {number} [props.value] - Badge ichidagi raqam
+ * @param {"emerald"|"blue"|"black"|"red"|"orange"|"yellow"} [props.color="red"] - Badge rangi
+ * @param {"filled"|"ghost"|"outlined"} [props.variant="filled"] - Badge varianti
+ * @param {string} [props.className] - Qo'shimcha className
+ * @returns {JSX.Element}
+ */
+function Badge({
+  children,
+  value,
+  color = "red",
+  variant = "filled",
+  className = "",
+}) {
+  const variants = {
+    filled: {
+      emerald: "bg-emerald-500 text-white",
+      blue: "bg-blue-500 text-white",
+      black: "bg-black text-white",
+      red: "bg-red-500 text-white",
+      orange: "bg-orange-500 text-white",
+      yellow: "bg-yellow-400 text-black",
+      slate: "bg-slate-700 text-white",
+    },
+    ghost: {
+      emerald: "bg-emerald-100 text-emerald-600",
+      blue: "bg-blue-100 text-blue-600",
+      black: "bg-zinc-200 text-black",
+      red: "bg-red-100 text-red-600",
+      orange: "bg-orange-100 text-orange-600",
+      yellow: "bg-yellow-100 text-yellow-700",
+      slate: "bg-slate-100 text-slate-700",
+    },
+    outlined: {
+      emerald: "bg-white border border-emerald-500 text-emerald-600",
+      blue: "bg-white border border-blue-500 text-blue-600",
+      black: "bg-white border border-black text-black",
+      red: "bg-white border border-red-500 text-red-600",
+      orange: "bg-white border border-orange-500 text-orange-600",
+      yellow: "bg-white border border-yellow-400 text-yellow-700",
+      slate: "bg-white border border-slate-500 text-slate-700",
+    },
+  };
+
+  const display =
+    value === undefined ? null : value > 99 ? "99+" : String(value);
+  const isWide = display && display.length > 1;
+
+  return (
+    <div className={`relative inline-flex shrink-0 ${className}`}>
+      {children}
+      {display !== null && (
+        <span
+          className={`
+            absolute -top-1.5 -right-1.5
+            flex items-center justify-center
+            min-w-4.5 h-4.5
+            ${isWide ? "px-1 rounded-full" : "rounded-full"}
+            text-[10px] font-bold leading-none select-none
+            ${variants[variant][color]}
+          `}
+        >
+          {display}
+        </span>
+      )}
+    </div>
+  );
+}
+
+export default Badge;

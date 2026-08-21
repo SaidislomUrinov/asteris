@@ -1,0 +1,78 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=SN+Pro:ital,wght@0,200..900;1,200..900&family=Space+Grotesk:wght@300..700&display=swap");
+
+@import "tailwindcss";
+
+* {
+  font-family: "SN Pro", sans-serif;
+}
+@theme {
+  --font-jet: "JetBrains Mono", monospace;
+  --font-space: "Space Grotesk", cursive;
+
+  --animate-dialog-in: dialog-in 250ms ease-out;
+  --animate-dialog-out: dialog-out 200ms ease-in forwards;
+  --animate-overlay-in: overlay-in 250ms ease-out;
+  --animate-overlay-out: overlay-out 200ms ease-in forwards;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(3rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes dialog-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(3rem);
+  }
+}
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@layer base {
+  .font-jet {
+    font-family: var(--font-jet) !important;
+  }
+  .font-space {
+    font-family: var(--font-space) !important;
+  }
+}
+
+body {
+  @apply bg-[#f5f8fd];
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
