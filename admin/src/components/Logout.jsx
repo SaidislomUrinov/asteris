@@ -24,6 +24,7 @@ export default function Logout() {
     }
     socket.disconnect();
     localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
     dp(resetUser());
     nv("/");
   };

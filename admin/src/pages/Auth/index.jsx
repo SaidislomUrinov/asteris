@@ -22,9 +22,10 @@ function Auth() {
       setDisabled(true);
 
       const res = await api.post("/admin/signin", form);
-      const { ok, data, access, msg } = res.data;
+      const { ok, data, access, refresh, msg } = res.data;
       if (!ok) throw new Error(msg);
       localStorage.setItem("access", access);
+      localStorage.setItem("refresh", refresh || "");
       successMsg(msg);
       setTimeout(() => {
         dp(updateUser(data));

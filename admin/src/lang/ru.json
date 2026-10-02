@@ -118,7 +118,12 @@
     "copied": "Скопировано",
     "error": "Произошла ошибка. Попробуйте ещё раз",
     "success": "Успешно выполнено",
-    "networkError": "Нет связи с сервером. Проверьте интернет и попробуйте ещё раз"
+    "networkError": "Нет связи с сервером. Проверьте интернет и попробуйте ещё раз",
+    "invalidInput": "Данные введены неверно",
+    "tooManyRequests": "Слишком много попыток. Попробуйте чуть позже",
+    "notFound": "Не найдено",
+    "fileTooLarge": "Файл слишком большой (до 10 МБ)",
+    "fileTypeNotAllowed": "Этот тип файла не поддерживается"
   },
   "platform": {
     "website": "Веб-сайт",
@@ -514,7 +519,14 @@
       "homework:delete": "Домашнее задание удалено",
       "teachingPlan:archived": "План уроков архивирован",
       "teachingPlan:restored": "План уроков восстановлен из архива",
-      "news:create": "Создан черновик новости"
+      "news:create": "Создан черновик новости",
+      "salary:cancel": "Операция по зарплате отменена",
+      "staff:blocked": "Сотрудник заблокирован",
+      "staff:unblocked": "Сотрудник разблокирован",
+      "student:priceChanged": "Изменена цена для ученика",
+      "grade:removed": "Оценка удалена",
+      "groupHoliday:removed": "Снят выходной группы",
+      "centerHoliday:removed": "Снят выходной филиала"
     },
     "entities": {
       "Student": "Ученик",
@@ -550,7 +562,8 @@
       "news": "Новость",
       "Homework": "Домашнее задание",
       "homework": "Домашнее задание",
-      "teachingPlan": "План уроков"
+      "teachingPlan": "План уроков",
+      "grade": "Оценка"
     },
     "fields": {
       "fullName": "ФИО",
@@ -587,7 +600,12 @@
       "telegramSame": "Telegram совпадает с телефоном",
       "telegramPhone": "Номер Telegram",
       "parentTelegramSame": "Telegram родителя совпадает с телефоном",
-      "parentTelegramPhone": "Номер Telegram родителя"
+      "parentTelegramPhone": "Номер Telegram родителя",
+      "login": "Логин",
+      "password": "Пароль",
+      "title": "Название",
+      "category": "Категория",
+      "value": "Значение"
     },
     "roles": {
       "reception": "Ресепшн",

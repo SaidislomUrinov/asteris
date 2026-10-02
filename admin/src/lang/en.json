@@ -118,7 +118,12 @@
     "copied": "Copied",
     "error": "Something went wrong. Please try again",
     "success": "Done successfully",
-    "networkError": "No connection to the server. Check your internet and try again"
+    "networkError": "No connection to the server. Check your internet and try again",
+    "invalidInput": "Invalid input",
+    "tooManyRequests": "Too many attempts. Please try again later",
+    "notFound": "Not found",
+    "fileTooLarge": "File is too large (max 10 MB)",
+    "fileTypeNotAllowed": "This file type is not allowed"
   },
   "platform": {
     "website": "Website",
@@ -514,7 +519,14 @@
       "homework:delete": "Homework deleted",
       "teachingPlan:archived": "Lesson plan archived",
       "teachingPlan:restored": "Lesson plan restored",
-      "news:create": "News draft created"
+      "news:create": "News draft created",
+      "salary:cancel": "Salary transaction cancelled",
+      "staff:blocked": "Staff member blocked",
+      "staff:unblocked": "Staff member unblocked",
+      "student:priceChanged": "Student price changed",
+      "grade:removed": "Grade removed",
+      "groupHoliday:removed": "Group day off removed",
+      "centerHoliday:removed": "Branch day off removed"
     },
     "entities": {
       "Student": "Student",
@@ -550,7 +562,8 @@
       "news": "News",
       "Homework": "Homework",
       "homework": "Homework",
-      "teachingPlan": "Lesson plan"
+      "teachingPlan": "Lesson plan",
+      "grade": "Grade"
     },
     "fields": {
       "fullName": "Full name",
@@ -587,7 +600,12 @@
       "telegramSame": "Telegram same as phone",
       "telegramPhone": "Telegram number",
       "parentTelegramSame": "Parent Telegram same as phone",
-      "parentTelegramPhone": "Parent Telegram number"
+      "parentTelegramPhone": "Parent Telegram number",
+      "login": "Login",
+      "password": "Password",
+      "title": "Title",
+      "category": "Category",
+      "value": "Value"
     },
     "roles": {
       "reception": "Reception",

@@ -55,6 +55,10 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const p = useLocation().pathname;
   const permissions = useSelector((e) => e.user?.permissions);
+  const role = useSelector((e) => e.user?.role);
+  // Backend `requirePermission` bilan bir xil: `role: "owner"` hamma bo'limni
+  // ko'radi, aks holda ruxsat ro'yxati (yoki `["all"]`).
+  const allowed = (permission) => role === "owner" || hasPermission(permissions, permission);
 
   // Route almashganda mobil menyu yopiladi — render fazasida sinxronlanadi.
   const [prevPath, setPrevPath] = useState(p);
@@ -96,32 +100,42 @@ export default function Navbar() {
             {t("nav.main")}
           </p>
 
-          <NavLink to="/dashboard">
-            <HiChartPie className="text-yellow-400 text-[20px]" />
-            {t("nav.dashboard")}
-          </NavLink>
+          {allowed("client:view") && (
+            <NavLink to="/dashboard">
+              <HiChartPie className="text-yellow-400 text-[20px]" />
+              {t("nav.dashboard")}
+            </NavLink>
+          )}
 
-          <NavLink to="/leads" startsWith>
-            <HiUserGroup className="text-cyan-400 text-[20px]" />
-            {t("nav.leads")}
-          </NavLink>
+          {allowed("lead:view") && (
+            <NavLink to="/leads" startsWith>
+              <HiUserGroup className="text-cyan-400 text-[20px]" />
+              {t("nav.leads")}
+            </NavLink>
+          )}
 
-          <NavLink to="/clients" startsWith>
-            <HiUsers className="text-violet-400 text-[20px]" />
-            {t("nav.clients")}
-          </NavLink>
+          {allowed("client:view") && (
+            <NavLink to="/clients" startsWith>
+              <HiUsers className="text-violet-400 text-[20px]" />
+              {t("nav.clients")}
+            </NavLink>
+          )}
 
-          <NavLink to="/tariffs" startsWith>
-            <HiTag className="text-emerald-400 text-[20px]" />
-            {t("nav.tariffs")}
-          </NavLink>
+          {allowed("tariff:view") && (
+            <NavLink to="/tariffs" startsWith>
+              <HiTag className="text-emerald-400 text-[20px]" />
+              {t("nav.tariffs")}
+            </NavLink>
+          )}
 
-          <NavLink to="/chat" startsWith>
-            <HiOutlineChatBubbleLeftRight className="text-teal-400 text-[20px]" />
-            {t("nav.chat")}
-          </NavLink>
+          {allowed("chat:view") && (
+            <NavLink to="/chat" startsWith>
+              <HiOutlineChatBubbleLeftRight className="text-teal-400 text-[20px]" />
+              {t("nav.chat")}
+            </NavLink>
+          )}
 
-          {hasPermission(permissions, "news:manage") && (
+          {allowed("news:manage") && (
             <NavLink to="/news" startsWith>
               <HiNewspaper className="text-orange-400 text-[20px]" />
               {t("nav.news")}
@@ -134,35 +148,47 @@ export default function Navbar() {
             {t("nav.system")}
           </p>
 
-          <NavLink to="/audit-log" startsWith>
-            <HiClipboardDocumentList className="text-amber-400 text-[20px]" />
-            {t("nav.auditLog")}
-          </NavLink>
+          {allowed("audit:view") && (
+            <NavLink to="/audit-log" startsWith>
+              <HiClipboardDocumentList className="text-amber-400 text-[20px]" />
+              {t("nav.auditLog")}
+            </NavLink>
+          )}
 
-          <NavLink to="/monitoring" startsWith>
-            <HiChartBar className="text-sky-400 text-[20px]" />
-            {t("nav.monitoring")}
-          </NavLink>
+          {allowed("monitoring:view") && (
+            <NavLink to="/monitoring" startsWith>
+              <HiChartBar className="text-sky-400 text-[20px]" />
+              {t("nav.monitoring")}
+            </NavLink>
+          )}
 
-          <NavLink to="/logs" startsWith>
-            <HiCommandLine className="text-emerald-400 text-[20px]" />
-            {t("nav.logs")}
-          </NavLink>
+          {allowed("monitoring:view") && (
+            <NavLink to="/logs" startsWith>
+              <HiCommandLine className="text-emerald-400 text-[20px]" />
+              {t("nav.logs")}
+            </NavLink>
+          )}
 
-          <NavLink to="/settings" startsWith>
-            <HiCog6Tooth className="text-slate-400 text-[20px]" />
-            {t("nav.systemSettings")}
-          </NavLink>
+          {allowed("settings:manage") && (
+            <NavLink to="/settings" startsWith>
+              <HiCog6Tooth className="text-slate-400 text-[20px]" />
+              {t("nav.systemSettings")}
+            </NavLink>
+          )}
 
-          <NavLink to="/fonts" startsWith>
-            <HiLanguage className="text-pink-400 text-[20px]" />
-            {t("nav.fonts")}
-          </NavLink>
+          {allowed("settings:manage") && (
+            <NavLink to="/fonts" startsWith>
+              <HiLanguage className="text-pink-400 text-[20px]" />
+              {t("nav.fonts")}
+            </NavLink>
+          )}
 
-          <NavLink to="/tutorial-videos" startsWith>
-            <HiPlayCircle className="text-rose-400 text-[20px]" />
-            {t("nav.tutorialVideos")}
-          </NavLink>
+          {allowed("settings:manage") && (
+            <NavLink to="/tutorial-videos" startsWith>
+              <HiPlayCircle className="text-rose-400 text-[20px]" />
+              {t("nav.tutorialVideos")}
+            </NavLink>
+          )}
 
           <NavLink to="#logout">
             <HiLogout className="text-red-400 text-[20px]" />

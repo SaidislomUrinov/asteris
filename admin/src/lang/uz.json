@@ -118,7 +118,12 @@
     "copied": "Nusxalandi",
     "error": "Xatolik yuz berdi. Qaytadan urinib ko'ring",
     "success": "Muvaffaqiyatli bajarildi",
-    "networkError": "Server bilan aloqa yo'q. Internetni tekshirib, qaytadan urinib ko'ring"
+    "networkError": "Server bilan aloqa yo'q. Internetni tekshirib, qaytadan urinib ko'ring",
+    "invalidInput": "Ma'lumot noto'g'ri kiritilgan",
+    "tooManyRequests": "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring",
+    "notFound": "Topilmadi",
+    "fileTooLarge": "Fayl hajmi juda katta (10 MB gacha)",
+    "fileTypeNotAllowed": "Bu turdagi faylni yuklab bo'lmaydi"
   },
   "platform": {
     "website": "Veb-sayt",
@@ -514,7 +519,14 @@
       "homework:delete": "Uyga vazifa o'chirildi",
       "teachingPlan:archived": "Dars reja arxivlandi",
       "teachingPlan:restored": "Dars reja arxivdan qaytarildi",
-      "news:create": "Yangilik qoralamasi yaratildi"
+      "news:create": "Yangilik qoralamasi yaratildi",
+      "salary:cancel": "Oylik tranzaksiyasi bekor qilindi",
+      "staff:blocked": "Hodim bloklandi",
+      "staff:unblocked": "Hodim blokdan chiqarildi",
+      "student:priceChanged": "O'quvchi narxi o'zgartirildi",
+      "grade:removed": "Baho o'chirildi",
+      "groupHoliday:removed": "Guruh dam olish kuni olib tashlandi",
+      "centerHoliday:removed": "Filial dam olish kuni olib tashlandi"
     },
     "entities": {
       "Student": "O'quvchi",
@@ -550,7 +562,8 @@
       "news": "Yangilik",
       "Homework": "Uyga vazifa",
       "homework": "Uyga vazifa",
-      "teachingPlan": "Dars reja"
+      "teachingPlan": "Dars reja",
+      "grade": "Baho"
     },
     "fields": {
       "fullName": "To'liq ism",
@@ -587,7 +600,12 @@
       "telegramSame": "Telegram raqami telefon bilan bir xil",
       "telegramPhone": "Telegram raqami",
       "parentTelegramSame": "Ota-ona Telegrami telefon bilan bir xil",
-      "parentTelegramPhone": "Ota-ona Telegram raqami"
+      "parentTelegramPhone": "Ota-ona Telegram raqami",
+      "login": "Login",
+      "password": "Parol",
+      "title": "Nomi",
+      "category": "Kategoriya",
+      "value": "Qiymat"
     },
     "roles": {
       "reception": "Resepshin",
