@@ -3,6 +3,7 @@
 !/admin
 !/client
 !/server
+!/parent
 !/.gitignore
 
 # node_modules (har qanday chuqurlikda)
@@ -12,6 +13,11 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+# Runtime ma'lumot — DB dumplari (shaxsiy ma'lumot!) va foydalanuvchi
+# yuklagan fayllar repoga tushmaydi; ular serverda alohida backup qilinadi.
+server/backups/
+server/uploads/
 
 # Build/output
 dist/
