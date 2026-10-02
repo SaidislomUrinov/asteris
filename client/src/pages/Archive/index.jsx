@@ -93,7 +93,8 @@ function Archive() {
     const [teachersRes, assistantsRes, roomsRes] = await Promise.allSettled([
       api.get("/staffs/lookup", { params: { role: "teacher" } }),
       api.get("/staffs/lookup", { params: { role: "assistant" } }),
-      api.get("/rooms", { params: { page: 1 } }),
+      // Tanlov uchun ruxsatsiz ro'yxat (`room:view` resepshinga berilmaydi).
+      api.get("/rooms/lookup"),
     ]);
     const next = {
       teachers: teachersRes.status === "fulfilled" && teachersRes.value.data.ok ? teachersRes.value.data.data || [] : [],

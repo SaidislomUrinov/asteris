@@ -52,7 +52,8 @@
       "Homework": "Домашнее задание",
       "homework": "Домашнее задание",
       "teachingPlan": "План уроков",
-      "Group": "Группа"
+      "Group": "Группа",
+      "grade": "Оценка"
     },
     "actions": {
       "center:create": "Филиал создан",
@@ -90,7 +91,28 @@
       "homework:delete": "Домашнее задание удалено",
       "teachingPlan:archived": "План уроков архивирован",
       "teachingPlan:restored": "План уроков восстановлен из архива",
-      "news:create": "Создан черновик новости"
+      "news:create": "Создан черновик новости",
+      "payment:create": "Принята оплата",
+      "payment:cancel": "Оплата отменена",
+      "expense:create": "Добавлен расход",
+      "expense:update": "Расход изменён",
+      "expense:cancel": "Расход отменён",
+      "salary:advance": "Выдан аванс",
+      "salary:withdraw": "Выдано досрочно",
+      "salary:bonus": "Начислен бонус",
+      "salary:penalty": "Начислен штраф",
+      "salary:cancel": "Операция по зарплате отменена",
+      "staff:create": "Добавлен сотрудник",
+      "staff:update": "Данные сотрудника изменены",
+      "staff:blocked": "Сотрудник заблокирован",
+      "staff:unblocked": "Сотрудник разблокирован",
+      "student:create": "Ученик добавлен в группу",
+      "student:update": "Данные ученика изменены",
+      "student:priceChanged": "Изменена цена для ученика",
+      "student:leftGroup": "Ученик вышел из группы",
+      "grade:removed": "Оценка удалена",
+      "groupHoliday:removed": "Снят выходной группы",
+      "centerHoliday:removed": "Снят выходной филиала"
     },
     "fields": {
       "name": "Название",
@@ -114,7 +136,17 @@
       "telegramSame": "Telegram совпадает с телефоном",
       "telegramPhone": "Номер Telegram",
       "parentTelegramSame": "Telegram родителя совпадает с телефоном",
-      "parentTelegramPhone": "Номер Telegram родителя"
+      "parentTelegramPhone": "Номер Telegram родителя",
+      "login": "Логин",
+      "role": "Роль",
+      "permissions": "Права доступа",
+      "salaryValue": "Размер зарплаты",
+      "password": "Пароль",
+      "title": "Название",
+      "category": "Категория",
+      "amount": "Сумма",
+      "value": "Значение",
+      "price": "Цена"
     }
   },
   "nav": {
@@ -510,7 +542,12 @@
     "error": "Произошла ошибка. Попробуйте ещё раз",
     "success": "Успешно выполнено",
     "networkError": "Нет связи с сервером. Проверьте интернет и попробуйте ещё раз",
-    "imagePreview": "Предпросмотр изображения"
+    "imagePreview": "Предпросмотр изображения",
+    "invalidInput": "Данные введены неверно",
+    "tooManyRequests": "Слишком много попыток. Попробуйте чуть позже",
+    "notFound": "Не найдено",
+    "fileTooLarge": "Файл слишком большой (до 10 МБ)",
+    "fileTypeNotAllowed": "Этот тип файла не поддерживается"
   },
   "dashboard": {
     "title": "Дашборд",
@@ -857,7 +894,10 @@
     "botLinkCopied": "Ссылка на бота скопирована",
     "botLinkLabel": "Бот для учеников",
     "editContact": "Редактировать контакты",
-    "paymentStatusPaid": "Оплачено"
+    "paymentStatusPaid": "Оплачено",
+    "invalidMonth": "Месяц выбран неверно",
+    "sharedContactLocked": "Ученик также учится в другом центре — телефон, номер родителя и Telegram изменить нельзя",
+    "sharedContactHint": "Ученик учится и в другом центре: он будет добавлен в группу, контакты не изменятся."
   },
   "import": {
     "buttonLabel": "Импорт из Excel",
@@ -2039,5 +2079,10 @@
     "saved": "План сохранён",
     "duplicated": "План продублирован",
     "deleted": "План архивирован"
+  },
+  "notFoundPage": {
+    "title": "Эта страница вам недоступна",
+    "desc": "Страница не существует или у вас нет к ней доступа. При необходимости обратитесь к руководителю.",
+    "back": "На главную"
   }
 }

@@ -52,7 +52,8 @@
       "Homework": "Uyga vazifa",
       "homework": "Uyga vazifa",
       "teachingPlan": "Dars reja",
-      "Group": "Guruh"
+      "Group": "Guruh",
+      "grade": "Baho"
     },
     "actions": {
       "center:create": "Filial yaratildi",
@@ -90,7 +91,28 @@
       "homework:delete": "Uyga vazifa o'chirildi",
       "teachingPlan:archived": "Dars reja arxivlandi",
       "teachingPlan:restored": "Dars reja arxivdan qaytarildi",
-      "news:create": "Yangilik qoralamasi yaratildi"
+      "news:create": "Yangilik qoralamasi yaratildi",
+      "payment:create": "To'lov qabul qilindi",
+      "payment:cancel": "To'lov bekor qilindi",
+      "expense:create": "Xarajat qo'shildi",
+      "expense:update": "Xarajat tahrirlandi",
+      "expense:cancel": "Xarajat bekor qilindi",
+      "salary:advance": "Avans berildi",
+      "salary:withdraw": "Oldindan pul berildi",
+      "salary:bonus": "Bonus berildi",
+      "salary:penalty": "Jarima yozildi",
+      "salary:cancel": "Oylik tranzaksiyasi bekor qilindi",
+      "staff:create": "Hodim qo'shildi",
+      "staff:update": "Hodim ma'lumotlari o'zgartirildi",
+      "staff:blocked": "Hodim bloklandi",
+      "staff:unblocked": "Hodim blokdan chiqarildi",
+      "student:create": "O'quvchi guruhga qo'shildi",
+      "student:update": "O'quvchi ma'lumotlari o'zgartirildi",
+      "student:priceChanged": "O'quvchi narxi o'zgartirildi",
+      "student:leftGroup": "O'quvchi guruhdan chiqdi",
+      "grade:removed": "Baho o'chirildi",
+      "groupHoliday:removed": "Guruh dam olish kuni olib tashlandi",
+      "centerHoliday:removed": "Filial dam olish kuni olib tashlandi"
     },
     "fields": {
       "name": "Nomi",
@@ -114,7 +136,17 @@
       "telegramSame": "Telegram raqami telefon bilan bir xil",
       "telegramPhone": "Telegram raqami",
       "parentTelegramSame": "Ota-ona Telegrami telefon bilan bir xil",
-      "parentTelegramPhone": "Ota-ona Telegram raqami"
+      "parentTelegramPhone": "Ota-ona Telegram raqami",
+      "login": "Login",
+      "role": "Rol",
+      "permissions": "Ruxsatlar",
+      "salaryValue": "Oylik qiymati",
+      "password": "Parol",
+      "title": "Nomi",
+      "category": "Kategoriya",
+      "amount": "Summa",
+      "value": "Qiymat",
+      "price": "Narx"
     }
   },
   "nav": {
@@ -510,7 +542,12 @@
     "error": "Xatolik yuz berdi. Qaytadan urinib ko'ring",
     "success": "Muvaffaqiyatli bajarildi",
     "networkError": "Server bilan aloqa yo'q. Internetni tekshirib, qaytadan urinib ko'ring",
-    "imagePreview": "Rasm ko'rinishi"
+    "imagePreview": "Rasm ko'rinishi",
+    "invalidInput": "Ma'lumot noto'g'ri kiritilgan",
+    "tooManyRequests": "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring",
+    "notFound": "Topilmadi",
+    "fileTooLarge": "Fayl hajmi juda katta (10 MB gacha)",
+    "fileTypeNotAllowed": "Bu turdagi faylni yuklab bo'lmaydi"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -857,7 +894,10 @@
     "botLinkCopied": "Bot havolasi nusxalandi",
     "botLinkLabel": "O'quvchilar boti",
     "editContact": "Kontaktni tahrirlash",
-    "paymentStatusPaid": "To'langan"
+    "paymentStatusPaid": "To'langan",
+    "invalidMonth": "Oy noto'g'ri tanlangan",
+    "sharedContactLocked": "Bu o'quvchi boshqa markazda ham o'qiydi — telefon, ota-ona raqami va Telegram raqamlarini o'zgartirib bo'lmaydi",
+    "sharedContactHint": "O'quvchi boshqa markazda ham o'qiydi: u guruhga qo'shiladi, kontakt ma'lumotlari o'zgartirilmaydi."
   },
   "import": {
     "buttonLabel": "Excel'dan import",
@@ -2039,5 +2079,10 @@
     "saved": "Reja saqlandi",
     "duplicated": "Rejadan nusxa olindi",
     "deleted": "Reja arxivlandi"
+  },
+  "notFoundPage": {
+    "title": "Bu sahifa siz uchun ochiq emas",
+    "desc": "Sahifa mavjud emas yoki unga kirish uchun ruxsatingiz yo'q. Kerak bo'lsa, rahbaringizga murojaat qiling.",
+    "back": "Bosh sahifaga"
   }
 }

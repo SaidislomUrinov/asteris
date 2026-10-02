@@ -20,6 +20,7 @@ import useHideFinance from "../../hooks/useHideFinance";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 import { maskMoney } from "../../utils/moneyFormat";
+import useCan from "../../hooks/useCan";
 
 const CATEGORIES = ["rent", "utilities", "equipment", "marketing", "repair", "other"];
 const CATEGORY_COLOR = {
@@ -41,6 +42,7 @@ const currentMonth = () => {
 
 function Expenses() {
   const { t } = useTranslation();
+  const can = useCan();
   const isDesktop = useMediaQuery("(min-width: 640px)");
   const [hideFinance] = useHideFinance();
   const money = (v) => maskMoney(v, hideFinance);
@@ -195,8 +197,10 @@ function Expenses() {
       key: "actions",
       header: "",
       className: "text-right",
+      // Tahrir/bekor qilish — backendda `expense:update` (ruxsatsiz hodimga
+      // menyu ko'rinmaydi).
       render: (row) =>
-        row.status === "cancelled" ? null : (
+        row.status === "cancelled" || !can("expense:update") ? null : (
           <div className="flex items-center justify-end">
             <DropMenu
               items={[

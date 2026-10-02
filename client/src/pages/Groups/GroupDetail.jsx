@@ -1,3 +1,4 @@
+import NotFound from "../NotFound";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -157,6 +158,8 @@ function GroupDetail() {
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  // Boshqa filial/o'qituvchi guruhi — "topilmadi" emas, "ruxsat yo'q" ekrani.
+  const [forbidden, setForbidden] = useState(false);
   const [error, setError] = useState(false);
 
   const [centers, setCenters] = useState([]);
@@ -303,9 +306,14 @@ function GroupDetail() {
       setLoading(true);
       setError(false);
       setNotFound(false);
+      setForbidden(false);
       const res = await api.get(`/groups/${id}`);
       const { ok, data, msg } = res.data;
       if (!ok) {
+        if (msg === "auth.forbidden") {
+          setForbidden(true);
+          return;
+        }
         if (msg === "group.notFound") setNotFound(true);
         throw new Error(msg);
       }
@@ -666,6 +674,8 @@ function GroupDetail() {
   );
 
   if (loading) return <Loading height="40vh" />;
+
+  if (forbidden) return <NotFound />;
 
   if (notFound || error) {
     return (

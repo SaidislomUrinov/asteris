@@ -52,7 +52,8 @@
       "Homework": "Homework",
       "homework": "Homework",
       "teachingPlan": "Lesson plan",
-      "Group": "Group"
+      "Group": "Group",
+      "grade": "Grade"
     },
     "actions": {
       "center:create": "Center created",
@@ -90,7 +91,28 @@
       "homework:delete": "Homework deleted",
       "teachingPlan:archived": "Lesson plan archived",
       "teachingPlan:restored": "Lesson plan restored",
-      "news:create": "News draft created"
+      "news:create": "News draft created",
+      "payment:create": "Payment received",
+      "payment:cancel": "Payment cancelled",
+      "expense:create": "Expense added",
+      "expense:update": "Expense edited",
+      "expense:cancel": "Expense cancelled",
+      "salary:advance": "Advance issued",
+      "salary:withdraw": "Early payout issued",
+      "salary:bonus": "Bonus added",
+      "salary:penalty": "Penalty added",
+      "salary:cancel": "Salary transaction cancelled",
+      "staff:create": "Staff member added",
+      "staff:update": "Staff member updated",
+      "staff:blocked": "Staff member blocked",
+      "staff:unblocked": "Staff member unblocked",
+      "student:create": "Student added to group",
+      "student:update": "Student updated",
+      "student:priceChanged": "Student price changed",
+      "student:leftGroup": "Student left the group",
+      "grade:removed": "Grade removed",
+      "groupHoliday:removed": "Group day off removed",
+      "centerHoliday:removed": "Branch day off removed"
     },
     "fields": {
       "name": "Name",
@@ -114,7 +136,17 @@
       "telegramSame": "Telegram same as phone",
       "telegramPhone": "Telegram number",
       "parentTelegramSame": "Parent Telegram same as phone",
-      "parentTelegramPhone": "Parent Telegram number"
+      "parentTelegramPhone": "Parent Telegram number",
+      "login": "Login",
+      "role": "Role",
+      "permissions": "Permissions",
+      "salaryValue": "Salary value",
+      "password": "Password",
+      "title": "Title",
+      "category": "Category",
+      "amount": "Amount",
+      "value": "Value",
+      "price": "Price"
     }
   },
   "nav": {
@@ -510,7 +542,12 @@
     "error": "Something went wrong. Please try again",
     "success": "Done successfully",
     "networkError": "No connection to the server. Check your internet and try again",
-    "imagePreview": "Image preview"
+    "imagePreview": "Image preview",
+    "invalidInput": "Invalid input",
+    "tooManyRequests": "Too many attempts. Please try again later",
+    "notFound": "Not found",
+    "fileTooLarge": "File is too large (max 10 MB)",
+    "fileTypeNotAllowed": "This file type is not allowed"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -857,7 +894,10 @@
     "botLinkCopied": "Bot link copied",
     "botLinkLabel": "Students' bot",
     "editContact": "Edit contacts",
-    "paymentStatusPaid": "Paid"
+    "paymentStatusPaid": "Paid",
+    "invalidMonth": "Invalid month",
+    "sharedContactLocked": "This student also studies at another center — phone, parent's number and Telegram can't be changed",
+    "sharedContactHint": "This student also studies at another center: they'll be added to the group, contact details stay unchanged."
   },
   "import": {
     "buttonLabel": "Import from Excel",
@@ -2039,5 +2079,10 @@
     "saved": "Plan saved",
     "duplicated": "Plan duplicated",
     "deleted": "Plan archived"
+  },
+  "notFoundPage": {
+    "title": "This page isn't available to you",
+    "desc": "The page doesn't exist or you don't have access to it. Contact your manager if you need it.",
+    "back": "Back to home"
   }
 }

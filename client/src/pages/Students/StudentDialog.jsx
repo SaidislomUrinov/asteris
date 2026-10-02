@@ -253,7 +253,11 @@ function StudentDialog({
               {t("student.chooseDifferent")}
             </button>
           </div>
-        ) : matches.length > 0 ? (
+        ) : null}
+        {existingStudent?.shared && (
+          <p className="-mt-1 text-xs text-slate-500">{t("student.sharedContactHint")}</p>
+        )}
+        {existingStudent ? null : matches.length > 0 ? (
           <div className="flex flex-col gap-1 -mt-1">
             <p className="pl-2 text-xs text-slate-400">{t("student.existingMatchesHint")}</p>
             <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">

@@ -53,6 +53,7 @@ import AuditLog from "./pages/AuditLog";
 import Certificates from "./pages/Certificates";
 import TemplateEditor from "./pages/Certificates/TemplateEditor";
 import CertificateVerify from "./pages/CertificateVerify";
+import NotFound from "./pages/NotFound";
 import UiLab from "./pages/UiLab";
 import Calendar from "./pages/Calendar";
 import Archive from "./pages/Archive";
@@ -278,6 +279,8 @@ function App() {
               {can("archive:view") && !isTeacher && (
                 <Route path="/archive" element={<Archive />} />
               )}
+              {/* Ruxsat yo'q yoki mavjud bo'lmagan sahifa — bo'sh oyna emas. */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
         </div>

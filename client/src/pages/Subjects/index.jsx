@@ -16,11 +16,13 @@ import Select from "../../ui/Select";
 import DropMenu from "../../ui/DropMenu";
 import SubjectDialog from "./SubjectDialog";
 import ExportExcelButton from "../../ui/ExportExcelButton";
+import useCan from "../../hooks/useCan";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 
 function Subjects() {
   const { t } = useTranslation();
+  const can = useCan();
 
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
@@ -145,34 +147,39 @@ function Subjects() {
       key: "actions",
       header: "",
       className: "text-right",
-      render: (row) => (
-        <div className="flex items-center justify-end">
-          <DropMenu
-            items={[
-              {
-                label: t("common.edit"),
-                icon: HiPencil,
-                iconClass: "bg-blue-50 text-blue-600",
-                onClick: () => openEdit(row),
-              },
-              {
-                label: t("common.copy"),
-                icon: HiDocumentDuplicate,
-                iconClass: "bg-slate-100 text-slate-600",
-                onClick: () => openDuplicate(row),
-              },
-              // "O'chirish" endi ARXIVLASH — fan yo'qolmaydi, Arxiv
-              // bo'limidan qaytariladi (API_CONTRACT_archive.md).
-              {
-                label: t("archive.archive"),
-                icon: HiArchiveBox,
-                iconClass: "bg-amber-50 text-amber-600",
-                onClick: () => setDeleteTarget(row),
-              },
-            ]}
-          />
-        </div>
-      ),
+      // Ruxsat bo'lmasa menyu bandi ko'rinmaydi (CLAUDE.md) — avval faqat
+      // `subject:view` li hodim ham tahrirlash/arxivlashni ko'rib, bosganda
+      // `auth.forbidden` olardi.
+      render: (row) => {
+        const items = [
+          can("subject:update") && {
+            label: t("common.edit"),
+            icon: HiPencil,
+            iconClass: "bg-blue-50 text-blue-600",
+            onClick: () => openEdit(row),
+          },
+          can("subject:create") && {
+            label: t("common.copy"),
+            icon: HiDocumentDuplicate,
+            iconClass: "bg-slate-100 text-slate-600",
+            onClick: () => openDuplicate(row),
+          },
+          // "O'chirish" endi ARXIVLASH — fan yo'qolmaydi, Arxiv
+          // bo'limidan qaytariladi (API_CONTRACT_archive.md).
+          can("subject:delete") && {
+            label: t("archive.archive"),
+            icon: HiArchiveBox,
+            iconClass: "bg-amber-50 text-amber-600",
+            onClick: () => setDeleteTarget(row),
+          },
+        ].filter(Boolean);
+        if (!items.length) return null;
+        return (
+          <div className="flex items-center justify-end">
+            <DropMenu items={items} />
+          </div>
+        );
+      },
     },
   ];
 
@@ -212,10 +219,12 @@ function Subjects() {
           )}
         </div>
 
-        <Button onClick={openCreate} className="gap-1.5 w-full sm:w-auto">
-          <HiPlus className="text-base" />
-          {t("subject.create")}
-        </Button>
+        {can("subject:create") && (
+          <Button onClick={openCreate} className="gap-1.5 w-full sm:w-auto">
+            <HiPlus className="text-base" />
+            {t("subject.create")}
+          </Button>
+        )}
       </div>
 
       {error ? (

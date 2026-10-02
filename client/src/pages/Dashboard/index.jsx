@@ -159,9 +159,11 @@ function Dashboard() {
     (async () => {
       try {
         const params = { page: 1, ...(filterCenter ? { center: filterCenter } : {}) };
+        // Ruxsat bo'lmasa API chaqirilmaydi (CLAUDE.md).
+        const skip = Promise.resolve({ data: { ok: false } });
         const [roomsRes, subjectsRes] = await Promise.all([
-          api.get("/rooms", { params }),
-          api.get("/subjects", { params }),
+          can("room:view") ? api.get("/rooms", { params }) : skip,
+          can("subject:view") ? api.get("/subjects", { params }) : skip,
         ]);
         if (roomsRes.data.ok) setRoomsCount(roomsRes.data.meta?.total ?? roomsRes.data.data?.length ?? 0);
         if (subjectsRes.data.ok)
@@ -170,7 +172,7 @@ function Dashboard() {
         // faqat kichik hisoblagichlar, xato bo'lsa jim o'tkazamiz
       }
     })();
-  }, [filterCenter]);
+  }, [filterCenter, can]);
 
   // Realtime — to'lov/davomat/xarajat/oylik o'zgarsa dashboard qayta yuklanadi.
   // Debounce SHART: `attendance:marked` har QR skanida keladi va ertalabki

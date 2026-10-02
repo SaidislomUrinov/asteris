@@ -52,7 +52,8 @@
       "Homework": "Уйга вазифа",
       "homework": "Уйга вазифа",
       "teachingPlan": "Дарс режа",
-      "Group": "Гуруҳ"
+      "Group": "Гуруҳ",
+      "grade": "Баҳо"
     },
     "actions": {
       "center:create": "Филиал яратилди",
@@ -90,7 +91,28 @@
       "homework:delete": "Уйга вазифа ўчирилди",
       "teachingPlan:archived": "Дарс режа архивланди",
       "teachingPlan:restored": "Дарс режа архивдан қайтарилди",
-      "news:create": "Янгилик қораламаси яратилди"
+      "news:create": "Янгилик қораламаси яратилди",
+      "payment:create": "Тўлов қабул қилинди",
+      "payment:cancel": "Тўлов бекор қилинди",
+      "expense:create": "Харажат қўшилди",
+      "expense:update": "Харажат таҳрирланди",
+      "expense:cancel": "Харажат бекор қилинди",
+      "salary:advance": "Аванс берилди",
+      "salary:withdraw": "Олдиндан пул берилди",
+      "salary:bonus": "Бонус берилди",
+      "salary:penalty": "Жарима ёзилди",
+      "salary:cancel": "Ойлик транзакцияси бекор қилинди",
+      "staff:create": "Ходим қўшилди",
+      "staff:update": "Ходим маълумотлари ўзгартирилди",
+      "staff:blocked": "Ходим блокланди",
+      "staff:unblocked": "Ходим блокдан чиқарилди",
+      "student:create": "Ўқувчи гуруҳга қўшилди",
+      "student:update": "Ўқувчи маълумотлари ўзгартирилди",
+      "student:priceChanged": "Ўқувчи нархи ўзгартирилди",
+      "student:leftGroup": "Ўқувчи гуруҳдан чиқди",
+      "grade:removed": "Баҳо ўчирилди",
+      "groupHoliday:removed": "Гуруҳ дам олиш куни олиб ташланди",
+      "centerHoliday:removed": "Филиал дам олиш куни олиб ташланди"
     },
     "fields": {
       "name": "Номи",
@@ -114,7 +136,17 @@
       "telegramSame": "Telegram рақами телефон билан бир хил",
       "telegramPhone": "Telegram рақами",
       "parentTelegramSame": "Ота-она Telegramи телефон билан бир хил",
-      "parentTelegramPhone": "Ота-она Telegram рақами"
+      "parentTelegramPhone": "Ота-она Telegram рақами",
+      "login": "Логин",
+      "role": "Рол",
+      "permissions": "Рухсатлар",
+      "salaryValue": "Ойлик қиймати",
+      "password": "Парол",
+      "title": "Номи",
+      "category": "Категория",
+      "amount": "Сумма",
+      "value": "Қиймат",
+      "price": "Нарх"
     }
   },
   "nav": {
@@ -510,7 +542,12 @@
     "error": "Хатолик юз берди. Қайтадан уриниб кўринг",
     "success": "Муваффақиятли бажарилди",
     "networkError": "Сервер билан алоқа йўқ. Интернетни текшириб, қайтадан уриниб кўринг",
-    "imagePreview": "Расм кўриниши"
+    "imagePreview": "Расм кўриниши",
+    "invalidInput": "Маълумот нотўғри киритилган",
+    "tooManyRequests": "Жуда кўп уриниш. Бироздан кейин қайта уриниб кўринг",
+    "notFound": "Топилмади",
+    "fileTooLarge": "Файл ҳажми жуда катта (10 MB гача)",
+    "fileTypeNotAllowed": "Бу турдаги файлни юклаб бўлмайди"
   },
   "dashboard": {
     "title": "Дашборд",
@@ -857,7 +894,10 @@
     "botLinkCopied": "Бот ҳаволаси нусхаланди",
     "botLinkLabel": "Ўқувчилар боти",
     "editContact": "Контактни таҳрирлаш",
-    "paymentStatusPaid": "Тўланган"
+    "paymentStatusPaid": "Тўланган",
+    "invalidMonth": "Ой нотўғри танланган",
+    "sharedContactLocked": "Бу ўқувчи бошқа марказда ҳам ўқийди — телефон, ота-она рақами ва Telegram рақамларини ўзгартириб бўлмайди",
+    "sharedContactHint": "Ўқувчи бошқа марказда ҳам ўқийди: у гуруҳга қўшилади, контакт маълумотлари ўзгартирилмайди."
   },
   "room": {
     "title": "Хоналар",
@@ -2039,5 +2079,10 @@
     "saved": "Режа сақланди",
     "duplicated": "Режадан нусха олинди",
     "deleted": "Режа архивланди"
+  },
+  "notFoundPage": {
+    "title": "Бу саҳифа сиз учун очиқ эмас",
+    "desc": "Саҳифа мавжуд эмас ёки унга кириш учун рухсатингиз йўқ. Керак бўлса, раҳбарингизга мурожаат қилинг.",
+    "back": "Бош саҳифага"
   }
 }

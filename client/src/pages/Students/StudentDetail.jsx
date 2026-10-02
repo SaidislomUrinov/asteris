@@ -779,7 +779,7 @@ function StudentDetail() {
                       <HiOutlineArrowsRightLeft />
                     </IconButton>
                   )}
-                  {p.status === "paid" && hasFeature("finance.refund") && (
+                  {p.status === "paid" && hasFeature("finance.refund") && can("payment:refund") && (
                     <IconButton
                       variant="ghost"
                       color="red"

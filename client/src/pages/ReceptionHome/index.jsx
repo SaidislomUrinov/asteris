@@ -67,6 +67,8 @@ function ReceptionHome() {
 
   const canViewGroups = can("group:view");
   const canViewStudents = can("student:view");
+  // Moliya kartalari va grafiklar — `/dashboard` (backendda `dashboard:view`).
+  const canViewStats = can("dashboard:view");
   const [hideFinance, toggleHideFinance] = useHideFinance();
 
   const [groups, setGroups] = useState([]);
@@ -90,6 +92,10 @@ function ReceptionHome() {
   const [debtorsFailed, setDebtorsFailed] = useState(false);
 
   const fetchStats = useCallback(async () => {
+    if (!canViewStats) {
+      setStatsLoading(false);
+      return;
+    }
     try {
       setStatsLoading(true);
       const res = await api.get("/dashboard");
@@ -103,7 +109,7 @@ function ReceptionHome() {
     } finally {
       setStatsLoading(false);
     }
-  }, []);
+  }, [canViewStats]);
 
   const fetchGroups = useCallback(async () => {
     if (!canViewGroups) {
@@ -127,16 +133,20 @@ function ReceptionHome() {
 
   const fetchLookups = useCallback(async () => {
     try {
+      // Faqat nomlar uchun zaxira (today-lessons odatda nomni o'zi beradi).
+      // `/rooms` `room:view` talab qiladi — resepshinga ruxsatsiz `lookup`.
       const [subjectsRes, roomsRes] = await Promise.all([
-        api.get("/subjects", { params: { page: 1 } }),
-        api.get("/rooms", { params: { page: 1 } }),
+        can("subject:view")
+          ? api.get("/subjects", { params: { page: 1 } })
+          : Promise.resolve({ data: { ok: false } }),
+        api.get("/rooms/lookup"),
       ]);
       if (subjectsRes.data.ok) setSubjects(subjectsRes.data.data || []);
       if (roomsRes.data.ok) setRooms(roomsRes.data.data || []);
     } catch {
       // lookup — sahifa asosiy funksiyasiga xalaqit bermasin
     }
-  }, []);
+  }, [can]);
 
   const fetchStudents = useCallback(async () => {
     if (!canViewStudents) {
@@ -205,25 +215,27 @@ function ReceptionHome() {
       />
 
       {/* Moliya — gradient kartalar. Moliyani yashirish tugmasi sarlavhada. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <MoneyCard
-          icon={<HiBanknotes />}
-          label={t("receptionHome.monthRevenue")}
-          value={statsLoading ? "…" : statsFailed && !stats ? "—" : maskMoney(stats?.monthRevenue, hideFinance)}
-          suffix={hideFinance || (statsFailed && !stats) ? "" : t("student.somSuffix")}
-          gradient="from-emerald-500 to-teal-600"
-          shadow="shadow-emerald-500/20"
-        />
-        <MoneyCard
-          icon={<HiExclamationTriangle />}
-          label={t("student.debt")}
-          value={statsLoading ? "…" : statsFailed && !stats ? "—" : maskMoney(stats?.currentCycleDebt, hideFinance)}
-          suffix={hideFinance || (statsFailed && !stats) ? "" : t("student.somSuffix")}
-          hint={t("dashboard.debtHint")}
-          gradient="from-amber-500 to-orange-600"
-          shadow="shadow-amber-500/20"
-        />
-      </div>
+      {canViewStats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <MoneyCard
+            icon={<HiBanknotes />}
+            label={t("receptionHome.monthRevenue")}
+            value={statsLoading ? "…" : statsFailed && !stats ? "—" : maskMoney(stats?.monthRevenue, hideFinance)}
+            suffix={hideFinance || (statsFailed && !stats) ? "" : t("student.somSuffix")}
+            gradient="from-emerald-500 to-teal-600"
+            shadow="shadow-emerald-500/20"
+          />
+          <MoneyCard
+            icon={<HiExclamationTriangle />}
+            label={t("student.debt")}
+            value={statsLoading ? "…" : statsFailed && !stats ? "—" : maskMoney(stats?.currentCycleDebt, hideFinance)}
+            suffix={hideFinance || (statsFailed && !stats) ? "" : t("student.somSuffix")}
+            hint={t("dashboard.debtHint")}
+            gradient="from-amber-500 to-orange-600"
+            shadow="shadow-amber-500/20"
+          />
+        </div>
+      )}
 
       {/* Ixcham hisoblagichlar */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
