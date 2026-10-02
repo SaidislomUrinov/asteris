@@ -16,6 +16,15 @@ module.exports = {
     }
   },
 
+  botInfo: async (req, res, next) => {
+    try {
+      const data = await telegramService.botInfo();
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   status: async (req, res, next) => {
     try {
       const { kind, id } = selfOf(req);

@@ -4,14 +4,25 @@ const { formatDate, getNow } = require("../utils/date.util");
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
 // O'quvchilar bu yerda SAQLANMAYDI — Student.groups[] orqali bog'lanadi
-// (API_CONTRACT.md "Guruh (Group) — qayta qurish"). Guruh nomi ham
-// saqlanmaydi, har doim frontendda fan nomi + pendingId/activeId'dan
-// hisoblanadi.
+// (API_CONTRACT.md "Guruh (Group) — qayta qurish").
 const schema = new Schema({
   client: {
     type: Schema.Types.ObjectId,
     ref: "Client",
     required: true,
+  },
+  // IXTIYORIY qo'lda qo'yilgan nom — bo'lmasa (null) frontend/DTO avvalgidek
+  // fan nomi + pendingId/activeId'dan hisoblaydi (API_CONTRACT_group_rename.md).
+  name: {
+    type: String,
+    default: null,
+    trim: true,
+  },
+  // IXTIYORIY Telegram guruh manzili — har doim `https://t.me/<path>`
+  // ko'rinishida normallashtirilgan holda saqlanadi (group.service.js#setTelegramLink).
+  telegramLink: {
+    type: String,
+    default: null,
   },
   center: {
     type: Schema.Types.ObjectId,

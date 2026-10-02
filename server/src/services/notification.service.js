@@ -1,6 +1,15 @@
 const Notification = require("../models/Notification");
 const emit = require("../utils/emitter.util");
 
+const unreadCountOf = async (userId) =>
+  await Notification.countDocuments({ "recipient.id": userId, read: false });
+
+// O'qilgandan keyin foydalanuvchining BARCHA ochiq tab/qurilmalariga yangi
+// o'qilmagan sonini yuboradi — qo'ng'iroqdagi son hamma joyda bir xil bo'ladi.
+const emitUnread = async (userId) => {
+  emit(`user:${userId}`, "notification:unread", { unread: await unreadCountOf(userId) });
+};
+
 const DTO = (n) => ({
   _id: String(n._id),
   type: n.type,
@@ -65,8 +74,7 @@ module.exports = {
     };
   },
 
-  unreadCount: async (userId) =>
-    await Notification.countDocuments({ "recipient.id": userId, read: false }),
+  unreadCount: async (userId) => await unreadCountOf(userId),
 
   markRead: async (userId, id) => {
     const doc = await Notification.findOneAndUpdate(
@@ -75,6 +83,7 @@ module.exports = {
       { new: true },
     );
     if (!doc) throw new Error("notification.notFound");
+    await emitUnread(userId);
     return DTO(doc);
   },
 
@@ -83,6 +92,7 @@ module.exports = {
       { "recipient.id": userId, read: false },
       { $set: { read: true, readAt: Math.floor(Date.now() / 1000) } },
     );
+    await emitUnread(userId);
     return { ok: true };
   },
 };

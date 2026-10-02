@@ -4,7 +4,6 @@ const { sendExcel, THEME } = require("../utils/excel.util");
 const SALARY_TYPE_LABELS = {
   fixed: "Belgilangan",
   percentage: "Foizli",
-  perGroup: "Guruh bo'yicha",
 };
 const ROLE_LABELS = { manager: "Menejer", reception: "Resepshin", teacher: "O'qituvchi" };
 const TX_TYPE_LABELS = { advance: "Avans", withdrawal: "Oldindan olish", bonus: "Bonus", penalty: "Jarima" };

@@ -7,11 +7,9 @@ module.exports = {
 
   client: (objectId) => `${REDIS_KEY_PREFIX}client:${objectId}`,
   clientAccess: (objectId) => `${REDIS_KEY_PREFIX}client_access:${objectId}`,
-  clientRefresh: (objectId) => `${REDIS_KEY_PREFIX}client_refresh:${objectId}`,
 
   staff: (objectId) => `${REDIS_KEY_PREFIX}staff:${objectId}`,
   staffAccess: (objectId) => `${REDIS_KEY_PREFIX}staff_access:${objectId}`,
-  staffRefresh: (objectId) => `${REDIS_KEY_PREFIX}staff_refresh:${objectId}`,
 
   inpayToken: () => `${REDIS_KEY_PREFIX}inpay_token`,
 
@@ -68,4 +66,19 @@ module.exports = {
   // generatsiya qilinadi, `/start {token}` orqali botda ishlatiladi (bir
   // martalik, TTL bilan). Qiymati JSON: {kind:"client"|"staff", id}.
   telegramLinkToken: (token) => `telegram_link:${token}`,
+  // Bot suhbat holati (ota-ona oqimi: til → raqam) — chat bo'yicha, 1 soat.
+  botState: (chatId) => `bot:state:${chatId}`,
+  botAttendanceDebounce: (studentId, groupId, date) => `bot:att:${studentId}:${groupId}:${date}`,
+
+  // Guruhdagi oylik o'rinlar (hash: field = studentId, value = position) —
+  // "Dars tugadi" xabaridagi "o'rin 5 → 3" uchun oldingi holat
+  // (jobs/lessonFinished.job.js, API_CONTRACT_badges_monthly_rank.md §B).
+  groupMonthRank: (groupId, month) => `rank:${groupId}:${month}`,
+  // Badge berish jobi (jobs/badges.job.js) — `month` = badge beriladigan
+  // (o'tgan) oy. `done` — bajarilgani belgisi (60 kun), `lock` — cluster'da
+  // bir vaqtda faqat bitta worker ishlashi uchun.
+  badgesDone: (month) => `scheduler:badges:${month}`,
+  badgesLock: (month) => `scheduler:badges:${month}:lock`,
+  // Ikkinchi bosqich — ota-onaga Telegram xabari yuborildi.
+  badgesNotified: (month) => `scheduler:badges:${month}:notified`,
 };

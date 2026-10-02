@@ -54,9 +54,7 @@ const schema = new Schema({
     },
   ],
   // Oylik hisoblash qiymati — "staff.salary.percentage" bo'lsa foiz (0-100),
-  // "staff.salary.fixed" bo'lsa summa (so'm). "staff.salary.perGroup" uchun
-  // bu yerda saqlanmaydi (stavka har bir guruhga alohida, Guruh moduli
-  // qurilganda belgilanadi).
+  // "staff.salary.fixed" bo'lsa summa (so'm).
   salaryValue: {
     type: Number,
     default: null,
@@ -70,6 +68,10 @@ const schema = new Schema({
   },
   access: String, // oxirgi jwt token — bitta qurilmadan sessiya
   blocked: {
+    type: Boolean,
+    default: false,
+  },
+  introSeen: {
     type: Boolean,
     default: false,
   },

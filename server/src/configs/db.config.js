@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const env = require("./env.config");
 const Admin = require("../models/Admin");
 const { getHash } = require("../utils/hash.util");
+const migrateGradeScale = require("../scripts/migrate-grade-scale");
+const migrateChatParticipants = require("../scripts/migrate-chat-participants");
 
 const seedOwnerAdmin = async () => {
   try {
@@ -34,6 +36,17 @@ const connectDB = async () => {
     await mongoose.connect(env.MONGO_URI);
     console.log(`MongoDB connected (pid: ${process.pid})`);
     await seedOwnerAdmin();
+    // Bir martalik ma'lumot migratsiyalari — idempotent, har ishga tushishda.
+    try {
+      await migrateGradeScale();
+    } catch (err) {
+      console.error("Baho shkalasi migratsiya xatosi:", err.message);
+    }
+    try {
+      await migrateChatParticipants();
+    } catch (err) {
+      console.error("Chat suhbatlari migratsiya xatosi:", err.message);
+    }
   } catch (err) {
     console.error("MongoDB connection error:", err.message);
     process.exit(1);

@@ -7,26 +7,35 @@ const Group = require("../models/Group");
 const Staff = require("../models/Staff");
 const Student = require("../models/Student");
 const { getHash, compareHash } = require("../utils/hash.util");
-const { getNow, addMonths } = require("../utils/date.util");
+const { getNow, addMonths, addDays } = require("../utils/date.util");
 const envConfig = require("../configs/env.config");
 const keyConfig = require("../configs/key.config");
 const jwtUtil = require("../utils/jwt.util");
 const redisUtil = require("../utils/redis.util");
+const emit = require("../utils/emitter.util");
 
-const issueTokens = (clientId) => {
-  const access = jwtUtil.sign(
-    { _id: clientId },
-    envConfig.CLIENT_JWT_SECRET,
-    envConfig.CLIENT_ACCESS_EXPIRES_IN,
-  );
-  const refresh = jwtUtil.sign(
-    { _id: clientId },
-    envConfig.CLIENT_REFRESH_JWT_SECRET,
-    "30d", // absolyut chegara, haqiqiy amal qilish muddati Redis TTL orqali boshqariladi
-  );
-
-  return { access, refresh };
+// Obuna admin tomonidan o'zgartirilganda Owner HAM Staff'ga signal —
+// ikkalasi ham `client:{clientId}` roomida (socket.config.js "joinRooms").
+// To'liq DTO emas, faqat signal: Owner/Staff har xil shaklda ma'lumot
+// kutadi (subscription vs tariffFeatures), yagona haqiqat manbai baribir
+// `verify` endpointi — frontend shuni qayta chaqiradi.
+// Signaldan OLDIN owner'ning Redis sessiya keshi tashlanadi — unda
+// kirish paytidagi obuna/ruxsatlar muzlab qoladi va `verify` shundan
+// o'qiydi; tashlanmasa signal kelgach ham eski tarif qaytarilardi.
+// Keyingi so'rovda `fullClientAuth` bazadan yangisini quradi.
+const emitSubscriptionUpdated = async (clientId) => {
+  try {
+    await redisUtil.del(keyConfig.client(clientId));
+  } catch {
+    // kesh tashlanmasa ham signal yuboriladi
+  }
+  emit(`client:${clientId}`, "subscription:updated", { clientId: String(clientId) });
 };
+
+// Refresh token yo'q — access token muddatsiz (jwtUtil.sign expiresIn'siz).
+// Sessiya faqat signOut yoki Redis'dagi `clientAccess` kaliti boshqa qurilma
+// login qilganda almashtirilganda tugaydi.
+const issueAccessToken = (clientId) => jwtUtil.sign({ _id: clientId }, envConfig.CLIENT_JWT_SECRET);
 
 const PAGE_SIZE = 50;
 // Boshlanish sanasi kiritilsa, tugash sanasi default "keyingi oy, o'sha kun"
@@ -75,6 +84,7 @@ const DTO = (data) => ({
   blocked: data?.blocked,
   subscription: subscriptionDTO(data?.subscription),
   trialUsed: data?.trialUsed,
+  introSeen: data?.introSeen || false,
   date: data?.date,
   lastUpdate: data?.lastUpdate,
 });
@@ -171,6 +181,47 @@ module.exports = {
     return DTO(client);
   },
 
+  // Admin Tarifni tahrirlaganda shu tarifdagi JORIY obunalar ham yangi
+  // holatga keltiriladi: `tariffSnapshot`ning nom/limit/ruxsat qismi
+  // qayta yoziladi, owner'ning Redis sessiya keshi tashlanadi, yopilgan
+  // filiallar limit oshgan bo'lsa ochiladi va Owner/Staff panellariga
+  // `subscription:updated` signali yuboriladi.
+  // Faqat JORIY obuna (`Client.subscription`) — "changed"/"cancelled"
+  // tarixiy yozuvlar o'sha paytdagi holatini saqlab qoladi. Narx
+  // (`price`, `tariffSnapshot.price`) moliyaviy yozuv — o'zgartirilmaydi.
+  syncSubscriptionsWithTariff: async (tariff) => {
+    const subIds = await Subscription.find({ tariff: tariff._id }).distinct("_id");
+    if (!subIds.length) return 0;
+
+    const clients = await Client.find({
+      subscription: { $in: subIds },
+      isDeleted: false,
+    }).select("_id subscription");
+    if (!clients.length) return 0;
+
+    await Subscription.updateMany(
+      { _id: { $in: clients.map((c) => c.subscription) } },
+      {
+        $set: {
+          "tariffSnapshot.name": tariff.name,
+          "tariffSnapshot.studentLimit": tariff.studentLimit,
+          "tariffSnapshot.centerLimit": tariff.centerLimit,
+          "tariffSnapshot.teacherLimit": tariff.teacherLimit,
+          "tariffSnapshot.receptionLimit": tariff.receptionLimit,
+          "tariffSnapshot.allowedPermissions": tariff.allowedPermissions,
+          updatedAt: getNow(),
+        },
+      },
+    );
+
+    const centerService = require("./center.service");
+    for (const client of clients) {
+      await centerService.reconcileAfterTariffChange(client._id);
+      await emitSubscriptionUpdated(client._id);
+    }
+    return clients.length;
+  },
+
   // Tarif orqali ochilgan feature-flag'ni tekshiradi (masalan "excel.export")
   // — req.client owner uchun to'liq DTO, staff uchun faqat {_id} bo'lishi
   // mumkinligi sabab har doim bazadan yangi holatni o'qiydi (jonli tarif
@@ -193,6 +244,14 @@ module.exports = {
     const client = await populateSubscription(Client.findOne({ _id: clientId, isDeleted: false }));
     if (!client?.subscription) return [];
     return liveTariffSnapshot(client.subscription)?.allowedPermissions || [];
+  },
+
+  // Profil sarlavhasida "qaysi tarifda" ko'rsatish uchun — faqat NOM,
+  // narx/limit yuqoridagi qaror bo'yicha hamon chiqarilmaydi.
+  getTariffName: async (clientId) => {
+    const client = await populateSubscription(Client.findOne({ _id: clientId, isDeleted: false }));
+    if (!client?.subscription) return null;
+    return liveTariffSnapshot(client.subscription)?.name || null;
   },
 
   // Staff panel (Reception/Manager/Teacher) — obuna tugagan/yo'q bo'lsa
@@ -264,24 +323,36 @@ module.exports = {
     const tariff = await Tariff.findOne({ _id: tariffId, isDeleted: false });
     if (!tariff) throw new Error("tariff.notFound");
 
+    // Bepul sinov muddati — FAQAT client hali birinchi marta obuna
+    // bo'layotganda (`trialUsed:false`), tarifda `trialDays > 0` bo'lsa, va
+    // admin sana/narxni QO'LDA kiritmagan bo'lsa (kiritgan bo'lsa — admin
+    // qarori ustuvor, avtomatik sinov qo'llanilmaydi). Bir marta ishlatilgach
+    // `trialUsed` true bo'ladi va qayta berilmaydi.
+    const useTrial =
+      !client.trialUsed && tariff.trialDays > 0 && !startDate && !endDate && price === undefined;
+
     const start = startDate || getNow();
-    const end = endDate || defaultEndDate(start);
+    const end = useTrial ? addDays(start, tariff.trialDays) : endDate || defaultEndDate(start);
     if (end <= start) throw new Error("client.invalidEndDate");
 
     const sub = await Subscription.create({
       client: client._id,
       tariff: tariff._id,
       tariffSnapshot: snapshotTariff(tariff),
-      price: price !== undefined ? price : tariff.price,
+      price: useTrial ? 0 : price !== undefined ? price : tariff.price,
       startDate: start,
       endDate: end,
       status: "active",
+      source: useTrial ? "trial" : "admin",
       createdBy: admin._id,
     });
 
+    if (useTrial) client.trialUsed = true;
     client.subscription = sub._id;
     await client.save();
     await client.populate({ path: "subscription", populate: { path: "tariff" } });
+    await require("./center.service").reconcileAfterTariffChange(client._id);
+    await emitSubscriptionUpdated(client._id);
     return DTO(client);
   },
 
@@ -296,6 +367,7 @@ module.exports = {
     );
     client.subscription = null;
     await client.save();
+    await emitSubscriptionUpdated(client._id);
     return DTO(client);
   },
 
@@ -338,8 +410,17 @@ module.exports = {
     client.subscription = newSub._id;
     await client.save();
     await client.populate({ path: "subscription", populate: { path: "tariff" } });
+    await require("./center.service").reconcileAfterTariffChange(client._id);
+    await emitSubscriptionUpdated(client._id);
     return DTO(client);
   },
+
+  // Tarif tanlash ekranida (Subscription/TariffsTab) hozirgi faol filiallar
+  // sonidan kam `centerLimit`li tariflarni oldindan disabled qilish uchun —
+  // shu bilan getCenterOverflow'dagi majburiy modal faqat zaxira holatida
+  // (masalan admin tomonidan changeTariff bilan) ishga tushadi.
+  getActiveCenterCount: async (clientId) =>
+    Center.countDocuments({ client: clientId, isDeleted: false, status: "active" }),
 
   // Tarif pasayganda "ortiqcha filial" holatini aniqlaydi (API_CONTRACT.md
   // §7.1.1). Frontendda majburiy (non-dismissible) modal shu javobga
@@ -423,69 +504,80 @@ module.exports = {
 
     await client.populate({ path: "subscription", populate: { path: "tariff" } });
     const data = DTO(client);
-    const { access, refresh } = issueTokens(client._id);
+    const access = issueAccessToken(client._id);
 
     client.access = access;
     const key = keyConfig.client(client._id);
     const accessKey = keyConfig.clientAccess(client._id);
-    const refreshKey = keyConfig.clientRefresh(client._id);
     await Promise.all([
       client.save(),
       redisUtil.set(key, data, envConfig.CLIENT_SESSION_TTL),
       redisUtil.set(accessKey, access, envConfig.CLIENT_SESSION_TTL),
-      redisUtil.set(refreshKey, refresh, envConfig.CLIENT_SESSION_TTL),
     ]);
 
-    return { data, access, refresh };
+    return { data, access };
   },
 
-  refreshToken: async (refreshToken) => {
-    if (!refreshToken) throw new Error("auth.failed");
-
-    let payload;
-    try {
-      payload = jwtUtil.verify(refreshToken, envConfig.CLIENT_REFRESH_JWT_SECRET);
-    } catch {
-      throw new Error("auth.failed");
+  // Client Owner o'z profilini o'zi yangilashi — FAQAT ism va parol
+  // (staff.service.js "updateOwnProfile" bilan bir xil naqsh; subscription/
+  // tariff/markazlar bu yerga tegishli emas).
+  updateOwnProfile: async (clientId, body) => {
+    const { name, currentPassword, newPassword } = body;
+    const wantsPasswordChange = !!currentPassword || !!newPassword;
+    if (!name && !wantsPasswordChange) throw new Error("client.fillTheRows");
+    if (wantsPasswordChange && (!currentPassword || !newPassword)) {
+      throw new Error("client.fillTheRows");
     }
 
-    const clientId = payload?._id;
-    if (!clientId) throw new Error("auth.failed");
+    const client = await populateSubscription(
+      Client.findOne({ _id: clientId, isDeleted: false }),
+    );
+    if (!client) throw new Error("auth.notFound");
 
-    const refreshKey = keyConfig.clientRefresh(clientId);
-    const cachedRefresh = await redisUtil.get(refreshKey);
-    if (!cachedRefresh || cachedRefresh !== refreshToken) throw new Error("auth.failed");
+    if (wantsPasswordChange) {
+      const matches = await compareHash(currentPassword.trim(), client.password);
+      if (!matches) throw new Error("auth.notFound");
+      client.password = await getHash(newPassword.trim());
+    }
 
-    const client = await Client.findOne({ _id: clientId, isDeleted: false });
-    if (!client) throw new Error("auth.failed");
-    if (client.blocked) throw new Error("client.blocked");
+    if (name) client.name = name.trim();
+    await client.save();
 
-    await client.populate({ path: "subscription", populate: { path: "tariff" } });
     const data = DTO(client);
-    const { access, refresh } = issueTokens(clientId);
+    // Redis'dagi sessiya keshi ham yangilanadi — aks holda `fullClientAuth`
+    // sessiya TTL tugagunicha eski ismni qaytaraveradi (signIn'dagi bilan
+    // bir xil kalit, `keyConfig.client`).
+    await redisUtil.set(keyConfig.client(client._id), data, envConfig.CLIENT_SESSION_TTL);
 
-    client.access = access;
-    const key = keyConfig.client(clientId);
-    const accessKey = keyConfig.clientAccess(clientId);
-    await Promise.all([
-      client.save(),
-      redisUtil.set(key, data, envConfig.CLIENT_SESSION_TTL),
-      redisUtil.set(accessKey, access, envConfig.CLIENT_SESSION_TTL),
-      redisUtil.set(refreshKey, refresh, envConfig.CLIENT_SESSION_TTL),
-    ]);
+    return data;
+  },
 
-    return { data, access, refresh };
+  markIntroSeen: async (clientId) => {
+    const client = await populateSubscription(
+      Client.findOneAndUpdate(
+        { _id: clientId, isDeleted: false },
+        { $set: { introSeen: true } },
+        { new: true },
+      ),
+    );
+    if (!client) throw new Error("auth.notFound");
+
+    const data = DTO(client);
+    // signIn/updateOwnProfile bilan bir xil naqsh — Redis sessiya keshi ham
+    // yangilanadi, aks holda `fullClientAuth` TTL tugagunicha eski
+    // `introSeen:false`ni qaytaraveradi.
+    await redisUtil.set(keyConfig.client(client._id), data, envConfig.CLIENT_SESSION_TTL);
+
+    return true;
   },
 
   signOutSession: async (client) => {
     const key = keyConfig.client(client._id);
     const accessKey = keyConfig.clientAccess(client._id);
-    const refreshKey = keyConfig.clientRefresh(client._id);
     await Promise.all([
       Client.updateOne({ _id: client._id }, { $set: { access: "" } }),
       redisUtil.del(key),
       redisUtil.del(accessKey),
-      redisUtil.del(refreshKey),
     ]);
 
     return true;

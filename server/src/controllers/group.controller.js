@@ -1,65 +1,14 @@
 const groupService = require("../services/group.service");
 const { sendExcel, THEME } = require("../utils/excel.util");
-const emit = require("../utils/emitter.util");
+const { buildActor } = require("../utils/audit.util");
 
 const DAY_LABELS = { mon: "Dushanba", tue: "Seshanba", wed: "Chorshanba", thu: "Payshanba", fri: "Juma", sat: "Shanba", sun: "Yakshanba" };
 const STATUS_LABELS = { pending: "Yig'ilmoqda", active: "Faol", finished: "Tugagan" };
 
-// Qoralama egasi: Staff bo'lsa o'zi, aks holda Client Owner.
-const actorId = (req) => String(req.staff?._id || req.client._id);
-
 module.exports = {
-  // ─── Ommaviy qayta tartiblash ("Tartiblash") ──────────────────────────
-  // API_CONTRACT_group_reschedule.md. Qoralama egasi = amal qilayotgan
-  // foydalanuvchi, shuning uchun ikki administrator bir-birini buzmaydi.
-
-  rescheduleStart: async (req, res, next) => {
-    try {
-      const data = await groupService.rescheduleStart(
-        req.client._id,
-        actorId(req),
-        req.staff?.center || "",
-      );
-      return res.send({ ok: true, data });
-    } catch (error) {
-      next(error);
-    }
-  },
-
-  rescheduleGet: async (req, res, next) => {
-    try {
-      const data = await groupService.rescheduleGet(req.client._id, actorId(req));
-      return res.send({ ok: true, data });
-    } catch (error) {
-      next(error);
-    }
-  },
-
-  reschedulePlace: async (req, res, next) => {
-    try {
-      const data = await groupService.reschedulePlace(req.client._id, actorId(req), req.body);
-      return res.send({ ok: true, data });
-    } catch (error) {
-      // Konflikt `error.conflict` bilan keladi va utils/error.util.js uni
-      // javobga o'zi qo'shadi — GroupScheduleDialog allaqachon shu shaklni
-      // kutadi, shuning uchun maxsus ishlov kerak emas.
-      next(error);
-    }
-  },
-
-  rescheduleUnplace: async (req, res, next) => {
-    try {
-      const data = await groupService.rescheduleUnplace(
-        req.client._id,
-        actorId(req),
-        req.params.groupId,
-      );
-      return res.send({ ok: true, data });
-    } catch (error) {
-      next(error);
-    }
-  },
-
+  // Jadval sahifasining ma'lumot bazasi (guruhlar + xonalar). Saqlash har bir
+  // guruh uchun alohida `PATCH /:id/schedule` (pastda `reschedule`) orqali
+  // boradi — API_CONTRACT_group_schedule_per_group.md.
   scheduleData: async (req, res, next) => {
     try {
       const data = await groupService.scheduleData(req.client._id, req.staff?.center || "");
@@ -69,33 +18,9 @@ module.exports = {
     }
   },
 
-  rescheduleCommit: async (req, res, next) => {
-    try {
-      const data = await groupService.rescheduleCommit(
-        req.client._id,
-        actorId(req),
-        req.body,
-        req.staff?.center || "",
-      );
-      emit(`client:${req.client._id}`, "group:rescheduled", { count: data.updated });
-      return res.send({ ok: true, data, msg: "group.rescheduleApplied" });
-    } catch (error) {
-      next(error);
-    }
-  },
-
-  rescheduleDiscard: async (req, res, next) => {
-    try {
-      await groupService.rescheduleDiscard(req.client._id, actorId(req));
-      return res.send({ ok: true, data: null });
-    } catch (error) {
-      next(error);
-    }
-  },
-
   create: async (req, res, next) => {
     try {
-      const data = await groupService.create(req.client._id, req.body);
+      const data = await groupService.create(req.client._id, req.body, req.staff);
       return res.send({ ok: true, data, msg: "group.created" });
     } catch (error) {
       next(error);
@@ -200,7 +125,7 @@ module.exports = {
 
   reschedule: async (req, res, next) => {
     try {
-      const data = await groupService.reschedule(req.client._id, req.params.id, req.body);
+      const data = await groupService.reschedule(req.client._id, req.params.id, req.body, req.staff);
       return res.send({ ok: true, data, msg: "group.rescheduled" });
     } catch (error) {
       next(error);
@@ -211,6 +136,40 @@ module.exports = {
     try {
       const data = await groupService.finish(req.client._id, req.params.id);
       return res.send({ ok: true, data, msg: "group.finished" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Arxivlash — API_CONTRACT_archive.md. Hujjat o'chmaydi, Arxiv bo'limiga
+  // o'tadi va u yerdan qaytarilishi mumkin.
+  archive: async (req, res, next) => {
+    try {
+      await groupService.archive(req.client._id, req.params.id, buildActor(req));
+      return res.send({ ok: true, msg: "archive.archived" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  rename: async (req, res, next) => {
+    try {
+      const data = await groupService.rename(req.client._id, req.params.id, req.body.name);
+      return res.send({ ok: true, data, msg: "group.renamed" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Telegram guruh manzili — `{ telegramLink: string | null | "" }`.
+  setTelegramLink: async (req, res, next) => {
+    try {
+      const data = await groupService.setTelegramLink(
+        req.client._id,
+        req.params.id,
+        req.body?.telegramLink,
+      );
+      return res.send({ ok: true, data, msg: "group.telegramUpdated" });
     } catch (error) {
       next(error);
     }

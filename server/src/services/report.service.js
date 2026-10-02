@@ -733,7 +733,8 @@ module.exports = {
       const lessons = syllabus ? flattenLessons(syllabus.modules) : [];
       const progress = buildProgress(
         lessons,
-        (doneMap[String(g._id)] || 0) + (g.lessonOffset || 0),
+        // Manfiy lessonOffset (reja kechroq biriktirilgan) — 0 bilan qisiladi.
+        Math.max(0, (doneMap[String(g._id)] || 0) + (g.lessonOffset || 0)),
         syllabus ? syllabus.modules.length : 0,
       );
 
@@ -795,7 +796,10 @@ module.exports = {
           student: { _id: student._id, fullName: student.fullName },
           phone: student.phone,
           group: { _id: g.group, name: groupMap[String(g.group)] || "—" },
-          months: (g.debtBreakdown || []).map((d) => d.month),
+          // Opening (ko'chirishdan oldingi) qarz shu oydagi sikl bilan bir
+          // oyga tushishi mumkin — takrorlanmasin. `null` = oyi ko'rsatilmagan
+          // opening qarz (API_CONTRACT_opening_debts.md §2).
+          months: [...new Set((g.debtBreakdown || []).map((d) => d.month))],
           amount: g.debt,
         });
       }
@@ -817,5 +821,124 @@ module.exports = {
         totalPages: Math.ceil(rows.length / limit) || 1,
       },
     };
+  },
+
+  // Davomat hisoboti (`attendance.report` tarif flag'i). Filial/guruh/davr
+  // bo'yicha: o'tilgan darslar (sessiyalar) soni, kelgan/kelmagan/sababli
+  // ulushlari, guruh kesimi va eng ko'p qoldiruvchi o'quvchilar.
+  // Foizlar BELGILANGAN yozuvlarga nisbatan — belgilanmagan o'quvchi
+  // "kelmagan" deb hisoblanmaydi (summary'dagi attendanceRateOf bilan bir xil).
+  attendance: async (clientId, query = {}) => {
+    const cacheKey = { scope: "attendance", ...query };
+    const cached = await reportCache.get(clientId, "attendance", cacheKey);
+    if (cached) return cached;
+
+    const center = query.center || "";
+    const group = query.group && Types.ObjectId.isValid(query.group) ? String(query.group) : "";
+    const p = resolvePeriod(query);
+    const topLimit = Math.min(50, Math.max(1, Number(query.limit) || 10));
+
+    const filter = attendanceFilter(clientId, center, p.fromDay, p.toDay);
+    if (group) filter.group = group;
+
+    const sessions = await Attendance.find(filter, { group: 1, center: 1, date: 1, records: 1 });
+
+    const rateOf = (part, total) => (total ? Math.round((part / total) * 100) : 0);
+    const emptyCounter = () => ({ present: 0, absent: 0, excused: 0, late: 0, total: 0 });
+    const count = (acc, r) => {
+      acc.total += 1;
+      if (r.status === "present") acc.present += 1;
+      else if (r.status === "absent") acc.absent += 1;
+      else if (r.status === "excused") acc.excused += 1;
+      if (r.late) acc.late += 1;
+    };
+
+    const totals = emptyCounter();
+    const byGroup = new Map();
+    const byStudent = new Map();
+
+    for (const s of sessions) {
+      const gKey = String(s.group);
+      if (!byGroup.has(gKey)) byGroup.set(gKey, { ...emptyCounter(), lessons: 0, center: s.center });
+      const gAcc = byGroup.get(gKey);
+      gAcc.lessons += 1;
+
+      for (const r of s.records || []) {
+        count(totals, r);
+        count(gAcc, r);
+        const sKey = String(r.student);
+        if (!byStudent.has(sKey)) byStudent.set(sKey, { ...emptyCounter(), groups: new Set() });
+        const sAcc = byStudent.get(sKey);
+        count(sAcc, r);
+        sAcc.groups.add(gKey);
+      }
+    }
+
+    // Eng ko'p qoldiruvchilar — avval sababsiz, keyin sababli qoldirishlar soni.
+    const topRaw = [...byStudent.entries()]
+      .filter(([, v]) => v.absent + v.excused > 0)
+      .sort((a, b) => b[1].absent - a[1].absent || b[1].excused - a[1].excused)
+      .slice(0, topLimit);
+
+    const groupIds = [...byGroup.keys()];
+    const [groups, students, centers] = await Promise.all([
+      Group.find({ _id: { $in: groupIds }, client: clientId }, { name: 1, subject: 1, teacher: 1, activeId: 1, pendingId: 1 }),
+      Student.find({ _id: { $in: topRaw.map(([id]) => id) } }, { fullName: 1, phone: 1 }),
+      Center.find({ client: clientId, _id: { $in: [...new Set([...byGroup.values()].map((g) => String(g.center)))] } }, { name: 1 }),
+    ]);
+
+    const [subjects, teachers] = await Promise.all([
+      Subject.find({ _id: { $in: [...new Set(groups.map((g) => String(g.subject)))] } }, { name: 1 }),
+      Staff.find({ _id: { $in: [...new Set(groups.filter((g) => g.teacher).map((g) => String(g.teacher)))] } }, { name: 1 }),
+    ]);
+
+    const subjectMap = Object.fromEntries(subjects.map((s) => [String(s._id), s.name]));
+    const teacherMap = Object.fromEntries(teachers.map((s) => [String(s._id), s.name]));
+    const centerMap = Object.fromEntries(centers.map((c) => [String(c._id), c.name]));
+    const groupMap = Object.fromEntries(
+      groups.map((g) => [
+        String(g._id),
+        {
+          name: g.name || `${subjectMap[String(g.subject)] || "?"}-${g.activeId || g.pendingId}`,
+          teacher: g.teacher ? teacherMap[String(g.teacher)] || "—" : "—",
+        },
+      ]),
+    );
+    const studentMap = Object.fromEntries(students.map((s) => [String(s._id), s]));
+
+    const shape = (acc) => ({
+      present: acc.present,
+      absent: acc.absent,
+      excused: acc.excused,
+      late: acc.late,
+      records: acc.total,
+      presentRate: rateOf(acc.present, acc.total),
+      absentRate: rateOf(acc.absent, acc.total),
+      excusedRate: rateOf(acc.excused, acc.total),
+    });
+
+    const result = {
+      from: p.fromDay,
+      to: p.toDay,
+      totals: { lessons: sessions.length, ...shape(totals) },
+      byGroup: [...byGroup.entries()]
+        .map(([id, acc]) => ({
+          group: { _id: id, name: groupMap[id]?.name || "—" },
+          center: { _id: acc.center, name: centerMap[String(acc.center)] || "—" },
+          teacher: groupMap[id]?.teacher || "—",
+          lessons: acc.lessons,
+          ...shape(acc),
+        }))
+        .sort((a, b) => a.presentRate - b.presentRate),
+      topAbsentees: topRaw.map(([id, acc]) => ({
+        student: { _id: id, fullName: studentMap[id]?.fullName || "—" },
+        phone: studentMap[id]?.phone || "",
+        groups: [...acc.groups].map((g) => ({ _id: g, name: groupMap[g]?.name || "—" })),
+        ...shape(acc),
+      })),
+    };
+
+    await reportCache.set(clientId, "attendance", cacheKey, result);
+    return result;
   },
 };

@@ -18,6 +18,13 @@ router.patch("/settings/:centerId", requireTenantPermission("settings:update"), 
 // QR davomat — premium, tarif flagi ostida (`attendance.qr`). `/:groupId`
 // dan OLDIN e'lon qilinadi, aks holda "qr" guruh id sifatida ushlanadi.
 router.get(
+  "/qr/group/:groupId",
+  requireTariffFeature("attendance.qr"),
+  requireTenantPermission("attendance:view"),
+  requireTeacherGroup(),
+  attendanceController.getGroupQrCards,
+);
+router.get(
   "/qr/:studentId",
   requireTariffFeature("attendance.qr"),
   requireTenantPermission("attendance:view"),
@@ -35,6 +42,15 @@ router.get(
   requireTenantPermission("attendance:view"),
   requireTeacherGroup(),
   attendanceController.getStats,
+);
+
+// "O'quvchilar" ro'yxatini baho/davomat bo'yicha tartiblash uchun —
+// API_CONTRACT_group_students_sort.md.
+router.get(
+  "/:groupId/summary",
+  requireTenantPermission("attendance:view"),
+  requireTeacherGroup(),
+  attendanceController.getStudentsSummary,
 );
 router.get(
   "/:groupId/month",

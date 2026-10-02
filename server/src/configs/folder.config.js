@@ -3,6 +3,11 @@ const path = require("path");
 
 const FOLDERS = {
   LOGOS: "logos",
+  CERTIFICATES: "certificates",
+  FONTS: "fonts",
+  CHAT_IMAGES: "chat",
+  // Yangiliklar media (rasm + video) — API_CONTRACT_news.md §2
+  NEWS: "news",
 };
 
 const UPLOAD_DIR = path.join(process.cwd(), "uploads");

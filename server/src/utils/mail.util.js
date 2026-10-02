@@ -68,7 +68,7 @@ const sendMail = async ({ to, subject, template, data = {}, html = "" }) => {
     if (!body) return { ok: false, skipped: true, error: "mail.templateNotFound" };
 
     const from = smtp.fromEmail
-      ? `${smtp.fromName || "Asteris"} <${smtp.fromEmail}>`
+      ? `${smtp.fromName || "WENET"} <${smtp.fromEmail}>`
       : smtp.user;
 
     const info = await getTransport(smtp).sendMail({ from, to, subject, html: body });

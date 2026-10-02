@@ -53,7 +53,6 @@ const schema = new Schema({
       "staff.salary.advance", // Hodimga avans berish
       "staff.salary.percentage", // Hodim maoshini foiz asosida hisoblash
       "staff.salary.fixed", // Hodim uchun qat'iy oylik
-      "staff.salary.perGroup", // Hodimga har bir guruh uchun alohida oylik
       "staff.bonus", // Bonus va rag'batlantirish
 
       "student.rate", // O'quvchini baholash
@@ -75,9 +74,28 @@ const schema = new Schema({
       "finance.refund", // To'lovni qaytarish
       "finance.report", // Moliyaviy hisobotlar
 
+      "gamification.badges", // O'quvchi yutuq nishonlari (oylik badge'lar)
+
       "ai.report", // AI hisobotlari
       "ai.advice", // AI tavsiyalari va maslahatlari
     ],
+  },
+  // Saytdagi narx sahifasida ko'rsatiladimi. Default `false` — tarif admin
+  // panelda tayyorlanadi, faqat ataylab yoqilgach ommaga chiqadi.
+  isPublic: {
+    type: Boolean,
+    default: false,
+  },
+  // Narx sahifasida "eng ommabop" deb ajratib ko'rsatiladigan tarif.
+  highlighted: {
+    type: Boolean,
+    default: false,
+  },
+  // Narx sahifasidagi bir qatorli izoh — "Bitta filialli markazlar uchun".
+  tagline: {
+    type: String,
+    trim: true,
+    default: "",
   },
   isDeleted: {
     type: Boolean,

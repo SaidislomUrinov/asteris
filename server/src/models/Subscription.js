@@ -16,8 +16,10 @@ const schema = new Schema({
     ref: "Tariff",
     required: true,
   },
-  // Obuna paytidagi tarif holatining muzlatilgan nusxasi — keyin Tariff
-  // o'zgarsa/o'chirilsa ham bu yozuv tarixi buzilmaydi.
+  // Tarif holatining nusxasi. JORIY obunada Tariff tahrirlanganda nom/limit/
+  // ruxsatlar qayta yoziladi (clientService.syncSubscriptionsWithTariff);
+  // `price` va tarixiy ("changed"/"cancelled") obunalar esa muzlatilgan
+  // holicha qoladi. Tariff o'chirilsa ham oxirgi holat shu yerda saqlanadi.
   tariffSnapshot: {
     name: String,
     price: Number,

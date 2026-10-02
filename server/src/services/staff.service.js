@@ -1,13 +1,21 @@
 const Staff = require("../models/Staff");
 const Center = require("../models/Center");
 const Subject = require("../models/Subject");
+const Client = require("../models/Client");
 const { getHash, compareHash } = require("../utils/hash.util");
 const { getNow } = require("../utils/date.util");
 const envConfig = require("../configs/env.config");
 const keyConfig = require("../configs/key.config");
 const jwtUtil = require("../utils/jwt.util");
 const redisUtil = require("../utils/redis.util");
-const { sanitizeStaffPermissions } = require("../utils/staffPermission.util");
+const {
+  sanitizeStaffPermissions,
+  salaryTypeKeyOf,
+  SALARY_TYPE_TARIFF_FLAG,
+} = require("../utils/staffPermission.util");
+const clientService = require("./client.service");
+const audit = require("../utils/audit.util");
+const { emitArchiveChanged } = require("../utils/archive.util");
 
 const PAGE_SIZE = 50;
 
@@ -27,6 +35,7 @@ const DTO = (data) => ({
   subjects: (data?.subjects || []).map((s) => String(s)),
   salaryValue: data?.salaryValue,
   blocked: data?.blocked,
+  introSeen: data?.introSeen || false,
   date: data?.date,
   lastUpdate: data?.lastUpdate,
 });
@@ -50,19 +59,37 @@ const resolveSubjects = async (clientId, centerId, role, subjectIds) => {
   return valid.map((s) => s._id);
 };
 
-const issueTokens = (staffId) => {
-  const access = jwtUtil.sign(
-    { _id: staffId },
-    envConfig.STAFF_JWT_SECRET,
-    envConfig.STAFF_ACCESS_EXPIRES_IN,
-  );
-  const refresh = jwtUtil.sign(
-    { _id: staffId },
-    envConfig.STAFF_REFRESH_JWT_SECRET,
-    "30d", // absolyut chegara, haqiqiy amal qilish muddati Redis TTL orqali boshqariladi
-  );
+// Client'ning faol obunasidan `teacherLimit`/`receptionLimit`ni aniqlaydi —
+// center.service.js dagi `getCenterLimit` bilan bir xil naqsh. `teacherLimit`
+// TEACHING_ROLES (teacher+assistant) uchun, `receptionLimit` esa qolgan
+// (reception) rol uchun.
+const getStaffLimits = async (clientId) => {
+  const client = await Client.findOne({ _id: clientId, isDeleted: false }).populate({
+    path: "subscription",
+    populate: { path: "tariff" },
+  });
+  if (!client || !client.subscription) throw new Error("client.noActiveSubscription");
 
-  return { access, refresh };
+  const sub = client.subscription;
+  const tariffDoc = sub.tariff?._id ? sub.tariff : null;
+  const source = tariffDoc || sub.tariffSnapshot || {};
+  return { teacherLimit: source.teacherLimit, receptionLimit: source.receptionLimit };
+};
+
+// Refresh token yo'q — access token muddatsiz (jwtUtil.sign expiresIn'siz).
+// Sessiya faqat signOut yoki Redis'dagi `staffAccess` kaliti boshqa qurilma
+// login qilganda almashtirilganda tugaydi.
+const issueAccessToken = (staffId) => jwtUtil.sign({ _id: staffId }, envConfig.STAFF_JWT_SECRET);
+
+// Hodimga beriladigan OYLIK TURI tarifda ochiq bo'lishi shart (tarif flagi
+// `staff.salary.*`). Tarif pasaygandan keyin hodimda allaqachon turgan tur
+// (o'zgartirilmasa) saqlanib qoladi — aks holda boshqa maydonni tahrirlash
+// hodimning oyligini jimgina o'chirib yuborardi.
+const assertSalaryTypeAllowed = async (clientId, nextPermissions, prevPermissions = []) => {
+  const nextKey = salaryTypeKeyOf(nextPermissions);
+  if (!nextKey || nextKey === salaryTypeKeyOf(prevPermissions)) return;
+  const allowed = await clientService.hasPermission(clientId, SALARY_TYPE_TARIFF_FLAG[nextKey]);
+  if (!allowed) throw new Error("staff.salaryTypeNotInTariff");
 };
 
 module.exports = {
@@ -81,6 +108,23 @@ module.exports = {
     const trimmedLogin = login.trim();
     const exists = await Staff.findOne({ login: trimmedLogin, isDeleted: false });
     if (exists) throw new Error("staff.loginTaken");
+
+    const isTeaching = TEACHING_ROLES.includes(role);
+    const { teacherLimit, receptionLimit } = await getStaffLimits(clientId);
+    const limit = isTeaching ? teacherLimit : receptionLimit;
+    if (limit !== -1) {
+      const countFilter = {
+        client: clientId,
+        isDeleted: false,
+        role: isTeaching ? { $in: TEACHING_ROLES } : role,
+      };
+      const count = await Staff.countDocuments(countFilter);
+      if (count >= limit) {
+        throw new Error(isTeaching ? "staff.teacherLimitReached" : "staff.receptionLimitReached");
+      }
+    }
+
+    await assertSalaryTypeAllowed(clientId, permissions);
 
     const staff = await Staff.create({
       client: clientId,
@@ -210,7 +254,10 @@ module.exports = {
       if (!Staff.ROLES.includes(body.role)) throw new Error("staff.invalidRole");
       staff.role = body.role;
     }
-    if (body.permissions) staff.permissions = body.permissions;
+    if (body.permissions) {
+      await assertSalaryTypeAllowed(clientId, body.permissions, staff.permissions);
+      staff.permissions = body.permissions;
+    }
     // Rol o'zgargan bo'lsa ham qayta tozalanadi — resepshin -> o'qituvchi
     // bo'lganda eski "to'lov olish" kabi ruxsatlar qolib ketmasin.
     staff.permissions = sanitizeStaffPermissions(staff.role, staff.permissions);
@@ -237,13 +284,26 @@ module.exports = {
     return DTO(staff);
   },
 
-  remove: async (clientId, id) => {
+  // Arxivlash — API_CONTRACT_archive.md. `blocked` TEGILMAYDI: bloklash
+  // (vaqtincha kirishni yopish) mustaqil funksiya bo'lib qoladi.
+  // Arxivlangan hodim login qila olmaydi (signIn `isDeleted: false` qidiradi),
+  // oylik tarixi esa saqlanadi — moliyaviy yozuvlar hech qachon o'chmaydi.
+  remove: async (clientId, id, actor = null) => {
     const staff = await Staff.findOne({ _id: id, client: clientId, isDeleted: false });
     if (!staff) throw new Error("staff.notFound");
 
     staff.isDeleted = true;
     staff.deletedAt = getNow();
     await staff.save();
+
+    emitArchiveChanged(clientId, staff.center, "staff", staff._id, "archived");
+    void audit.log({
+      actor,
+      client: clientId,
+      center: staff.center,
+      action: "staff:archived",
+      entity: { type: "staff", id: staff._id, label: staff.name },
+    });
 
     return true;
   },
@@ -270,57 +330,18 @@ module.exports = {
     if (!checkPass) throw new Error("auth.notFound");
 
     const data = DTO(staff);
-    const { access, refresh } = issueTokens(staff._id);
+    const access = issueAccessToken(staff._id);
 
     staff.access = access;
     const key = keyConfig.staff(staff._id);
     const accessKey = keyConfig.staffAccess(staff._id);
-    const refreshKey = keyConfig.staffRefresh(staff._id);
     await Promise.all([
       staff.save(),
       redisUtil.set(key, data, envConfig.STAFF_SESSION_TTL),
       redisUtil.set(accessKey, access, envConfig.STAFF_SESSION_TTL),
-      redisUtil.set(refreshKey, refresh, envConfig.STAFF_SESSION_TTL),
     ]);
 
-    return { data, access, refresh };
-  },
-
-  refreshToken: async (refreshToken) => {
-    if (!refreshToken) throw new Error("auth.failed");
-
-    let payload;
-    try {
-      payload = jwtUtil.verify(refreshToken, envConfig.STAFF_REFRESH_JWT_SECRET);
-    } catch {
-      throw new Error("auth.failed");
-    }
-
-    const staffId = payload?._id;
-    if (!staffId) throw new Error("auth.failed");
-
-    const refreshKey = keyConfig.staffRefresh(staffId);
-    const cachedRefresh = await redisUtil.get(refreshKey);
-    if (!cachedRefresh || cachedRefresh !== refreshToken) throw new Error("auth.failed");
-
-    const staff = await Staff.findOne({ _id: staffId, isDeleted: false });
-    if (!staff) throw new Error("auth.failed");
-    if (staff.blocked) throw new Error("staff.blocked");
-
-    const data = DTO(staff);
-    const { access, refresh } = issueTokens(staffId);
-
-    staff.access = access;
-    const key = keyConfig.staff(staffId);
-    const accessKey = keyConfig.staffAccess(staffId);
-    await Promise.all([
-      staff.save(),
-      redisUtil.set(key, data, envConfig.STAFF_SESSION_TTL),
-      redisUtil.set(accessKey, access, envConfig.STAFF_SESSION_TTL),
-      redisUtil.set(refreshKey, refresh, envConfig.STAFF_SESSION_TTL),
-    ]);
-
-    return { data, access, refresh };
+    return { data, access };
   },
 
   // Staff o'z profilini o'zi yangilashi — FAQAT ism va parol (login/rol/
@@ -355,15 +376,30 @@ module.exports = {
     return data;
   },
 
+  markIntroSeen: async (staffId) => {
+    const staff = await Staff.findOneAndUpdate(
+      { _id: staffId, isDeleted: false },
+      { $set: { introSeen: true } },
+      { new: true },
+    );
+    if (!staff) throw new Error("auth.notFound");
+
+    const data = DTO(staff);
+    // updateOwnProfile bilan bir xil naqsh — Redis sessiya keshi ham
+    // yangilanadi, aks holda `fullStaffAuth` TTL tugagunicha eski
+    // `introSeen:false`ni qaytaraveradi.
+    await redisUtil.set(keyConfig.staff(staff._id), data, envConfig.STAFF_SESSION_TTL);
+
+    return true;
+  },
+
   signOutSession: async (staff) => {
     const key = keyConfig.staff(staff._id);
     const accessKey = keyConfig.staffAccess(staff._id);
-    const refreshKey = keyConfig.staffRefresh(staff._id);
     await Promise.all([
       Staff.updateOne({ _id: staff._id }, { $set: { access: "" } }),
       redisUtil.del(key),
       redisUtil.del(accessKey),
-      redisUtil.del(refreshKey),
     ]);
 
     return true;

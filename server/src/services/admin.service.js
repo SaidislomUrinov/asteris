@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const envConfig = require("../configs/env.config");
 const keyConfig = require("../configs/key.config");
 const Admin = require("../models/Admin");
-const { compareHash } = require("../utils/hash.util");
+const { compareHash, getHash } = require("../utils/hash.util");
 const jwtUtil = require("../utils/jwt.util");
 const redisUtil = require("../utils/redis.util");
 
@@ -137,6 +137,29 @@ module.exports = {
     await admin.save();
 
     return admin.apiKey;
+  },
+
+  updateProfile: async (adminId, body) => {
+    const { name, currentPassword, newPassword } = body || {};
+    if (!name?.trim() && !newPassword?.trim())
+      throw new Error("admin.nothingToUpdate");
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) throw new Error("auth.failed");
+
+    if (newPassword?.trim()) {
+      const checkPass = await compareHash(
+        currentPassword?.trim() || "",
+        admin.password,
+      );
+      if (!checkPass) throw new Error("admin.wrongPassword");
+      admin.password = await getHash(newPassword.trim());
+    }
+
+    if (name?.trim()) admin.name = name.trim();
+
+    await admin.save();
+    return DTO(admin);
   },
 
   signOut: async (admin) => {

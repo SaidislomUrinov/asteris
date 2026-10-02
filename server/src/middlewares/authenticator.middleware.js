@@ -127,13 +127,19 @@ module.exports = {
 
       const accessKey = keyConfig.clientAccess(clientId);
       const key = keyConfig.client(clientId);
-      const refreshKey = keyConfig.clientRefresh(clientId);
       const cached = await redisUtil.get(key);
 
       if (cached) {
         req.client = cached;
       } else {
-        const client = await Client.findOne({ _id: clientId, isDeleted: false });
+        // Obuna+tarif populate shart — aks holda DTO'dagi `subscription`
+        // bo'sh maydonlar bilan qaytib, owner'da barcha tarif imkoniyatlari
+        // yo'qolardi (signIn'dagi bilan bir xil shakl). Kesh tarif
+        // o'zgarganda tashlanadi (clientService.syncSubscriptionsWithTariff).
+        const client = await Client.findOne({ _id: clientId, isDeleted: false }).populate({
+          path: "subscription",
+          populate: { path: "tariff" },
+        });
         if (!client) throw new Error("auth.failed");
         if (client.blocked) throw new Error("client.blocked");
 
@@ -146,7 +152,6 @@ module.exports = {
       await Promise.all([
         redisUtil.touch(key, envConfig.CLIENT_SESSION_TTL),
         redisUtil.touch(accessKey, envConfig.CLIENT_SESSION_TTL),
-        redisUtil.touch(refreshKey, envConfig.CLIENT_SESSION_TTL),
       ]);
 
       next();
@@ -189,7 +194,6 @@ module.exports = {
 
       const accessKey = keyConfig.staffAccess(staffId);
       const key = keyConfig.staff(staffId);
-      const refreshKey = keyConfig.staffRefresh(staffId);
       const cached = await redisUtil.get(key);
 
       if (cached) {
@@ -217,7 +221,6 @@ module.exports = {
       await Promise.all([
         redisUtil.touch(key, envConfig.STAFF_SESSION_TTL),
         redisUtil.touch(accessKey, envConfig.STAFF_SESSION_TTL),
-        redisUtil.touch(refreshKey, envConfig.STAFF_SESSION_TTL),
       ]);
 
       next();
@@ -244,6 +247,31 @@ module.exports = {
   // qarab mos auth zanjiri ishlaydi. Staff bo'lsa req.client = { _id: staff.client }
   // qilib qo'yiladi — mavjud controller/service zanjiri (clientId birinchi argument)
   // o'zgarishsiz ishlayveradi, tenant isolation esa staff.client orqali saqlanadi.
+  // OTA-ONA (Telegram WebApp) — API_CONTRACT_parent.md §4.1. Admin/Client/
+  // Staff'dan farqi: Redis sessiya YO'Q (token 30 kun, refresh yo'q). Tenant
+  // tokenda emas — har endpoint topilgan a'zolik (`entry`) bo'yicha tekshiradi,
+  // shuning uchun bu yerda faqat Parent hujjati yuklanadi (`req.parent`).
+  parentAuth: async (req, res, next) => {
+    try {
+      const header = req?.headers?.["x-parent-auth-token"];
+      if (!header || !header?.startsWith("BerarerParent ")) throw new Error("auth.failed");
+
+      const access = header?.split(" ")[1];
+      if (!envConfig.PARENT_JWT_SECRET) throw new Error("auth.failed");
+      const payload = jwtUtil.verify(access, envConfig.PARENT_JWT_SECRET);
+      if (!payload || !payload?._id || !isValidObjectId(payload._id)) throw new Error("auth.failed");
+
+      const parent = await require("../models/Parent").findById(payload._id);
+      // /unlink qilingan (hujjat o'chgan) yoki chat almashgan bo'lsa token yaroqsiz.
+      if (!parent || String(parent.telegram?.chatId) !== String(payload.chatId)) throw new Error("auth.failed");
+
+      req.parent = parent;
+      next();
+    } catch (error) {
+      next(new Error("auth.failed"));
+    }
+  },
+
   tenantAuth: async (req, res, next) => {
     const mw = module.exports;
 
@@ -343,6 +371,9 @@ module.exports = {
   // ham bu ruxsatlarni bu rollarga bermaydi, lekin tarif/ruxsat sozlamalari
   // kelajakda o'zgarsa ham bu amallar ochilib ketmasligi kerak — shuning
   // uchun ROL bo'yicha qat'iy taqiq qo'yilgan.
+  // O'qituvchi/yordamchi bo'lsa guruhdagi maydon nomi ("teacher"/"assistant"), aks holda null.
+  teachingScopeField: (req) => GROUP_SCOPE_FIELD[req.staff?.role] || null,
+
   blockTeachingRoles: (req, res, next) =>
     GROUP_SCOPE_FIELD[req.staff?.role] ? next(new Error("auth.forbidden")) : next(),
 
@@ -437,10 +468,45 @@ module.exports = {
     try {
       const client = await Client.findById(req.client._id)
         .select("subscription")
-        .populate({ path: "subscription", select: "status endDate" });
+        .populate({
+          path: "subscription",
+          select: "status endDate tariff tariffSnapshot.centerLimit",
+          populate: { path: "tariff", select: "centerLimit isDeleted" },
+        });
       const sub = client?.subscription;
       const active = !!sub && sub.status === "active" && sub.endDate > getNow();
       if (!active) throw new Error("client.subscriptionExpired");
+
+      // CLAUDE.md "Downgrade'da markaz tanlash oqimi": tarif pasayib faol
+      // filiallar limitdan oshib ketgan bo'lsa, Client Owner majburiy modalda
+      // tanlov qilmaguncha HECH QANDAY mutatsiya o'tmaydi (Staff bu yerga
+      // yetib kelmaydi — bloklangan filial hodimi `fullStaffAuth`da to'xtaydi,
+      // faol filial hodimi esa ishlayveradi: tanlov Owner'ning vazifasi).
+      if (!req.staff) {
+        const tariffDoc = sub.tariff && !sub.tariff.isDeleted ? sub.tariff : null;
+        const limit = tariffDoc ? tariffDoc.centerLimit : sub.tariffSnapshot?.centerLimit;
+        if (typeof limit === "number" && limit !== -1) {
+          const activeCount = await Center.countDocuments({
+            client: req.client._id,
+            isDeleted: false,
+            status: "active",
+          });
+          if (activeCount > limit) throw new Error("center.overflowPending");
+        }
+      }
+
+      // Bloklangan filial — Read-Only: so'rov aniq shu filialga
+      // (query/body orqali) qaratilgan bo'lsa mutatsiya rad etiladi.
+      const targets = [req.query?.center, req.body?.centerId, req.body?.center]
+        .filter((v) => typeof v === "string" && /^[a-f\d]{24}$/i.test(v));
+      if (targets.length) {
+        const blocked = await Center.exists({
+          _id: { $in: targets },
+          client: req.client._id,
+          status: "blocked",
+        });
+        if (blocked) throw new Error("center.blocked");
+      }
       next();
     } catch (error) {
       next(error);

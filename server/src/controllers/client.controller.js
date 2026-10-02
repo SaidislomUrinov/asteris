@@ -97,18 +97,8 @@ module.exports = {
 
   signIn: async (req, res, next) => {
     try {
-      const { data, access, refresh } = await clientService.signIn(req.body);
-      return res.send({ ok: true, data, access, refresh, msg: "auth.success" });
-    } catch (error) {
-      next(error);
-    }
-  },
-
-  refreshToken: async (req, res, next) => {
-    try {
-      const { refresh } = req.body;
-      const { data, access, refresh: newRefresh } = await clientService.refreshToken(refresh);
-      return res.send({ ok: true, data, access, refresh: newRefresh, msg: "auth.success" });
+      const { data, access } = await clientService.signIn(req.body);
+      return res.send({ ok: true, data, access, msg: "auth.success" });
     } catch (error) {
       next(error);
     }
@@ -117,6 +107,24 @@ module.exports = {
   verify: (req, res, next) => {
     try {
       return res.send({ ok: true, data: req.client });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  updateOwnProfile: async (req, res, next) => {
+    try {
+      const data = await clientService.updateOwnProfile(req.client._id, req.body);
+      return res.send({ ok: true, data, msg: "client.profileUpdated" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  markIntroSeen: async (req, res, next) => {
+    try {
+      await clientService.markIntroSeen(req.client._id);
+      return res.send({ ok: true, msg: "auth.introSeen" });
     } catch (error) {
       next(error);
     }
@@ -133,8 +141,11 @@ module.exports = {
 
   listTariffs: async (req, res, next) => {
     try {
-      const data = await tariffService.list();
-      return res.send({ ok: true, data });
+      const [data, activeCenterCount] = await Promise.all([
+        tariffService.list(),
+        clientService.getActiveCenterCount(req.client._id),
+      ]);
+      return res.send({ ok: true, data, activeCenterCount });
     } catch (error) {
       next(error);
     }
@@ -149,6 +160,7 @@ module.exports = {
       );
       return res.send({ ok: true, ...result });
     } catch (error) {
+      console.error("[subscriptionPayment] initiateSubscription xato", error.message);
       next(error);
     }
   },

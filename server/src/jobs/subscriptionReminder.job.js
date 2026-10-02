@@ -64,8 +64,8 @@ const notifyOne = async (sub, kind) => {
       to: client.email,
       subject:
         kind === "expired"
-          ? "Asteris — obunangiz muddati tugadi"
-          : `Asteris — obunangiz ${daysLeft} kundan so'ng tugaydi`,
+          ? "WENET — obunangiz muddati tugadi"
+          : `WENET — obunangiz ${daysLeft} kundan so'ng tugaydi`,
       template: kind === "expired" ? "subscription-expired" : "subscription-expiring",
       data: {
         clientName: client.name,
@@ -78,6 +78,24 @@ const notifyOne = async (sub, kind) => {
   }
 
   return true;
+};
+
+// Muddati o'tgan, lekin hali "active" deb qolgan obunalarni "expired"ga
+// o'tkazadi. `requireActiveSubscription` middleware Read-Only'ni HAR DOIM
+// jonli hisoblaydi (status+endDate), shu sabab bu sweep UX'ga ta'sir
+// qilmaydi — faqat `Subscription.status` maydonining o'zi haqiqatga mos
+// bo'lishi uchun (aks holda "expired" bo'yicha filtr/hisobot hech narsa
+// topmasdi). Har tikda ishlaydi (kunlik qulfsiz) — `updateMany` idempotent,
+// bir nechta worker bir vaqtda chaqirsa ham xavfsiz.
+const expireLapsedSubscriptions = async () => {
+  try {
+    await Subscription.updateMany(
+      { status: "active", endDate: { $lte: getNow() } },
+      { $set: { status: "expired" } },
+    );
+  } catch (error) {
+    console.error("subscriptionReminder(expire):", error.message);
+  }
 };
 
 const run = async () => {
@@ -119,6 +137,13 @@ const run = async () => {
     }
   }
 
+  // Bildirishnomalar yuborilib bo'lgach — endi "kecha tugagan" to'plamni
+  // (yuqorida `expired` qulaydi) haqiqatan ham "expired"ga o'tkazamiz.
+  // Kechroq tugagan (bir kundan ortiq oldin), lekin hali "active" qolib
+  // ketgan yozuvlar ham (masalan server bir necha kun o'chib turgan bo'lsa)
+  // shu bitta sweep bilan tozalanadi.
+  await expireLapsedSubscriptions();
+
   // Platforma adminiga umumiy xulosa (bitta xabar, spam yo'q).
   if (expiring.length || expired.length) {
     await sendAlert(
@@ -145,4 +170,4 @@ const start = () => {
   console.log(`Subscription reminder scheduler started (har kuni ${RUN_HOUR}:00)`);
 };
 
-module.exports = { start, run };
+module.exports = { start, run, expireLapsedSubscriptions };

@@ -100,7 +100,7 @@ function writeSheet(workbook, { sheetName, color, title, subtitle, columns, rows
 // Bir nechta varaq bo'lishi mumkin (masalan "Statistika" + "Tranzaksiyalar").
 const buildWorkbook = async (sheets) => {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "Asteris";
+  workbook.creator = "WENET";
   workbook.created = new Date();
   sheets.forEach((sheet) => writeSheet(workbook, sheet));
   return workbook.xlsx.writeBuffer();

@@ -1,7 +1,8 @@
 const { Schema, model } = require("mongoose");
 const { getNow } = require("../utils/date.util");
 
-// Bildirishnoma. Qabul qiluvchi Client Owner ham, Staff ham bo'lishi mumkin —
+// Bildirishnoma. Qabul qiluvchi Client Owner, Staff yoki Parent (ota-ona,
+// Telegram) bo'lishi mumkin —
 // ular MUSTAQIL modellar (CLAUDE.md "Autentifikatsiya"), shuning uchun
 // `refPath` emas, id + kind juftligi (Payment.collectedBy bilan bir xil naqsh).
 const schema = new Schema({
@@ -9,7 +10,7 @@ const schema = new Schema({
   center: { type: Schema.Types.ObjectId, ref: "Center", default: null },
   recipient: {
     id: { type: Schema.Types.ObjectId, required: true },
-    kind: { type: String, enum: ["client", "staff"], required: true },
+    kind: { type: String, enum: ["client", "staff", "parent"], required: true },
   },
   // "lesson:reminder" — darsga 1 soat qolganda; keyinchalik boshqa turlar.
   type: { type: String, required: true },

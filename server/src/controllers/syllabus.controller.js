@@ -58,6 +58,22 @@ module.exports = {
     }
   },
 
+  plans: async (req, res, next) => {
+    try {
+      const data = await syllabusService.plans(
+        req.client._id,
+        req.params.groupId,
+        scopeOf(req),
+        // Staff faqat o'z filiali o'qituvchilarining rejalarini ko'radi.
+        req.staff?.center || "",
+        req.staff || null,
+      );
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   importFrom: async (req, res, next) => {
     try {
       const data = await syllabusService.importFrom(

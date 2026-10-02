@@ -1,4 +1,5 @@
 const studentService = require("../services/student.service");
+const { buildActor } = require("../utils/audit.util");
 const teacherView = require("../utils/teacherView.util");
 const { sendExcel, THEME } = require("../utils/excel.util");
 const { formatDate } = require("../utils/date.util");
@@ -8,6 +9,33 @@ module.exports = {
     try {
       const data = await studentService.create(req.client._id, req.body);
       return res.send({ ok: true, data, msg: "student.created" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  importBulk: async (req, res, next) => {
+    try {
+      const data = await studentService.importBulk(req.client._id, req.body, buildActor(req));
+      return res.send({ ok: true, data, msg: "student.importDone" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  latestImportBatch: async (req, res, next) => {
+    try {
+      const data = await studentService.latestImportBatch(req.client._id, req.query.groupId);
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  undoImportBatch: async (req, res, next) => {
+    try {
+      const data = await studentService.undoImportBatch(req.client._id, req.params.id, buildActor(req));
+      return res.send({ ok: true, data, msg: "import.undone" });
     } catch (error) {
       next(error);
     }
@@ -24,9 +52,10 @@ module.exports = {
 
   list: async (req, res, next) => {
     try {
-      const { page, search, center, group, status, debtStatus } = req.query;
+      const { page, limit, search, center, group, status, debtStatus } = req.query;
       const { data, meta } = await studentService.list(req.client._id, {
         page,
+        limit,
         search,
         center,
         group,
@@ -168,6 +197,22 @@ module.exports = {
     }
   },
 
+  // PATCH /students/:id/contact — ism/raqam/ota-ona raqami
+  // (API_CONTRACT_student_contact_telegram.md §2). Ruxsat va guruh doirasi
+  // `requireStudentContact` da tekshirilgan.
+  updateContact: async (req, res, next) => {
+    try {
+      const data = await studentService.updateContact(req.client._id, req.params.id, req.body);
+      return res.send({
+        ok: true,
+        data: teacherView.isTeacher(req) ? teacherView.stripStudent(data) : data,
+        msg: "student.updated",
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   updateGroupPrice: async (req, res, next) => {
     try {
       const data = await studentService.updateGroupPrice(
@@ -182,10 +227,56 @@ module.exports = {
     }
   },
 
+  // Ko'chirishdan oldingi qarz(lar) + avans — to'liq almashtirish
+  // (API_CONTRACT_opening_debts.md §3.2). Validatsiya servisda.
+  updateOpening: async (req, res, next) => {
+    try {
+      const data = await studentService.updateOpening(
+        req.client._id,
+        req.params.id,
+        req.params.groupEntryId,
+        req.body || {},
+        buildActor(req),
+      );
+      return res.send({ ok: true, data, msg: "student.openingDebtsSaved" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  archiveGroupEntry: async (req, res, next) => {
+    try {
+      const data = await studentService.archiveGroupEntry(
+        req.client._id,
+        req.params.id,
+        req.params.groupEntryId,
+        buildActor(req),
+      );
+      return res.send({ ok: true, data, msg: "archive.archived" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   leaveGroup: async (req, res, next) => {
     try {
       const data = await studentService.leaveGroup(req.client._id, req.params.id, req.params.groupEntryId);
       return res.send({ ok: true, data, msg: "student.left" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  transferGroup: async (req, res, next) => {
+    try {
+      const data = await studentService.transferGroup(
+        req.client._id,
+        req.params.id,
+        req.params.groupEntryId,
+        req.body,
+        buildActor(req),
+      );
+      return res.send({ ok: true, data, msg: "student.transferred" });
     } catch (error) {
       next(error);
     }
@@ -264,6 +355,24 @@ module.exports = {
         collector,
       );
       return res.send({ ok: true, data, msg: "student.paymentAdded" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // To'lovning "qaysi oy uchun" belgisini o'zgartirish
+  // (API_CONTRACT_payment_move_month.md). Validatsiya servisda.
+  movePaymentMonth: async (req, res, next) => {
+    try {
+      const data = await studentService.movePaymentMonth(
+        req.client._id,
+        req.params.id,
+        req.params.groupEntryId,
+        req.params.paymentId,
+        req.body || {},
+        buildActor(req),
+      );
+      return res.send({ ok: true, data, msg: "student.paymentMonthMoved" });
     } catch (error) {
       next(error);
     }

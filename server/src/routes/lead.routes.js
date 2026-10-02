@@ -36,6 +36,20 @@ const keyedLeadLimiter = rateLimit({
   keyGenerator: (req) => req.leadSourceKey,
 });
 
+// Websitening "Bepul boshlash" modali — API-key TALAB QILINMAYDI (haqiqiy
+// tashrifchi ochiq brauzerdan chaqiradi, kalitni yashirib bo'lmaydi), shu
+// sabab bu yerda IP bo'yicha qattiq limit + controller darajasidagi honeypot
+// bilan cheklaymiz (`requireLeadApiKey`dan FARQLI, unga tegilmaydi).
+// 30/soat: mobil operatorlar (CGNAT) ko'p odamni bitta IP ortida chiqaradi —
+// reklama paytida 10 juda kam edi va haqiqiy leadlar 429 olishi mumkin edi.
+const publicLeadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.post("/public", publicLeadLimiter, leadController.createPublic);
 router.post("/", requireLeadApiKey, keyedLeadLimiter, leadController.create);
 
 router.use(adminAuth, fullAdminAuth);

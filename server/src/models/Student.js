@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const { normalizePhone, normalizeTelegramPhone, setTelegramPhone } = require("../utils/phone.util");
 const { formatDate, getNow } = require("../utils/date.util");
 
 // O'quvchi telefon raqam asosida yagona hujjat (CLAUDE.md "Ma'lumotlar
@@ -23,6 +24,27 @@ const paymentSchema = new Schema(
     collectedBy: { type: Schema.Types.ObjectId, default: null },
     collectedByKind: { type: String, enum: ["owner", "staff", null], default: null },
     date: { type: Number, default: getNow },
+    // Qisqa, ochiq (public) tekshirish kodi — chek QR/link shunga ishora
+    // qiladi (paymentVerify.service.js). ESKI to'lovlarda YO'Q (null) —
+    // ular hamon o'zining Mongo `_id`si orqali tekshiriladi (backward
+    // compat, paymentVerify.service.js ikkalasini ham sinaydi).
+    code: { type: String, default: null },
+    // "Qaysi oy uchun" belgisini o'tkazishlar tarixi
+    // (API_CONTRACT_payment_move_month.md). `from` eski qiymat — eski
+    // to'lovda `""` bo'lishi mumkin (sana oyi deb talqin qilinadi).
+    forMonthHistory: {
+      type: [
+        {
+          from: { type: String, default: "" },
+          to: { type: String, default: "" },
+          at: { type: Number, default: getNow },
+          byId: { type: Schema.Types.ObjectId, default: null },
+          byKind: { type: String, enum: ["owner", "staff", null], default: null },
+          _id: false,
+        },
+      ],
+      default: [],
+    },
   },
   { _id: true },
 );
@@ -58,6 +80,19 @@ const priceHistorySchema = new Schema(
   { _id: false },
 );
 
+// Ko'chirishdan (WENET'ga o'tishdan) OLDINGI qarz — oylar kesimida
+// (API_CONTRACT_opening_debts.md §1). `month` = "YYYY-MM" yoki null (oyi
+// noma'lum — faqat import/eski data). Moliyaviy yozuv EMAS (tahrirlanadi va
+// o'chiriladi), lekin har o'zgarish Audit Log'ga yoziladi.
+const openingDebtSchema = new Schema(
+  {
+    month: { type: String, default: null },
+    amount: { type: Number, required: true, min: 1 },
+    note: { type: String, default: "", trim: true },
+  },
+  { _id: true },
+);
+
 const groupEntrySchema = new Schema(
   {
     group: { type: Schema.Types.ObjectId, ref: "Group", required: true },
@@ -66,21 +101,101 @@ const groupEntrySchema = new Schema(
     subject: { type: Schema.Types.ObjectId, ref: "Subject", required: true },
     price: { type: Number, default: 0, min: 0 }, // shu guruh uchun kelishilgan JORIY narx
     priceHistory: { type: [priceHistorySchema], default: [] },
-    status: { type: String, enum: ["active", "left"], default: "active" },
+    // "archived" — API_CONTRACT_archive.md. Arxiv birligi O'QUVCHI HUJJATI
+    // emas, aynan SHU a'zolik: o'quvchi X guruhda arxivlangan bo'lib, N
+    // guruhda faol qolaveradi. Butun loyihada qarzdorlik/statistika
+    // `status === "active"` bo'yicha hisoblangani uchun arxivlangan a'zolik
+    // avtomatik ravishda barcha hisob-kitobdan chiqadi (yangi filtr shart emas).
+    status: { type: String, enum: ["active", "left", "archived"], default: "active" },
+    // Arxivlash PAYTIDAGI holat — qaytarishda aynan shu holat tiklanadi
+    // (guruhdan chiqarilgan o'quvchi "active" bo'lib qaytib qolmasligi uchun).
+    statusBeforeArchive: { type: String, enum: ["active", "left", null], default: null },
+    archivedAt: { type: Number, default: null },
+    // Guruh arxivlangani uchun KASKAD bilan arxivlanganmi (true), yoki aynan
+    // shu a'zolik QO'LDA arxivlanganmi (false). Guruh arxivdan qaytarilganda
+    // faqat kaskad bilan arxivlanganlari tiklanadi — qo'lda arxivlangani
+    // arxivda qolishi kerak.
+    archivedWithGroup: { type: Boolean, default: false },
     joinedAt: { type: Number, default: getNow },
     leftAt: { type: Number, default: null },
     payments: { type: [paymentSchema], default: [] },
     credits: { type: [creditSchema], default: [] },
+    // "3 kun ketma-ket kelmadi → keyingi oyga o'tkazish" (utils/rollover.util.js).
+    // Moliyaviy ta'sirli yozuv — o'chirilmaydi, faqat `status: "cancelled"`.
+    rollovers: {
+      type: [
+        {
+          dates: { type: [String], default: [] }, // "YYYY-MM-DD"
+          amount: { type: Number, required: true, min: 0 },
+          fromMonth: { type: String, required: true }, // shu oy tushum/percentidan ayiriladi
+          toMonth: { type: String, required: true }, // shu oyga qo'shiladi
+          applyAt: { type: Number, required: true }, // chegirma qo'llanadigan sikl ichidagi unix
+          status: { type: String, enum: ["active", "cancelled"], default: "active" },
+          createdAt: { type: Number, default: getNow },
+          cancelledAt: { type: Number, default: null },
+        },
+      ],
+      default: [],
+    },
+    // Ko'chirishdan oldingi AVANS (oldindan to'langan summa, ≥ 0). Eski
+    // hujjatlarda MANFIY qiymat (= eski qarz) qolgan bo'lishi mumkin — u
+    // migratsiyasiz o'qishda normallashtiriladi (student.service.js
+    // `openingItemsOf`: manfiy → `{ month: null, amount }` qarz qatori), PUT
+    // .../opening saqlashida esa `openingDebts`ga ko'chiriladi.
+    // Bu MOLIYAVIY YOZUV EMAS (payments[] emas) — shuning uchun tahrirlanadi va
+    // o'chiriladi. Soxta `payments[]` yozuvi yaratilmaydi, chunki moliyaviy
+    // yozuv hech qachon o'chirilmaydi (CLAUDE.md).
+    openingBalance: { type: Number, default: 0 },
+    openingDebts: { type: [openingDebtSchema], default: [] },
+    // Shu A'ZOLIKNI import qo'shgan bo'lsa (yangi yoki mavjud hujjatga
+    // yangi guruh) — batch id. Bekor qilishda (`undoImportBatch`)
+    // `$pull` orqali izlanadi (API_CONTRACT_import_undo.md §1).
+    importBatch: { type: Schema.Types.ObjectId, ref: "ImportBatch", default: null },
+    // Guruhdan guruhga o'tkazish (API_CONTRACT_student_transfer.md §2).
+    // `transferredFrom` — shu a'zolikdan OLDINGI a'zoliklar zanjiri (A→B→C
+    // bo'lsa C'da A va B). Baho/davomat/to'lov KO'CHIRILMAYDI — ular manba
+    // guruhda o'z sanasi bilan qoladi, yangi guruh ko'rinishlari shu zanjir
+    // orqali ularni qo'shib ko'rsatadi.
+    transferredFrom: {
+      type: [
+        {
+          group: { type: Schema.Types.ObjectId, ref: "Group", required: true },
+          entry: { type: Schema.Types.ObjectId, required: true },
+          center: { type: Schema.Types.ObjectId, ref: "Center", default: null },
+          from: { type: Number, default: 0 },
+          until: { type: Number, required: true },
+          _id: false,
+        },
+      ],
+      default: [],
+    },
+    // Shu a'zolik boshqa guruhga O'TKAZILGAN — hisob-kitobi yopilgan
+    // (balans yangi a'zolikka ko'chgan, computeBilling `debt: 0` beradi).
+    transferredTo: {
+      type: new Schema(
+        {
+          group: { type: Schema.Types.ObjectId, ref: "Group", required: true },
+          entry: { type: Schema.Types.ObjectId, required: true },
+          at: { type: Number, required: true },
+        },
+        { _id: false },
+      ),
+      default: null,
+    },
   },
   { _id: true },
 );
 
 const schema = new Schema({
+  // Bitta o'quvchi bir nechta farzand uchun bitta ota-ona telefon raqamidan
+  // foydalanishi mumkin (API_CONTRACT.md §2) — endi UNIQUE emas, faqat
+  // qidiruv tezligi uchun oddiy index. Eski unique index Mongo'da hali
+  // qolgan bo'lsa startup'da avtomatik tashlanadi (pastga qarang).
   phone: {
     type: String,
     required: true,
-    unique: true,
     trim: true,
+    index: true,
   },
   fullName: {
     type: String,
@@ -91,11 +206,25 @@ const schema = new Schema({
     type: String,
     default: "",
   },
+  // Ota-ona raqami — Telegram botda `request_contact` raqami bilan AYNAN
+  // taqqoslanadi, shuning uchun yozishda normalizatsiya (`+998XXXXXXXXX`)
+  // va indeks (`{ parentPhone: 1 }`, pastda). Bir raqam bir nechta bolada
+  // bo'lishi normal (aka-uka) — unique EMAS.
   parentPhone: {
     type: String,
     default: "",
     trim: true,
+    set: (v) => normalizePhone(v),
   },
+  // TELEGRAM raqamlari (API_CONTRACT_telegram_phone.md §1). Bot va barcha
+  // Telegram mosliklari FAQAT shu maydonlar bo'yicha ishlaydi. Invariant:
+  // `*TelegramPhone` doim SAMARALI qiymat — `*Same === true` bo'lsa telefondan
+  // hisoblangan, aks holda foydalanuvchi kiritgan (bo'sh = botga ulanmaydi).
+  // Faqat `utils/telegramPhone.util.applyTelegramFields` orqali yoziladi.
+  telegramSame: { type: Boolean, default: true },
+  telegramPhone: { type: String, default: "", trim: true, set: setTelegramPhone },
+  parentTelegramSame: { type: Boolean, default: true },
+  parentTelegramPhone: { type: String, default: "", trim: true, set: setTelegramPhone },
   // QR davomat uchun doimiy maxfiy token (`attendance.qr` tarif flagi ostida).
   // O'quvchi hujjatiga bir marta beriladi va o'zgarmaydi — chop etilgan karta
   // yoki telefondagi rasm uzoq muddat ishlashi kerak. Tanlangan bo'lsa, qo'lda
@@ -120,6 +249,12 @@ const schema = new Schema({
     type: [groupEntrySchema],
     default: [],
   },
+  // HUJJAT darajasi — FAQAT shu import YARATGAN hujjatda to'ladi (mavjud
+  // o'quvchi yangi guruhga import orqali qo'shilsa bu maydon TEGILMAYDI,
+  // faqat groupEntrySchema.importBatch to'ladi). Bekor qilishda batch
+  // qo'shgan a'zolik(lar) `$pull` qilingandan keyin, shu maydon bo'yicha
+  // "endi guruhi bo'shab qolgan" hujjatlar topilib arxivlanadi.
+  importBatch: { type: Schema.Types.ObjectId, ref: "ImportBatch", default: null, index: true },
   isDeleted: {
     type: Boolean,
     default: false,
@@ -140,6 +275,13 @@ const schema = new Schema({
 
 schema.pre("save", async function () {
   this.updatedAt = getNow();
+  // Xavfsizlik to'ri: invariant asosan `applyTelegramFields` orqali yoziladi,
+  // lekin seed/skript kabi boshqa yo'llarda ham `*Same === true` bo'lsa
+  // Telegram raqami telefon bilan sinxron qoladi (API_CONTRACT_telegram_phone.md §1).
+  if (this.telegramSame !== false) this.telegramPhone = normalizeTelegramPhone(this.phone) || "";
+  if (this.parentTelegramSame !== false) {
+    this.parentTelegramPhone = normalizeTelegramPhone(this.parentPhone) || "";
+  }
 });
 
 schema.virtual("date").get(function () {
@@ -157,5 +299,37 @@ schema.virtual("lastUpdate").get(function () {
 schema.index({ "groups.client": 1, "groups.center": 1 });
 schema.index({ "groups.group": 1, "groups.status": 1 });
 schema.index({ isDeleted: 1 });
+// Ota-ona botda raqam bo'yicha farzandlarini topadi (bo'sh satr ko'p — partial).
+schema.index({ parentPhone: 1 }, { partialFilterExpression: { parentPhone: { $gt: "" } } });
+// Telegram mosligi (bot, bildirishnomalar, badge) — shu ikki maydon bo'yicha.
+schema.index({ telegramPhone: 1 }, { partialFilterExpression: { telegramPhone: { $gt: "" } } });
+schema.index({ parentTelegramPhone: 1 }, { partialFilterExpression: { parentTelegramPhone: { $gt: "" } } });
+// To'lov tekshirish kodi bo'yicha tez qidiruv. UNIQUE EMAS: massiv maydonda
+// partialFilterExpression butun HUJJATga qo'llanadi — o'quvchida bitta kodli
+// to'lov bo'lsa, uning kodsiz eski to'lovlari (`code: null`) ham indekslanadi
+// va ikkinchi shunday o'quvchida "E11000 dup key: { code: null }" beradi
+// (prod'da indeks build yiqildi). Unikallik `generateUniqueShortCode` ichidagi
+// `Student.exists` tekshiruvi bilan ta'minlanadi.
+schema.index({ "groups.payments.code": 1 });
 
-module.exports = model("Student", schema);
+const StudentModel = model("Student", schema);
+
+// Bir marta ishga tushirilishi kerak bo'lgan migratsiya: eski unique `phone_1`
+// indeksi Mongo'da hali qolgan bo'lishi mumkin (bu deploy'gacha `unique: true`
+// bo'lgan). Mongoose `autoIndex` odatda yangi indekslarni qo'shadi, lekin
+// ESKI unique indeksni o'zi olib tashlamaydi — shu sabab bu yerda startup'da
+// bir marta tekshirib, topilsa, tashlab yuboriladi. Xatolik (masalan indeks
+// allaqachon yo'q) e'tiborsiz qoldiriladi — server ishga tushishini to'xtatmaydi.
+StudentModel.on("index", async () => {
+  try {
+    const indexes = await StudentModel.collection.indexes();
+    const staleUniquePhoneIndex = indexes.find((idx) => idx.key?.phone === 1 && idx.unique);
+    if (staleUniquePhoneIndex) {
+      await StudentModel.collection.dropIndex(staleUniquePhoneIndex.name);
+    }
+  } catch {
+    // Indeks topilmadi yoki collection hali yaratilmagan — muammo emas.
+  }
+});
+
+module.exports = StudentModel;

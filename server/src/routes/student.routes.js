@@ -10,6 +10,8 @@ const {
 } = require("../middlewares/authenticator.middleware");
 
 const Group = require("../models/Group");
+const Student = require("../models/Student");
+const { isValidObjectId } = require("mongoose");
 
 // Guruhga biriktirilish orqali cheklanadigan rollar → Group'dagi maydon
 // nomi (authenticator.middleware.js dagi GROUP_SCOPE_FIELD bilan bir xil).
@@ -39,6 +41,60 @@ const teacherStudentScope = async (req, res, next) => {
   }
 };
 
+// PATCH /:id/contact (API_CONTRACT_student_contact_telegram.md §2).
+//  - Owner — o'tadi.
+//  - Teacher/Assistant — `all` yoki `student:contact` VA o'quvchining shu
+//    client'dagi AKTIV a'zoligi o'zi biriktirilgan (o'chirilmagan) guruhda.
+//  - Boshqa hodim — `all` | `student:update` | `student:contact`
+//    (`student:update` ⊇ `student:contact`).
+// Staff uchun filial izolyatsiyasi: a'zolik `req.centerScope` filialida bo'lishi shart.
+const CONTACT_PERMISSIONS = ["all", "student:update", "student:contact"];
+const TEACHING_CONTACT_PERMISSIONS = ["all", "student:contact"];
+
+const requireStudentContact = async (req, res, next) => {
+  if (!req.staff) return next(); // Client Owner
+  try {
+    const permissions = req.staff.permissions || [];
+    const field = GROUP_SCOPE_FIELD[req.staff.role];
+    const allowed = field ? TEACHING_CONTACT_PERMISSIONS : CONTACT_PERMISSIONS;
+    if (!allowed.some((p) => permissions.includes(p))) throw new Error("auth.forbidden");
+
+    const id = req.params.id;
+    if (!isValidObjectId(id)) throw new Error("student.notFound");
+
+    const student = await Student.findOne({ _id: id, isDeleted: false })
+      .select("groups.client groups.center groups.group groups.status")
+      .lean();
+    if (!student) throw new Error("student.notFound");
+
+    const scope = req.centerScope ? String(req.centerScope) : "";
+    const entries = (student.groups || []).filter(
+      (g) =>
+        String(g.client) === String(req.client._id) &&
+        g.status !== "archived" &&
+        (!scope || String(g.center) === scope),
+    );
+    // O'qituvchi rollari uchun "begona o'quvchi" — 403 (contract §2), boshqalarga 404.
+    if (!entries.length) throw new Error(field ? "auth.forbidden" : "student.notFound");
+
+    if (field) {
+      const groupIds = entries.filter((g) => g.status === "active").map((g) => g.group);
+      const own = groupIds.length
+        ? await Group.exists({
+            _id: { $in: groupIds },
+            client: req.client._id,
+            [field]: req.staff._id,
+            isDeleted: false,
+          })
+        : null;
+      if (!own) throw new Error("auth.forbidden");
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 // `blockTeachingRoles` — authenticator.middleware.js dan (avval shu faylda
 // nusxasi bor edi; endi guruh marshrutlari ham o'shanga tayangani uchun
 // yagona joyga ko'chirildi). O'quvchining BATAFSIL kartochkasi o'qituvchi
@@ -52,6 +108,23 @@ router.use(tenantAuth);
 router.use(requireActiveSubscription);
 
 router.post("/", requireTenantPermission("student:create"), studentController.create);
+// Excel'dan (yoki paste) guruhga ko'plab o'quvchi import qilish — bir xil
+// `student:create` ruxsati, POST "/" bilan bir xil himoya darajasi
+// (API_CONTRACT_student_import.md §3).
+router.post("/import", requireTenantPermission("student:create"), studentController.importBulk);
+// Importni bekor qilish (API_CONTRACT_import_undo.md §1) — `/:id` bilan
+// TO'QNASHMASLIGI uchun `/import/batches/...` aniq yo'llardan OLDIN
+// e'lon qilinadi (Express birinchi mos kelgan marshrutni tanlaydi).
+router.get(
+  "/import/batches/latest",
+  requireTenantPermission("student:create"),
+  studentController.latestImportBatch,
+);
+router.post(
+  "/import/batches/:id/undo",
+  requireTenantPermission("student:create"),
+  studentController.undoImportBatch,
+);
 router.get(
   "/",
   requireTenantPermission("student:view"),
@@ -94,10 +167,20 @@ router.patch(
   requireTenantPermission("student:update"),
   studentController.update,
 );
+router.patch("/:id/contact", requireStudentContact, studentController.updateContact);
 router.patch(
   "/:id/groups/:groupEntryId",
   requireTenantPermission("student:update"),
   studentController.updateGroupPrice,
+);
+// Ko'chirishdan oldingi qarz(lar) va avans — to'liq almashtirish
+// (API_CONTRACT_opening_debts.md §3.2). Moliyaviy ma'lumot bo'lgani uchun
+// o'qituvchi rollariga yopiq.
+router.put(
+  "/:id/groups/:groupEntryId/opening",
+  blockTeachingRoles,
+  requireTenantPermission("student:update"),
+  studentController.updateOpening,
 );
 // O'quvchini guruhdan chiqarish — Resepshin/Boshliq ishi. O'qituvchi va
 // yordamchi o'qituvchi uchun ROL darajasida yopiq (ruxsat ro'yxati ham
@@ -108,6 +191,24 @@ router.patch(
   requireTenantPermission("student:update"),
   studentController.leaveGroup,
 );
+// Guruhdan guruhga o'tkazish — bitta atomar amal
+// (API_CONTRACT_student_transfer.md §3). `leave` bilan bir xil himoya +
+// tarif flagi.
+router.post(
+  "/:id/groups/:groupEntryId/transfer",
+  blockTeachingRoles,
+  requireTenantPermission("student:update"),
+  requireTariffFeature("student.transfer"),
+  studentController.transferGroup,
+);
+// A'zolikni arxivlash — "o'chirish" o'rniga (API_CONTRACT_archive.md).
+// O'quvchi HUJJATI o'chmaydi: faqat SHU guruhdagi a'zoligi arxivga o'tadi.
+router.patch(
+  "/:id/groups/:groupEntryId/archive",
+  blockTeachingRoles,
+  requireTenantPermission("student:delete"),
+  studentController.archiveGroupEntry,
+);
 router.post(
   "/:id/groups/:groupEntryId/payments",
   blockTeachingRoles,
@@ -115,9 +216,16 @@ router.post(
   studentController.addPayment,
 );
 router.patch(
+  "/:id/groups/:groupEntryId/payments/:paymentId/month",
+  blockTeachingRoles,
+  requireTenantPermission("payment:create"),
+  studentController.movePaymentMonth,
+);
+router.patch(
   "/:id/groups/:groupEntryId/payments/:paymentId/cancel",
   blockTeachingRoles,
   requireTenantPermission("payment:refund"),
+  requireTariffFeature("finance.refund"),
   studentController.cancelPayment,
 );
 

@@ -5,6 +5,7 @@ const {
   requireActiveSubscription,
   requireTenantPermission,
   requireTeacherGroup,
+  requireTariffFeature,
   teacherScope,
 } = require("../middlewares/authenticator.middleware");
 
@@ -13,6 +14,7 @@ const router = Router();
 router.use(tenantAuth);
 router.use(requireActiveSubscription);
 router.use(teacherScope);
+router.use(requireTariffFeature("student.rate"));
 
 // Baho — davomat bilan bir xil ruxsatlar doirasida: ko'rish `attendance:view`,
 // qo'yish `attendance:create`. O'qituvchi faqat O'Z guruhida

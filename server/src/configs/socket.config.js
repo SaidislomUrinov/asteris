@@ -49,7 +49,15 @@ const authenticateClientSocket = async (socket, next) => {
     if (role === "owner") {
       const accessKey = keyConfig.clientAccess(payload._id);
       const cachedAccess = await redisUtil.get(accessKey);
-      if (!cachedAccess || cachedAccess !== token)
+      // REST clientAuth (authenticator.middleware.js) bitta-qurilma tekshiruvini
+      // ENFORCE_SINGLE_DEVICE_SESSION bilan gate qiladi (dev'da o'chiq) — socket
+      // ham AYNAN shu qoidaga bo'ysunishi kerak, aks holda Redis'dagi cache
+      // token bilan localStorage'dagi eskirgan token farqlanganda REST ishlab
+      // turadi-yu, socket abadiy "Unauthorized" bilan rad etaveradi.
+      if (
+        !cachedAccess ||
+        (env.ENFORCE_SINGLE_DEVICE_SESSION && cachedAccess !== token)
+      )
         return next(new Error("Unauthorized"));
 
       socket.data.role = "owner";
@@ -58,7 +66,10 @@ const authenticateClientSocket = async (socket, next) => {
     } else {
       const accessKey = keyConfig.staffAccess(payload._id);
       const cachedAccess = await redisUtil.get(accessKey);
-      if (!cachedAccess || cachedAccess !== token)
+      if (
+        !cachedAccess ||
+        (env.ENFORCE_SINGLE_DEVICE_SESSION && cachedAccess !== token)
+      )
         return next(new Error("Unauthorized"));
 
       const Staff = require("../models/Staff");

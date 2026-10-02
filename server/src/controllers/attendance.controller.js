@@ -1,4 +1,5 @@
 const attendanceService = require("../services/attendance.service");
+const { MONTH_RE } = require("../utils/gradeScore.util");
 
 module.exports = {
   getSettings: async (req, res, next) => {
@@ -69,6 +70,15 @@ module.exports = {
     }
   },
 
+  getGroupQrCards: async (req, res, next) => {
+    try {
+      const data = await attendanceService.getGroupQrCards(req.client._id, req.params.groupId, req.staff?.center || null);
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   scanQr: async (req, res, next) => {
     try {
       // Hodim bo'lsa filiali uzatiladi — faqat o'z filialining
@@ -84,6 +94,19 @@ module.exports = {
   getStats: async (req, res, next) => {
     try {
       const data = await attendanceService.getStats(req.client._id, req.params.groupId, req.query.month);
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  getStudentsSummary: async (req, res, next) => {
+    try {
+      // `?month=YYYY-MM` ixtiyoriy (default — joriy oy). server/ da zod
+      // ulanmagan (center.service izohi) — qo'lda tekshiruv.
+      const { month } = req.query;
+      if (month !== undefined && !MONTH_RE.test(String(month))) throw new Error("validation.month");
+      const data = await attendanceService.getStudentsSummary(req.client._id, req.params.groupId, month);
       return res.send({ ok: true, data });
     } catch (error) {
       next(error);

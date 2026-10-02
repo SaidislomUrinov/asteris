@@ -1,6 +1,7 @@
 const staffService = require("../services/staff.service");
 const clientService = require("../services/client.service");
 const { sendExcel, THEME } = require("../utils/excel.util");
+const { buildActor } = require("../utils/audit.util");
 
 const ROLE_LABELS = { manager: "Menejer", reception: "Resepshin", teacher: "O'qituvchi" };
 
@@ -79,8 +80,8 @@ module.exports = {
 
   remove: async (req, res, next) => {
     try {
-      await staffService.remove(req.client._id, req.params.id);
-      return res.send({ ok: true, msg: "staff.deleted" });
+      await staffService.remove(req.client._id, req.params.id, buildActor(req));
+      return res.send({ ok: true, msg: "archive.archived" });
     } catch (error) {
       next(error);
     }
@@ -106,30 +107,20 @@ module.exports = {
 
   signIn: async (req, res, next) => {
     try {
-      const { data, access, refresh } = await staffService.signIn(req.body);
+      const { data, access } = await staffService.signIn(req.body);
       // `verify` bilan bir xil payload — aks holda login'dan keyin premium
       // bo'limlar (QR davomat) faqat sahifa yangilangach paydo bo'lardi.
-      const [{ active }, tariffFeatures] = await Promise.all([
+      const [{ active }, tariffFeatures, tariffName] = await Promise.all([
         clientService.getSubscriptionStatus(data.client),
         clientService.getTariffFeatures(data.client),
+        clientService.getTariffName(data.client),
       ]);
       return res.send({
         ok: true,
-        data: { ...data, subscriptionActive: active, tariffFeatures },
+        data: { ...data, subscriptionActive: active, tariffFeatures, tariffName },
         access,
-        refresh,
         msg: "auth.success",
       });
-    } catch (error) {
-      next(error);
-    }
-  },
-
-  refreshToken: async (req, res, next) => {
-    try {
-      const { refresh } = req.body;
-      const { data, access, refresh: newRefresh } = await staffService.refreshToken(refresh);
-      return res.send({ ok: true, data, access, refresh: newRefresh, msg: "auth.success" });
     } catch (error) {
       next(error);
     }
@@ -140,13 +131,14 @@ module.exports = {
       // Tarif flaglari ham qo'shiladi — hodim panelida premium bo'limlar
       // (masalan "QR davomat") shu ro'yxatga qarab ko'rsatiladi
       // (docs/API_CONTRACT_qr_attendance_staff.md).
-      const [{ active }, tariffFeatures] = await Promise.all([
+      const [{ active }, tariffFeatures, tariffName] = await Promise.all([
         clientService.getSubscriptionStatus(req.staff.client),
         clientService.getTariffFeatures(req.staff.client),
+        clientService.getTariffName(req.staff.client),
       ]);
       return res.send({
         ok: true,
-        data: { ...req.staff, subscriptionActive: active, tariffFeatures },
+        data: { ...req.staff, subscriptionActive: active, tariffFeatures, tariffName },
       });
     } catch (error) {
       next(error);
@@ -166,6 +158,15 @@ module.exports = {
     try {
       const data = await staffService.updateOwnProfile(req.staff._id, req.body);
       return res.send({ ok: true, data, msg: "staff.profileUpdated" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  markIntroSeen: async (req, res, next) => {
+    try {
+      await staffService.markIntroSeen(req.staff._id);
+      return res.send({ ok: true, msg: "auth.introSeen" });
     } catch (error) {
       next(error);
     }

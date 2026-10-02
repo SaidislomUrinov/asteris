@@ -19,7 +19,7 @@ const schema = new Schema({
     user: { type: String, default: "" },
     // MAXFIY — DTO'da hech qachon ochiq qaytmaydi (hasPassword bayrog'i bilan).
     pass: { type: String, default: "" },
-    fromName: { type: String, default: "Asteris" },
+    fromName: { type: String, default: "WENET" },
     fromEmail: { type: String, default: "" },
   },
 
@@ -29,11 +29,18 @@ const schema = new Schema({
     botToken: { type: String, default: "" },
     // Tizim ogohlantirishlari boradigan chatlar (bot /chatid orqali topiladi).
     alertChatIds: { type: [String], default: [] },
+    // Lead xabarlari (yangi lead + status o'zgarishi) boradigan chatlar —
+    // reklama/sotuv jamoasi uchun. Bo'sh bo'lsa `alertChatIds`ga ketadi.
+    leadChatIds: { type: [String], default: [] },
+    // Ota-ona Telegram WebApp manzili (https). Bo'sh bo'lsa bot xabarlarida
+    // "Batafsil ko'rish" tugmasi chiqmaydi.
+    parentWebAppUrl: { type: String, default: "" },
     alerts: {
       serverError: { type: Boolean, default: true },
       healthDegraded: { type: Boolean, default: true },
       subscriptionExpiring: { type: Boolean, default: true },
       newLead: { type: Boolean, default: true },
+      leadStatus: { type: Boolean, default: true },
     },
   },
 

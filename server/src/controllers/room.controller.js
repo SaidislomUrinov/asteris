@@ -1,5 +1,6 @@
 const roomService = require("../services/room.service");
 const { sendExcel, THEME } = require("../utils/excel.util");
+const { buildActor } = require("../utils/audit.util");
 
 const DAY_LABELS = { mon: "Dushanba", tue: "Seshanba", wed: "Chorshanba", thu: "Payshanba", fri: "Juma", sat: "Shanba", sun: "Yakshanba" };
 const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
@@ -19,6 +20,15 @@ module.exports = {
       const { page, search, center } = req.query;
       const { data, meta } = await roomService.list(req.client._id, { page, search, center });
       return res.send({ ok: true, data, meta });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  lookup: async (req, res, next) => {
+    try {
+      const data = await roomService.lookup(req.client._id, { center: req.query.center });
+      return res.send({ ok: true, data });
     } catch (error) {
       next(error);
     }
@@ -129,8 +139,8 @@ module.exports = {
 
   remove: async (req, res, next) => {
     try {
-      await roomService.remove(req.client._id, req.params.id);
-      return res.send({ ok: true, msg: "room.deleted" });
+      await roomService.remove(req.client._id, req.params.id, buildActor(req));
+      return res.send({ ok: true, msg: "archive.archived" });
     } catch (error) {
       next(error);
     }

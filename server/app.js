@@ -17,6 +17,9 @@ const errorHandler = require("./src/utils/error.util");
 
 const app = express();
 
+// Nginx ortida: rate-limit va req.ip haqiqiy mijoz IP'sini X-Forwarded-For'dan olsin.
+app.set("trust proxy", 1);
+
 app.use(helmet());
 // exposedHeaders: Content-Disposition — Excel export fayl nomini frontend
 // (cross-origin, 5173→5000) o'qiy olishi uchun (aks holda brauzer bu
@@ -24,7 +27,17 @@ app.use(helmet());
 app.use(cors({ origin: env.ORIGINS, credentials: true, exposedHeaders: ["Content-Disposition"] }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(fileUpload());
+// Global 10MB limit. Yangilik videosi (≤100MB) yuklanadigan yo'l bundan
+// chetlab o'tadi — u `adminNews.routes.js` da o'zining 100MB limitli
+// fileUpload'iga ega (API_CONTRACT_news.md §2). Aks holda global middleware
+// 10MB'dan katta videoni route'ga yetmasdan 413 bilan kesib tashlardi.
+const NEWS_MEDIA_PATH = "/api/admin/news/media";
+const globalFileUpload = fileUpload({ limits: { fileSize: 10 * 1024 * 1024 }, abortOnLimit: true });
+app.use((req, res, next) =>
+  req.path === NEWS_MEDIA_PATH || req.path === `${NEWS_MEDIA_PATH}/`
+    ? next()
+    : globalFileUpload(req, res, next),
+);
 
 // helmet() global CORP header (same-origin) static fayllarni boshqa origin'dan
 // (masalan client:5174, admin:5173) <img> orqali yuklashni brauzerda bloklaydi —
@@ -65,11 +78,15 @@ const start = async () => {
   // rejimida har worker'da ishga tushadi, lekin Redis qulfi tufayli har
   // "tick" faqat bittasida bajariladi.
   require("./src/jobs/lessonReminder.job").start();
+  require("./src/jobs/lessonFinished.job").start();
+  require("./src/jobs/parentDebt.job").start();
   require("./src/jobs/morningReport.job").start();
   require("./src/jobs/eveningReport.job").start();
   require("./src/jobs/healthCheck.job").start();
   require("./src/jobs/subscriptionReminder.job").start();
+  require("./src/jobs/subscriptionPaymentExpire.job").start();
   require("./src/jobs/backup.job").start();
+  require("./src/jobs/badges.job").start();
 
   // Telegram bot — faqat platforma sozlamalarida yoqilgan va token mavjud
   // bo'lsa ko'tariladi. Cluster'da Redis qulfi orqali faqat BITTA worker

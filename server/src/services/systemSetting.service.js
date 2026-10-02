@@ -12,7 +12,24 @@ const { getNow, formatDate } = require("../utils/date.util");
 const CACHE_KEY = "system_setting";
 const CACHE_TTL = 3600;
 
-const BACKUP_DIR = path.join(process.cwd(), "backups");
+const BACKUP_DIR = path.resolve(process.cwd(), env.BACKUP_DIR || "./backups");
+// Yuklangan fayllar (logo, rasm, shrift, sertifikat) — app.js dagi /uploads static.
+const UPLOADS_DIR = path.join(__dirname, "..", "..", "uploads");
+
+// Bola-protsessni ishga tushirib, tugashini kutadi.
+const runProcess = (cmd, args, notFoundMsg) =>
+  new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, { stdio: ["ignore", "ignore", "pipe"] });
+    let stderr = "";
+    child.stderr?.on("data", (chunk) => {
+      stderr += String(chunk);
+    });
+    child.on("error", () => reject(new Error(notFoundMsg)));
+    child.on("close", (code) => {
+      if (code === 0) return resolve();
+      reject(new Error(stderr.trim().split("\n").pop() || "settings.backupFailed"));
+    });
+  });
 
 // Maxfiy maydonlar javobda HECH QACHON ochiq ketmaydi — faqat "bor/yo'q".
 const DTO = (s) => ({
@@ -30,11 +47,14 @@ const DTO = (s) => ({
     enabled: !!s.telegram?.enabled,
     hasBotToken: !!s.telegram?.botToken,
     alertChatIds: s.telegram?.alertChatIds || [],
+    leadChatIds: s.telegram?.leadChatIds || [],
+    parentWebAppUrl: s.telegram?.parentWebAppUrl || "",
     alerts: {
       serverError: s.telegram?.alerts?.serverError !== false,
       healthDegraded: s.telegram?.alerts?.healthDegraded !== false,
       subscriptionExpiring: s.telegram?.alerts?.subscriptionExpiring !== false,
       newLead: s.telegram?.alerts?.newLead !== false,
+      leadStatus: s.telegram?.alerts?.leadStatus !== false,
     },
   },
   storage: {
@@ -118,8 +138,11 @@ const buildUpdate = (body, current) => {
     if (t.botToken === null) $set["telegram.botToken"] = "";
     if (Array.isArray(t.alertChatIds))
       $set["telegram.alertChatIds"] = t.alertChatIds.map((id) => String(id).trim()).filter(Boolean);
+    if (Array.isArray(t.leadChatIds))
+      $set["telegram.leadChatIds"] = t.leadChatIds.map((id) => String(id).trim()).filter(Boolean);
+    if (t.parentWebAppUrl !== undefined) $set["telegram.parentWebAppUrl"] = String(t.parentWebAppUrl || "").trim();
     if (t.alerts) {
-      for (const k of ["serverError", "healthDegraded", "subscriptionExpiring", "newLead"]) {
+      for (const k of ["serverError", "healthDegraded", "subscriptionExpiring", "newLead", "leadStatus"]) {
         if (t.alerts[k] !== undefined) $set[`telegram.alerts.${k}`] = !!t.alerts[k];
       }
     }
@@ -167,21 +190,18 @@ const runBackup = async () => {
   const target = path.join(BACKUP_DIR, file);
   const startedAt = Date.now();
 
-  await new Promise((resolve, reject) => {
-    const child = spawn("mongodump", [`--uri=${env.MONGO_URI}`, "--gzip", `--archive=${target}`], {
-      stdio: ["ignore", "ignore", "pipe"],
-    });
+  await runProcess("mongodump", [`--uri=${env.MONGO_URI}`, "--gzip", `--archive=${target}`], "settings.mongodumpNotFound");
 
-    let stderr = "";
-    child.stderr?.on("data", (chunk) => {
-      stderr += String(chunk);
-    });
-    child.on("error", () => reject(new Error("settings.mongodumpNotFound")));
-    child.on("close", (code) => {
-      if (code === 0) return resolve();
-      reject(new Error(stderr.trim().split("\n").pop() || "settings.backupFailed"));
-    });
-  });
+  // uploads/ ham zaxiralanadi — busiz tiklangan bazadagi rasm/fayl havolalari o'lik bo'ladi.
+  let uploadsFile = null;
+  if (fs.existsSync(UPLOADS_DIR)) {
+    uploadsFile = `asteris-uploads-${stamp}.tar.gz`;
+    await runProcess(
+      "tar",
+      ["-czf", path.join(BACKUP_DIR, uploadsFile), "-C", path.dirname(UPLOADS_DIR), path.basename(UPLOADS_DIR)],
+      "settings.backupFailed",
+    );
+  }
 
   const sizeMb = Number((fs.statSync(target).size / 1024 / 1024).toFixed(2));
   const durationMs = Date.now() - startedAt;
@@ -193,7 +213,7 @@ const runBackup = async () => {
   );
   await invalidate();
 
-  return { file, sizeMb, durationMs };
+  return { file, uploadsFile, sizeMb, durationMs };
 };
 
 // `keepDays` dan eski backup fayllarini o'chiradi (backup.job.js chaqiradi).
@@ -257,7 +277,7 @@ module.exports = {
 
     const result = await require("../utils/mail.util").sendMail({
       to: String(to).trim(),
-      subject: "Asteris — sinov xati",
+      subject: "WENET — sinov xati",
       template: "test",
       data: { date: formatDate(getNow()) },
     });
@@ -269,7 +289,7 @@ module.exports = {
   testTelegram: async () => {
     const result = await require("../bot/alert").sendAlert(
       "test",
-      { title: "Asteris — sinov xabari", body: `Vaqt: ${formatDate(getNow())}` },
+      { title: "WENET — sinov xabari", body: `Vaqt: ${formatDate(getNow())}` },
       { force: true },
     );
 

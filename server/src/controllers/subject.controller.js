@@ -1,5 +1,6 @@
 const subjectService = require("../services/subject.service");
 const { sendExcel, THEME } = require("../utils/excel.util");
+const { buildActor } = require("../utils/audit.util");
 
 module.exports = {
   create: async (req, res, next) => {
@@ -66,8 +67,8 @@ module.exports = {
 
   remove: async (req, res, next) => {
     try {
-      await subjectService.remove(req.client._id, req.params.id);
-      return res.send({ ok: true, msg: "subject.deleted" });
+      await subjectService.remove(req.client._id, req.params.id, buildActor(req));
+      return res.send({ ok: true, msg: "archive.archived" });
     } catch (error) {
       next(error);
     }

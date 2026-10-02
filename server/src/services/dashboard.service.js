@@ -7,6 +7,7 @@ const Subject = require("../models/Subject");
 const Room = require("../models/Room");
 const studentService = require("./student.service");
 const dashboardCache = require("../utils/dashboardCache.util");
+const { monthRolloverAdjustment } = require("../utils/rollover.util");
 const {
   currentMonthString,
   formatMonth,
@@ -86,8 +87,11 @@ module.exports = {
       for (const entry of student.groups) {
         if (String(entry.client) !== clientStr) continue;
         if (centerStr && String(entry.center) !== centerStr) continue;
+        // Arxivlangan a'zolik (entry.status "archived") statistikaga
+        // kirmasligi kerak — faqat faol a'zoliklar hisoblanadi.
+        if (entry.status !== "active") continue;
 
-        if (entry.status === "active" && !counted) {
+        if (!counted) {
           activeStudents += 1;
           counted = true;
         }
@@ -109,6 +113,22 @@ module.exports = {
         }
       }
     }
+
+    // "3 kun ketma-ket kelmadi" rollover: o'tkazilgan summa shu oy tushumidan
+    // chiqib, keyingi oyga qo'shiladi (utils/rollover.util.js).
+    monthRevenue = Math.max(
+      0,
+      monthRevenue +
+        monthRolloverAdjustment(
+          students,
+          null,
+          m,
+          (e) =>
+            String(e.client) === clientStr &&
+            (!centerStr || String(e.center) === centerStr) &&
+            e.status === "active",
+        ),
+    );
 
     recentPayments.sort((a, b) => b.dateUnix - a.dateUnix);
 

@@ -62,6 +62,15 @@ module.exports = {
     }
   },
 
+  updateProfile: async (req, res, next) => {
+    try {
+      const data = await adminService.updateProfile(req.admin._id, req.body);
+      return res.send({ ok: true, data, msg: "admin.profileUpdated" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   signOut: async (req, res, next) => {
     try {
       const admin = req.admin;

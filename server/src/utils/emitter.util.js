@@ -10,11 +10,21 @@ const reportCache = require("./reportCache.util");
 const CACHE_BUSTING = new Set([
   "payment:created",
   "payment:cancelled",
+  // To'lov boshqa oyga o'tkazildi — oylik tushum/qarzdorlik o'zgaradi
+  // (API_CONTRACT_payment_move_month.md).
+  "payment:updated",
   "student:leftGroup",
   "attendance:marked",
   "expense:created",
   "expense:updated",
   "salary:updated",
+  // Arxivlash/qaytarish qarzdorlik va o'quvchi/guruh sanoqlarini darhol
+  // o'zgartiradi (API_CONTRACT_archive.md §3) — kesh bekor qilinmasa
+  // Dashboard eski raqamni ko'rsatib qolardi.
+  "archive:changed",
+  // Narx yoki ko'chirishdan oldingi qarz o'zgarishi qarzdorlikni darhol
+  // o'zgartiradi (API_CONTRACT_opening_debts.md §3.2 shu eventni ishlatadi).
+  "student:priceUpdated",
 ]);
 
 /**

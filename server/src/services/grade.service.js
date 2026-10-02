@@ -1,8 +1,23 @@
 const Grade = require("../models/Grade");
 const Group = require("../models/Group");
 const Student = require("../models/Student");
+const Attendance = require("../models/Attendance");
 const { todayString, currentMonthString } = require("../utils/date.util");
 const emit = require("../utils/emitter.util");
+const { sourceWindowsOf, transferredGrades } = require("../utils/transferOverlay.util");
+
+// Guruhga boshqa guruhdan O'TKAZILGAN o'quvchilar (manba zanjiri bilan) —
+// ularning oldingi baholari shu guruh ko'rinishiga qo'shiladi
+// (API_CONTRACT_student_transfer.md §4).
+const transferredStudentsOf = (groupId, studentId = null) =>
+  Student.find(
+    {
+      ...(studentId ? { _id: studentId } : {}),
+      isDeleted: false,
+      groups: { $elemMatch: { group: groupId, "transferredFrom.0": { $exists: true } } },
+    },
+    { _id: 1, "groups.group": 1, "groups.transferredFrom": 1 },
+  );
 
 const DTO = (g) => ({
   _id: String(g._id),
@@ -86,6 +101,25 @@ module.exports = {
       };
     }
 
+    // Oldingi guruhdagi baholar — o'z sanasi bilan, faqat o'qish uchun.
+    const carried = await transferredGrades(sourceWindowsOf(await transferredStudentsOf(groupId), groupId), {
+      $gte: `${targetMonth}-01`,
+      $lte: `${targetMonth}-31`,
+    });
+    for (const [sid, map] of carried) {
+      if (!byStudent[sid]) byStudent[sid] = {};
+      for (const [date, rec] of map) {
+        if (byStudent[sid][date]) continue;
+        byStudent[sid][date] = {
+          value: rec.value,
+          note: rec.note,
+          teacher: rec.teacher,
+          transferred: true,
+          fromGroup: rec.fromGroup,
+        };
+      }
+    }
+
     // O'rtacha baho — o'quvchining shu oydagi barcha baholari bo'yicha.
     const averages = {};
     for (const [sid, map] of Object.entries(byStudent)) {
@@ -106,7 +140,7 @@ module.exports = {
 
     const { studentId, value, note = "", date } = body;
     const num = Number(value);
-    if (!Number.isInteger(num) || num < 1 || num > 5) throw new Error("grade.invalidValue");
+    if (!Number.isInteger(num) || num < 1 || num > 10) throw new Error("grade.invalidValue");
 
     const group = await assertGroup(clientId, groupId, scopeOf(staff));
 
@@ -122,6 +156,14 @@ module.exports = {
     }).select("_id fullName");
     if (!student) throw new Error("student.notInGroup");
 
+    // Kelmagan o'quvchiga baho qo'yib bo'lmaydi — davomat "absent" yoki
+    // "excused" (sababli) bo'lsa rad etiladi. Frontend ham shu holatni
+    // oldindan yashiradi, bu yerda yakuniy tekshiruv (haqiqat manbai backend).
+    const session = await Attendance.findOne({ group: groupId, date: target });
+    const record = session?.records.find((r) => String(r.student) === String(studentId));
+    if (record?.status === "absent") throw new Error("grade.studentAbsent");
+    if (record?.status === "excused") throw new Error("grade.studentExcused");
+
     // Mavjud bahoni USTIGA yozish ham "tahrirlash" — yordamchi boshqa
     // kishi qo'ygan bahoga tega olmaydi.
     const existing = await Grade.findOne({ group: groupId, student: studentId, date: target });
@@ -135,6 +177,7 @@ module.exports = {
           center: group.center,
           teacher: staff?._id || null,
           value: num,
+          scale: 10,
           note: String(note || "").trim().slice(0, 200),
         },
       },
@@ -172,24 +215,35 @@ module.exports = {
   },
 
   // O'quvchi baholari XULOSASI — Student Detail sahifasi uchun.
-  // Har guruh bo'yicha: umumiy o'rtacha ("4.5 / 5") va FAQAT o'zi o'qigan
+  // Har guruh bo'yicha: umumiy o'rtacha ("8.5 / 10") va FAQAT o'zi o'qigan
   // oylar kesimida o'rtacha. Baho yo'q oylar ro'yxatga tushmaydi.
   studentSummary: async (clientId, studentId) => {
     const student = await Student.findOne({ _id: studentId, isDeleted: false }).select("groups");
     if (!student) throw new Error("student.notFound");
 
     // Faqat SHU clientning guruh yozuvlari (Student hujjati tenant'lararo umumiy).
-    const groupIds = student.groups
-      .filter((g) => String(g.client) === String(clientId))
-      .map((g) => g.group);
+    const entries = student.groups.filter((g) => String(g.client) === String(clientId));
+    const groupIds = entries.map((g) => g.group);
     if (!groupIds.length) return [];
 
     const grades = await Grade.find({ student: studentId, group: { $in: groupIds } }).sort({
       date: 1,
     });
 
+    // O'tkazilgan a'zolik oldingi guruh baholarini ham o'z xulosasiga oladi
+    // (API_CONTRACT_student_transfer.md §4) — guruh matritsasi bilan bir xil.
+    const rows = grades.map((g) => ({ group: String(g.group), date: g.date, value: g.value }));
+    for (const entry of entries) {
+      if (!entry.transferredFrom?.length) continue;
+      const carried = await transferredGrades(sourceWindowsOf([student], entry.group));
+      for (const [date, rec] of carried.get(String(studentId)) || []) {
+        rows.push({ group: String(entry.group), date, value: rec.value });
+      }
+    }
+    rows.sort((a, b) => (a.date < b.date ? -1 : 1));
+
     const byGroup = new Map();
-    for (const g of grades) {
+    for (const g of rows) {
       const gid = String(g.group);
       if (!byGroup.has(gid)) byGroup.set(gid, { values: [], months: new Map() });
       const bucket = byGroup.get(gid);
@@ -217,6 +271,26 @@ module.exports = {
   listByStudent: async (clientId, groupId, studentId, scope = null) => {
     await assertGroup(clientId, groupId, scope);
     const grades = await Grade.find({ group: groupId, student: studentId }).sort({ date: -1 });
-    return grades.map(DTO);
+    const own = grades.map(DTO);
+
+    const carried = await transferredGrades(
+      sourceWindowsOf(await transferredStudentsOf(groupId, studentId), groupId),
+    );
+    const ownDates = new Set(own.map((g) => g.date));
+    const extra = [...(carried.get(String(studentId)) || [])]
+      .filter(([date]) => !ownDates.has(date))
+      .map(([date, rec]) => ({
+        _id: String(rec._id),
+        group: rec.fromGroup,
+        student: String(studentId),
+        date,
+        value: rec.value,
+        teacher: rec.teacher,
+        note: rec.note,
+        createdAt: rec.createdAt,
+        transferred: true,
+      }));
+
+    return [...own, ...extra].sort((a, b) => (a.date < b.date ? 1 : -1));
   },
 };

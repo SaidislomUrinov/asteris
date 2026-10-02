@@ -39,6 +39,11 @@ const syncCreditForDate = async (clientId, groupId, date, shouldCredit) => {
 };
 
 module.exports = {
+  // Center darajasidagi kalendar (calendar.service.js) tomonidan qayta
+  // ishlatiladi — bitta guruh + sana uchun credit sync (chargeable:false
+  // kabi) logikasi shu yerda bir joyda saqlanadi.
+  syncCreditForDate,
+
   // LessonCalendar oy ko'rinishida qaysi sanalar dam olish kuni deb
   // belgilanganini ko'rsatish uchun.
   listForMonth: async (clientId, groupId, month) => {

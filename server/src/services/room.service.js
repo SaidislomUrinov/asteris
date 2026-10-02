@@ -5,6 +5,8 @@ const Subject = require("../models/Subject");
 const Staff = require("../models/Staff");
 const Student = require("../models/Student");
 const { getNow } = require("../utils/date.util");
+const audit = require("../utils/audit.util");
+const { emitArchiveChanged } = require("../utils/archive.util");
 
 const PAGE_SIZE = 50;
 
@@ -76,6 +78,26 @@ module.exports = {
     });
 
     return DTO(room);
+  },
+
+  /**
+   * Tanlov ro'yxati (lookup) — guruh yaratish/faollashtirish, jadval kabi
+   * oynalarda xona TANLASH uchun. `room:view` ruxsatini TALAB QILMAYDI:
+   * o'qituvchi/yordamchi bu ruxsatni printsipial ololmaydi (whitelist uni
+   * kesib tashlaydi), lekin guruhni faollashtirishda xona ko'rsatishi shart.
+   * Shu sabab bu yerda faqat ENG ZARUR maydonlar qaytadi — statistika,
+   * sig'im tafsilotlari va boshqa boshqaruv ma'lumotlari yo'q.
+   * Filial izolatsiyasi `tenantAuth` bergan `center` orqali saqlanadi.
+   */
+  lookup: async (clientId, { center = "" }) => {
+    const filter = { client: clientId, isDeleted: false };
+    if (center) filter.center = center;
+    const rooms = await Room.find(filter).select("name center").sort({ name: 1 }).lean();
+    return rooms.map((r) => ({
+      _id: String(r._id),
+      name: r.name,
+      center: String(r.center),
+    }));
   },
 
   list: async (clientId, { page = 1, search = "", center = "" }) => {
@@ -237,13 +259,24 @@ module.exports = {
     return DTO(room);
   },
 
-  remove: async (clientId, id) => {
+  // Arxivlash — API_CONTRACT_archive.md. Bog'langan guruhlar TEGILMAYDI
+  // (kaskad yo'q), guruhda xona bog'lanishi shunchaki bo'sh ko'rinadi.
+  remove: async (clientId, id, actor = null) => {
     const room = await Room.findOne({ _id: id, client: clientId, isDeleted: false });
     if (!room) throw new Error("room.notFound");
 
     room.isDeleted = true;
     room.deletedAt = getNow();
     await room.save();
+
+    emitArchiveChanged(clientId, room.center, "room", room._id, "archived");
+    void audit.log({
+      actor,
+      client: clientId,
+      center: room.center,
+      action: "room:archived",
+      entity: { type: "room", id: room._id, label: room.name },
+    });
 
     return true;
   },

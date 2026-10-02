@@ -27,6 +27,15 @@ const schema = new Schema({
     type: Boolean,
     default: false,
   },
+  // true = yuqoridagi "keyingi oyga o'tkazish" HAR KELMAGAN KUN uchun emas,
+  // faqat o'quvchi KETMA-KET 3 ta darsga kelmaganda ishlaydi: 3 kunlik summa
+  // shu oy o'qituvchi percent oyligi va markaz tushumidan keyingi oyga
+  // o'tkaziladi, o'quvchining keyingi to'lovida chegirma bo'ladi
+  // (utils/rollover.util.js). false = eski xatti-harakat (har kun darhol kredit).
+  rolloverOnConsecutiveAbsence: {
+    type: Boolean,
+    default: false,
+  },
   // true = shu kun uchun pul o'qituvchi oyligidan USHLAB QOLINADI (kesiladi).
   // false = ushlab qolinmaydi (keyingi oyga o'tkaziladi, o'qituvchi
   // jarimalanmaydi). Sababli kelmaganda ushlash odatda YO'Q (default false),

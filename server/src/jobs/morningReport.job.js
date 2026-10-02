@@ -8,6 +8,7 @@ const Student = require("../models/Student");
 const telegramService = require("../services/telegram.service");
 const { t } = require("../bot/i18n");
 const { escapeHtml } = require("../bot/notify");
+const { bulletList, blockList } = require("../bot/format");
 const { todayString, todayDayCode } = require("../utils/date.util");
 
 const TZ = "Asia/Tashkent";
@@ -62,11 +63,16 @@ const buildCenterText = (lang, centerName, summary) => {
     lines.push(t(lang, "morningNoLessons"));
     return lines.join("\n");
   }
-  lines.push(`📚 ${t(lang, "morningLessonsToday")}: <b>${summary.lessonsCount}</b>`);
-  lines.push(`🧑‍🎓 ${t(lang, "morningStudentsExpected")}: <b>${summary.studentsExpected}</b>`);
-  if (summary.rooms.length) lines.push(`🏠 ${t(lang, "morningRooms")}: ${escapeHtml(summary.rooms.join(", "))}`);
-  if (summary.teachers.length)
-    lines.push(`👩‍🏫 ${t(lang, "morningTeachers")}: ${escapeHtml(summary.teachers.join(", "))}`);
+  lines.push(`${t(lang, "morningLessonsToday")}: <b>${summary.lessonsCount}</b>`);
+  lines.push(`${t(lang, "morningStudentsExpected")}: <b>${summary.studentsExpected}</b>`);
+  if (summary.rooms.length) {
+    lines.push("", `<b>${t(lang, "morningRooms")}:</b>`);
+    lines.push(bulletList(summary.rooms.map((r) => escapeHtml(r))));
+  }
+  if (summary.teachers.length) {
+    lines.push("", `<b>${t(lang, "morningTeachers")}:</b>`);
+    lines.push(bulletList(summary.teachers.map((n) => escapeHtml(n))));
+  }
   return lines.join("\n");
 };
 
@@ -135,13 +141,19 @@ const sendTeacherReports = async (dayCode) => {
         if (!groups.length) {
           lines.push(t(lang, "morningNoLessonsMine"));
         } else {
-          for (const g of groups) {
-            const room = g.room ? roomMap[String(g.room)] : "";
-            lines.push(
-              `\n⏰ ${g.startTime}–${g.endTime}\n📘 ${escapeHtml(subjectMap[String(g.subject)] || "?")} - ${g.activeId}` +
-                (room ? `\n🏠 ${escapeHtml(room)}` : ""),
-            );
-          }
+          lines.push(
+            "",
+            blockList(
+              groups.map((g) => ({
+                title: escapeHtml(`${subjectMap[String(g.subject)] || "?"} - ${g.activeId}`),
+                lines: [
+                  [`${g.startTime}-${g.endTime}`, g.room ? escapeHtml(roomMap[String(g.room)] || "") : ""]
+                    .filter(Boolean)
+                    .join(" · "),
+                ],
+              })),
+            ),
+          );
         }
         return lines.join("\n");
       })

@@ -5,6 +5,7 @@ const {
   requireActiveSubscription,
   requireTenantPermission,
   requireTeacherGroup,
+  requireTariffFeature,
   teacherScope,
 } = require("../middlewares/authenticator.middleware");
 
@@ -13,6 +14,7 @@ const router = Router();
 router.use(tenantAuth);
 router.use(requireActiveSubscription);
 router.use(teacherScope);
+router.use(requireTariffFeature("lesson.planning"));
 
 // Kurs dasturi — CLAUDE.md permission jadvalidagi "Dars rejalari" guruhi
 // (`lesson:*`), eski LessonPlan moduli o'rnini bosadi. O'qituvchi o'z
@@ -41,6 +43,13 @@ router.get(
   requireTenantPermission("lesson:view"),
   requireTeacherGroup(),
   syllabusController.sources,
+);
+// O'qituvchilar shablon rejalari (API_CONTRACT_teaching_plans.md §4.2).
+router.get(
+  "/:groupId/plans",
+  requireTenantPermission("lesson:view"),
+  requireTeacherGroup(),
+  syllabusController.plans,
 );
 router.post(
   "/:groupId/import",

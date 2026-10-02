@@ -8,6 +8,10 @@ const {
 
 const router = Router();
 
+// wenet.uz narx sahifasi uchun — autentifikatsiyasiz, `router.use(adminAuth)`
+// dan OLDIN turishi shart. Faqat `isPublic` yoqilgan tariflarni qaytaradi.
+router.get("/public", tariffController.publicList);
+
 router.use(adminAuth, fullAdminAuth);
 
 router.post("/", requirePermission("tariff:create"), tariffController.create);

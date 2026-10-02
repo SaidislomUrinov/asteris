@@ -4,7 +4,8 @@ const Subject = require("../models/Subject");
 const Student = require("../models/Student");
 const salaryService = require("./salary.service");
 const groupService = require("./group.service");
-const { todayDayCode, currentMonthString } = require("../utils/date.util");
+const calendarService = require("./calendar.service");
+const { todayDayCode, currentMonthString, todayString } = require("../utils/date.util");
 const moment = require("moment-timezone");
 
 // O'qituvchi paneli uchun yagona dashboard so'rovi — guruhlari, xonalari,
@@ -110,6 +111,10 @@ module.exports = {
 
     const current = groups.find((g) => g.startTime <= nowHHmm && nowHHmm <= g.endTime);
     if (!current) return null;
+
+    // Markaz darajasida bugun dam olish kuni deb belgilangan bo'lsa — Dars
+    // ochilmaydi (API_CONTRACT.md "Kalendar").
+    if (await calendarService.isCenterHoliday(current.center, todayString())) return null;
 
     const group = await groupService.getOne(clientId, current._id);
     return { group, isLive: true };

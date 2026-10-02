@@ -16,8 +16,15 @@ module.exports = {
   },
 
   set: async function (key, value, expire) {
-    await this.del(key);
-
+    // ESKIDA: yozishdan oldin `del(key)` chaqirilardi — ikkita ketma-ket
+    // Redis round-trip orasida kalit BIR necha millisekund umuman
+    // mavjud bo'lmay qolardi. Aynan shu oraliqda boshqa parallel so'rov
+    // (masalan token refresh paytida SPA bir vaqtda bir nechta endpoint
+    // chaqirsa) accessKey'ni o'qisa, "topilmadi" deb sessiyani noto'g'ri
+    // tugagan deb hisoblardi ("auth.failed" tez-tez chiqishi shundan edi —
+    // Redis TTL/eviction emas). Redis `SET key value EX seconds` o'zi
+    // atomik: eski qiymat va TTL'ni bitta buyruqda almashtiradi, alohida
+    // `del()` shart emas.
     let storeValue = value;
 
     if (typeof value === "object") {

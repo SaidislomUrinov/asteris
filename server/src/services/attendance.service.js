@@ -3,6 +3,7 @@ const AttendanceSetting = require("../models/AttendanceSetting");
 const Group = require("../models/Group");
 const Center = require("../models/Center");
 const Student = require("../models/Student");
+const Subject = require("../models/Subject");
 const {
   todayString,
   todayDayCode,
@@ -18,10 +19,19 @@ const moment = require("moment-timezone");
 const TZ = "Asia/Tashkent";
 const { countLessonDays, listLessonDates, JS_DAY_TO_CODE } = require("../utils/lessonDays.util");
 const studentService = require("./student.service");
+const parentNotification = require("./parentNotification.service");
 const groupHolidayService = require("./groupHoliday.service");
+const calendarService = require("./calendar.service");
 const emit = require("../utils/emitter.util");
+const { sourceWindowsOf, transferredAttendance } = require("../utils/transferOverlay.util");
+const { planRollovers } = require("../utils/rollover.util");
+const billingSettingService = require("./billingSetting.service");
 const redisUtil = require("../utils/redis.util");
+const redis = require("../configs/redis.config");
 const keyConfig = require("../configs/key.config");
+
+// Baho saralash (Bayes gradeScore) — utils/gradeScore.util.js.
+const { groupStudentsSummary } = require("../utils/gradeScore.util");
 
 // Sozlama yozuvlar kam o'zgaradi, lekin har davomat belgilashda (applyCredit)
 // o'qiladi — cache-aside: avval Redis, topilmasa DB'dan olib Redis'ga
@@ -56,6 +66,7 @@ const SETTING_FIELDS = [
   "unexcusedRollsOverStudentFee",
   "excusedTeacherSalaryWithheld",
   "unexcusedTeacherSalaryWithheld",
+  "rolloverOnConsecutiveAbsence",
 ];
 
 const settingDTO = (s) => ({
@@ -63,6 +74,7 @@ const settingDTO = (s) => ({
   unexcusedRollsOverStudentFee: s.unexcusedRollsOverStudentFee,
   excusedTeacherSalaryWithheld: s.excusedTeacherSalaryWithheld,
   unexcusedTeacherSalaryWithheld: s.unexcusedTeacherSalaryWithheld,
+  rolloverOnConsecutiveAbsence: !!s.rolloverOnConsecutiveAbsence,
   lateAfterMinutes: s.lateAfterMinutes ?? 0,
 });
 
@@ -82,7 +94,13 @@ const getOrCreateSettings = async (centerId) => {
   let setting = await AttendanceSetting.findOne({ center: centerId });
   if (!setting) {
     const center = await Center.findById(centerId).select("client");
-    setting = await AttendanceSetting.create({ client: center?.client, center: centerId });
+    try {
+      setting = await AttendanceSetting.create({ client: center?.client, center: centerId });
+    } catch (error) {
+      // Parallel so'rov shu orada yaratib qo'ydi (center unique) — o'shani olamiz.
+      if (error?.code !== 11000) throw error;
+      setting = await AttendanceSetting.findOne({ center: centerId });
+    }
   }
 
   const dto = settingDTO(setting);
@@ -126,6 +144,23 @@ const pickGroupByTime = (groups, now) => {
   return best.group;
 };
 
+// 128 bit tasodifiy token — taxmin qilib bo'lmaydi. To'qnashuv amalda
+// imkonsiz, lekin unique index bor ekan baribir tekshiriladi.
+const uniqueQrToken = async () => {
+  for (;;) {
+    const token = crypto.randomBytes(16).toString("hex");
+    if (!(await Student.exists({ qrToken: token }))) return token;
+  }
+};
+
+// `group.name` IXTIYORIY qo'lda qo'yilgan nom — bo'lmasa (default `null`,
+// aksariyat guruhda shunday) "Fan - activeId" ko'rinishida hisoblanadi
+// (group.service.js DTO'dagi bilan bir xil qoida, API_CONTRACT_group_rename.md).
+// Buni e'tiborsiz qoldirib to'g'ridan-to'g'ri `group.name`dan foydalanish
+// QR kartada guruh/fan nomini deyarli har doim BO'SH qoldirar edi.
+const groupDisplayLabel = (group, subjectName) =>
+  group.name || `${subjectName || "?"} - ${group.activeId ?? group.pendingId ?? ""}`;
+
 const assertCenterOwnership = async (clientId, centerId) => {
   const center = await Center.findOne({ _id: centerId, client: clientId, isDeleted: false });
   if (!center) throw new Error("center.notFound");
@@ -150,12 +185,123 @@ async function applyCredit(clientId, student, group, date, status) {
     (status === "excused" && setting.excusedRollsOverStudentFee) ||
     (status === "absent" && setting.unexcusedRollsOverStudentFee);
 
+  if (setting.rolloverOnConsecutiveAbsence) {
+    // Ketma-ket kelmaslik rejimi: kunlik kredit YO'Q (ikki marta chegirma
+    // bo'lmasligi uchun), o'rniga rollover bloklari qayta baholanadi.
+    const changed = await applyRollovers(student, entry, group, setting);
+    await student.save();
+    if (changed) emit(`client:${clientId}`, "salary:updated", { group: String(group._id) });
+    return;
+  }
+
   // Summasi yo'q — faqat "shu kun uchun pul olinmaydi" belgisi. Haqiqiy
   // qiymati computeBilling'da jonli, JORIY narx/dars-kunlari asosida
   // hisoblanadi (student.service.js).
   if (eligible) entry.credits.push({ date });
 
   await student.save();
+}
+
+// Rollover (utils/rollover.util.js) — shu a'zolikning guruhdagi to'liq
+// davomat tarixi bo'yicha bekor qilinadigan/yangi bloklarni topib, entry'ga
+// qo'llaydi (saqlash chaqiruvchida). O'zgarish bo'lsa `true`.
+async function applyRollovers(student, entry, group, setting) {
+  const isEligible = (st) =>
+    (st === "excused" && setting.excusedRollsOverStudentFee) ||
+    (st === "absent" && setting.unexcusedRollsOverStudentFee);
+
+  const sessions = await Attendance.find(
+    { group: group._id, "records.student": student._id },
+    { date: 1, records: { $elemMatch: { student: student._id } } },
+  ).sort({ date: 1 });
+  const history = sessions
+    .filter((ses) => ses.records?.[0])
+    .map((ses) => ({ date: ses.date, status: ses.records[0].status }));
+
+  entry.rollovers = entry.rollovers || [];
+  const { cancel, create } = planRollovers(history, entry.rollovers, isEligible);
+  let changed = false;
+
+  const now = getNow();
+  for (const r of entry.rollovers) {
+    if (cancel.some((id) => String(id) === String(r._id))) {
+      r.status = "cancelled";
+      r.cancelledAt = now;
+      changed = true;
+    }
+  }
+
+  if (create.length) {
+    const { cycleMode } = await billingSettingService.getOrCreate(group.center);
+    for (const dates of create) {
+      const plan = studentService.rolloverAmountFor(entry, group, cycleMode, dates);
+      // To'lanmagan kunlar o'tkazilmaydi — ko'chiradigan pul yo'q.
+      if (!plan || plan.amount <= 0) continue;
+      entry.rollovers.push({ dates, ...plan, status: "active", createdAt: now });
+      changed = true;
+    }
+  }
+
+  return changed;
+}
+
+const isDupKey = (error) => error?.code === 11000;
+
+// (guruh, sana) sessiyasiga bitta o'quvchi yozuvini ATOMAR qo'yadi va oldingi
+// statusni (yo'q bo'lsa null) qaytaradi.
+//
+// Avval findOne → new Attendance → save edi: bir guruhda bir necha o'quvchi
+// tez-tez belgilanganda parallel so'rovlar ikkalasi ham "sessiya yo'q" deb
+// ko'rib insert qilardi → E11000 (group_1_date_1). Butun hujjatni save()
+// qilish esa parallel yozuvlarni bir-birining ustiga yozib yo'qotardi.
+// Endi: sessiya upsert bilan yaratiladi (dup-key = boshqa so'rov yaratdi →
+// qayta urinish), yozuv esa `$set` (mavjud) yoki `$push` (yangi) bilan.
+async function upsertRecord(clientId, group, date, record) {
+  const filter = { group: group._id, date };
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await Attendance.updateOne(
+        filter,
+        { $setOnInsert: { client: clientId, center: group.center, group: group._id, date, records: [], createdAt: getNow() } },
+        { upsert: true },
+      );
+      break;
+    } catch (error) {
+      if (!isDupKey(error) || attempt === 2) throw error;
+    }
+  }
+
+  const now = getNow();
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    // Mavjud yozuvni yangilash — `before` hujjatdan oldingi statusni olamiz.
+    const before = await Attendance.findOneAndUpdate(
+      { ...filter, "records.student": record.student },
+      {
+        $set: {
+          "records.$.status": record.status,
+          "records.$.reason": record.reason,
+          "records.$.late": record.late,
+          "records.$.source": record.source,
+          updatedAt: now,
+        },
+      },
+      { returnDocument: "before", projection: { records: 1 } },
+    );
+    if (before) {
+      const prev = before.records.find((r) => String(r.student) === String(record.student));
+      return prev?.status || null;
+    }
+
+    // Yozuv yo'q — faqat hali ham yo'q bo'lsa qo'shamiz (parallel so'rov
+    // shu orada qo'shib qo'ygan bo'lsa matched=0 → $set yo'liga qaytamiz).
+    const pushed = await Attendance.updateOne(
+      { ...filter, "records.student": { $ne: record.student } },
+      { $push: { records: record }, $set: { updatedAt: now } },
+    );
+    if (pushed.matchedCount) return null;
+  }
+  throw new Error("attendance.conflict");
 }
 
 // Qo'lda belgilash (`mark`) va QR skan (`scanQr`) uchun umumiy yadro —
@@ -168,25 +314,16 @@ async function writeRecord(
   student,
   { status, reason = "", late = false, source = "manual", date = todayString() },
 ) {
-  let session = await Attendance.findOne({ group: group._id, date });
-  if (!session) {
-    session = new Attendance({ client: clientId, center: group.center, group: group._id, date, records: [] });
-  }
-
-  const existing = session.records.find((r) => String(r.student) === String(student._id));
   // Oldingi holat — mijoz statistikani QAYTA YUKLAMASDAN, faqat farqni
   // qo'llab yangilashi uchun kerak (donut: eski statusdan ayirib, yangisiga
   // qo'shadi). Yozuv birinchi marta qo'yilayotgan bo'lsa `null`.
-  const previousStatus = existing?.status || null;
-  if (existing) {
-    existing.status = status;
-    existing.reason = reason;
-    existing.late = late;
-    existing.source = source;
-  } else {
-    session.records.push({ student: student._id, status, reason, late, source });
-  }
-  await session.save();
+  const previousStatus = await upsertRecord(clientId, group, date, {
+    student: student._id,
+    status,
+    reason,
+    late,
+    source,
+  });
 
   await applyCredit(clientId, student, group, date, status);
   const studentDTO = await studentService.getOne(clientId, student._id);
@@ -207,6 +344,20 @@ async function writeRecord(
     entry,
   });
 
+  // Ota-onaga Telegram (3 daqiqalik debounce, faqat bugungi dars).
+  void parentNotification.onAttendance({
+    clientId,
+    groupId: group._id,
+    studentId: student._id,
+    date,
+    status,
+    late,
+    reason,
+    today: todayString(),
+  });
+
+  // Javob uchun yakuniy holat — parallel so'rovlar qo'shgan yozuvlar bilan.
+  const session = await Attendance.findOne({ group: group._id, date }, { date: 1, records: 1 }).lean();
   return { session, entry, date };
 }
 
@@ -265,6 +416,10 @@ module.exports = {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("attendance.notLessonDay");
     if (date > todayString()) throw new Error("attendance.notLessonDay");
 
+    if (await calendarService.isCenterHoliday(group.center, date)) {
+      throw new Error("calendar.centerHoliday");
+    }
+
     // O'QITUVCHI va YORDAMCHI faqat BUGUN va KECHA uchun belgilaydi — undan eskisini
     // to'g'rilash Menejer/Resepshin zimmasida (docs/teacher-panel.md §3).
     // Aks holda oy oxirida davomatni "to'g'rilab" oylikni oshirish mumkin
@@ -290,7 +445,11 @@ module.exports = {
       if (!valid.includes(date)) throw new Error("attendance.notLessonDay");
     }
 
-    const student = await Student.findOne({ _id: studentId, isDeleted: false });
+    const student = await Student.findOne({
+      _id: studentId,
+      isDeleted: false,
+      groups: { $elemMatch: { group: group._id, client: clientId } },
+    });
     if (!student) throw new Error("student.notFound");
 
     const { session, entry } = await writeRecord(clientId, group, student, {
@@ -311,19 +470,76 @@ module.exports = {
 
     // Tenant isolation — faqat shu client'ning o'quvchisi. Hodim bo'lsa
     // qo'shimcha ravishda faqat O'Z FILIALI o'quvchisi.
-    const belongs = student.groups.some(
+    const entries = student.groups.filter(
       (g) =>
         String(g.client) === String(clientId) &&
         (!staffCenterId || String(g.center) === String(staffCenterId)),
     );
-    if (!belongs) throw new Error("student.notFound");
+    if (!entries.length) throw new Error("student.notFound");
 
     if (!student.qrToken || reset) {
-      student.qrToken = crypto.randomBytes(16).toString("hex");
+      student.qrToken = await uniqueQrToken();
       await student.save();
     }
 
-    return { studentId: String(student._id), fullName: student.fullName, qrToken: student.qrToken };
+    // Karta uchun: markaz nomi/logosi va o'quvchining FAOL guruhlari.
+    const active = entries.filter((g) => g.status === "active");
+    const [groups, center] = await Promise.all([
+      Group.find({ _id: { $in: active.map((g) => g.group) }, client: clientId, isDeleted: false }).select(
+        "name subject activeId pendingId",
+      ),
+      Center.findOne({ _id: (active[0] || entries[0]).center, client: clientId }).select("name logo"),
+    ]);
+    const subjects = await Subject.find({ _id: { $in: groups.map((g) => g.subject) } }).select("name");
+    const subjectMap = Object.fromEntries(subjects.map((s) => [String(s._id), s.name]));
+
+    return {
+      studentId: String(student._id),
+      fullName: student.fullName,
+      phone: student.phone,
+      qrToken: student.qrToken,
+      center: { name: center?.name || "", logo: center?.logo || "" },
+      groups: groups.map((g) => groupDisplayLabel(g, subjectMap[String(g.subject)])).filter(Boolean),
+    };
+  },
+
+  // Guruhning barcha FAOL o'quvchilari uchun QR kartalar (bitta PDF uchun).
+  // Tokeni yo'q o'quvchilarga shu yerda bir martada (bulkWrite) yaratiladi —
+  // mavjud o'quvchilar uchun alohida migratsiya shart emas.
+  getGroupQrCards: async (clientId, groupId, staffCenterId = null) => {
+    const group = await Group.findOne({ _id: groupId, client: clientId, isDeleted: false }).select(
+      "name center subject activeId pendingId",
+    );
+    if (!group) throw new Error("group.notFound");
+    if (staffCenterId && String(group.center) !== String(staffCenterId)) throw new Error("group.notFound");
+
+    const [students, center, subject] = await Promise.all([
+      Student.find({
+        isDeleted: false,
+        groups: { $elemMatch: { group: group._id, client: clientId, status: "active" } },
+      })
+        .select("fullName qrToken")
+        .sort({ fullName: 1 }),
+      Center.findOne({ _id: group.center, client: clientId }).select("name logo"),
+      Subject.findById(group.subject).select("name"),
+    ]);
+
+    const ops = [];
+    for (const s of students) {
+      if (!s.qrToken) {
+        s.qrToken = await uniqueQrToken();
+        ops.push({
+          updateOne: { filter: { _id: s._id, qrToken: { $not: { $type: "string" } } }, update: { $set: { qrToken: s.qrToken } } },
+        });
+      }
+    }
+    if (ops.length) await Student.bulkWrite(ops);
+
+    return {
+      center: { name: center?.name || "", logo: center?.logo || "" },
+      group: { _id: String(group._id), name: groupDisplayLabel(group, subject?.name) },
+      students: students.map((s) => ({ _id: String(s._id), fullName: s.fullName, qrToken: s.qrToken })),
+    };
   },
 
   // QR skan — o'quvchi o'z doimiy QR'ini ko'rsatadi, Reception/Teacher
@@ -364,7 +580,7 @@ module.exports = {
       if (!target) throw new Error("attendance.studentNotInGroup");
     } else {
       const todayGroups = groups.filter((g) => g.status === "active" && g.days?.includes(dayCode));
-      if (!todayGroups.length) throw new Error("attendance.notLessonDay");
+      if (!todayGroups.length) throw new Error("attendance.noLessonToday");
 
       // Bugun allaqachon belgilangan darslar chiqarib tashlanadi — o'quvchi
       // ikkinchi fanga kelib kartani qayta o'tkazsa, tizim uni "takroriy
@@ -406,7 +622,11 @@ module.exports = {
     }
 
     // Takroriy skan — qayta yozilmaydi, mavjud yozuv qaytariladi va
-    // frontend ogohlantirish toast'ini ko'rsatadi.
+    // frontend ogohlantirish toast'ini ko'rsatadi. Avval mavjud yozuv
+    // o'qiladi (qulfsiz, faqat o'qish) — odatiy "operator bir necha soniya
+    // ichida kartani ikkinchi marta o'tkazdi" holatida haqiqiy status/late
+    // ko'rsatiladi, aks holda ("kech qoldi" yozuvi ham "keldi" deb
+    // ko'rsatilardi — qulf yo'lida doim `late:false` qattiq yozilgan edi).
     const date = todayString();
     const session = await Attendance.findOne({ group: target._id, date });
     const already = session?.records.find((r) => String(r.student) === String(student._id));
@@ -415,8 +635,28 @@ module.exports = {
         duplicate: true,
         student: { _id: String(student._id), fullName: student.fullName, photo: student.photo },
         groupId: String(target._id),
+        subject: target.subject?.name || "",
         status: already.status,
         late: already.late || false,
+      };
+    }
+
+    // Yozuv hali yo'q — lekin bir kartani skaner va kamera deyarli bir
+    // vaqtda o'qisa ikkita parallel so'rov ikkalasi ham "yozuv yo'q" deb
+    // ko'rib dublikat qo'shishi mumkin — shu o'quvchi+guruh+kun uchun qisqa
+    // Redis qulfi (SET NX) buni oldini oladi. Bu holatda haqiqiy late
+    // qiymatini hali bilib bo'lmaydi (yozuv hali yo'q) — "present" taxmin
+    // qilinadi, chunki qulfni ilgari olgan so'rov aynan shuni yozadi.
+    const lockKey = `qrscan:${target._id}:${student._id}:${date}`;
+    const locked = await redis.set(lockKey, "1", "EX", 5, "NX");
+    if (!locked) {
+      return {
+        duplicate: true,
+        student: { _id: String(student._id), fullName: student.fullName, photo: student.photo },
+        groupId: String(target._id),
+        subject: target.subject?.name || "",
+        status: "present",
+        late: false,
       };
     }
 
@@ -466,10 +706,12 @@ module.exports = {
       });
     });
 
-    const [activeStudentsCount, holidayDates] = await Promise.all([
+    const [activeStudentsCount, groupHolidayDates, centerHolidays] = await Promise.all([
       Student.countDocuments({ groups: { $elemMatch: { group: groupId, status: "active" } } }),
       groupHolidayService.getNonChargeableDates(groupId),
+      calendarService.getCenterHolidayDates(group.center),
     ]);
+    const holidayDates = new Set([...groupHolidayDates, ...centerHolidays.map((h) => h.date)]);
     const lessonDays = countLessonDaysInMonth(group, targetMonth, holidayDates);
     const expected = lessonDays * activeStudentsCount;
     const recorded = counts.present + counts.absent + counts.excused;
@@ -488,6 +730,18 @@ module.exports = {
       excusedPercent: pct(counts.excused),
       unmarkedPercent: pct(unmarked),
     };
+  },
+
+  // "O'quvchilar" ro'yxatini baho/davomat bo'yicha tartiblash uchun —
+  // har bir FAOL o'quvchi bo'yicha BITTA OY (default joriy) davomat foizi va
+  // baho o'rtachasi (API_CONTRACT_group_students_sort.md,
+  // API_CONTRACT_badges_monthly_rank.md §A). `month` controller'da tekshirilgan.
+  getStudentsSummary: async (clientId, groupId, month) => {
+    const group = await Group.findOne({ _id: groupId, client: clientId, isDeleted: false });
+    if (!group) throw new Error("group.notFound");
+    // Hisob umumiy util'da — ota-ona/o'quvchi WebApp'idagi "guruhdagi o'rin"
+    // ham aynan shu formuladan foydalanadi (API_CONTRACT_student_role_homework.md §3.5).
+    return await groupStudentsSummary(group, { month });
   },
 
   // Oylik davomat matritsasi — o'quvchi × dars-kuni (Guruh detail
@@ -514,8 +768,16 @@ module.exports = {
     const from = Math.max(monthStart, group.activatedAt || monthStart);
     const dates = group.activatedAt ? listLessonDates(group.days, from, nextMonthStart) : [];
 
-    const holidays = await groupHolidayService.listForMonth(clientId, groupId, targetMonth);
+    const [holidays, centerHolidays] = await Promise.all([
+      groupHolidayService.listForMonth(clientId, groupId, targetMonth),
+      calendarService.getCenterHolidayDates(group.center, targetMonth),
+    ]);
     const holidayMap = new Map(holidays.map((h) => [h.date, h]));
+    // CenterHoliday ham xuddi shu vizual belgi sifatida ko'rsatiladi (group
+    // darajasida qo'lda belgilanmagan bo'lsa ham) — har doim chargeable:false.
+    for (const h of centerHolidays) {
+      if (!holidayMap.has(h.date)) holidayMap.set(h.date, { chargeable: false, note: h.note || "" });
+    }
 
     const [sessions, students] = await Promise.all([
       Attendance.find({
@@ -524,9 +786,22 @@ module.exports = {
       }).select("date records"),
       Student.find(
         { isDeleted: false, groups: { $elemMatch: { group: groupId, status: "active" } } },
-        { _id: 1 },
+        { _id: 1, "groups.group": 1, "groups.transferredFrom": 1 },
       ),
     ]);
+
+    // Boshqa guruhdan O'TKAZILGAN o'quvchilarning oldingi davomati — o'z
+    // sanasi bilan, faqat o'qish uchun (API_CONTRACT_student_transfer.md §4).
+    const carried = await transferredAttendance(sourceWindowsOf(students, groupId), {
+      $gte: `${targetMonth}-01`,
+      $lte: `${targetMonth}-31`,
+    });
+    // Yangi guruhda dars kuni BO'LMAGAN manba sanalari — alohida (qulflangan)
+    // ustun sifatida qo'shiladi, aks holda o'sha yozuvlar ko'rinmay qolardi.
+    const extraDates = new Set();
+    for (const map of carried.values()) {
+      for (const date of map.keys()) if (!dates.includes(date)) extraDates.add(date);
+    }
 
     // date → (studentId → record)
     const byDate = new Map();
@@ -539,11 +814,15 @@ module.exports = {
     }
 
     const dateSet = new Set(dates);
+    const allDates = [...dates, ...extraDates].sort();
 
     return {
       month: targetMonth,
       today,
-      days: dates.map((date) => {
+      days: allDates.map((date) => {
+        if (extraDates.has(date)) {
+          return { date, day: JS_DAY_TO_CODE[moment.tz(date, TZ).day()], future: false, holiday: null, transferred: true };
+        }
         const holiday = holidayMap.get(date);
         return {
           date,
@@ -564,6 +843,12 @@ module.exports = {
           if (!dateSet.has(date)) continue;
           const rec = map.get(id);
           if (!rec) continue;
+          records[date] = rec;
+          if (counts[rec.status] !== undefined) counts[rec.status] += 1;
+        }
+        // Oldingi guruh yozuvi — shu guruhda o'sha kunga yozuv bo'lmasa.
+        for (const [date, rec] of carried.get(id) || []) {
+          if (records[date]) continue;
           records[date] = rec;
           if (counts[rec.status] !== undefined) counts[rec.status] += 1;
         }
@@ -588,11 +873,12 @@ module.exports = {
     const group = await Group.findOne({ _id: groupId, client: clientId, isDeleted: false });
     if (!group) throw new Error("group.notFound");
 
-    const sessions = await Attendance.find({ group: groupId, "records.student": studentId }).sort({
-      date: -1,
-    });
+    const [sessions, student] = await Promise.all([
+      Attendance.find({ group: groupId, "records.student": studentId }).sort({ date: -1 }),
+      Student.findById(studentId).select("groups.group groups.transferredFrom"),
+    ]);
 
-    return sessions.map((session) => {
+    const own = sessions.map((session) => {
       const record = session.records.find((r) => String(r.student) === String(studentId));
       return {
         date: session.date,
@@ -601,5 +887,14 @@ module.exports = {
         late: record?.late || false,
       };
     });
+
+    // Oldingi guruh(lar)dan o'tkazilgan tarix (API_CONTRACT_student_transfer.md §4).
+    const carried = student ? await transferredAttendance(sourceWindowsOf([student], groupId)) : new Map();
+    const ownDates = new Set(own.map((r) => r.date));
+    const extra = [...(carried.get(String(studentId)) || [])]
+      .filter(([date]) => !ownDates.has(date))
+      .map(([date, rec]) => ({ date, ...rec }));
+
+    return [...own, ...extra].sort((a, b) => (a.date < b.date ? 1 : -1));
   },
 };

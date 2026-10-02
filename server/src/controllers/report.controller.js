@@ -12,6 +12,7 @@ const params = (query) => ({
   page: query.page,
   limit: query.limit,
   search: query.search,
+  group: query.group,
 });
 
 module.exports = {
@@ -76,6 +77,88 @@ module.exports = {
         params(req.query),
       );
       return res.send({ ok: true, data, meta, totalDebt });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  attendance: async (req, res, next) => {
+    try {
+      const data = await reportService.attendance(req.client._id, params(req.query));
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Davomat hisoboti Excel'i — 3 varaq: Umumiy, Guruhlar, Ko'p qoldiruvchilar
+  // (exportAll bilan bir xil naqsh, AYNAN ekrandagi filtr bilan).
+  exportAttendance: async (req, res, next) => {
+    try {
+      const report = await reportService.attendance(req.client._id, {
+        ...params(req.query),
+        limit: 50,
+      });
+      const pct = { width: 14, align: "right" };
+      const num = { width: 12, align: "right" };
+      const t = report.totals;
+
+      await sendExcel(res, "davomat-hisoboti", [
+        {
+          sheetName: "Umumiy",
+          color: THEME.report,
+          title: "Davomat hisoboti",
+          subtitle: `Davr: ${report.from} — ${report.to}`,
+          columns: [
+            { header: "Ko'rsatkich", width: 28, value: (r) => r.label },
+            { header: "Qiymat", width: 16, align: "right", value: (r) => r.value },
+          ],
+          rows: [
+            { label: "O'tilgan darslar", value: t.lessons },
+            { label: "Belgilangan yozuvlar", value: t.records },
+            { label: "Kelgan", value: t.present },
+            { label: "Kelmagan (sababsiz)", value: t.absent },
+            { label: "Sababli", value: t.excused },
+            { label: "Kechikkan", value: t.late },
+            { label: "Kelgan (%)", value: t.presentRate },
+            { label: "Kelmagan (%)", value: t.absentRate },
+            { label: "Sababli (%)", value: t.excusedRate },
+          ],
+        },
+        {
+          sheetName: "Guruhlar",
+          color: THEME.report,
+          title: "Guruhlar kesimi",
+          columns: [
+            { header: "Guruh", width: 24, value: (r) => r.group.name },
+            { header: "Filial", width: 20, value: (r) => r.center.name },
+            { header: "O'qituvchi", width: 22, value: (r) => r.teacher },
+            { header: "Darslar", ...num, value: (r) => r.lessons },
+            { header: "Kelgan", ...num, value: (r) => r.present },
+            { header: "Kelmagan", ...num, value: (r) => r.absent },
+            { header: "Sababli", ...num, value: (r) => r.excused },
+            { header: "Kelgan (%)", ...pct, value: (r) => r.presentRate },
+            { header: "Kelmagan (%)", ...pct, value: (r) => r.absentRate },
+            { header: "Sababli (%)", ...pct, value: (r) => r.excusedRate },
+          ],
+          rows: report.byGroup,
+        },
+        {
+          sheetName: "Qoldiruvchilar",
+          color: THEME.report,
+          title: "Eng ko'p qoldiruvchi o'quvchilar",
+          columns: [
+            { header: "O'quvchi", width: 26, value: (r) => r.student.fullName },
+            { header: "Telefon", width: 18, value: (r) => r.phone },
+            { header: "Guruhlar", width: 26, value: (r) => r.groups.map((g) => g.name).join(", ") },
+            { header: "Kelmagan", ...num, value: (r) => r.absent },
+            { header: "Sababli", ...num, value: (r) => r.excused },
+            { header: "Jami darslar", ...num, value: (r) => r.records },
+            { header: "Kelmagan (%)", ...pct, value: (r) => r.absentRate },
+          ],
+          rows: report.topAbsentees,
+        },
+      ]);
     } catch (error) {
       next(error);
     }

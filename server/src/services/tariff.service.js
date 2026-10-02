@@ -1,5 +1,6 @@
 const Tariff = require("../models/Tariff");
 const { getNow } = require("../utils/date.util");
+const clientService = require("./client.service");
 
 const DTO = (data) => ({
   _id: data?._id,
@@ -11,6 +12,9 @@ const DTO = (data) => ({
   teacherLimit: data?.teacherLimit,
   receptionLimit: data?.receptionLimit,
   allowedPermissions: data?.allowedPermissions,
+  isPublic: data?.isPublic,
+  highlighted: data?.highlighted,
+  tagline: data?.tagline,
   date: data?.date,
   lastUpdate: data?.lastUpdate,
 });
@@ -27,7 +31,7 @@ module.exports = {
   DTO,
 
   create: async (body) => {
-    const { name, price, allowedPermissions, trialDays } = body;
+    const { name, price, allowedPermissions, trialDays, isPublic, highlighted, tagline } = body;
 
     if (!name || price == null) throw new Error("tariff.fillTheRows");
     if (Number(price) < 0) throw new Error("tariff.invalidPrice");
@@ -50,6 +54,9 @@ module.exports = {
       teacherLimit: body.teacherLimit,
       receptionLimit: body.receptionLimit,
       allowedPermissions: allowedPermissions || [],
+      isPublic: !!isPublic,
+      highlighted: !!highlighted,
+      tagline: tagline?.trim() || "",
     });
 
     return DTO(tariff);
@@ -58,6 +65,30 @@ module.exports = {
   list: async () => {
     const data = await Tariff.find({ isDeleted: false }).sort({ price: 1 });
     return data.map(DTO);
+  },
+
+  // wenet.uz narx sahifasi uchun — autentifikatsiyasiz. Faqat `isPublic`
+  // yoqilgan tariflar va faqat ommaga ko'rsatiladigan maydonlar chiqadi
+  // (ichki `allowedPermissions` ro'yxati ham beriladi, chunki sahifa
+  // imkoniyatlar jadvalini shundan quradi).
+  publicList: async () => {
+    const data = await Tariff.find({ isDeleted: false, isPublic: true }).sort({
+      price: 1,
+    });
+
+    return data.map((t) => ({
+      _id: t._id,
+      name: t.name,
+      tagline: t.tagline || "",
+      price: t.price,
+      trialDays: t.trialDays,
+      studentLimit: t.studentLimit,
+      centerLimit: t.centerLimit,
+      teacherLimit: t.teacherLimit,
+      receptionLimit: t.receptionLimit,
+      allowedPermissions: t.allowedPermissions || [],
+      highlighted: !!t.highlighted,
+    }));
   },
 
   getOne: async (id) => {
@@ -82,12 +113,28 @@ module.exports = {
       }
     }
 
-    const fields = ["name", "price", "trialDays", "allowedPermissions", ...LIMIT_FIELDS];
+    const fields = [
+      "name",
+      "price",
+      "trialDays",
+      "allowedPermissions",
+      "isPublic",
+      "highlighted",
+      "tagline",
+      ...LIMIT_FIELDS,
+    ];
     for (const field of fields) {
       if (body[field] !== undefined) tariff[field] = body[field];
     }
 
+    // Obunaga ta'sir qiladigan maydonlar — narx/sinov/ommaviylik joriy
+    // obunalarni o'zgartirmaydi (narx obunada kelishilgan summa sifatida qoladi).
+    const affectsSubscriptions = ["name", "allowedPermissions", ...LIMIT_FIELDS].some((f) =>
+      tariff.isModified(f),
+    );
+
     await tariff.save();
+    if (affectsSubscriptions) await clientService.syncSubscriptionsWithTariff(tariff);
     return DTO(tariff);
   },
 

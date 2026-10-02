@@ -47,6 +47,10 @@ const schema = new Schema({
     type: Boolean,
     default: false,
   }, // tekin sinov muddatidan bir marta foydalanilgach true bo'ladi, qayta berilmaydi
+  introSeen: {
+    type: Boolean,
+    default: false,
+  },
   // Shaxsiy Telegram bog'lanishi — platforma botiga (SystemSetting.telegram)
   // "/start {token}" orqali ulaydi. Bir bot, ko'p foydalanuvchi: `chatId`
   // faqat shu hujjatga tegishli, boshqa Client/Staff'ning bog'lanishiga

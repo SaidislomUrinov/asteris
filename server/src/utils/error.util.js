@@ -70,5 +70,11 @@ module.exports = (err, req, res, _next) => {
     msg: parsed.message,
     ...(err?.lockedBy ? { lockedBy: err.lockedBy } : {}),
     ...(err?.conflict ? { conflict: err.conflict } : {}),
+    // Import bekor qilishda "nechta yozuv to'sqinlik qilyapti" (`blockedCount`)
+    // — `conflict`/`lockedBy` bilan bir xil naqsh, umumiy passthrough.
+    ...(err?.data ? { data: err.data } : {}),
+    // Mashina o'qiydigan biznes kodi (masalan INVALID_TELEGRAM_PHONE) — faqat
+    // string; Mongo'ning raqamli `code`i (11000) chiqmaydi.
+    ...(typeof err?.code === "string" && /^[A-Z][A-Z0-9_]+$/.test(err.code) ? { code: err.code } : {}),
   });
 };

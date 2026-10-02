@@ -4,18 +4,28 @@ const Student = require("../models/Student");
 const SalaryTransaction = require("../models/SalaryTransaction");
 const emit = require("../utils/emitter.util");
 const { getNow, currentMonthString, formatMonth } = require("../utils/date.util");
+const clientService = require("./client.service");
+const { salaryTypeKeyOf, SALARY_TYPE_TARIFF_FLAG } = require("../utils/staffPermission.util");
+const { monthRolloverAdjustment } = require("../utils/rollover.util");
 
-// Hodimning oylik turi Staff.permissions ichidagi "staff.salary.*" flag'i
-// bilan belgilanadi (StaffDialog shu formatda yozadi).
+// Tranzaksiya turi → shu turni ochadigan tarif flagi (faqat premium
+// turlar uchun; withdrawal/penalty har doim ochiq).
+const TX_TARIFF_FLAG = {
+  advance: "staff.salary.advance",
+  bonus: "staff.bonus",
+};
+
+// Hodimning OYLIK TURI Staff.permissions ichidagi "staff.salary.*" kaliti
+// bilan belgilanadi (StaffDialog shu formatda yozadi). Bu satrlar tarif
+// flaglari bilan bir xil — farqi staffPermission.util.js da izohlangan.
 const SALARY_FLAGS = {
   "staff.salary.fixed": "fixed",
   "staff.salary.percentage": "percentage",
-  "staff.salary.perGroup": "perGroup",
 };
 
 const salaryTypeOf = (staff) => {
-  const flag = (staff.permissions || []).find((p) => SALARY_FLAGS[p]);
-  return flag ? SALARY_FLAGS[flag] : null;
+  const key = salaryTypeKeyOf(staff.permissions);
+  return key ? SALARY_FLAGS[key] : null;
 };
 
 const txDTO = (t) => ({
@@ -64,22 +74,29 @@ const sumMonthPayments = async (groupIds, month) => {
     }
   }
 
-  return total;
+  // "3 kun ketma-ket kelmadi → keyingi oyga o'tkazish" (CLAUDE.md Ish haqi):
+  // o'tkazilgan summa shu oydan ayiriladi, keyingi oyga qo'shiladi.
+  total += monthRolloverAdjustment(students, idSet, month);
+
+  return Math.max(0, total);
 };
 
 // Bitta hodimning bitta oy uchun jonli hisob-kitobi.
-const computeStaffMonth = async (staff, month) => {
+// `features` — joriy tarif flaglari (bitta so'rovda bir marta olinadi).
+const computeStaffMonth = async (staff, month, features = null) => {
   const type = salaryTypeOf(staff);
+  const typeKey = salaryTypeKeyOf(staff.permissions);
+  // Tarif pasaygandan keyin hodimda qolib ketgan (endi tarifda yo'q) oylik
+  // turi: hisob TO'XTATILMAYDI (hodim ishlagan oy uchun pul qarz), lekin UI
+  // "tarifda yo'q" deb ogohlantirishi va turni o'zgartirishni taklif qilishi
+  // uchun bayroq qaytariladi. Yangi berish staff.service'da bloklangan.
+  const salaryTypeInTariff =
+    !typeKey || !features ? true : features.includes(SALARY_TYPE_TARIFF_FLAG[typeKey]);
   let base = 0;
   let meta = {};
 
   if (type === "fixed") {
     base = staff.salaryValue || 0;
-  } else if (type === "perGroup") {
-    // salaryValue = har bir guruh uchun yagona stavka
-    const count = await Group.countDocuments({ ...scopedGroupFilter(staff), status: "active" });
-    base = (staff.salaryValue || 0) * count;
-    meta = { groupCount: count, ratePerGroup: staff.salaryValue || 0 };
   } else if (type === "percentage") {
     const groups = await Group.find(scopedGroupFilter(staff), { _id: 1 });
     const paymentsTotal = await sumMonthPayments(groups.map((g) => g._id), month);
@@ -108,6 +125,7 @@ const computeStaffMonth = async (staff, month) => {
     },
     month,
     salaryType: type,
+    salaryTypeInTariff,
     base,
     ...meta,
     advance: sums.advance,
@@ -127,7 +145,8 @@ module.exports = {
     if (center) filter.center = center;
 
     const staffs = await Staff.find(filter).sort({ createdAt: -1 });
-    const data = await Promise.all(staffs.map((s) => computeStaffMonth(s, m)));
+    const features = await clientService.getTariffFeatures(clientId);
+    const data = await Promise.all(staffs.map((s) => computeStaffMonth(s, m, features)));
 
     return { month: m, data };
   },
@@ -137,7 +156,8 @@ module.exports = {
     const staff = await Staff.findOne({ _id: staffId, client: clientId, isDeleted: false });
     if (!staff) throw new Error("staff.notFound");
 
-    return computeStaffMonth(staff, month || currentMonthString());
+    const features = await clientService.getTariffFeatures(clientId);
+    return computeStaffMonth(staff, month || currentMonthString(), features);
   },
 
   // Avans / oldindan pul olish / bonus / jarima qo'shish
@@ -145,6 +165,11 @@ module.exports = {
     const { type, amount, note, month } = body;
     if (!SalaryTransaction.TYPES.includes(type)) throw new Error("salary.invalidType");
     if (!amount || amount < 1) throw new Error("salary.invalidAmount");
+
+    const tariffFlag = TX_TARIFF_FLAG[type];
+    if (tariffFlag && !(await clientService.hasPermission(clientId, tariffFlag))) {
+      throw new Error("tariff.featureNotAvailable");
+    }
 
     const staff = await Staff.findOne({ _id: staffId, client: clientId, isDeleted: false });
     if (!staff) throw new Error("staff.notFound");

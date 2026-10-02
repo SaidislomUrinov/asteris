@@ -18,6 +18,15 @@ const FINANCIAL_FIELDS = [
   "courseStartMonth",
   "currentCycleMonth",
   "priceHistory",
+  // Ko'chirishdan oldingi qarz/avans (API_CONTRACT_opening_debts.md)
+  "openingBalance",
+  "openingDebts",
+  "openingDebtTotal",
+  "openingDebtRemaining",
+  "earliestPayableMonth",
+  // To'lov oyini o'tkazish tarixi (API_CONTRACT_payment_move_month.md) —
+  // `payments` bilan birga allaqachon ketmaydi, bu himoya qatlami.
+  "forMonthHistory",
 ];
 
 const stripEntry = (entry) => {

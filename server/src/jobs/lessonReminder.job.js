@@ -4,9 +4,13 @@ const Group = require("../models/Group");
 const Staff = require("../models/Staff");
 const Subject = require("../models/Subject");
 const Room = require("../models/Room");
-const Syllabus = require("../models/Syllabus");
+const { getTodayLesson } = require("../utils/lessonSchedule.util");
+const GroupHoliday = require("../models/GroupHoliday");
+const CenterHoliday = require("../models/CenterHoliday");
+const parentNotification = require("../services/parentNotification.service");
 const notificationService = require("../services/notification.service");
 const telegramService = require("../services/telegram.service");
+const clientService = require("../services/client.service");
 const syllabusProgress = require("../utils/syllabusProgress.util");
 const { t } = require("../bot/i18n");
 const { escapeHtml } = require("../bot/notify");
@@ -32,18 +36,37 @@ const acquireLock = async (tick) => {
   return res === "OK";
 };
 
-// Kurs dasturidagi "bugungi" (keyingi o'tiladigan) dars mavzusi — mavjud
-// bo'lmasa (dastur tuzilmagan/tugagan) `null` (Telegram xabarida shunda
-// umuman ko'rsatilmaydi, GroupDetail/Lesson sahifasidagi bilan bir xil
-// hisoblash usuli — `syllabusProgress.util.js`).
-const getTodayTopic = async (clientId, groupId, lessonOffset) => {
-  const syllabus = await Syllabus.findOne({ client: clientId, group: groupId, isDeleted: false });
-  if (!syllabus) return null;
-  const lessons = syllabusProgress.flattenLessons(syllabus.modules);
-  if (!lessons.length) return null;
-  const doneCount = await syllabusProgress.countDoneLessons(clientId, groupId, lessonOffset);
-  const nextNo = doneCount >= lessons.length ? null : doneCount + 1;
-  return nextNo ? lessons[nextNo - 1].title || null : null;
+// Bugungi dars mavzusi — dastur tuzilmagan/tugagan bo'lsa `null`.
+// Mavzu — o'qituvchi paneli va ota-ona WebApp'idagi bilan AYNAN bir xil
+// sana→dars moslashuvi (utils/lessonSchedule.util.js): dam olish kunlari
+// darsni surgan bo'lsa ham to'g'ri mavzu chiqadi.
+const getTodayTopic = async (group, date) => (await getTodayLesson(group, date))?.title || null;
+
+// O'QUVCHI ROLI eslatmasi (API_CONTRACT_student_role_homework.md §5) —
+// hodim eslatmasi bilan bir xil vaqtda. Bayram/dam olish kuni (markaz
+// kalendari yoki guruh kalendari) bo'lsa yuborilmaydi. Dedup parentNotification
+// ichida (`lessonReminder:{entryId}:{date}`).
+const remindStudents = async (due, date) => {
+  const groupIds = due.map((g) => g._id);
+  const centerIds = [...new Set(due.map((g) => String(g.center)))];
+  const [groupOff, centerOff] = await Promise.all([
+    GroupHoliday.find({ group: { $in: groupIds }, date }).select("group").lean(),
+    CenterHoliday.find({ center: { $in: centerIds }, date }).select("center").lean(),
+  ]);
+  const offGroups = new Set(groupOff.map((h) => String(h.group)));
+  const offCenters = new Set(centerOff.map((h) => String(h.center)));
+  // Mavzu faqat tarifda dars rejalash bo'lsa (WebApp "Dars rejasi" tabi
+  // bilan bir xil qoida) — mijoz boshiga bitta tekshiruv.
+  const planningByClient = new Map();
+  for (const g of due) {
+    if (offGroups.has(String(g._id)) || offCenters.has(String(g.center))) continue;
+    const clientKey = String(g.client);
+    if (!planningByClient.has(clientKey)) {
+      planningByClient.set(clientKey, await clientService.hasPermission(g.client, "lesson.planning"));
+    }
+    const topic = planningByClient.get(clientKey) ? await getTodayTopic(g, date) : null;
+    await parentNotification.onLessonReminder({ groupId: g._id, date, topic });
+  }
 };
 
 const run = async () => {
@@ -52,24 +75,43 @@ const run = async () => {
   if (!(await acquireLock(tick))) return;
 
   const dayCode = todayDayCode();
-  // O'qituvchi VA yordamchi o'qituvchi — ikkalasi ham eslatma oladi
-  // (avval faqat `teacher` edi, `assistant` chetda qolib ketgan edi).
-  const groups = await Group.find({
+  const allGroups = await Group.find({
     status: "active",
     isDeleted: false,
     days: dayCode,
-    $or: [{ teacher: { $ne: null } }, { assistant: { $ne: null } }],
-  }).select("client center teacher assistant subject room startTime activeId lessonOffset");
-  if (!groups.length) return;
+  }).select("client center teacher assistant subject room startTime activeId lessonOffset days activatedAt finishedAt status");
+  if (!allGroups.length) return;
 
   const from = now + LEAD_MINUTES * 60;
   const to = from + TICK_MINUTES * 60;
 
-  const due = groups.filter((g) => {
+  const dueAll = allGroups.filter((g) => {
     const start = timeToUnixToday(g.startTime);
     return start !== null && start >= from && start < to;
   });
+  if (!dueAll.length) return;
+
+  // O'quvchilarga — o'qituvchisi bor-yo'qligidan qat'i nazar. Fonda (kutilmaydi):
+  // ko'p o'quvchili soatda fan-out tick'dan uzoq cho'zilishi mumkin — hodim
+  // eslatmasi kechikmasin. Takroriy tick'da dedupKey qayta yuborishni to'xtatadi.
+  remindStudents(dueAll, todayString()).catch((error) =>
+    console.error("lessonReminder students:", error?.message || error),
+  );
+
+  // O'qituvchi VA yordamchi o'qituvchi — ikkalasi ham eslatma oladi
+  // (avval faqat `teacher` edi, `assistant` chetda qolib ketgan edi).
+  const due = dueAll.filter((g) => g.teacher || g.assistant);
   if (!due.length) return;
+
+  // Tarif "teacher.notifications" flagi — client bo'yicha keshlab
+  // tekshiramiz (bir tick ichida bir nechta guruh bir clientga tegishli
+  // bo'lishi mumkin).
+  const clientIds = [...new Set(due.map((g) => String(g.client)))];
+  const featureByClient = new Map(
+    await Promise.all(
+      clientIds.map(async (id) => [id, await clientService.hasPermission(id, "teacher.notifications")]),
+    ),
+  );
 
   const staffIds = [...new Set(due.flatMap((g) => [g.teacher, g.assistant].filter(Boolean).map(String)))];
   const staffDocs = await Staff.find({ _id: { $in: staffIds }, isDeleted: false, blocked: false }).select("_id");
@@ -86,12 +128,14 @@ const run = async () => {
 
   const date = todayString();
   for (const g of due) {
+    if (!featureByClient.get(String(g.client))) continue;
+
     const recipients = [...new Set([g.teacher, g.assistant].filter(Boolean).map(String))].filter((id) =>
       activeStaff.has(id),
     );
     if (!recipients.length) continue;
 
-    const topic = await getTodayTopic(g.client, g._id, g.lessonOffset);
+    const topic = await getTodayTopic(g, date);
 
     for (const staffId of recipients) {
       await notificationService.create({
@@ -120,10 +164,12 @@ const run = async () => {
             `${t(lang, "reminderHeader")}`,
             "",
             `<b>${escapeHtml(subjectMap[String(g.subject)] || "?")} - ${g.activeId}</b>`,
-            `⏰ ${g.startTime}`,
+            `${t(lang, "reminderTimeLabel")}: ${g.startTime}`,
           ];
-          if (g.room) lines.push(`🏠 ${escapeHtml(roomMap[String(g.room)] || "")}`);
-          lines.push(`📘 ${topic ? escapeHtml(topic) : t(lang, "reminderNoTopic")}`);
+          if (g.room) lines.push(`${t(lang, "reminderRoomLabel")}: ${escapeHtml(roomMap[String(g.room)] || "")}`);
+          lines.push(
+            `${t(lang, "reminderTopicLabel")}: ${topic ? escapeHtml(topic) : t(lang, "reminderNoTopic")}`,
+          );
           return lines.join("\n");
         })
         .catch(() => {});

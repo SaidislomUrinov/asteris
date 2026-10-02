@@ -1,6 +1,8 @@
 const Subject = require("../models/Subject");
 const Center = require("../models/Center");
 const { getNow } = require("../utils/date.util");
+const audit = require("../utils/audit.util");
+const { emitArchiveChanged } = require("../utils/archive.util");
 
 const PAGE_SIZE = 50;
 
@@ -137,13 +139,23 @@ module.exports = {
     return DTO(subject);
   },
 
-  remove: async (clientId, id) => {
+  // Arxivlash — API_CONTRACT_archive.md. Bog'langan guruhlar TEGILMAYDI.
+  remove: async (clientId, id, actor = null) => {
     const subject = await Subject.findOne({ _id: id, client: clientId, isDeleted: false });
     if (!subject) throw new Error("subject.notFound");
 
     subject.isDeleted = true;
     subject.deletedAt = getNow();
     await subject.save();
+
+    emitArchiveChanged(clientId, subject.center, "subject", subject._id, "archived");
+    void audit.log({
+      actor,
+      client: clientId,
+      center: subject.center,
+      action: "subject:archived",
+      entity: { type: "subject", id: subject._id, label: subject.name },
+    });
 
     return true;
   },

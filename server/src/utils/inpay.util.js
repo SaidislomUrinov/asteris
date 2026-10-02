@@ -2,13 +2,11 @@ const envConfig = require("../configs/env.config");
 const keyConfig = require("../configs/key.config");
 const redisUtil = require("../utils/redis.util");
 
-// inPAY (https://inpay.uz/api/v1/) — ochiq hujjatida aniq JSON sxemalar va
-// webhook imzo tekshiruvi ko'rsatilmagan (to'liq reference login talab
-// qiladigan /docs/ ostida). Shu sabab bu modul himoyalangan tarzda yozilgan:
-// token muddati noaniq bo'lgani uchun konservativ TTL bilan keshlanadi,
-// status javobidagi maydon/qiymat nomlari bir nechta variant bo'yicha
-// tekshiriladi, tanib bo'lmagan holat har doim "pending" (xavfsiz default).
-const TOKEN_TTL = 45 * 60; // 45 daqiqa — hujjatlashtirilmagan muddat uchun ehtiyotkor chegara
+// inPAY (https://inpay.uz/api/v1/) — hujjatda webhook imzo tekshiruvi
+// ko'rsatilmagan, shu sabab callback body'ga ishonilmaydi: holat har doim
+// /transactions/ orqali qayta so'raladi, tanib bo'lmagan holat "pending"
+// (xavfsiz default).
+const TOKEN_TTL = 23 * 60 * 60; // 23 soat — hujjatga ko'ra token 24 soat amal qiladi
 
 const assertConfigured = () => {
   if (!envConfig.INPAY_MERCHANT_ID || !envConfig.INPAY_MERCHANT_TOKEN) {
@@ -27,6 +25,8 @@ const request = async (path, { method = "GET", query, body, token } = {}) => {
   const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
 
+  console.log(`[inpay] -> ${method} ${url.toString()}`, body ? { ...body, token: body.token ? "***" : undefined } : "");
+
   const res = await fetch(url, {
     method,
     headers,
@@ -40,7 +40,10 @@ const request = async (path, { method = "GET", query, body, token } = {}) => {
     data = null;
   }
 
+  console.log(`[inpay] <- ${res.status} ${url.pathname}`, data);
+
   if (!res.ok) {
+    console.error(`[inpay] request failed: ${res.status}`, data?.message || "no message");
     throw new Error(data?.message || "inpay.requestFailed");
   }
 
@@ -48,6 +51,7 @@ const request = async (path, { method = "GET", query, body, token } = {}) => {
 };
 
 const fetchFreshToken = async () => {
+  console.log("[inpay] fetching fresh token from inPAY");
   assertConfigured();
 
   const data = await request("/authorization/", {
@@ -57,18 +61,23 @@ const fetchFreshToken = async () => {
     },
   });
 
-  // Aniq javob maydon nomi hujjatlashtirilmagan — bir nechta ehtimoliy
-  // nomni tekshiramiz.
-  const token = data?.token || data?.access_token || data?.bearer || data?.data?.token;
-  if (!token) throw new Error("inpay.tokenMissing");
+  const token = data?.bearer_token;
+  if (!token) {
+    console.error("[inpay] tokenMissing — javobda bearer_token yo'q", data);
+    throw new Error("inpay.tokenMissing");
+  }
 
+  console.log("[inpay] fresh token olindi");
   return token;
 };
 
 const getToken = async () => {
   const key = keyConfig.inpayToken();
   const cached = await redisUtil.get(key);
-  if (cached) return cached;
+  if (cached) {
+    console.log("[inpay] token Redis keshdan olindi");
+    return cached;
+  }
 
   const token = await fetchFreshToken();
   await redisUtil.set(key, token, TOKEN_TTL);
@@ -83,6 +92,7 @@ const withAuth = async (fn) => {
     return await fn(token);
   } catch (error) {
     if (error.message === "inpay.requestFailed") {
+      console.warn("[inpay] token eskirgan bo'lishi mumkin, qayta uriniladi");
       await redisUtil.del(keyConfig.inpayToken());
       token = await fetchFreshToken();
       await redisUtil.set(keyConfig.inpayToken(), token, TOKEN_TTL);
@@ -93,12 +103,16 @@ const withAuth = async (fn) => {
 };
 
 /**
- * @param {{ amount:number, description:string, paymentMethod:string, callbackUrl:string, phone:string }} params
+ * @param {{ amount:number, description:string, callbackUrl:string, returnUrl?:string, phone:string }} params
  * @returns {Promise<{ payUrl:string, orderId:string }>}
  */
-const createPayment = async ({ amount, description, paymentMethod, callbackUrl, phone }) => {
+const createPayment = async ({ amount, description, callbackUrl, returnUrl, phone }) => {
+  console.log("[inpay] createPayment boshlandi", { amount, description, callbackUrl, returnUrl, phone });
   assertConfigured();
-  if (!amount || amount < 1000) throw new Error("inpay.invalidAmount");
+  if (!amount || amount < 1000) {
+    console.error("[inpay] invalidAmount", amount);
+    throw new Error("inpay.invalidAmount");
+  }
 
   return withAuth(async (token) => {
     const data = await request("/create/", {
@@ -109,16 +123,20 @@ const createPayment = async ({ amount, description, paymentMethod, callbackUrl, 
         token,
         amount,
         description,
-        payment_method: paymentMethod,
         callback_url: callbackUrl,
+        return_url: returnUrl,
         phone,
       },
     });
 
     const payUrl = data?.pay_url || data?.payUrl || data?.data?.pay_url;
     const orderId = data?.order_id || data?.orderId || data?.data?.order_id;
-    if (!payUrl || !orderId) throw new Error("inpay.createFailed");
+    if (!payUrl || !orderId) {
+      console.error("[inpay] createFailed — javobda pay_url/order_id topilmadi", data);
+      throw new Error("inpay.createFailed");
+    }
 
+    console.log("[inpay] createPayment muvaffaqiyatli", { orderId, payUrl });
     return { payUrl, orderId: String(orderId) };
   });
 };
@@ -132,6 +150,7 @@ const FAILURE_VALUES = ["cancelled", "canceled", "failed", "error", "expired", "
  * @returns {Promise<"paid"|"cancelled"|"failed"|"pending">}
  */
 const getTransactionStatus = async (orderId) => {
+  console.log("[inpay] getTransactionStatus so'ralmoqda", orderId);
   const data = await withAuth((token) =>
     request("/transactions/", { token, query: { order_id: orderId } }),
   );
@@ -140,9 +159,12 @@ const getTransactionStatus = async (orderId) => {
     data?.status || data?.state || data?.payment_status || data?.data?.status;
   const normalized = String(raw || "").toLowerCase();
 
-  if (SUCCESS_VALUES.includes(normalized)) return "paid";
-  if (FAILURE_VALUES.includes(normalized)) return "failed";
-  return "pending";
+  let result = "pending";
+  if (SUCCESS_VALUES.includes(normalized)) result = "paid";
+  else if (FAILURE_VALUES.includes(normalized)) result = "failed";
+
+  console.log(`[inpay] getTransactionStatus natija: ${orderId} -> ${result} (raw: ${raw})`);
+  return result;
 };
 
 module.exports = { getToken, createPayment, getTransactionStatus };

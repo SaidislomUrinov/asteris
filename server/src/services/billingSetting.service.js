@@ -24,7 +24,13 @@ const getOrCreate = async (centerId) => {
   let setting = await BillingSetting.findOne({ center: centerId });
   if (!setting) {
     const center = await Center.findById(centerId).select("client");
-    setting = await BillingSetting.create({ client: center?.client, center: centerId });
+    try {
+      setting = await BillingSetting.create({ client: center?.client, center: centerId });
+    } catch (error) {
+      // Parallel so'rov shu orada yaratib qo'ydi (center unique) — o'shani olamiz.
+      if (error?.code !== 11000) throw error;
+      setting = await BillingSetting.findOne({ center: centerId });
+    }
   }
 
   const dto = DTO(setting);

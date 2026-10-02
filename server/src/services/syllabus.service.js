@@ -1,20 +1,26 @@
-const { Types } = require("mongoose");
+const { isValidObjectId } = require("mongoose");
 const Syllabus = require("../models/Syllabus");
+const TeachingPlan = require("../models/TeachingPlan");
 const Group = require("../models/Group");
 const Subject = require("../models/Subject");
 const Student = require("../models/Student");
+const Staff = require("../models/Staff");
 const emit = require("../utils/emitter.util");
 const {
   flattenLessons,
   countDoneLessons,
+  getDoneDates,
   buildProgress,
+  offsetForCurrentLesson,
 } = require("../utils/syllabusProgress.util");
-
-// Daraxt hajmi cheklovlari — bitta hujjatga cheksiz modul/dars yozib
-// yuborilsa Mongo hujjat limitiga (16MB) yaqinlashardi va frontend
-// akkordeoni ishlatib bo'lmas holga kelardi.
-const MAX_MODULES = 50;
-const MAX_LESSONS_PER_MODULE = 200;
+// Daraxt qoidalari (limitlar, normalizatsiya, nusxa) TeachingPlan bilan umumiy.
+const {
+  normalizeModules,
+  cloneModules,
+  moduleDTO,
+  lightModules,
+  countLessons,
+} = require("../utils/syllabusTree.util");
 
 // Guruhga biriktirilish orqali cheklanadigan rollar → Group'dagi mos maydon.
 const SCOPE_FIELD = { teacher: "teacher", assistant: "assistant" };
@@ -61,64 +67,38 @@ const assertGroup = async (clientId, groupId, scope = null) => {
   return group;
 };
 
-const moduleDTO = (mod) => ({
-  _id: String(mod._id),
-  title: mod.title,
-  lessons: (mod.lessons || []).map((l) => ({
-    _id: String(l._id),
-    title: l.title,
-    description: l.description || "",
-    homework: l.homework || "",
-  })),
-});
-
 // GET javobining yagona shakli — import ham, PUT ham aynan shuni qaytaradi,
 // shuning uchun frontend har amaldan keyin bir xil holatni oladi.
 const buildResponse = async (clientId, group, syllabus) => {
   const modules = syllabus?.modules || [];
   const lessons = flattenLessons(modules);
-  const doneCount = await countDoneLessons(clientId, group._id, group.lessonOffset);
+  const [doneCount, attendanceDates] = await Promise.all([
+    countDoneLessons(clientId, group._id, group.lessonOffset),
+    getDoneDates(clientId, group._id),
+  ]);
 
   return {
     groupId: String(group._id),
     lessonOffset: group.lessonOffset || 0,
     modules: modules.map(moduleDTO),
     progress: buildProgress(lessons, doneCount, modules.length),
+    // Xronologik davomat sanalari — kalendarda har bir dars AYNAN qaysi
+    // kunda o'tilganini ko'rsatish uchun (useLessonSchedule.js, frontend).
+    attendanceDates,
   };
 };
 
-// Frontenddan kelgan daraxtni tozalaydi va tekshiradi. `_id` yuborilsa
-// SAQLANADI (frontend qatorlarining key'i va tahrir holati buzilmasligi
-// uchun), yo'q bo'lsa yangi generatsiya qilinadi.
-const normalizeModules = (raw) => {
-  if (!Array.isArray(raw)) throw new Error("syllabus.invalidModules");
-  if (raw.length > MAX_MODULES) throw new Error("syllabus.tooManyModules");
-
-  return raw.map((mod) => {
-    const title = String(mod?.title || "").trim();
-    if (!title) throw new Error("syllabus.titleRequired");
-
-    const rawLessons = Array.isArray(mod?.lessons) ? mod.lessons : [];
-    if (rawLessons.length > MAX_LESSONS_PER_MODULE) throw new Error("syllabus.tooManyLessons");
-
-    return {
-      _id: Types.ObjectId.isValid(mod?._id) ? new Types.ObjectId(mod._id) : new Types.ObjectId(),
-      title,
-      lessons: rawLessons.map((lesson) => {
-        const lessonTitle = String(lesson?.title || "").trim();
-        if (!lessonTitle) throw new Error("syllabus.titleRequired");
-        return {
-          _id: Types.ObjectId.isValid(lesson?._id)
-            ? new Types.ObjectId(lesson._id)
-            : new Types.ObjectId(),
-          title: lessonTitle,
-          description: String(lesson?.description || "").trim(),
-          homework: String(lesson?.homework || "").trim(),
-        };
-      }),
-    };
-  });
+// "Hozir qaysi darsdamiz" — K (yoyilgan ro'yxatda 1-dan). Butun son va
+// 1 ≤ K ≤ totalLessons bo'lishi shart (API_CONTRACT_teaching_plans.md §4.2).
+const parseLessonNo = (raw, totalLessons) => {
+  const no = raw === null || raw === "" ? NaN : Number(raw);
+  if (!Number.isInteger(no) || no < 1 || no > totalLessons) {
+    throw new Error("syllabus.invalidCurrentLesson");
+  }
+  return no;
 };
+
+const hasValue = (value) => value !== undefined && value !== null && value !== "";
 
 // Daraxtni butunlay almashtiradi (upsert) — PUT ham, import ham shu orqali.
 const replaceModules = async (clientId, group, modules) => {
@@ -164,15 +144,24 @@ module.exports = {
     assertCanWrite(staff);
     const group = await assertGroup(clientId, groupId, scopeOf(staff));
 
-    const offset = Number(body.lessonOffset);
-    if (!Number.isFinite(offset) || offset < 0) throw new Error("syllabus.invalidOffset");
+    const syllabus = await Syllabus.findOne({ group: group._id, client: clientId, isDeleted: false });
 
-    group.lessonOffset = Math.floor(offset);
+    if (hasValue(body.currentLessonNo)) {
+      // "Joriy darsni o'zgartirish" — offset serverda YAGONA formula bilan
+      // hisoblanadi (syllabusProgress.util.js#offsetForCurrentLesson).
+      const totalLessons = countLessons(syllabus?.modules);
+      if (!totalLessons) throw new Error("syllabus.sourceEmpty");
+      const no = parseLessonNo(body.currentLessonNo, totalLessons);
+      group.lessonOffset = await offsetForCurrentLesson(clientId, group._id, no);
+    } else {
+      // Manfiy butun son ham ruxsat (reja guruh boshlanganidan keyin biriktirilgan).
+      const offset = hasValue(body.lessonOffset) ? Number(body.lessonOffset) : NaN;
+      if (!Number.isInteger(offset)) throw new Error("syllabus.invalidOffset");
+      group.lessonOffset = offset;
+    }
     await group.save();
 
     emit(`client:${clientId}`, "syllabus:changed", { groupId: String(group._id) });
-
-    const syllabus = await Syllabus.findOne({ group: group._id, client: clientId, isDeleted: false });
     return buildResponse(clientId, group, syllabus);
   },
 
@@ -220,7 +209,7 @@ module.exports = {
     return groups
       .map((g) => {
         const modules = syllabusMap[String(g._id)]?.modules || [];
-        const lessonCount = modules.reduce((sum, m) => sum + (m.lessons?.length || 0), 0);
+        const lessonCount = countLessons(modules);
         return {
           _id: String(g._id),
           // Guruh nomi frontendda saqlanmaydi (fan nomi + activeId ?? pendingId)
@@ -229,53 +218,111 @@ module.exports = {
           moduleCount: modules.length,
           lessonCount,
           studentsCount: countMap[String(g._id)] || 0,
+          // Yengil daraxt — "Hozir qaysi darsdamiz?" tanlovchisi uchun.
+          modules: lightModules(modules),
         };
       })
       // Dasturi bo'sh guruhdan import qilishning ma'nosi yo'q.
       .filter((g) => g.lessonCount > 0);
   },
 
+  // Import uchun O'QITUVCHILAR REJALARI — shu fandagi (fan NOMI bo'yicha,
+  // `sources` bilan bir xil qoida) barcha o'qituvchilarning shablon rejalari,
+  // har birida muallif ko'rsatiladi. Staff faqat o'z filiali rejalarini
+  // ko'radi (staffCenter). Bo'sh rejalar chiqmaydi.
+  plans: async (clientId, groupId, scope = null, staffCenter = "", staff = null) => {
+    const group = await assertGroup(clientId, groupId, scope);
+    const subjectIds = await sameSubjectIds(clientId, group.subject);
+
+    const filter = { client: clientId, subject: { $in: subjectIds }, isDeleted: false };
+    if (staffCenter) filter.center = staffCenter;
+
+    const plans = (await TeachingPlan.find(filter).lean()).filter((p) => countLessons(p.modules) > 0);
+    if (!plans.length) return [];
+
+    // Mualliflar — bitta so'rovda (reja boshiga emas).
+    const authorIds = [...new Set(plans.map((p) => String(p.staff)))];
+    const authors = await Staff.find({ _id: { $in: authorIds }, client: clientId }, { name: 1 }).lean();
+    const nameMap = Object.fromEntries(authors.map((a) => [String(a._id), a.name]));
+    const myId = staff?._id ? String(staff._id) : null;
+
+    return plans
+      .map((p) => ({
+        _id: String(p._id),
+        title: p.title,
+        teacher: { _id: String(p.staff), name: nameMap[String(p.staff)] || "?" },
+        // Owner uchun doim false (`staff` yo'q).
+        mine: Boolean(myId) && String(p.staff) === myId,
+        moduleCount: p.modules.length,
+        lessonCount: countLessons(p.modules),
+        updatedAt: p.updatedAt,
+        modules: lightModules(p.modules),
+      }))
+      .sort((a, b) => Number(b.mine) - Number(a.mine) || (b.updatedAt || 0) - (a.updatedAt || 0));
+  },
+
   // To'liq NUSXA — manba bilan hech qanday bog'liqlik qolmaydi, shuning
   // uchun barcha `_id` lar yangidan generatsiya qilinadi (aks holda ikki
   // guruh bir xil dars id'larini ulashib, frontendda chalkashardi).
+  //
+  // Manba: `{ sourceGroupId }` (boshqa guruh dasturi) YOKI `{ planId }`
+  // (o'qituvchi shablon rejasi). Ixtiyoriy `currentLessonNo` — "hozir qaysi
+  // darsdamiz" → `lessonOffset` (API_CONTRACT_teaching_plans.md §3).
   importFrom: async (clientId, groupId, body = {}, staff = null) => {
     assertCanWrite(staff);
     const scope = scopeOf(staff);
     const group = await assertGroup(clientId, groupId, scope);
-
-    const sourceGroup = await Group.findOne({
-      _id: body.sourceGroupId,
-      client: clientId,
-      isDeleted: false,
-    });
-    if (!sourceGroup) throw new Error("group.notFound");
-    // `sources` bilan bir xil qoida — fan NOMI bo'yicha (yuqoridagi izohga qara).
+    // `sources`/`plans` bilan bir xil qoida — fan NOMI bo'yicha (yuqoridagi izohga qara).
     const subjectIds = await sameSubjectIds(clientId, group.subject);
-    if (!subjectIds.some((id) => String(id) === String(sourceGroup.subject))) {
-      throw new Error("syllabus.subjectMismatch");
+    const sameSubject = (id) => subjectIds.some((s) => String(s) === String(id));
+
+    let sourceModules;
+    if (hasValue(body.planId)) {
+      if (!isValidObjectId(body.planId)) throw new Error("teachingPlan.notFound");
+      const filter = { _id: body.planId, client: clientId, isDeleted: false };
+      // Staff faqat o'z filiali rejalaridan import qiladi (`plans` ro'yxati bilan bir xil).
+      if (staff?.center) filter.center = staff.center;
+      const plan = await TeachingPlan.findOne(filter);
+      if (!plan) throw new Error("teachingPlan.notFound");
+      if (!sameSubject(plan.subject)) throw new Error("syllabus.subjectMismatch");
+      sourceModules = plan.modules;
+    } else {
+      const sourceGroup = await Group.findOne({
+        _id: body.sourceGroupId,
+        client: clientId,
+        isDeleted: false,
+      });
+      if (!sourceGroup) throw new Error("group.notFound");
+      if (!sameSubject(sourceGroup.subject)) throw new Error("syllabus.subjectMismatch");
+
+      const source = await Syllabus.findOne({
+        group: sourceGroup._id,
+        client: clientId,
+        isDeleted: false,
+      });
+      sourceModules = source?.modules;
     }
 
-    const source = await Syllabus.findOne({
-      group: sourceGroup._id,
-      client: clientId,
-      isDeleted: false,
-    });
-    if (!source?.modules?.length) throw new Error("syllabus.sourceEmpty");
+    const totalLessons = countLessons(sourceModules);
+    if (!sourceModules?.length || !totalLessons) throw new Error("syllabus.sourceEmpty");
 
-    const modules = source.modules.map((mod) => ({
-      _id: new Types.ObjectId(),
-      title: mod.title,
-      lessons: (mod.lessons || []).map((lesson) => ({
-        _id: new Types.ObjectId(),
-        title: lesson.title,
-        description: lesson.description || "",
-        homework: lesson.homework || "",
-      })),
-    }));
+    // Diapazon YOZISHDAN OLDIN tekshiriladi — xato bo'lsa dastur o'zgarmaydi.
+    // Berilmasa offset o'zgarmaydi (eski xatti-harakat).
+    const lessonNo = hasValue(body.currentLessonNo)
+      ? parseLessonNo(body.currentLessonNo, totalLessons)
+      : null;
+
+    // Offset `replaceModules` dan OLDIN saqlanadi: u `syllabus:changed`
+    // emit qiladi, boshqa qurilmalar refetch qilganda yangi offset tayyor bo'lsin.
+    if (lessonNo !== null) {
+      group.lessonOffset = await offsetForCurrentLesson(clientId, group._id, lessonNo);
+      await group.save();
+    }
 
     // Replace rejimi — maqsad guruhning eski modullari butunlay almashadi
     // (tasdiq modali frontendda ko'rsatiladi).
-    const syllabus = await replaceModules(clientId, group, modules);
+    const syllabus = await replaceModules(clientId, group, cloneModules(sourceModules));
+
     return buildResponse(clientId, group, syllabus);
   },
 };

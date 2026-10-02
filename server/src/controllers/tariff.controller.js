@@ -10,6 +10,15 @@ module.exports = {
     }
   },
 
+  publicList: async (req, res, next) => {
+    try {
+      const data = await tariffService.publicList();
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   list: async (req, res, next) => {
     try {
       const data = await tariffService.list();

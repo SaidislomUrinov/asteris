@@ -17,10 +17,28 @@ router.use(tenantAuth);
 router.use(requireActiveSubscription);
 router.use(requireTenantPermission("report:view"));
 
+// Davomat hisoboti — moliyaviy hisobotdan MUSTAQIL tarif flag'i
+// (`attendance.report`), shuning uchun `finance.report` gate'idan OLDIN
+// e'lon qilinadi: moliyaviy hisobotsiz tarifda ham ishlayveradi.
+router.get(
+  "/attendance/export",
+  requireTariffFeature("attendance.report"),
+  requireTenantPermission("report:export"),
+  requireTariffFeature("excel.export"),
+  reportController.exportAttendance,
+);
+router.get("/attendance", requireTariffFeature("attendance.report"), reportController.attendance);
+
+router.use(requireTariffFeature("finance.report"));
+
 router.get("/summary", reportController.summary);
 router.get("/timeline", reportController.timeline);
 router.get("/by-center", reportController.byCenter);
-router.get("/by-teacher", reportController.byTeacher);
+router.get(
+  "/by-teacher",
+  requireTariffFeature("teacher.performance"),
+  reportController.byTeacher
+);
 router.get("/by-collector", reportController.byCollector);
 router.get("/by-group", reportController.byGroup);
 router.get("/debtors", reportController.debtors);

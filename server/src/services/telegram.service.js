@@ -56,6 +56,12 @@ module.exports = {
     return { ok: true, message };
   },
 
+  // Bot o'chiq/token yo'q bo'lsa `username: null` — frontend havolani yashiradi.
+  botInfo: async () => {
+    const username = await getBotUsername();
+    return { username: username || null, link: username ? `https://t.me/${username}` : null };
+  },
+
   status: async (kind, id) => {
     const doc = await Model(kind).findOne({ _id: id }).select("telegram");
     return {

@@ -3,6 +3,19 @@ const fs = require("fs");
 const md5 = require("md5");
 const { getNow } = require("./date.util");
 const { FOLDERS } = require("../configs/folder.config");
+
+// Har bir folder uchun ruxsat etilgan fayl kengaytmalari — ixtiyoriy turdagi
+// fayl (masalan .html/.svg) /uploads orqali static xizmat ko'rsatilishining
+// oldini olish uchun.
+const ALLOWED_EXTENSIONS = {
+  [FOLDERS.LOGOS]: [".jpg", ".jpeg", ".png", ".webp"],
+  [FOLDERS.CERTIFICATES]: [".jpg", ".jpeg", ".png", ".webp"],
+  [FOLDERS.FONTS]: [".ttf", ".otf", ".woff", ".woff2"],
+  [FOLDERS.CHAT_IMAGES]: [".jpg", ".jpeg", ".png", ".webp"],
+  // Yangiliklar: rasm (≤10MB) + video (≤100MB) — hajm news.service'da tekshiriladi.
+  [FOLDERS.NEWS]: [".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".webm"],
+};
+
 /**
  * Fayl saqlash
  * @param {File} file
@@ -22,7 +35,11 @@ async function save(file, folder, name, index) {
 
   fs.mkdirSync(`.${uploadDir}`, { recursive: true });
 
-  const ext = path.extname(file.name);
+  const ext = path.extname(file.name).toLowerCase();
+  const allowed = ALLOWED_EXTENSIONS[folder] || [];
+  if (!allowed.includes(ext)) {
+    throw new Error("Ruxsat etilmagan fayl turi");
+  }
 
   const fileName =
     index !== undefined

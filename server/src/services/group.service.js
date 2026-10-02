@@ -8,9 +8,10 @@ const Room = require("../models/Room");
 const Student = require("../models/Student");
 const Counter = require("../models/Counter");
 const { getNow, dateStringToUnix } = require("../utils/date.util");
-const rescheduleDraft = require("../utils/rescheduleDraft.util");
 const syllabusProgress = require("../utils/syllabusProgress.util");
 const emit = require("../utils/emitter.util");
+const audit = require("../utils/audit.util");
+const { archiveGroupEntries, emitArchiveChanged } = require("../utils/archive.util");
 
 const PAGE_SIZE = 50;
 
@@ -25,12 +26,38 @@ const parseDays = (days) => {
   return [...new Set(list)];
 };
 
+// Telegram guruh havolasini normallashtirish. Qabul qilinadi:
+// `https://t.me/x`, `http://t.me/x`, `t.me/x`, `telegram.me/x`,
+// `https://t.me/+Hash`, `https://t.me/joinchat/Hash`, `@username`.
+// Natija: `https://t.me/<path>`; bo'sh → null; yaroqsiz → undefined.
+const TG_PATH_RE = /^(?:\+[A-Za-z0-9_-]{5,}|joinchat\/[A-Za-z0-9_-]{5,}|[A-Za-z][A-Za-z0-9_]{3,31})$/;
+const normalizeTelegramLink = (value) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string") return undefined;
+  const raw = value.trim();
+  if (!raw) return null;
+
+  if (raw.startsWith("@")) {
+    const username = raw.slice(1);
+    return TG_PATH_RE.test(username) && !username.includes("/") && !username.startsWith("+")
+      ? `https://t.me/${username}`
+      : undefined;
+  }
+
+  const match = raw.match(/^(?:https?:\/\/)?(?:www\.)?(?:t|telegram)\.me\/(.+)$/i);
+  if (!match) return undefined;
+  const path = match[1].replace(/[?#].*$/, "").replace(/\/+$/, "");
+  return TG_PATH_RE.test(path) ? `https://t.me/${path}` : undefined;
+};
+
 const DTO = (data, studentsCount = 0, syllabus = null, roomName = null, subjectName = null) => ({
   _id: data?._id,
   client: data?.client,
   center: data?.center,
   subject: data?.subject,
   subjectName,
+  name: data?.name || null,
+  telegramLink: data?.telegramLink || null,
   teacher: data?.teacher,
   assistant: data?.assistant,
   room: data?.room,
@@ -99,7 +126,8 @@ const getSyllabusMap = async (clientId, groups) => {
     const totalLessons = row.lessonCounts.reduce((sum, n) => sum + n, 0);
     if (!totalLessons) continue;
 
-    const doneCount = (doneMap[key] || 0) + (offsetMap[key] || 0);
+    // Manfiy offset (reja kechroq biriktirilgan) — 0 bilan qisiladi.
+    const doneCount = syllabusProgress.clampDone((doneMap[key] || 0) + (offsetMap[key] || 0));
     const finished = doneCount >= totalLessons;
     // Joriy dars raqami: tugamagan bo'lsa keyingisi, tugagan bo'lsa oxirgisi.
     const lessonNo = finished ? totalLessons : doneCount + 1;
@@ -281,53 +309,11 @@ const emitGroupChanged = (clientId, group, action = "updated") => {
   });
 };
 
-// ─── Ommaviy qayta tartiblash ("Tartiblash") yordamchilari ────────────────
-// API_CONTRACT_group_reschedule.md
-
-const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
-
-// Bitta joylashuvni tekshiradi. `existing` — solishtiriladigan boshqa
-// joylashuvlar ro'yxati (qoralamada faqat qoralamaning o'zi, commit'da esa
-// yakuniy holat). Konflikt topilsa `conflict` maydonli Error otiladi.
-const validatePlacement = ({ groupId, roomId, days, startTime, endTime }, existing, labelOf, roomNameOf) => {
-  if (!groupId || !roomId) throw new Error("group.fillTheRows");
-  if (!Array.isArray(days) || !days.length) throw new Error("group.fillTheRows");
-  validateDays(days);
-  if (!TIME_RE.test(startTime || "") || !TIME_RE.test(endTime || "")) {
-    throw new Error("group.invalidTime");
-  }
-  if (toMinutes(startTime) >= toMinutes(endTime)) throw new Error("group.invalidTime");
-
-  for (const other of existing) {
-    if (String(other.groupId) === String(groupId)) continue;
-    if (String(other.roomId) !== String(roomId)) continue;
-
-    const commonDay = days.find((d) => other.days.includes(d));
-    if (!commonDay) continue;
-    if (!timesOverlap(startTime, endTime, other.startTime, other.endTime)) continue;
-
-    // Shakl checkRoomConflict() bilan AYNI — frontend (GroupScheduleDialog)
-    // allaqachon shu maydonlarni kutadi.
-    const err = new Error("room.busyAtThisTime");
-    err.conflict = {
-      room: roomNameOf ? roomNameOf(other.roomId) : "",
-      day: commonDay,
-      startTime: other.startTime,
-      endTime: other.endTime,
-      label: labelOf ? labelOf(other.groupId) : "",
-    };
-    throw err;
-  }
-};
-
-// Qoralamadagi `placements` obyektini validatsiya ro'yxatiga aylantiradi.
-const toList = (placements) =>
-  Object.entries(placements || {}).map(([groupId, p]) => ({ groupId, ...p }));
+// ─── Jadval ish maydoni yordamchilari ─────────────────────────────────────
+// API_CONTRACT_group_schedule_per_group.md
 
 // Jadval ish maydonining ma'lumot bazasi: shu tenantning (staff'da — shu
-// filialning) barcha pending+active guruhlari va faol xonalari. `rescheduleStart`
-// bundan Redis qoralamasini yasaydi, `rescheduleCommit` esa frontend yuborgan
-// joylashuvlarni tekshirish uchun ishlatadi.
+// filialning) barcha pending+active guruhlari va faol xonalari.
 const buildScheduleData = async (clientId, staffCenter = "") => {
   const filter = scopeFilter(clientId, staffCenter);
 
@@ -402,9 +388,21 @@ const scopeFilter = (clientId, staffCenter) => {
 module.exports = {
   DTO,
 
-  create: async (clientId, body) => {
-    const { centerId, subjectId, teacherId, assistantId, roomId, days, startTime, endTime, maxStudents } =
-      body;
+  // Arxiv moduli (archive.service.js `restoreGroup`) guruhni qaytarishdan
+  // oldin xuddi shu xona to'qnashuvini tekshirish uchun qayta ishlatadi —
+  // arxivlangan payt bo'shab qolgan slot boshqa guruhga berilgan bo'lishi
+  // mumkin.
+  checkRoomConflict,
+  validateRoom,
+  emitGroupChanged,
+
+  create: async (clientId, body, staff = null) => {
+    const { centerId, subjectId, assistantId, roomId, days, startTime, endTime, maxStudents } = body;
+    // O'qituvchi o'zi guruh yaratsa, u DOIM shu guruhning o'qituvchisi
+    // bo'ladi — boshqa o'qituvchini `teacherId` orqali yubormoqchi bo'lsa ham
+    // e'tiborga olinmaydi (frontend ham maydonni qulflab qo'ygan, bu yerda
+    // esa yakuniy kafolat).
+    const teacherId = staff?.role === "teacher" ? String(staff._id) : body.teacherId;
     if (!centerId || !subjectId) throw new Error("group.fillTheRows");
     if (maxStudents != null && maxStudents < 0) throw new Error("group.invalidMaxStudents");
     validateDays(days);
@@ -686,12 +684,22 @@ module.exports = {
   // jadval maydonlarini yangilaydi. Xona to'qnashuvi xuddi activate'dagi
   // kabi tekshiriladi (o'zining joriy bandligi excludeGroupId orqali
   // hisobga olinmaydi).
-  reschedule: async (clientId, id, body = {}) => {
+  // O'qituvchi o'zining guruhini tahrirlashi mumkin, lekin FAQAT yordamchi
+  // o'qituvchi maydonini — fan, xona, kunlar, vaqt uni tegishli emas
+  // (frontend `GroupScheduleDialog` bu maydonlarni teacher uchun qulflab
+  // qo'yadi, bu yerda esa yakuniy kafolat: boshqa maydonlar jimgina
+  // e'tiborsiz qoldiriladi, xato tashlanmaydi).
+  reschedule: async (clientId, id, body = {}, staff = null) => {
     const group = await Group.findOne({ _id: id, client: clientId, isDeleted: false });
     if (!group) throw new Error("group.notFound");
-    if (group.status !== "active") throw new Error("group.notActive");
+    // Ish maydonida pending ("Start berilgan") guruhlar ham bor va ularga
+    // jadval qo'yish mumkin. Faqat yakunlangan guruh jadvali o'zgarmaydi.
+    if (group.status === "finished") throw new Error("group.scheduleFinished");
 
-    const { teacherId, assistantId, roomId, days, startTime, endTime } = body;
+    const isTeacherScoped = staff?.role === "teacher";
+    const { teacherId, assistantId, roomId, days, startTime, endTime } = isTeacherScoped
+      ? { teacherId: undefined, assistantId: body.assistantId, roomId: undefined, days: undefined, startTime: undefined, endTime: undefined }
+      : body;
     validateDays(days);
 
     const teacher = teacherId ? await validateTeacher(clientId, group.center, teacherId) : null;
@@ -705,20 +713,28 @@ module.exports = {
     const nextDays = days || group.days;
     const nextStartTime = startTime !== undefined ? startTime : group.startTime;
     const nextEndTime = endTime !== undefined ? endTime : group.endTime;
-    const nextRoom = room || (await Room.findOne({ _id: group.room, isDeleted: false }));
+    // `roomId: null` — guruhni jadvaldan olib tashlash (bo'shatish),
+    // `undefined` esa "tegilmasin" degani. Bo'shatishda xona to'qnashuvini
+    // tekshirish MA'NOSIZ (guruh jadvaldan chiqarilyapti).
+    const nextRoom =
+      roomId !== undefined
+        ? room
+        : await Room.findOne({ _id: group.room, isDeleted: false });
 
-    await checkRoomConflict(
-      clientId,
-      group.center,
-      nextRoom,
-      nextDays,
-      nextStartTime,
-      nextEndTime,
-      group._id,
-    );
+    if (roomId === undefined || room) {
+      await checkRoomConflict(
+        clientId,
+        group.center,
+        nextRoom,
+        nextDays,
+        nextStartTime,
+        nextEndTime,
+        group._id,
+      );
+    }
 
     if (teacher) group.teacher = teacher._id;
-    if (room) group.room = room._id;
+    if (roomId !== undefined) group.room = room ? room._id : null;
     if (days) group.days = days;
     if (startTime !== undefined) group.startTime = startTime;
     if (endTime !== undefined) group.endTime = endTime;
@@ -729,166 +745,41 @@ module.exports = {
     return DTO(group, countMap[String(group._id)] || 0);
   },
 
-  // ─── Ommaviy qayta tartiblash ─────────────────────────────────────────
-  // Qoralama Redis'da (rescheduleDraft.util), DB'ga commit'gacha TEGILMAYDI.
-  // Shu sabab "Chiqish" hech narsani orqaga qaytarishi shart emas.
+  rename: async (clientId, id, name) => {
+    const trimmed = (name || "").trim();
+    if (!trimmed) throw new Error("group.invalidName");
 
-  scheduleData: async (clientId, staffCenter = "") => buildScheduleData(clientId, staffCenter),
-
-  rescheduleStart: async (clientId, userId, staffCenter = "") =>
-    rescheduleDraft.save(clientId, userId, await buildScheduleData(clientId, staffCenter)),
-
-  rescheduleGet: async (clientId, userId) => rescheduleDraft.get(clientId, userId),
-
-  reschedulePlace: async (clientId, userId, body = {}) => {
-    const draft = await rescheduleDraft.get(clientId, userId);
-    if (!draft) throw new Error("group.noDraft");
-
-    const { groupId, roomId, days, startTime, endTime } = body;
-
-    const group = draft.groups.find((g) => g._id === String(groupId));
+    const group = await Group.findOne({ _id: id, client: clientId, isDeleted: false });
     if (!group) throw new Error("group.notFound");
-    const room = draft.rooms.find((r) => r._id === String(roomId));
-    if (!room) throw new Error("room.notFound");
-    // Guruh boshqa filialning xonasiga tushib qolmasligi kerak.
-    if (group.center !== room.center) throw new Error("room.notFound");
 
-    const labelOf = (id) => draft.groups.find((g) => g._id === String(id))?.label || "";
-    const roomNameOf = (id) => draft.rooms.find((r) => r._id === String(id))?.name || "";
+    group.name = trimmed;
+    await group.save();
+    emitGroupChanged(clientId, group, "renamed");
 
-    validatePlacement(
-      { groupId: String(groupId), roomId: String(roomId), days, startTime, endTime },
-      toList(draft.placements),
-      labelOf,
-      roomNameOf,
-    );
-
-    draft.placements[String(groupId)] = {
-      roomId: String(roomId),
-      days,
-      startTime,
-      endTime,
-    };
-
-    return rescheduleDraft.save(clientId, userId, draft);
+    const countMap = await getStudentsCountMap([group._id]);
+    return DTO(group, countMap[String(group._id)] || 0);
   },
 
-  rescheduleUnplace: async (clientId, userId, groupId) => {
-    const draft = await rescheduleDraft.get(clientId, userId);
-    if (!draft) throw new Error("group.noDraft");
+  // Telegram guruh manzili — bo'sh/null → o'chiriladi. Aks holda
+  // `normalizeTelegramLink` orqali `https://t.me/<path>` ga keltiriladi.
+  setTelegramLink: async (clientId, id, link) => {
+    const normalized = normalizeTelegramLink(link);
+    if (normalized === undefined) throw new Error("group.invalidTelegramLink");
 
-    delete draft.placements[String(groupId)];
-    return rescheduleDraft.save(clientId, userId, draft);
+    const group = await Group.findOne({ _id: id, client: clientId, isDeleted: false });
+    if (!group) throw new Error("group.notFound");
+
+    group.telegramLink = normalized;
+    await group.save();
+    emitGroupChanged(clientId, group, "telegram");
+
+    const countMap = await getStudentsCountMap([group._id]);
+    return DTO(group, countMap[String(group._id)] || 0);
   },
 
-  rescheduleDiscard: async (clientId, userId) => {
-    await rescheduleDraft.remove(clientId, userId);
-    return true;
-  },
-
-  /**
-   * Qoralamani real Group hujjatlariga qo'llaydi.
-   *
-   * mode="placed" (default): faqat joylashtirilganlar yangilanadi,
-   *   qolganlarning eski jadvali SAQLANADI.
-   * mode="full":  joylashtirilmaganlarning jadvali TOZALANADI.
-   *
-   * Ikkala rejimda ham yozishdan oldin YAKUNIY holat tekshiriladi — bitta
-   * konflikt bo'lsa hech narsa yozilmaydi (qisman qo'llash jadvalni buzardi).
-   */
-  // `placements` bodyda kelsa Redis qoralamasi KERAK EMAS — jadval sahifasi
-  // joylashuvlarni o'zida (frontendda) saqlaydi. Kelmasa eski oqim ishlaydi.
-  rescheduleCommit: async (
-    clientId,
-    userId,
-    { mode = "placed", placements } = {},
-    staffCenter = "",
-  ) => {
-    const draft = placements
-      ? { ...(await buildScheduleData(clientId, staffCenter)), placements }
-      : await rescheduleDraft.get(clientId, userId);
-    if (!draft) throw new Error("group.noDraft");
-
-    const placed = toList(draft.placements);
-    if (!placed.length) throw new Error("group.noPlacements");
-
-    // Frontenddan kelgan joylashuvlar: guruh ham, xona ham shu tenantga
-    // (staff'da — shu filialga) tegishli bo'lishi shart.
-    if (placements) {
-      for (const p of placed) {
-        const group = draft.groups.find((g) => g._id === String(p.groupId));
-        if (!group) throw new Error("group.notFound");
-        const room = draft.rooms.find((r) => r._id === String(p.roomId));
-        if (!room || room.center !== group.center) throw new Error("room.notFound");
-      }
-    }
-
-    const isFull = mode === "full";
-    const placedIds = new Set(placed.map((p) => p.groupId));
-
-    // Yakuniy holat: joylashtirilganlar (yangi slot) + "placed" rejimda
-    // joylashtirilmaganlar (eski slot). Aks holda commit'dan keyin ikki guruh
-    // bitta xonada bir vaqtda qolib ketardi.
-    const finalState = [...placed];
-    if (!isFull) {
-      for (const g of draft.groups) {
-        if (placedIds.has(g._id)) continue;
-        const o = g.original;
-        if (!o.room || !o.days?.length || !o.startTime || !o.endTime) continue;
-        finalState.push({
-          groupId: g._id,
-          roomId: o.room,
-          days: o.days,
-          startTime: o.startTime,
-          endTime: o.endTime,
-        });
-      }
-    }
-
-    const labelOf = (id) => draft.groups.find((g) => g._id === String(id))?.label || "";
-    const roomNameOf = (id) => draft.rooms.find((r) => r._id === String(id))?.name || "";
-    for (const p of finalState) {
-      validatePlacement(p, finalState, labelOf, roomNameOf);
-    }
-
-    // Tekshiruv o'tdi — endi yozamiz.
-    const filter = scopeFilter(clientId, staffCenter);
-    const ops = placed.map((p) => ({
-      updateOne: {
-        filter: { ...filter, _id: p.groupId },
-        update: {
-          $set: {
-            room: p.roomId,
-            days: p.days,
-            startTime: p.startTime,
-            endTime: p.endTime,
-            lastUpdate: getNow(),
-          },
-        },
-      },
-    }));
-
-    if (isFull) {
-      const unplacedIds = draft.groups.filter((g) => !placedIds.has(g._id)).map((g) => g._id);
-      if (unplacedIds.length) {
-        ops.push({
-          updateMany: {
-            filter: { ...filter, _id: { $in: unplacedIds } },
-            update: { $set: { days: [], startTime: "", endTime: "", lastUpdate: getNow() } },
-          },
-        });
-      }
-    }
-
-    const res = await Group.bulkWrite(ops);
-    await rescheduleDraft.remove(clientId, userId);
-
-    return {
-      updated: placed.length,
-      cleared: isFull ? draft.groups.length - placed.length : 0,
-      modified: res.modifiedCount || 0,
-    };
-  },
+  // Jadval sahifasining ma'lumot bazasi. Saqlash har bir guruh uchun alohida
+  // `reschedule` (yuqorida) orqali boradi — API_CONTRACT_group_schedule_per_group.md.
+  scheduleData: async (clientId, staffCenter = "") => buildScheduleData(clientId, staffCenter),
 
   finish: async (clientId, id) => {
     const group = await Group.findOne({ _id: id, client: clientId, isDeleted: false });
@@ -902,6 +793,38 @@ module.exports = {
 
     const countMap = await getStudentsCountMap([group._id]);
     return DTO(group, countMap[String(group._id)] || 0);
+  },
+
+  // Arxivlash — API_CONTRACT_archive.md. Guruh HOLATIDAN qat'i nazar
+  // (pending/active/finished) arxivlanadi. "O'chirish" tushunchasi yo'q:
+  // `isDeleted` endi "arxivda" degani, hujjat hech qachon yo'qolmaydi va
+  // Arxiv bo'limidan qaytarilishi mumkin.
+  archive: async (clientId, id, actor = null) => {
+    const group = await Group.findOne({ _id: id, client: clientId, isDeleted: false });
+    if (!group) throw new Error("group.notFound");
+
+    group.isDeleted = true;
+    group.deletedAt = getNow();
+    await group.save();
+
+    // Guruh bilan birga uning o'quvchi a'zoliklari ham arxivlanadi — shu
+    // bilan arxivlangan guruh qarzdorligi butun loyihadan chiqadi.
+    const entriesArchived = await archiveGroupEntries(group._id);
+
+    emitGroupChanged(clientId, group, "archived");
+    emitArchiveChanged(clientId, group.center, "group", group._id, "archived");
+
+    const subject = await Subject.findById(group.subject).select("name");
+    void audit.log({
+      actor,
+      client: clientId,
+      center: group.center,
+      action: "group:archived",
+      entity: { type: "group", id: group._id, label: group.name || subject?.name || "" },
+      meta: { entriesArchived },
+    });
+
+    return true;
   },
 };
 
