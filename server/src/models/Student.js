@@ -23,6 +23,10 @@ const paymentSchema = new Schema(
     // yozilmaydi (CLAUDE.md), shuning uchun UI'da "noma'lum" deb ko'rsatiladi.
     collectedBy: { type: Schema.Types.ObjectId, default: null },
     collectedByKind: { type: String, enum: ["owner", "staff", null], default: null },
+    // Bekor qilinganda kim va qachon (eski to'lovlarda yo'q — null).
+    cancelledAt: { type: Number, default: null },
+    cancelledBy: { type: Schema.Types.ObjectId, default: null },
+    cancelledByKind: { type: String, enum: ["owner", "staff", "admin", null], default: null },
     date: { type: Number, default: getNow },
     // Qisqa, ochiq (public) tekshirish kodi — chek QR/link shunga ishora
     // qiladi (paymentVerify.service.js). ESKI to'lovlarda YO'Q (null) —

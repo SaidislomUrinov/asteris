@@ -4,6 +4,7 @@ const {
   tenantAuth,
   requireTenantPermission,
   requireActiveSubscription,
+  requireTeacherGroup,
 } = require("../middlewares/authenticator.middleware");
 
 const router = Router();
@@ -11,8 +12,9 @@ const router = Router();
 router.use(tenantAuth);
 router.use(requireActiveSubscription);
 
-router.get("/:groupId", requireTenantPermission("group:view"), groupHolidayController.list);
-router.post("/:groupId", requireTenantPermission("group:update"), groupHolidayController.mark);
-router.delete("/:groupId/:date", requireTenantPermission("group:update"), groupHolidayController.unmark);
+// requireTeacherGroup — hodim faqat o'z filiali (o'qituvchi — o'z) guruhi.
+router.get("/:groupId", requireTenantPermission("group:view"), requireTeacherGroup(), groupHolidayController.list);
+router.post("/:groupId", requireTenantPermission("group:update"), requireTeacherGroup(), groupHolidayController.mark);
+router.delete("/:groupId/:date", requireTenantPermission("group:update"), requireTeacherGroup(), groupHolidayController.unmark);
 
 module.exports = router;

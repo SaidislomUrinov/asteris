@@ -77,6 +77,7 @@ const authenticateClientSocket = async (socket, next) => {
       if (!staff || staff.blocked) return next(new Error("Unauthorized"));
 
       socket.data.role = staff.role;
+      socket.data.permissions = staff.permissions || [];
       socket.data.userId = payload._id;
       socket.data.clientId = staff.client;
       socket.data.centerId = staff.center;
@@ -89,11 +90,21 @@ const authenticateClientSocket = async (socket, next) => {
 };
 
 const joinRooms = (socket) => {
-  const { userId, clientId, centerId } = socket.data;
+  const { userId, clientId, centerId, role, permissions = [] } = socket.data;
 
   if (userId) socket.join(`user:${userId}`);
-  if (clientId) socket.join(`client:${clientId}`);
+  // `client:{id}` — faqat Owner. Hodim o'z filiali (`center:`) va tenant
+  // bo'yicha umumiy, maxfiy bo'lmagan hodisalar (`staff:{clientId}`)
+  // xonalarida; `client:` hodisalari emitter.util orqali shu xonalarga
+  // yo'naltiriladi. Avval hodim ham `client:` da bo'lib, boshqa filial,
+  // audit va xarajat hodisalarini olardi.
+  if (clientId && role === "owner") socket.join(`client:${clientId}`);
+  if (clientId && role !== "owner") socket.join(`staff:${clientId}`);
   if (centerId) socket.join(`center:${centerId}`);
+  // Xarajat hodisalari (summalar bilan) — faqat `expense:view` ruxsatli hodim.
+  if (centerId && (permissions.includes("all") || permissions.includes("expense:view"))) {
+    socket.join(`center:${centerId}:expense`);
+  }
 };
 
 const authenticateAdminSocket = (socket, next) => {

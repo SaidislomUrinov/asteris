@@ -1,4 +1,5 @@
 const calendarService = require("../services/calendar.service");
+const { buildActor } = require("../utils/audit.util");
 
 // server/ da zod paketi ulanmagan (package.json'da yo'q) — repo konvensiyasiga
 // mos, boshqa controllerlar kabi qo'lda tekshiruv qilinadi (servis xatoni
@@ -39,7 +40,7 @@ module.exports = {
 
   unmark: async (req, res, next) => {
     try {
-      const data = await calendarService.unmark(req.client._id, req.params.centerId, req.params.date);
+      const data = await calendarService.unmark(req.client._id, req.params.centerId, req.params.date, buildActor(req));
       return res.send({ ok: true, data, msg: "calendar.unmarked" });
     } catch (error) {
       next(error);

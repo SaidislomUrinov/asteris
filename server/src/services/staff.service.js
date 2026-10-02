@@ -23,6 +23,12 @@ const PAGE_SIZE = 50;
 // saqlanmaydi (rol o'zgarganda ham tozalanadi, permissions kabi).
 const TEACHING_ROLES = ["teacher", "assistant"];
 
+// Sessiya keshini (`fullStaffAuth` o'qiydigan `staff:{id}`) tashlash —
+// keyingi so'rov hodimni bazadan qayta o'qiydi. Aks holda bloklash, ruxsat
+// o'zgarishi yoki arxivlash kesh TTL (365 kun, sliding) tugaguncha ta'sir
+// qilmasdi (QA 2026-10-02).
+const dropSessionCache = (staffId) => redisUtil.del(keyConfig.staff(staffId));
+
 const DTO = (data) => ({
   _id: data?._id,
   staffId: data?.staffId,
@@ -93,10 +99,11 @@ const assertSalaryTypeAllowed = async (clientId, nextPermissions, prevPermission
 };
 
 module.exports = {
+  dropSessionCache,
   DTO,
 
   // ---- CRUD (Client Owner tomonidan boshqariladi, clientId bo'yicha tenant isolation) ----
-  create: async (clientId, body) => {
+  create: async (clientId, body, actor = null) => {
     const { centerId, name, login, password, role, permissions, salaryValue, subjects } = body;
     if (!centerId || !name || !login || !password) throw new Error("staff.fillTheRows");
     if (!Staff.ROLES.includes(role)) throw new Error("staff.invalidRole");
@@ -136,6 +143,15 @@ module.exports = {
       permissions: sanitizeStaffPermissions(role, permissions),
       subjects: await resolveSubjects(clientId, center._id, role, subjects),
       salaryValue: salaryValue ?? null,
+    });
+
+    void audit.log({
+      actor,
+      client: clientId,
+      center: staff.center,
+      action: "staff:create",
+      entity: { type: "staff", id: staff._id, label: staff.name },
+      meta: { role: staff.role, login: staff.login },
     });
 
     return { ...DTO(staff), plainPassword: password.trim() };
@@ -233,9 +249,18 @@ module.exports = {
     }));
   },
 
-  update: async (clientId, id, body) => {
+  update: async (clientId, id, body, actor = null) => {
     const staff = await Staff.findOne({ _id: id, client: clientId, isDeleted: false });
     if (!staff) throw new Error("staff.notFound");
+    // Audit uchun — ayniqsa ruxsatlar o'zgarishi (kim kimga nima berdi).
+    const before = {
+      name: staff.name,
+      login: staff.login,
+      role: staff.role,
+      permissions: [...(staff.permissions || [])],
+      center: staff.center ? String(staff.center) : null,
+      salaryValue: staff.salaryValue,
+    };
 
     if (body.login && body.login.trim() !== staff.login) {
       const trimmedLogin = body.login.trim();
@@ -281,6 +306,27 @@ module.exports = {
     staff.subjects = await resolveSubjects(clientId, staff.center, staff.role, body.subjects);
 
     await staff.save();
+    await dropSessionCache(staff._id);
+
+    const changes = audit.diff(before, {
+      name: staff.name,
+      login: staff.login,
+      role: staff.role,
+      permissions: [...(staff.permissions || [])],
+      center: staff.center ? String(staff.center) : null,
+      salaryValue: staff.salaryValue,
+    });
+    if (body.password) changes.push({ field: "password", from: null, to: "••••" });
+    if (changes.length) {
+      void audit.log({
+        actor,
+        client: clientId,
+        center: staff.center,
+        action: "staff:update",
+        entity: { type: "staff", id: staff._id, label: staff.name },
+        changes,
+      });
+    }
     return DTO(staff);
   },
 
@@ -295,6 +341,7 @@ module.exports = {
     staff.isDeleted = true;
     staff.deletedAt = getNow();
     await staff.save();
+    await dropSessionCache(staff._id);
 
     emitArchiveChanged(clientId, staff.center, "staff", staff._id, "archived");
     void audit.log({
@@ -308,12 +355,20 @@ module.exports = {
     return true;
   },
 
-  setBlocked: async (clientId, id, blocked) => {
+  setBlocked: async (clientId, id, blocked, actor = null) => {
     const staff = await Staff.findOne({ _id: id, client: clientId, isDeleted: false });
     if (!staff) throw new Error("staff.notFound");
 
     staff.blocked = blocked;
     await staff.save();
+    await dropSessionCache(staff._id);
+    void audit.log({
+      actor,
+      client: clientId,
+      center: staff.center,
+      action: blocked ? "staff:blocked" : "staff:unblocked",
+      entity: { type: "staff", id: staff._id, label: staff.name },
+    });
     return DTO(staff);
   },
 

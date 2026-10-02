@@ -297,6 +297,9 @@ module.exports = {
     client.isDeleted = true;
     client.deletedAt = getNow();
     await client.save();
+    // Sessiya keshi tashlanmasa o'chirilgan mijoz kesh TTL'i davomida
+    // ishlashda davom etardi (fullClientAuth faqat kesh bo'sh bo'lsa o'qiydi).
+    await redisUtil.del(keyConfig.client(client._id));
 
     return true;
   },
@@ -307,6 +310,9 @@ module.exports = {
 
     client.blocked = blocked;
     await client.save();
+    // Bloklash darhol kuchga kirsin — keyingi so'rov `client.blocked`ni
+    // bazadan o'qiydi (avval kesh tugaguncha owner ishlayverardi).
+    await redisUtil.del(keyConfig.client(client._id));
     await client.populate({ path: "subscription", populate: { path: "tariff" } });
     return DTO(client);
   },

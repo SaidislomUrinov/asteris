@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const rateLimit = require("express-rate-limit");
+const rateLimit = require("../utils/rateLimit.util");
 const clientController = require("../controllers/client.controller");
 const { clientAuth, fullClientAuth } = require("../middlewares/authenticator.middleware");
 
@@ -13,9 +13,18 @@ const signInLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Profil (parol almashtirish `currentPassword` bilan) — parolni tanlab
+// ko'rishdan himoya; signin hisoblagichidan alohida.
+const profileLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 router.post("/signin", signInLimiter, clientController.signIn);
 router.get("/verify", clientAuth, fullClientAuth, clientController.verify);
-router.patch("/profile", clientAuth, fullClientAuth, clientController.updateOwnProfile);
+router.patch("/profile", profileLimiter, clientAuth, fullClientAuth, clientController.updateOwnProfile);
 router.patch("/intro-seen", clientAuth, fullClientAuth, clientController.markIntroSeen);
 router.post("/signout", clientAuth, fullClientAuth, clientController.signOutSession);
 router.get("/tariffs", clientAuth, fullClientAuth, clientController.listTariffs);

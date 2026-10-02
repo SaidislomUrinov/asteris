@@ -7,6 +7,7 @@ const {
   requireTeacherGroup,
   requireTariffFeature,
   teacherScope,
+  requireStudentScope,
 } = require("../middlewares/authenticator.middleware");
 
 const router = Router();
@@ -24,6 +25,7 @@ router.use(requireTariffFeature("student.rate"));
 router.get(
   "/summary/:studentId",
   requireTenantPermission("attendance:view"),
+  requireStudentScope(),
   gradeController.studentSummary,
 );
 
@@ -37,6 +39,7 @@ router.get(
   "/:groupId/student/:studentId",
   requireTenantPermission("attendance:view"),
   requireTeacherGroup(),
+  requireStudentScope(),
   gradeController.listByStudent,
 );
 router.post(

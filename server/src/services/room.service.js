@@ -60,12 +60,28 @@ const getRoomStatsMap = async (roomIds) => {
   return stats;
 };
 
+// Nom — oqilona uzunlik; sig'im — manfiy bo'lmagan butun son yoki null
+// (avval 90 KB nom va `capacity: -50` qabul qilinardi).
+const assertRoomFields = ({ name, capacity } = {}) => {
+  if (name !== undefined && (typeof name !== "string" || name.trim().length > 100)) {
+    throw new Error("common.invalidInput");
+  }
+  if (
+    capacity !== undefined &&
+    capacity !== null &&
+    (typeof capacity !== "number" || !Number.isInteger(capacity) || capacity < 0 || capacity > 10000)
+  ) {
+    throw new Error("common.invalidInput");
+  }
+};
+
 module.exports = {
   DTO,
 
   create: async (clientId, body) => {
-    const { centerId, name, capacity } = body;
+    const { centerId, name, capacity } = body || {};
     if (!centerId || !name) throw new Error("room.fillTheRows");
+    assertRoomFields({ name, capacity });
 
     const center = await Center.findOne({ _id: centerId, client: clientId, isDeleted: false });
     if (!center) throw new Error("center.notFound");
@@ -241,6 +257,7 @@ module.exports = {
     const room = await Room.findOne({ _id: id, client: clientId, isDeleted: false });
     if (!room) throw new Error("room.notFound");
 
+    assertRoomFields(body);
     if (body.name) room.name = body.name.trim();
     if (body.capacity !== undefined) room.capacity = body.capacity;
     if (body.status && ["active", "inactive"].includes(body.status)) room.status = body.status;

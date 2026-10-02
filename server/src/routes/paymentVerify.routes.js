@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const rateLimit = require("express-rate-limit");
+const rateLimit = require("../utils/rateLimit.util");
 const paymentVerifyController = require("../controllers/paymentVerify.controller");
 
 const router = Router();

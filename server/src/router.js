@@ -2,6 +2,9 @@ const { Router } = require("express");
 
 const router = Router();
 
+// Body'dagi Mongo operatorlari (`$ne`, `$gt`...) — har qanday route'dan OLDIN.
+router.use(require("./middlewares/sanitize.middleware"));
+
 // Ochiq health endpoint (auth yo'q) — uptime monitoringi uchun. `/admin/*`
 // dan oldin turadi, chunki u yagona autentifikatsiyasiz yo'l.
 router.use("/health", require("./routes/health.routes"));
@@ -77,4 +80,8 @@ router.use("/archive", require("./routes/archive.routes"));
 // Yutuq nishonlari (API_CONTRACT_badges_monthly_rank.md §C).
 router.use("/badges", require("./routes/badge.routes"));
 router.use("/chat", require("./routes/chat.routes"));
+// Mavjud bo'lmagan API yo'li — Express'ning HTML "Cannot GET" sahifasi
+// o'rniga konvensiyadagi JSON.
+router.use((req, res) => res.send({ ok: false, msg: "common.notFound" }));
+
 module.exports = router;

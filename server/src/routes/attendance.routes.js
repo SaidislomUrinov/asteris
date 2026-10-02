@@ -6,6 +6,8 @@ const {
   requireActiveSubscription,
   requireTariffFeature,
   requireTeacherGroup,
+  requireOwnCenterParam,
+  requireStudentScope,
 } = require("../middlewares/authenticator.middleware");
 
 const router = Router();
@@ -13,8 +15,9 @@ const router = Router();
 router.use(tenantAuth);
 router.use(requireActiveSubscription);
 
-router.get("/settings/:centerId", requireTenantPermission("attendance:view"), attendanceController.getSettings);
-router.patch("/settings/:centerId", requireTenantPermission("settings:update"), attendanceController.updateSettings);
+// Hodim faqat O'Z filiali sozlamalarini (boshqa filialniki — auth.forbidden).
+router.get("/settings/:centerId", requireTenantPermission("attendance:view"), requireOwnCenterParam(), attendanceController.getSettings);
+router.patch("/settings/:centerId", requireTenantPermission("settings:update"), requireOwnCenterParam(), attendanceController.updateSettings);
 // QR davomat — premium, tarif flagi ostida (`attendance.qr`). `/:groupId`
 // dan OLDIN e'lon qilinadi, aks holda "qr" guruh id sifatida ushlanadi.
 router.get(
@@ -28,6 +31,7 @@ router.get(
   "/qr/:studentId",
   requireTariffFeature("attendance.qr"),
   requireTenantPermission("attendance:view"),
+  requireStudentScope(),
   attendanceController.getQrToken,
 );
 router.post(
@@ -62,6 +66,7 @@ router.get(
   "/:groupId/student/:studentId",
   requireTenantPermission("attendance:view"),
   requireTeacherGroup(),
+  requireStudentScope(),
   attendanceController.getStudentHistory,
 );
 router.get(

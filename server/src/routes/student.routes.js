@@ -7,6 +7,8 @@ const {
   requireActiveSubscription,
   requireOwner,
   blockTeachingRoles,
+  requireStudentScope,
+  requireTeacherGroup,
 } = require("../middlewares/authenticator.middleware");
 
 const Group = require("../models/Group");
@@ -107,6 +109,37 @@ const router = Router();
 router.use(tenantAuth);
 router.use(requireActiveSubscription);
 
+// A'zolik (`:groupEntryId`) ustidagi barcha amallar (to'lov, oy o'tkazish,
+// narx, chiqarish, ko'chirish, arxiv...) — hodim uchun a'zolik O'Z FILIALIDA
+// bo'lishi shart. Xizmatlar faqat `client` bo'yicha tekshiradi, shuning uchun
+// avval resepshin boshqa filial o'quvchisiga to'lov yoza olardi (QA 2026-10-02).
+const requireEntryCenter = async (req, res, next) => {
+  if (!req.staff) return next();
+  try {
+    const { id, groupEntryId } = req.params;
+    if (!isValidObjectId(id) || !isValidObjectId(groupEntryId)) return next();
+    const student = await Student.findOne(
+      { _id: id, "groups._id": groupEntryId },
+      { "groups.$": 1 },
+    ).lean();
+    const entry = student?.groups?.[0];
+    if (!entry) return next(); // xizmatning o'z "notFound" xatosi
+    if (String(entry.client) !== String(req.client._id) || String(entry.center) !== String(req.staff.center)) {
+      throw new Error("auth.forbidden");
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+router.use("/:id/groups/:groupEntryId", requireEntryCenter);
+
+// `?groupId=` — boshqa filial guruhi bo'yicha import tarixini ochmaslik uchun.
+const requireQueryGroup = (req, res, next) => {
+  req.params.groupId = req.query.groupId;
+  return requireTeacherGroup("groupId")(req, res, next);
+};
+
 router.post("/", requireTenantPermission("student:create"), studentController.create);
 // Excel'dan (yoki paste) guruhga ko'plab o'quvchi import qilish — bir xil
 // `student:create` ruxsati, POST "/" bilan bir xil himoya darajasi
@@ -118,6 +151,7 @@ router.post("/import", requireTenantPermission("student:create"), studentControl
 router.get(
   "/import/batches/latest",
   requireTenantPermission("student:create"),
+  requireQueryGroup,
   studentController.latestImportBatch,
 );
 router.post(
@@ -131,7 +165,10 @@ router.get(
   teacherStudentScope,
   studentController.list,
 );
-router.get("/lookup", requireTenantPermission("student:view"), studentController.lookupByPhone);
+// Telefon bo'yicha qidiruv faqat o'quvchi QO'SHISH oqimi uchun — `student:create`
+// (avval `student:view` yetarli edi va o'qituvchi ham platforma bo'ylab
+// raqam bo'yicha qidira olardi).
+router.get("/lookup", requireTenantPermission("student:create"), studentController.lookupByPhone);
 router.get(
   "/export",
   blockTeachingRoles,
@@ -152,6 +189,7 @@ router.get(
   "/:id/export",
   blockTeachingRoles,
   requireTenantPermission("student:view"),
+  requireStudentScope("id"),
   requireTariffFeature("excel.export"),
   studentController.exportOne,
 );
@@ -165,11 +203,13 @@ router.patch(
   "/:id",
   blockTeachingRoles,
   requireTenantPermission("student:update"),
+  requireStudentScope("id"),
   studentController.update,
 );
 router.patch("/:id/contact", requireStudentContact, studentController.updateContact);
 router.patch(
   "/:id/groups/:groupEntryId",
+  blockTeachingRoles,
   requireTenantPermission("student:update"),
   studentController.updateGroupPrice,
 );

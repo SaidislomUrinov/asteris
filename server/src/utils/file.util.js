@@ -38,7 +38,7 @@ async function save(file, folder, name, index) {
   const ext = path.extname(file.name).toLowerCase();
   const allowed = ALLOWED_EXTENSIONS[folder] || [];
   if (!allowed.includes(ext)) {
-    throw new Error("Ruxsat etilmagan fayl turi");
+    throw new Error("common.fileTypeNotAllowed");
   }
 
   const fileName =

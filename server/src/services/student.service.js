@@ -29,6 +29,7 @@ const emit = require("../utils/emitter.util");
 const audit = require("../utils/audit.util");
 const { emitArchiveChanged } = require("../utils/archive.util");
 const { attachTelegramStatus, emitParentTelegramChanged } = require("../utils/parentTelegram.util");
+const { parseAmount } = require("../utils/amount.util");
 const {
   applyTelegramFields,
   telegramFieldsOf,
@@ -886,6 +887,31 @@ const rolloverAmountFor = (entry, group, cycleMode, dates) => {
   };
 };
 
+// O'zbekiston raqami — frontend maskasi bilan bir xil format (`+998XXXXXXXXX`).
+// Avval tahrirda format umuman tekshirilmasdi ("abc" saqlanib qolardi).
+const STUDENT_PHONE_RE = /^\+998\d{9}$/;
+
+// O'quvchi hujjati platforma bo'ylab UMUMIY (telefon bo'yicha yagona) — bir
+// necha mijoz (client) uni birga ishlatadi. Telefon, ota-ona raqami va
+// Telegram raqamlari ota-onaga xabar/WebApp kirishini belgilaydi, shuning
+// uchun boshqa mijozda ham FAOL a'zoligi bo'lsa ularni bitta mijoz yolg'iz
+// o'zgartira olmaydi (QA 2026-10-02: begona markaz o'quvchisini
+// `existingStudentId` bilan biriktirib, ota-ona raqamini o'ziniki qilib
+// almashtirish mumkin edi).
+const sharedWithOtherClients = (student, clientId) =>
+  (student.groups || []).some((g) => String(g.client) !== String(clientId) && g.status !== "archived");
+
+const CONTACT_FIELDS = [
+  "phone",
+  "parentPhone",
+  "telegramSame",
+  "telegramPhone",
+  "parentTelegramSame",
+  "parentTelegramPhone",
+];
+const changesSharedContact = (student, body) =>
+  CONTACT_FIELDS.some((f) => body[f] !== undefined && String(body[f] ?? "") !== String(student[f] ?? ""));
+
 module.exports = {
   DTO,
   centerBillingTotals,
@@ -908,27 +934,35 @@ module.exports = {
   // raqami bir nechta farzand uchun ishlatilishi mumkin), shuning uchun
   // qidiruv BIRTA emas, mos kelgan hujjatlar RO'YXATINI qaytaradi. Frontend
   // bo'sh massivni "yangi o'quvchi" deb talqin qiladi.
-  lookupByPhone: async (phone) => {
-    const trimmed = (phone || "").trim();
+  // Telefon bo'yicha mavjud o'quvchini topish (qo'shish formasida qayta
+  // ishlatish uchun). Boshqa mijoz o'quvchisi uchun faqat tanlashga yetarli
+  // minimum (id, ism, rasm) — ota-ona raqami va Telegram raqamlari BERILMAYDI.
+  lookupByPhone: async (phone, clientId) => {
+    const trimmed = typeof phone === "string" ? phone.trim() : "";
     if (!trimmed) return [];
 
     const students = await Student.find({ phone: trimmed, isDeleted: false }).select(
-      "fullName phone parentPhone photo telegramSame telegramPhone parentTelegramSame parentTelegramPhone",
+      "fullName phone parentPhone photo telegramSame telegramPhone parentTelegramSame parentTelegramPhone groups.client",
     );
 
-    return students.map((student) => ({
-      _id: student._id,
-      fullName: student.fullName,
-      parentPhone: student.parentPhone,
-      ...telegramFieldsOf(student),
-      photo: student.photo,
-    }));
+    return students.map((student) => {
+      const own = (student.groups || []).some((g) => String(g.client) === String(clientId));
+      return own
+        ? {
+            _id: student._id,
+            fullName: student.fullName,
+            parentPhone: student.parentPhone,
+            ...telegramFieldsOf(student),
+            photo: student.photo,
+          }
+        : { _id: student._id, fullName: student.fullName, photo: student.photo, shared: true };
+    });
   },
 
   // Yangi o'quvchi yaratadi YOKI (agar shu telefon raqam bilan hujjat
   // allaqachon mavjud bo'lsa) mavjud hujjatga yangi guruh bog'lanishini
   // qo'shadi — CLAUDE.md "O'quvchi — telefon raqam asosida yagona hujjat".
-  create: async (clientId, body) => {
+  create: async (clientId, body, actor = null) => {
     const { fullName, phone, parentPhone, centerId, groupId, price, existingStudentId } = body;
     if (!phone || !centerId || !groupId) throw new Error("student.fillTheRows");
 
@@ -975,6 +1009,9 @@ module.exports = {
       if (!Types.ObjectId.isValid(existingStudentId)) throw new Error("student.notFound");
       student = await Student.findOne({ _id: existingStudentId, isDeleted: false });
       if (!student) throw new Error("student.notFound");
+      // Telefon mos kelishi SHART — aks holda ID'ni bilgan har kim istalgan
+      // (boshqa markazdagi) o'quvchini o'z guruhiga biriktira olardi.
+      if (student.phone !== trimmedPhone) throw new Error("student.notFound");
 
       const alreadyIn = student.groups.some(
         (g) => String(g.group) === String(group._id) && g.status === "active",
@@ -982,6 +1019,7 @@ module.exports = {
       if (alreadyIn) throw new Error("student.alreadyEnrolled");
     } else {
       if (!fullName) throw new Error("student.fillTheRows");
+      if (!STUDENT_PHONE_RE.test(trimmedPhone)) throw new Error("student.invalidPhone");
       student = new Student({ phone: trimmedPhone, fullName: fullName.trim(), parentPhone: parentPhone || "" });
     }
 
@@ -1002,13 +1040,17 @@ module.exports = {
       }
     }
 
-    if (fullName && !student.isNew) student.fullName = fullName.trim();
+    // Boshqa mijozda ham faol o'qiydigan o'quvchining umumiy maydonlari
+    // (ism, ota-ona raqami, Telegram) bu yerda TEGILMAYDI — o'quvchi faqat
+    // guruhga qo'shiladi (`sharedWithOtherClients` izohiga qarang).
+    const contactLocked = !student.isNew && sharedWithOtherClients(student, clientId);
+    if (fullName && !student.isNew && !contactLocked) student.fullName = fullName.trim();
     const telegramBefore = student.isNew ? null : telegramFieldsOf(student);
-    if (parentPhone !== undefined) student.parentPhone = parentPhone || "";
+    if (parentPhone !== undefined && !contactLocked) student.parentPhone = parentPhone || "";
     // Telegram raqamlari (API_CONTRACT_telegram_phone.md §1) — parentPhone
     // bilan bir xil siyosat: yuborilgan maydonlar mavjud hujjatga ham
     // qo'llanadi, `*Same` bo'lsa telefon o'zgarishi bilan qayta sinxronlanadi.
-    applyTelegramFields(student, body, { isNew: student.isNew });
+    if (!contactLocked) applyTelegramFields(student, body, { isNew: student.isNew });
 
     const finalPrice = price != null ? price : (await Subject.findById(group.subject))?.price || 0;
     if (finalPrice < 0) throw new Error("student.invalidPrice");
@@ -1085,6 +1127,14 @@ module.exports = {
     };
     emit(`center:${String(center._id)}`, "student:enrolled", enrolledPayload);
     emit(`client:${String(clientId)}`, "student:enrolled", enrolledPayload);
+    void audit.log({
+      actor,
+      client: clientId,
+      center: center._id,
+      action: "student:create",
+      entity: { type: "student", id: student._id, label: student.fullName },
+      meta: { groupId: String(group._id), price: entry.price, existing: Boolean(existingStudentId) },
+    });
 
     // Telegram raqami o'zgargan bo'lsa (yangi hujjat yoki mavjudida yangilandi)
     // — eski va yangi raqamlar bo'yicha badge holati qayta hisoblanadi.
@@ -1349,9 +1399,12 @@ module.exports = {
     const removedMemberships = entries.length;
 
     // 1) A'zoliklar $pull — importdan oldingi holatni AYNAN tiklaydi.
+    // `payments: { $size: 0 }` — yuqoridagi tekshiruv bilan shu qator ORASIDA
+    // to'lov qo'shilib qolgan bo'lsa ham, to'lovli a'zolik hech qachon
+    // o'chirilmaydi (moliyaviy yozuv o'chmaydi — CLAUDE.md).
     await Student.updateMany(
       { "groups.importBatch": batch._id },
-      { $pull: { groups: { importBatch: batch._id } } },
+      { $pull: { groups: { importBatch: batch._id, payments: { $size: 0 } } } },
     );
 
     // 2) $pull'dan keyin guruhi BO'SHAB qolgan (shu batch YARATGAN, ya'ni
@@ -1581,8 +1634,8 @@ module.exports = {
   // PATCH /students/:id — Reception/Owner tomonidan asosiy ma'lumotlarni
   // tahrirlash (API_CONTRACT.md §1). fullName/phone/parentPhone/photo dan
   // kamida bittasi kelishi shart, faqat kelgan maydonlar yangilanadi.
-  update: async (clientId, id, body) => {
-    const { fullName, phone, parentPhone, photo } = body;
+  update: async (clientId, id, body, actor = null) => {
+    const { fullName, phone, parentPhone, photo } = body || {};
     if (
       fullName === undefined &&
       phone === undefined &&
@@ -1599,8 +1652,23 @@ module.exports = {
     const hasAccess = student.groups.some((g) => String(g.client) === String(clientId));
     if (!hasAccess) throw new Error("student.notFound");
 
+    if (fullName !== undefined && typeof fullName !== "string") throw new Error("student.invalidName");
+    if (phone !== undefined && typeof phone !== "string") throw new Error("student.invalidPhone");
+    if (parentPhone !== undefined && parentPhone !== null && typeof parentPhone !== "string") {
+      throw new Error("student.invalidPhone");
+    }
+    if (sharedWithOtherClients(student, clientId) && changesSharedContact(student, body)) {
+      throw new Error("student.sharedContactLocked");
+    }
+
     // Telegram raqamlari o'zgarishdan OLDINGI holat (badge eventi uchun).
     const telegramBefore = telegramFieldsOf(student);
+    const auditBefore = {
+      fullName: student.fullName,
+      phone: student.phone,
+      parentPhone: student.parentPhone,
+      ...telegramBefore,
+    };
 
     if (fullName !== undefined) {
       const trimmedName = fullName.trim();
@@ -1609,16 +1677,35 @@ module.exports = {
     }
     if (phone !== undefined) {
       const trimmedPhone = (phone || "").trim();
-      if (!trimmedPhone) throw new Error("student.invalidPhone");
+      if (!STUDENT_PHONE_RE.test(trimmedPhone)) throw new Error("student.invalidPhone");
       student.phone = trimmedPhone;
     }
-    if (parentPhone !== undefined) student.parentPhone = parentPhone || "";
+    if (parentPhone !== undefined) {
+      const trimmedParent = (parentPhone || "").trim();
+      if (trimmedParent && !STUDENT_PHONE_RE.test(trimmedParent)) throw new Error("student.invalidPhone");
+      student.parentPhone = trimmedParent;
+    }
     if (photo !== undefined) student.photo = photo || "";
     // phone/parentPhone YUQORIDA o'rnatilgan — `*Same` bo'lsa qayta sinxronlanadi.
     applyTelegramFields(student, body, { isNew: false });
 
     await student.save();
     emitTelegramDiff(telegramBefore, telegramFieldsOf(student));
+    const auditChanges = audit.diff(auditBefore, {
+      fullName: student.fullName,
+      phone: student.phone,
+      parentPhone: student.parentPhone,
+      ...telegramFieldsOf(student),
+    });
+    if (auditChanges.length) {
+      void audit.log({
+        actor,
+        client: clientId,
+        action: "student:update",
+        entity: { type: "student", id: student._id, label: student.fullName },
+        changes: auditChanges,
+      });
+    }
 
     // Bu o'quvchi tegishli BARCHA markaz va clientlarga xabar beriladi — bir
     // o'quvchi bir nechta centerda o'qishi mumkin (CLAUDE.md "15 tagacha
@@ -1648,7 +1735,7 @@ module.exports = {
   // O'qituvchi/yordamchi uchun kontakt tahriri (API_CONTRACT_student_contact_telegram.md
   // §2) — faqat `fullName`, `phone`, `parentPhone`; qolgan maydonlar (`photo` va
   // h.k.) jimgina tashlanadi. Validatsiya/socket/DTO — `update` ning o'zi.
-  updateContact: async (clientId, id, body = {}) => {
+  updateContact: async (clientId, id, body = {}, actor = null) => {
     const { fullName, phone, parentPhone } = body || {};
     // `update` `.trim()` chaqiradi — satr bo'lmagan qiymat 500 bermasin.
     if (fullName !== undefined && typeof fullName !== "string") throw new Error("student.invalidName");
@@ -1662,11 +1749,13 @@ module.exports = {
       parentPhone,
       // Telegram raqamlari ham kontakt (API_CONTRACT_telegram_phone.md §4).
       ...pickTelegramFields(body || {}),
-    });
+    }, actor);
   },
 
-  updateGroupPrice: async (clientId, id, groupEntryId, price) => {
-    if (price == null || price < 0) throw new Error("student.invalidPrice");
+  updateGroupPrice: async (clientId, id, groupEntryId, price, actor = null) => {
+    if (typeof price !== "number" || !Number.isInteger(price) || price < 0 || price > 1e12) {
+      throw new Error("student.invalidPrice");
+    }
 
     const student = await Student.findOne({ _id: id, isDeleted: false });
     if (!student) throw new Error("student.notFound");
@@ -1697,19 +1786,31 @@ module.exports = {
       group && effectiveNow >= group.activatedAt
         ? currentCycleStartOf(group, billingSetting?.cycleMode || "anchor", effectiveNow)
         : now;
+    const oldPrice = entry.price;
     entry.priceHistory.push({ price, from });
     entry.price = price;
     await student.save();
+    void audit.log({
+      actor,
+      client: clientId,
+      center: entry.center,
+      action: "student:priceChanged",
+      entity: { type: "student", id: student._id, label: student.fullName },
+      changes: [{ field: "price", from: oldPrice, to: price }],
+      meta: { groupId: String(entry.group) },
+    });
 
     // Narx o'zgarishi Guruh detail/Students ro'yxatida ochiq turgan boshqa
     // sahifalarga HAM realtime yetib borishi kerak (StudentEditDialog
     // orqali tahrirlash — attendance:marked bilan bir xil naqsh).
     if (group) {
-      emit(`client:${clientId}`, "student:priceUpdated", {
+      const pricePayload = {
         groupId: String(entry.group),
         studentId: String(id),
         entry: groupEntryDTO(entry, group, billingSetting.cycleMode),
-      });
+      };
+      emit(`client:${clientId}`, "student:priceUpdated", pricePayload);
+      emit(`center:${String(entry.center)}`, "student:priceUpdated", pricePayload);
     }
 
     return await DTO(student, clientId);
@@ -1796,6 +1897,8 @@ module.exports = {
     emit(`client:${clientId}`, "student:leftGroup", {
       studentId: String(id),
       groupEntryId: String(groupEntryId),
+      groupId: String(entry.group),
+      center: String(entry.center),
     });
     emitArchiveChanged(clientId, entry.center, "student", student._id, "archived");
 
@@ -1811,7 +1914,7 @@ module.exports = {
     return await DTO(student, clientId);
   },
 
-  leaveGroup: async (clientId, id, groupEntryId) => {
+  leaveGroup: async (clientId, id, groupEntryId, actor = null) => {
     const student = await Student.findOne({ _id: id, isDeleted: false });
     if (!student) throw new Error("student.notFound");
 
@@ -1826,6 +1929,16 @@ module.exports = {
     emit(`client:${clientId}`, "student:leftGroup", {
       studentId: String(id),
       groupEntryId: String(groupEntryId),
+      groupId: String(entry.group),
+      center: String(entry.center),
+    });
+    void audit.log({
+      actor,
+      client: clientId,
+      center: entry.center,
+      action: "student:leftGroup",
+      entity: { type: "student", id: student._id, label: student.fullName },
+      meta: { groupId: String(entry.group) },
     });
 
     return await DTO(student, clientId);
@@ -1932,6 +2045,8 @@ module.exports = {
     emit(`client:${clientId}`, "student:leftGroup", {
       studentId: String(id),
       groupEntryId: String(groupEntryId),
+      groupId: String(entry.group),
+      center: String(entry.center),
     });
 
     void audit.log({
@@ -2007,9 +2122,12 @@ module.exports = {
 
   // `collector` — to'lovni kim qabul qilgani ({ id, kind }). Controller
   // request'dan uzatadi (Owner bo'lsa req.client, hodim bo'lsa req.staff).
-  addPayment: async (clientId, id, groupEntryId, body, collector = null) => {
-    const { amount, type, note, forMonth } = body;
-    if (!amount || amount <= 0) throw new Error("student.invalidAmount");
+  addPayment: async (clientId, id, groupEntryId, body, collector = null, actor = null) => {
+    const { type, note, forMonth } = body || {};
+    const amount = parseAmount(body?.amount);
+    if (!amount) throw new Error("student.invalidAmount");
+    if (note != null && typeof note !== "string") throw new Error("student.invalidAmount");
+    if (forMonth != null && typeof forMonth !== "string") throw new Error("student.invalidMonth");
     if (type && !["cash", "card", "mixed", "previousMonth"].includes(type))
       throw new Error("student.invalidPaymentType");
 
@@ -2047,13 +2165,26 @@ module.exports = {
     // Dashboard/Center Detail/Salary/Student Detail — hammasi shu eventni
     // kutib turadi (API_CONTRACT: "payment:created"), realtime yangilanish
     // uchun.
+    // `center`/`groupId` — emitter hodisani hodimlarga FILIAL xonasi orqali
+    // yetkazadi (`client:` xonasida faqat Owner bor).
+    const created = entry.payments[entry.payments.length - 1];
     emit(`client:${clientId}`, "payment:created", {
       studentId: String(id),
       groupEntryId: String(groupEntryId),
+      groupId: String(entry.group),
+      center: String(entry.center),
+    });
+    void audit.log({
+      actor,
+      client: clientId,
+      center: entry.center,
+      action: "payment:create",
+      entity: { type: "payment", id: created._id, label: student.fullName },
+      meta: { amount, type: created.type, forMonth: created.forMonth, code, studentId: String(id) },
     });
 
     // Ota-onaga Telegram xabari — kutilmaydi, xatosi bu yerga chiqmaydi.
-    void parentNotification.onPayment({ student, entry, payment: entry.payments[entry.payments.length - 1] });
+    void parentNotification.onPayment({ student, entry, payment: created });
 
     return await DTO(student, clientId);
   },
@@ -2140,7 +2271,7 @@ module.exports = {
   },
 
   // Moliyaviy yozuv hech qachon o'chirilmaydi — faqat status "cancelled"ga o'zgaradi.
-  cancelPayment: async (clientId, id, groupEntryId, paymentId) => {
+  cancelPayment: async (clientId, id, groupEntryId, paymentId, actor = null) => {
     const student = await Student.findOne({ _id: id, isDeleted: false });
     if (!student) throw new Error("student.notFound");
 
@@ -2152,12 +2283,25 @@ module.exports = {
     if (payment.status !== "paid") throw new Error("student.paymentNotCancellable");
 
     payment.status = "cancelled";
+    payment.cancelledAt = getNow();
+    payment.cancelledBy = actor?.id || null;
+    payment.cancelledByKind = actor?.kind === "client" ? "owner" : actor?.kind || null;
     await student.save();
 
     emit(`client:${clientId}`, "payment:cancelled", {
       studentId: String(id),
       groupEntryId: String(groupEntryId),
       paymentId: String(paymentId),
+      groupId: String(entry.group),
+      center: String(entry.center),
+    });
+    void audit.log({
+      actor,
+      client: clientId,
+      center: entry.center,
+      action: "payment:cancel",
+      entity: { type: "payment", id: payment._id, label: student.fullName },
+      meta: { amount: payment.amount, forMonth: payment.forMonth, code: payment.code || null, studentId: String(id) },
     });
 
     void parentNotification.onPayment({ student, entry, payment, cancelled: true });

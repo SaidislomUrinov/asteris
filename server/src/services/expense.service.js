@@ -3,6 +3,10 @@ const Expense = require("../models/Expense");
 const Center = require("../models/Center");
 const emit = require("../utils/emitter.util");
 const { getNow, currentMonthString } = require("../utils/date.util");
+const audit = require("../utils/audit.util");
+const { parseAmount } = require("../utils/amount.util");
+
+const isText = (v) => typeof v === "string";
 
 const PAGE_SIZE = 50;
 
@@ -22,10 +26,14 @@ const DTO = (data) => ({
 module.exports = {
   DTO,
 
-  create: async (clientId, body) => {
-    const { centerId, title, category, amount, note, month } = body;
-    if (!centerId || !title || !amount) throw new Error("expense.fillTheRows");
-    if (amount < 1) throw new Error("expense.invalidValue");
+  // Har o'zgarish audit jurnaliga tushadi (CLAUDE.md "Audit Log"); `actor` —
+  // controller'dagi buildActor(req).
+  create: async (clientId, body, actor = null) => {
+    const { centerId, title, category, note, month } = body || {};
+    if (!centerId || !title || body.amount == null) throw new Error("expense.fillTheRows");
+    if (!isText(title) || (note != null && !isText(note))) throw new Error("expense.invalidValue");
+    const amount = parseAmount(body.amount);
+    if (!amount) throw new Error("expense.invalidValue");
     if (category && !Expense.CATEGORIES.includes(category)) {
       throw new Error("expense.invalidCategory");
     }
@@ -44,6 +52,14 @@ module.exports = {
     });
 
     emit(`client:${clientId}`, "expense:created", DTO(expense));
+    void audit.log({
+      actor,
+      client: clientId,
+      center: expense.center,
+      action: "expense:create",
+      entity: { type: "expense", id: expense._id, label: expense.title },
+      meta: { amount: expense.amount, category: expense.category, month: expense.month },
+    });
 
     return DTO(expense);
   },
@@ -139,10 +155,14 @@ module.exports = {
     }));
   },
 
-  update: async (clientId, id, body) => {
+  update: async (clientId, id, body, actor = null) => {
     const expense = await Expense.findOne({ _id: id, client: clientId });
     if (!expense) throw new Error("expense.notFound");
     if (expense.status === "cancelled") throw new Error("expense.cancelled");
+    if ((body.title != null && !isText(body.title)) || (body.note != null && !isText(body.note))) {
+      throw new Error("expense.invalidValue");
+    }
+    const before = { title: expense.title, note: expense.note, category: expense.category, amount: expense.amount };
 
     if (body.title) expense.title = body.title.trim();
     if (body.note !== undefined) expense.note = body.note?.trim() || "";
@@ -151,19 +171,38 @@ module.exports = {
       expense.category = body.category;
     }
     if (body.amount != null) {
-      if (body.amount < 1) throw new Error("expense.invalidValue");
-      expense.amount = body.amount;
+      const amount = parseAmount(body.amount);
+      if (!amount) throw new Error("expense.invalidValue");
+      expense.amount = amount;
     }
 
     await expense.save();
 
     emit(`client:${clientId}`, "expense:updated", DTO(expense));
+    // Summa joyida o'zgaradi — eski qiymat shu yozuvda (from → to) saqlanadi,
+    // ya'ni moliyaviy tarix yo'qolmaydi.
+    const changes = audit.diff(before, {
+      title: expense.title,
+      note: expense.note,
+      category: expense.category,
+      amount: expense.amount,
+    });
+    if (changes.length) {
+      void audit.log({
+        actor,
+        client: clientId,
+        center: expense.center,
+        action: "expense:update",
+        entity: { type: "expense", id: expense._id, label: expense.title },
+        changes,
+      });
+    }
 
     return DTO(expense);
   },
 
   // Moliyaviy yozuv o'chirilmaydi — faqat bekor qilinadi
-  cancel: async (clientId, id) => {
+  cancel: async (clientId, id, actor = null) => {
     const expense = await Expense.findOne({ _id: id, client: clientId });
     if (!expense) throw new Error("expense.notFound");
     if (expense.status === "cancelled") throw new Error("expense.alreadyCancelled");
@@ -173,6 +212,14 @@ module.exports = {
     await expense.save();
 
     emit(`client:${clientId}`, "expense:updated", DTO(expense));
+    void audit.log({
+      actor,
+      client: clientId,
+      center: expense.center,
+      action: "expense:cancel",
+      entity: { type: "expense", id: expense._id, label: expense.title },
+      meta: { amount: expense.amount },
+    });
 
     return DTO(expense);
   },

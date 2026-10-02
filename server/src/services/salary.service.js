@@ -7,6 +7,8 @@ const { getNow, currentMonthString, formatMonth } = require("../utils/date.util"
 const clientService = require("./client.service");
 const { salaryTypeKeyOf, SALARY_TYPE_TARIFF_FLAG } = require("../utils/staffPermission.util");
 const { monthRolloverAdjustment } = require("../utils/rollover.util");
+const audit = require("../utils/audit.util");
+const { parseAmount } = require("../utils/amount.util");
 
 // Tranzaksiya turi → shu turni ochadigan tarif flagi (faqat premium
 // turlar uchun; withdrawal/penalty har doim ochiq).
@@ -152,8 +154,15 @@ module.exports = {
   },
 
   // Bitta hodimning batafsil hisobi (hodim o'zinikini ham ko'ra oladi)
-  detail: async (clientId, staffId, { month = "" }) => {
-    const staff = await Staff.findOne({ _id: staffId, client: clientId, isDeleted: false });
+  // `centerId` — hodim so'raganda o'z filiali bilan cheklanadi (boshqa filial
+  // hodimi `staff.notFound`); Owner uchun null.
+  detail: async (clientId, staffId, { month = "" }, centerId = null) => {
+    const staff = await Staff.findOne({
+      _id: staffId,
+      client: clientId,
+      isDeleted: false,
+      ...(centerId && { center: centerId }),
+    });
     if (!staff) throw new Error("staff.notFound");
 
     const features = await clientService.getTariffFeatures(clientId);
@@ -161,17 +170,24 @@ module.exports = {
   },
 
   // Avans / oldindan pul olish / bonus / jarima qo'shish
-  addTransaction: async (clientId, staffId, body) => {
-    const { type, amount, note, month } = body;
+  addTransaction: async (clientId, staffId, body, centerId = null, actor = null) => {
+    const { type, note, month } = body || {};
     if (!SalaryTransaction.TYPES.includes(type)) throw new Error("salary.invalidType");
-    if (!amount || amount < 1) throw new Error("salary.invalidAmount");
+    const amount = parseAmount(body?.amount);
+    if (!amount) throw new Error("salary.invalidAmount");
+    if (note != null && typeof note !== "string") throw new Error("salary.invalidAmount");
 
     const tariffFlag = TX_TARIFF_FLAG[type];
     if (tariffFlag && !(await clientService.hasPermission(clientId, tariffFlag))) {
       throw new Error("tariff.featureNotAvailable");
     }
 
-    const staff = await Staff.findOne({ _id: staffId, client: clientId, isDeleted: false });
+    const staff = await Staff.findOne({
+      _id: staffId,
+      client: clientId,
+      isDeleted: false,
+      ...(centerId && { center: centerId }),
+    });
     if (!staff) throw new Error("staff.notFound");
 
     const tx = await SalaryTransaction.create({
@@ -185,6 +201,15 @@ module.exports = {
     });
 
     emit(`client:${clientId}`, "salary:updated", { staff: String(staff._id), month: tx.month });
+    void audit.log({
+      actor,
+      client: clientId,
+      center: staff.center,
+      // admin lang fayllaridagi mavjud kalit nomlari bilan bir xil (salary:withdraw).
+      action: type === "withdrawal" ? "salary:withdraw" : `salary:${type}`,
+      entity: { type: "salary", id: tx._id, label: staff.name },
+      meta: { amount: tx.amount, month: tx.month, staffId: String(staff._id) },
+    });
 
     return txDTO(tx);
   },
@@ -193,8 +218,12 @@ module.exports = {
   // Avans (advance) bundan mustasno: hodimga pul allaqachon qo'lma-qo'l
   // berib bo'lingan haqiqiy voqea, tizimda "bekor qilish" real hayotda pulni
   // orqaga qaytarmaydi — shu sabab avans hech qachon bekor qilinmaydi.
-  cancelTransaction: async (clientId, txId) => {
-    const tx = await SalaryTransaction.findOne({ _id: txId, client: clientId });
+  cancelTransaction: async (clientId, txId, centerId = null, actor = null) => {
+    const tx = await SalaryTransaction.findOne({
+      _id: txId,
+      client: clientId,
+      ...(centerId && { center: centerId }),
+    });
     if (!tx) throw new Error("salary.txNotFound");
     if (tx.type === "advance") throw new Error("salary.advanceNotCancellable");
     if (tx.status === "cancelled") throw new Error("salary.alreadyCancelled");
@@ -204,6 +233,14 @@ module.exports = {
     await tx.save();
 
     emit(`client:${clientId}`, "salary:updated", { staff: String(tx.staff), month: tx.month });
+    void audit.log({
+      actor,
+      client: clientId,
+      center: tx.center,
+      action: "salary:cancel",
+      entity: { type: "salary", id: tx._id, label: tx.type },
+      meta: { amount: tx.amount, month: tx.month, staffId: String(tx.staff) },
+    });
 
     return txDTO(tx);
   },

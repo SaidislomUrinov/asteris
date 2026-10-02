@@ -7,7 +7,7 @@ const { formatDate } = require("../utils/date.util");
 module.exports = {
   create: async (req, res, next) => {
     try {
-      const data = await studentService.create(req.client._id, req.body);
+      const data = await studentService.create(req.client._id, req.body, buildActor(req));
       return res.send({ ok: true, data, msg: "student.created" });
     } catch (error) {
       next(error);
@@ -43,7 +43,7 @@ module.exports = {
 
   lookupByPhone: async (req, res, next) => {
     try {
-      const data = await studentService.lookupByPhone(req.query.phone);
+      const data = await studentService.lookupByPhone(req.query.phone, req.client._id);
       return res.send({ ok: true, data });
     } catch (error) {
       next(error);
@@ -190,7 +190,7 @@ module.exports = {
 
   update: async (req, res, next) => {
     try {
-      const data = await studentService.update(req.client._id, req.params.id, req.body);
+      const data = await studentService.update(req.client._id, req.params.id, req.body, buildActor(req));
       return res.send({ ok: true, data, msg: "student.updated" });
     } catch (error) {
       next(error);
@@ -202,7 +202,7 @@ module.exports = {
   // `requireStudentContact` da tekshirilgan.
   updateContact: async (req, res, next) => {
     try {
-      const data = await studentService.updateContact(req.client._id, req.params.id, req.body);
+      const data = await studentService.updateContact(req.client._id, req.params.id, req.body, buildActor(req));
       return res.send({
         ok: true,
         data: teacherView.isTeacher(req) ? teacherView.stripStudent(data) : data,
@@ -220,6 +220,7 @@ module.exports = {
         req.params.id,
         req.params.groupEntryId,
         req.body.price,
+        buildActor(req),
       );
       return res.send({ ok: true, data, msg: "student.updated" });
     } catch (error) {
@@ -260,7 +261,7 @@ module.exports = {
 
   leaveGroup: async (req, res, next) => {
     try {
-      const data = await studentService.leaveGroup(req.client._id, req.params.id, req.params.groupEntryId);
+      const data = await studentService.leaveGroup(req.client._id, req.params.id, req.params.groupEntryId, buildActor(req));
       return res.send({ ok: true, data, msg: "student.left" });
     } catch (error) {
       next(error);
@@ -353,6 +354,7 @@ module.exports = {
         req.params.groupEntryId,
         req.body,
         collector,
+        buildActor(req),
       );
       return res.send({ ok: true, data, msg: "student.paymentAdded" });
     } catch (error) {
@@ -385,6 +387,7 @@ module.exports = {
         req.params.id,
         req.params.groupEntryId,
         req.params.paymentId,
+        buildActor(req),
       );
       return res.send({ ok: true, data, msg: "student.paymentCancelled" });
     } catch (error) {

@@ -2,6 +2,7 @@ const GroupHoliday = require("../models/GroupHoliday");
 const Group = require("../models/Group");
 const Student = require("../models/Student");
 const { currentMonthString } = require("../utils/date.util");
+const audit = require("../utils/audit.util");
 
 const DTO = (h) => ({ date: h.date, chargeable: h.chargeable, note: h.note || "" });
 
@@ -86,9 +87,19 @@ module.exports = {
     return DTO(holiday);
   },
 
-  unmark: async (clientId, groupId, date) => {
+  // Dam olish kuni — kalendar katakchasi (guruh+sana noyob), olib tashlanganda
+  // yozuv o'chadi; iz audit jurnalida qoladi.
+  unmark: async (clientId, groupId, date, actor = null) => {
     await assertGroupOwnership(clientId, groupId);
-    await GroupHoliday.deleteOne({ group: groupId, date });
+    const removed = await GroupHoliday.findOneAndDelete({ group: groupId, date });
+    if (removed) {
+      void audit.log({
+        actor,
+        client: clientId,
+        action: "groupHoliday:removed",
+        entity: { type: "group", id: groupId, label: date },
+      });
+    }
     await syncCreditForDate(clientId, groupId, date, false);
     return { date };
   },

@@ -4,6 +4,7 @@ const {
   tenantAuth,
   requireTenantPermission,
   requireActiveSubscription,
+  requireOwnCenterParam,
 } = require("../middlewares/authenticator.middleware");
 
 const router = Router();
@@ -11,8 +12,9 @@ const router = Router();
 router.use(tenantAuth);
 router.use(requireActiveSubscription);
 
-router.get("/:centerId/:month", requireTenantPermission("calendar:view"), calendarController.list);
-router.post("/:centerId/mark", requireTenantPermission("calendar:manage"), calendarController.mark);
-router.delete("/:centerId/:date", requireTenantPermission("calendar:manage"), calendarController.unmark);
+// Hodim faqat O'Z filiali kalendari.
+router.get("/:centerId/:month", requireTenantPermission("calendar:view"), requireOwnCenterParam(), calendarController.list);
+router.post("/:centerId/mark", requireTenantPermission("calendar:manage"), requireOwnCenterParam(), calendarController.mark);
+router.delete("/:centerId/:date", requireTenantPermission("calendar:manage"), requireOwnCenterParam(), calendarController.unmark);
 
 module.exports = router;

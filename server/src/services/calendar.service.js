@@ -9,6 +9,7 @@ const { currentMonthString, dateStringToUnix, addMonths, formatDay } = require("
 const TZ = "Asia/Tashkent";
 const { JS_DAY_TO_CODE } = require("../utils/lessonDays.util");
 const emit = require("../utils/emitter.util");
+const audit = require("../utils/audit.util");
 
 const assertCenterOwnership = async (clientId, centerId) => {
   const center = await Center.findOne({ _id: centerId, client: clientId, isDeleted: false });
@@ -139,7 +140,7 @@ module.exports = {
     return { marked };
   },
 
-  unmark: async (clientId, centerId, date) => {
+  unmark: async (clientId, centerId, date, actor = null) => {
     await assertCenterOwnership(clientId, centerId);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("calendar.invalidDate");
 
@@ -152,6 +153,14 @@ module.exports = {
     }
 
     await CenterHoliday.deleteOne({ _id: holiday._id });
+    void audit.log({
+      actor,
+      client: clientId,
+      center: centerId,
+      action: "centerHoliday:removed",
+      entity: { type: "center", id: centerId, label: date },
+      meta: { groups: (holiday.syncedGroups || []).length },
+    });
 
     emit(`center:${centerId}`, "calendar:updated", { centerId, dates: [date] });
     return { date };

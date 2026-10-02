@@ -1,16 +1,17 @@
 const { Router } = require("express");
 const dashboardController = require("../controllers/dashboard.controller");
-const { tenantAuth } = require("../middlewares/authenticator.middleware");
+const { tenantAuth, requireTenantPermission } = require("../middlewares/authenticator.middleware");
 
 const router = Router();
 
 router.use(tenantAuth);
 
-// Dashboard barcha tenant foydalanuvchilar (Owner + har qanday Staff) uchun
-// ochiq — bosh sahifa sifatida cheklovsiz ko'rinadi (CLAUDE.md permission
-// jadvalidagi "dashboard:view" granular ruxsat sifatida emas, umumiy kirish
-// nuqtasi sifatida talqin qilinadi).
-router.get("/", dashboardController.stats);
-router.get("/today-lessons", dashboardController.todayLessons);
+// Moliyaviy ko'rsatkichlar (oylik tushum, qarzdorlik) — hodim uchun
+// `dashboard:view` shart. Avval cheklovsiz edi va o'qituvchi/yordamchi ham
+// filial daromadini ko'ra olardi (QA 2026-10-02). O'qituvchi bosh sahifasi
+// o'zining `/teacher/dashboard` endpointidan foydalanadi.
+router.get("/", requireTenantPermission("dashboard:view"), dashboardController.stats);
+// Bugungi darslar — moliya emas, guruh ro'yxati (`group:view`).
+router.get("/today-lessons", requireTenantPermission("group:view"), dashboardController.todayLessons);
 
 module.exports = router;

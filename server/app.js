@@ -32,7 +32,12 @@ app.use(express.urlencoded({ extended: true }));
 // fileUpload'iga ega (API_CONTRACT_news.md §2). Aks holda global middleware
 // 10MB'dan katta videoni route'ga yetmasdan 413 bilan kesib tashlardi.
 const NEWS_MEDIA_PATH = "/api/admin/news/media";
-const globalFileUpload = fileUpload({ limits: { fileSize: 10 * 1024 * 1024 }, abortOnLimit: true });
+const globalFileUpload = fileUpload({
+  limits: { fileSize: 10 * 1024 * 1024 },
+  abortOnLimit: true,
+  // 413 oddiy matn ("File size limit has been reached") o'rniga JSON.
+  limitHandler: (req, res) => res.send({ ok: false, msg: "common.fileTooLarge" }),
+});
 app.use((req, res, next) =>
   req.path === NEWS_MEDIA_PATH || req.path === `${NEWS_MEDIA_PATH}/`
     ? next()

@@ -1,4 +1,5 @@
 const gradeService = require("../services/grade.service");
+const { buildActor } = require("../utils/audit.util");
 
 // Guruhga biriktirilish orqali cheklanadigan rollar uchun qamrov —
 // `teacherScope` middleware qo'ygan qiymatlardan yasaladi.
@@ -41,6 +42,7 @@ module.exports = {
         req.params.groupId,
         req.params.gradeId,
         req.staff || null,
+        buildActor(req),
       );
       return res.send({ ok: true, data, msg: "grade.removed" });
     } catch (error) {

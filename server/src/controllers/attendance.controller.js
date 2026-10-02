@@ -1,5 +1,6 @@
 const attendanceService = require("../services/attendance.service");
 const { MONTH_RE } = require("../utils/gradeScore.util");
+const { teachingScopeField } = require("../middlewares/authenticator.middleware");
 
 module.exports = {
   getSettings: async (req, res, next) => {
@@ -58,10 +59,20 @@ module.exports = {
 
   getQrToken: async (req, res, next) => {
     try {
+      const reset = req.query.reset === "true";
+      // QR'ni yangilash bosilgan kartalarni yaroqsiz qiladi — faqat Owner yoki
+      // `attendance:update` ruxsatli resepshin; o'qituvchi rollari uchun yopiq.
+      if (reset && req.staff) {
+        const perms = req.staff.permissions || [];
+        const teaching = ["teacher", "assistant"].includes(req.staff.role);
+        if (teaching || !(perms.includes("all") || perms.includes("attendance:update"))) {
+          throw new Error("auth.forbidden");
+        }
+      }
       const data = await attendanceService.getQrToken(
         req.client._id,
         req.params.studentId,
-        req.query.reset === "true",
+        reset,
         req.staff?.center || null,
       );
       return res.send({ ok: true, data });
@@ -83,7 +94,13 @@ module.exports = {
     try {
       // Hodim bo'lsa filiali uzatiladi — faqat o'z filialining
       // o'quvchisini belgilay oladi (Owner uchun null).
-      const data = await attendanceService.scanQr(req.client._id, req.body, req.staff?.center || null);
+      const field = teachingScopeField(req);
+      const data = await attendanceService.scanQr(
+        req.client._id,
+        req.body,
+        req.staff?.center || null,
+        field ? { field, staffId: req.staff._id } : null,
+      );
       const msg = data.duplicate ? "attendance.alreadyMarked" : "attendance.marked";
       return res.send({ ok: true, data, msg: data.needsGroup ? undefined : msg });
     } catch (error) {

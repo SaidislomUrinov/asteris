@@ -8,7 +8,7 @@ const ROLE_LABELS = { manager: "Menejer", reception: "Resepshin", teacher: "O'qi
 module.exports = {
   create: async (req, res, next) => {
     try {
-      const data = await staffService.create(req.client._id, req.body);
+      const data = await staffService.create(req.client._id, req.body, buildActor(req));
       return res.send({ ok: true, data, msg: "staff.created" });
     } catch (error) {
       next(error);
@@ -71,7 +71,7 @@ module.exports = {
 
   update: async (req, res, next) => {
     try {
-      const data = await staffService.update(req.client._id, req.params.id, req.body);
+      const data = await staffService.update(req.client._id, req.params.id, req.body, buildActor(req));
       return res.send({ ok: true, data, msg: "staff.updated" });
     } catch (error) {
       next(error);
@@ -89,7 +89,7 @@ module.exports = {
 
   block: async (req, res, next) => {
     try {
-      const data = await staffService.setBlocked(req.client._id, req.params.id, true);
+      const data = await staffService.setBlocked(req.client._id, req.params.id, true, buildActor(req));
       return res.send({ ok: true, data, msg: "staff.blockedSuccess" });
     } catch (error) {
       next(error);
@@ -98,7 +98,7 @@ module.exports = {
 
   unblock: async (req, res, next) => {
     try {
-      const data = await staffService.setBlocked(req.client._id, req.params.id, false);
+      const data = await staffService.setBlocked(req.client._id, req.params.id, false, buildActor(req));
       return res.send({ ok: true, data, msg: "staff.unblocked" });
     } catch (error) {
       next(error);

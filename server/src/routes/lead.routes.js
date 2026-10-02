@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const rateLimit = require("express-rate-limit");
+const rateLimit = require("../utils/rateLimit.util");
 const Admin = require("../models/Admin");
 const leadController = require("../controllers/lead.controller");
 const {
@@ -56,7 +56,9 @@ router.use(adminAuth, fullAdminAuth);
 
 router.get("/", requirePermission("lead:view"), leadController.list);
 router.get("/:id", requirePermission("lead:view"), leadController.getOne);
-router.patch("/:id/status", leadController.updateStatus);
-router.post("/:id/client", leadController.createClient);
+// Avval ruxsat tekshiruvi yo'q edi — har qanday admin lid holatini o'zgartirib,
+// liddan MIJOZ HISOBI yarata olardi (QA 2026-10-02).
+router.patch("/:id/status", requirePermission("lead:update"), leadController.updateStatus);
+router.post("/:id/client", requirePermission("client:create"), leadController.createClient);
 
 module.exports = router;

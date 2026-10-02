@@ -5,6 +5,7 @@ const Admin = require("../models/Admin");
 const Client = require("../models/Client");
 const Staff = require("../models/Staff");
 const Group = require("../models/Group");
+const Student = require("../models/Student");
 const Center = require("../models/Center");
 const jwtUtil = require("../utils/jwt.util");
 const redisUtil = require("../utils/redis.util");
@@ -402,9 +403,14 @@ module.exports = {
   // `:groupId` (yoki boshqa param) bo'yicha guruh AYNAN shu hodimniki
   // ekanini tekshiradi. `teacherScope` ro'yxatlarni cheklaydi, bu esa
   // ID orqali to'g'ridan-to'g'ri murojaatni yopadi.
+  // `:groupId` li route'lar uchun guruh doirasi (Owner uchun no-op):
+  //  - har qanday hodim — guruh O'Z FILIALIDA bo'lishi shart (2026-10-02 QA:
+  //    resepshin boshqa filial guruhiga davomat/baho/dam olish kuni yozib,
+  //    jurnalini o'qiy olardi — avval faqat o'qituvchi tekshirilardi);
+  //  - o'qituvchi/yordamchi — qo'shimcha ravishda guruh O'ZIGA biriktirilgan.
   requireTeacherGroup: (param = "groupId") => async (req, res, next) => {
-    const field = GROUP_SCOPE_FIELD[req.staff?.role];
-    if (!field) return next();
+    if (!req.staff) return next();
+    const field = GROUP_SCOPE_FIELD[req.staff.role];
     try {
       const id = req.params[param];
       if (!id || !isValidObjectId(id)) return next();
@@ -412,10 +418,52 @@ module.exports = {
         _id: id,
         client: req.client._id,
         isDeleted: false,
-      }).select("teacher assistant");
+      }).select("center teacher assistant");
       if (!group) return next();
-      if (String(group[field] || "") !== String(req.staff._id)) {
+      if (String(group.center) !== String(req.staff.center)) {
         throw new Error("auth.forbidden");
+      }
+      if (field && String(group[field] || "") !== String(req.staff._id)) {
+        throw new Error("auth.forbidden");
+      }
+      next();
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // `:centerId` li route'lar uchun: hodim faqat O'Z filiali (sozlamalar,
+  // kalendar). Owner uchun no-op.
+  requireOwnCenterParam: (param = "centerId") => (req, res, next) => {
+    if (!req.staff) return next();
+    const id = req.params[param];
+    if (id && String(id) !== String(req.staff.center)) return next(new Error("auth.forbidden"));
+    next();
+  },
+
+  // `:studentId` li route'lar uchun: hodim faqat o'z filialidagi a'zoligi
+  // bor o'quvchini; o'qituvchi/yordamchi — faqat O'Z guruhidagi o'quvchini.
+  // O'quvchi hujjati platforma bo'ylab umumiy (telefon bo'yicha yagona),
+  // shuning uchun tekshiruv a'zolik (`groups[]`) darajasida.
+  requireStudentScope: (param = "studentId") => async (req, res, next) => {
+    if (!req.staff) return next();
+    try {
+      const id = req.params[param];
+      if (!id || !isValidObjectId(id)) return next();
+      const field = GROUP_SCOPE_FIELD[req.staff.role];
+      const student = await Student.findOne({ _id: id }).select("groups.client groups.center groups.group");
+      if (!student) return next();
+      const mine = (student.groups || []).filter(
+        (g) => String(g.client) === String(req.client._id) && String(g.center) === String(req.staff.center),
+      );
+      if (!mine.length) throw new Error("auth.forbidden");
+      if (field) {
+        const own = await Group.exists({
+          _id: { $in: mine.map((g) => g.group) },
+          client: req.client._id,
+          [field]: req.staff._id,
+        });
+        if (!own) throw new Error("auth.forbidden");
       }
       next();
     } catch (error) {

@@ -4,6 +4,7 @@ const Student = require("../models/Student");
 const Attendance = require("../models/Attendance");
 const { todayString, currentMonthString } = require("../utils/date.util");
 const emit = require("../utils/emitter.util");
+const audit = require("../utils/audit.util");
 const { sourceWindowsOf, transferredGrades } = require("../utils/transferOverlay.util");
 
 // Guruhga boshqa guruhdan O'TKAZILGAN o'quvchilar (manba zanjiri bilan) —
@@ -196,7 +197,10 @@ module.exports = {
     return DTO(grade);
   },
 
-  remove: async (clientId, groupId, gradeId, staff = null) => {
+  // Baho — katakcha qiymati (student+guruh+sana bo'yicha noyob), arxivlanadigan
+  // obyekt emas: tozalanganda yozuv o'chadi, lekin eski qiymat audit
+  // jurnalida qoladi (kim, qachon, qaysi baho).
+  remove: async (clientId, groupId, gradeId, staff = null, actor = null) => {
     await assertGroup(clientId, groupId, scopeOf(staff));
 
     const target = await Grade.findOne({ _id: gradeId, group: groupId, client: clientId });
@@ -204,6 +208,16 @@ module.exports = {
     assertCanDelete(staff, target);
 
     const grade = await Grade.findOneAndDelete({ _id: gradeId, group: groupId, client: clientId });
+    if (!grade) throw new Error("grade.notFound");
+    void audit.log({
+      actor,
+      client: clientId,
+      center: staff?.center || null,
+      action: "grade:removed",
+      entity: { type: "grade", id: grade._id, label: grade.date },
+      changes: [{ field: "value", from: grade.value, to: null }],
+      meta: { groupId: String(groupId), studentId: String(grade.student) },
+    });
 
     emit(`client:${clientId}`, "grade:removed", {
       groupId: String(groupId),

@@ -551,7 +551,11 @@ module.exports = {
   // Hodim faqat o'z filialining o'quvchisini belgilay oladi; Owner uchun
   // `null` keladi va cheklov qo'llanmaydi (u barcha filiallarni ko'radi) —
   // docs/API_CONTRACT_qr_attendance_staff.md.
-  scanQr: async (clientId, { token, groupId }, staffCenterId = null) => {
+  // `teachScope` — o'qituvchi/yordamchi skanerlasa `{ field, staffId }`:
+  // faqat O'ZIGA biriktirilgan guruhlarga yozadi (davomat percent oylikka
+  // ta'sir qiladi — avval boshqa o'qituvchi guruhiga ham yozilardi).
+  scanQr: async (clientId, { token, groupId } = {}, staffCenterId = null, teachScope = null) => {
+    if (typeof token !== "string") throw new Error("attendance.invalidQr");
     if (!token) throw new Error("attendance.invalidQr");
 
     const student = await Student.findOne({ qrToken: token, isDeleted: false });
@@ -570,7 +574,9 @@ module.exports = {
       _id: { $in: clientEntries.map((g) => g.group) },
       client: clientId,
       isDeleted: false,
+      ...(teachScope && { [teachScope.field]: teachScope.staffId }),
     }).populate({ path: "subject", select: "name" });
+    if (teachScope && !groups.length) throw new Error("attendance.studentNotInGroup");
 
     // Aniq guruh berilgan — o'quvchi aynan shu guruhda bo'lishi shart
     // ("noto'g'ri guruh — rad etish").

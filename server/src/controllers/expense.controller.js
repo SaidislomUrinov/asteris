@@ -1,10 +1,11 @@
 const expenseService = require("../services/expense.service");
+const { buildActor } = require("../utils/audit.util");
 const { sendExcel, THEME } = require("../utils/excel.util");
 
 module.exports = {
   create: async (req, res, next) => {
     try {
-      const data = await expenseService.create(req.client._id, req.body);
+      const data = await expenseService.create(req.client._id, req.body, buildActor(req));
       return res.send({ ok: true, data, msg: "expense.created" });
     } catch (error) {
       next(error);
@@ -77,7 +78,7 @@ module.exports = {
 
   update: async (req, res, next) => {
     try {
-      const data = await expenseService.update(req.client._id, req.params.id, req.body);
+      const data = await expenseService.update(req.client._id, req.params.id, req.body, buildActor(req));
       return res.send({ ok: true, data, msg: "expense.updated" });
     } catch (error) {
       next(error);
@@ -86,7 +87,7 @@ module.exports = {
 
   cancel: async (req, res, next) => {
     try {
-      const data = await expenseService.cancel(req.client._id, req.params.id);
+      const data = await expenseService.cancel(req.client._id, req.params.id, buildActor(req));
       return res.send({ ok: true, data, msg: "expense.cancelled" });
     } catch (error) {
       next(error);

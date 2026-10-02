@@ -1,4 +1,5 @@
 const groupHolidayService = require("../services/groupHoliday.service");
+const { buildActor } = require("../utils/audit.util");
 
 module.exports = {
   list: async (req, res, next) => {
@@ -21,7 +22,7 @@ module.exports = {
 
   unmark: async (req, res, next) => {
     try {
-      const data = await groupHolidayService.unmark(req.client._id, req.params.groupId, req.params.date);
+      const data = await groupHolidayService.unmark(req.client._id, req.params.groupId, req.params.date, buildActor(req));
       return res.send({ ok: true, data, msg: "group.holidayUnmarked" });
     } catch (error) {
       next(error);

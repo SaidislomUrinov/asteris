@@ -22,7 +22,8 @@ const getTariff = () => {
     centerLimit: -1,
     teacherLimit: -1,
     receptionLimit: -1,
-    allowedPermissions: [],
+    // Xona moduli — validatsiya testlari `/rooms` orqali boradi.
+    allowedPermissions: ["room.control"],
   });
   return tariffPromise;
 };

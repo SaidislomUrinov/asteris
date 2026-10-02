@@ -31,10 +31,37 @@ const parseError = (err) => {
 // (5xx), ya'ni Telegram'ga ogohlantirish yuborilishi kerak.
 const I18N_KEY = /^[a-zA-Z][\w]*\.[\w]+$/;
 
+// Noto'g'ri KIRISH ma'lumotidan kelib chiqqan xatolar — server xatosi emas:
+// Mongoose CastError/ValidationError ("Cast to ObjectId failed", "Cast to
+// Number failed") va buzilgan JSON body. Avval xom matn foydalanuvchiga
+// ko'rinardi va har biri Telegram'ga 5xx alert yuborardi (QA 2026-10-02).
+// Satr kutilgan joyga obyekt/son/massiv kelganda servislardagi `.trim()`
+// kabi chaqiruvlar shu TypeError'ni beradi ("name.trim is not a function").
+const STRING_METHOD_ON_WRONG_TYPE =
+  /\.(trim|toLowerCase|toUpperCase|split|replace|startsWith|endsWith|padStart|localeCompare) is not a function$/;
+
+const isInputError = (err) =>
+  (err?.name === "TypeError" && STRING_METHOD_ON_WRONG_TYPE.test(err?.message || "")) ||
+  err?.name === "CastError" ||
+  err?.name === "ValidationError" ||
+  err?.name === "BSONError" ||
+  err?.type === "entity.parse.failed";
+
 const isServerError = (err) => {
+  if (isInputError(err)) return false;
   const status = err?.status || err?.statusCode;
   if (status) return status >= 500;
   return !I18N_KEY.test(err?.message || "");
+};
+
+// Foydalanuvchiga boradigan matn: biznes xatosi — o'z i18n kaliti; kirish
+// xatosi — `common.invalidInput`; qolgan kutilmagan xato (TypeError va h.k.)
+// — umumiy `common.error` (ichki matn/stack tashqariga chiqmaydi, u Telegram
+// alerti va server logida qoladi).
+const publicMessage = (err, parsed) => {
+  if (isInputError(err)) return "common.invalidInput";
+  if (I18N_KEY.test(parsed.message)) return parsed.message;
+  return "common.error";
 };
 
 // Fire-and-forget: alert yuborilmasa ham javob allaqachon ketgan.
@@ -67,7 +94,7 @@ module.exports = (err, req, res, _next) => {
 
   return res.send({
     ok: false,
-    msg: parsed.message,
+    msg: publicMessage(err, parsed),
     ...(err?.lockedBy ? { lockedBy: err.lockedBy } : {}),
     ...(err?.conflict ? { conflict: err.conflict } : {}),
     // Import bekor qilishda "nechta yozuv to'sqinlik qilyapti" (`blockedCount`)

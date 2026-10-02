@@ -1,4 +1,5 @@
 const salaryService = require("../services/salary.service");
+const { buildActor } = require("../utils/audit.util");
 const { sendExcel, THEME } = require("../utils/excel.util");
 
 const SALARY_TYPE_LABELS = {
@@ -7,6 +8,20 @@ const SALARY_TYPE_LABELS = {
 };
 const ROLE_LABELS = { manager: "Menejer", reception: "Resepshin", teacher: "O'qituvchi" };
 const TX_TYPE_LABELS = { advance: "Avans", withdrawal: "Oldindan olish", bonus: "Bonus", penalty: "Jarima" };
+
+// Hodim so'rasa — faqat o'z filiali hodimlari (Owner uchun null = cheklovsiz).
+const staffCenter = (req) => (req.staff ? req.staff.center : null);
+
+// Hodim boshqa hodimning hisobini ko'ra olmaydi. Istisno — `salary:view`
+// ruxsatiga ega hodim (masalan to'liq huquqli `["all"]`): u o'z filiali
+// hodimlarining ish haqini ko'radi.
+const assertCanViewSalary = (req) => {
+  const canViewOthers =
+    req.staff?.permissions?.includes("all") || req.staff?.permissions?.includes("salary:view");
+  if (req.staff && !canViewOthers && String(req.staff._id) !== req.params.staffId) {
+    throw new Error("auth.forbidden");
+  }
+};
 
 module.exports = {
   summary: async (req, res, next) => {
@@ -59,7 +74,10 @@ module.exports = {
 
   exportOne: async (req, res, next) => {
     try {
-      const data = await salaryService.detail(req.client._id, req.params.staffId, req.query);
+      // `detail` bilan bir xil cheklov — avval eksportda yo'q edi va istalgan
+      // hodim istalgan hodimning (boshqa filialniki ham) oyligini yuklab olardi.
+      assertCanViewSalary(req);
+      const data = await salaryService.detail(req.client._id, req.params.staffId, req.query, staffCenter(req));
       await sendExcel(res, `ish_haqi_${data.staff.name}_${data.month}`, [
         {
           sheetName: "Statistika",
@@ -106,17 +124,8 @@ module.exports = {
 
   detail: async (req, res, next) => {
     try {
-      // Hodim boshqa hodimning hisobini ko'ra olmaydi. Istisno — `salary:view`
-      // ruxsatiga ega hodim (masalan to'liq huquqli `["all"]`): u butun
-      // markazning ish haqi hisobotini ko'radi.
-      const canViewOthers =
-        req.staff?.permissions?.includes("all") ||
-        req.staff?.permissions?.includes("salary:view");
-      if (req.staff && !canViewOthers && String(req.staff._id) !== req.params.staffId) {
-        throw new Error("auth.forbidden");
-      }
-
-      const data = await salaryService.detail(req.client._id, req.params.staffId, req.query);
+      assertCanViewSalary(req);
+      const data = await salaryService.detail(req.client._id, req.params.staffId, req.query, staffCenter(req));
       return res.send({ ok: true, data });
     } catch (error) {
       next(error);
@@ -125,7 +134,7 @@ module.exports = {
 
   addTransaction: async (req, res, next) => {
     try {
-      const data = await salaryService.addTransaction(req.client._id, req.params.staffId, req.body);
+      const data = await salaryService.addTransaction(req.client._id, req.params.staffId, req.body, staffCenter(req), buildActor(req));
       return res.send({ ok: true, data, msg: "salary.txCreated" });
     } catch (error) {
       next(error);
@@ -134,7 +143,7 @@ module.exports = {
 
   cancelTransaction: async (req, res, next) => {
     try {
-      const data = await salaryService.cancelTransaction(req.client._id, req.params.txId);
+      const data = await salaryService.cancelTransaction(req.client._id, req.params.txId, staffCenter(req), buildActor(req));
       return res.send({ ok: true, data, msg: "salary.txCancelled" });
     } catch (error) {
       next(error);
