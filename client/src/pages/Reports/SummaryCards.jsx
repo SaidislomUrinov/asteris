@@ -10,7 +10,7 @@ import {
   HiUserPlus,
 } from "react-icons/hi2";
 import MetricCard from "../../ui/MetricCard";
-import { money, percent } from "./shared";
+import { money, percent } from "./reportData";
 
 // Skeleton — MetricCard bilan bir xil o'lchamda, sahifa "sakramasligi" uchun.
 function CardSkeleton() {

@@ -18,14 +18,28 @@ function Switch({
   label = "",
   className = "",
 }) {
+  // Yoqilgan holatdagi fon + fokus halqasi. Halqa Select/Input bilan bir xil
+  // formulada (`ring-3` + rangning 15% shaffofligi).
   const colors = {
     emerald: "bg-emerald-500",
     blue: "bg-blue-500",
-    red: "bg-red-500",
-    yellow: "bg-yellow-500",
+    red: "bg-rose-500",
+    yellow: "bg-amber-500",
     orange: "bg-orange-500",
-    black: "bg-black",
+    black: "bg-slate-900",
     slate: "bg-slate-700",
+  };
+
+  // To'liq klass yoziladi — Tailwind manbani statik skanerlaydi, prefiksni
+  // runtime'da yopishtirsak (`focus-visible:${...}`) klass generatsiya bo'lmaydi.
+  const rings = {
+    emerald: "focus-visible:ring-3 focus-visible:ring-emerald-500/20",
+    blue: "focus-visible:ring-3 focus-visible:ring-blue-500/20",
+    red: "focus-visible:ring-3 focus-visible:ring-rose-500/20",
+    yellow: "focus-visible:ring-3 focus-visible:ring-amber-500/20",
+    orange: "focus-visible:ring-3 focus-visible:ring-orange-500/20",
+    black: "focus-visible:ring-3 focus-visible:ring-slate-900/15",
+    slate: "focus-visible:ring-3 focus-visible:ring-slate-500/20",
   };
 
   return (
@@ -34,27 +48,24 @@ function Switch({
     >
       <button
         type="button"
+        role="switch"
+        aria-checked={checked}
         disabled={disabled}
         onClick={() => !disabled && onChange(!checked)}
-        className={`
-          relative inline-flex items-center h-6 w-11 rounded-full transition-colors duration-300
-          ${checked ? colors[color] : "bg-gray-300"}
-          ${disabled ? "cursor-not-allowed" : "cursor-pointer"}
-        `}
+        className={`relative inline-flex shrink-0 items-center h-6 w-11 p-0.5 rounded-full border transition-colors duration-200 outline-none ${
+          checked
+            ? `${colors[color]} border-transparent`
+            : "bg-slate-200 border-slate-300/60 hover:bg-slate-300/70"
+        } ${disabled ? "cursor-not-allowed" : "cursor-pointer"} ${rings[color]}`}
       >
         <span
-          className={`
-             flex items-center justify-center w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-300
-            ${checked ? "translate-x-5.5" : "translate-x-0.5"}
-          `}
-        >
-          <div
-            className={`${checked ? `${colors[color]} w-1` : "bg-zinc-300 -rotate-90 w-2.5"} duration-300 h-2.5 rounded-full`}
-          ></div>
-        </span>
+          className={`block w-5 h-5 rounded-full bg-white shadow-[0_1px_2px_rgba(15,23,42,0.25)] transition-transform duration-200 ${
+            checked ? "translate-x-5" : "translate-x-0"
+          }`}
+        />
       </button>
       {label && (
-        <span className="text-sm text-slate-800 select-none">{label}</span>
+        <span className="text-[13px] text-slate-700 select-none">{label}</span>
       )}
     </label>
   );

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import ChartCard from "../../ui/ChartCard";
 import {
   Area,
   AreaChart,
@@ -47,7 +48,7 @@ function RevenueChart({ payments = [] }) {
   }, [payments]);
 
   return (
-    <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 bg-white h-full">
+    <ChartCard>
       <p className="font-semibold text-slate-800 shrink-0">{t("group.revenueChartTitle")}</p>
 
       <div className="w-full flex-1 min-h-44">
@@ -80,10 +81,10 @@ function RevenueChart({ payments = [] }) {
               }}
             />
             <Area
-              type="monotone"
+              type="linear"
               dataKey="amount"
               stroke="#10b981"
-              strokeWidth={2}
+              strokeWidth={3}
               fill="url(#revenueFill)"
               dot={false}
               activeDot={{ r: 4, fill: "#10b981", stroke: "#fff", strokeWidth: 2 }}
@@ -91,7 +92,7 @@ function RevenueChart({ payments = [] }) {
           </AreaChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </ChartCard>
   );
 }
 

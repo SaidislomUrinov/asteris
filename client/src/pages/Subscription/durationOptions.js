@@ -1,9 +1,9 @@
 export const DURATION_OPTIONS = [
-  { months: 1, label: "1 oy", discount: 0 },
-  { months: 3, label: "3 oy", discount: 0.05 },
-  { months: 6, label: "6 oy", discount: 0.07 },
-  { months: 9, label: "9 oy", discount: 0.10 },
-  { months: 12, label: "1 yil", discount: 0.12 },
+  { months: 1, labelKey: "subscription.durationLabels.m1", discount: 0 },
+  { months: 3, labelKey: "subscription.durationLabels.m3", discount: 0.05 },
+  { months: 6, labelKey: "subscription.durationLabels.m6", discount: 0.07 },
+  { months: 9, labelKey: "subscription.durationLabels.m9", discount: 0.10 },
+  { months: 12, labelKey: "subscription.durationLabels.m12", discount: 0.12 },
 ];
 
 export const calcAmount = (monthlyPrice, months, discount) =>

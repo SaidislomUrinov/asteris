@@ -29,6 +29,11 @@ export function useReportResource(endpoint, params, deps = []) {
   const depsKey = JSON.stringify(deps);
 
   const fetchData = useCallback(async () => {
+    // Bo'sh endpoint — so'rov o'chirilgan (masalan tarifda bu hisobot yo'q).
+    if (!endpoint) {
+      setState((s) => ({ ...s, loading: false }));
+      return;
+    }
     try {
       setState((s) => ({ ...s, loading: true, error: false }));
       const res = await api.get(endpoint, { params: JSON.parse(key) });
@@ -44,7 +49,8 @@ export function useReportResource(endpoint, params, deps = []) {
   useEffect(() => {
     // `depsKey` chaqiruvda ishlatilmaydi — u faqat tashqi qayta yuklash
     // signali (socket tick) bo'lgani uchun bog'liqlikda turadi.
-    fetchData();
+    const id = setTimeout(fetchData, 0);
+    return () => clearTimeout(id);
   }, [fetchData, depsKey]);
 
   return { ...state, refetch: fetchData };

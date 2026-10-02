@@ -84,3 +84,35 @@ export function formatRemaining(t, mins) {
     ? t("room.remainingHm", { hours, minutes })
     : t("room.remainingMin", { count: minutes });
 }
+
+// ─── Haftalik timeline primitivlari ──────────────────────────────────────
+// `/schedule` ish maydoni (ScheduleTimeline) va xona detailidagi haftalik
+// jadval (WeeklyRoomSchedule) ikkalasi ham shu qoidalarga tayanadi.
+
+export const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+// Vaqt qadami — surish/cho'zishda daqiqalar shu qadamga yaxlitlanadi.
+export const SNAP = 15;
+
+export const snapTo = (minute, step = SNAP) => Math.round(minute / step) * step;
+
+/**
+ * Kun naqshini `delta` qadamga suradi (Du·Cho·Ju + 1 → Se·Pa·Yak).
+ * Hafta chegarasidan chiqsa `null` — chaqiruvchi surishni bekor qiladi.
+ */
+export const shiftDays = (days, delta) => {
+  if (!delta) return days;
+  const next = days.map((d) => DAYS.indexOf(d) + delta);
+  if (next.some((i) => i < 0 || i > 6)) return null;
+  return next.map((i) => DAYS[i]);
+};
+
+// Standart ko'rinadigan kun oralig'i (07:00–23:00) — `/schedule` ish
+// maydoni har doim shu oraliqni ko'rsatadi; xona detailida ham (`fill`
+// rejimida) o'qishga oson bo'lishi uchun aynan shu chegara ishlatiladi.
+export const DAY_RANGE_FROM = 7 * 60;
+export const DAY_RANGE_TO = 22 * 60 + 60; // oxirgi dars 22:00 da boshlanib tugashi uchun
+
+// Ikki vaqt oralig'i kesishadimi (chegara tegishi kesishish hisoblanmaydi:
+// 10:00–11:00 va 11:00–12:00 bemalol yonma-yon turadi).
+export const overlaps = (aStart, aEnd, bStart, bEnd) => aStart < bEnd && bStart < aEnd;

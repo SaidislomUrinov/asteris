@@ -7,10 +7,10 @@ import Chip from "../../ui/Chip";
 import NumberText from "../../ui/NumberText";
 import ExportExcelButton from "../../ui/ExportExcelButton";
 import useCan from "../../hooks/useCan";
+import useHideFinance from "../../hooks/useHideFinance";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
-
-const money = (v) => `${(v || 0).toLocaleString("uz-UZ")}`;
+import { maskMoney } from "../../utils/moneyFormat";
 
 const TX_COLOR = { advance: "orange", withdrawal: "red", bonus: "emerald", penalty: "red" };
 
@@ -21,17 +21,20 @@ function SalaryTransactionsListDialog({ open, staff, month, onClose, onChanged }
   const { t } = useTranslation();
   const can = useCan();
   const canManage = can("salary:manage");
+  const [hideFinance] = useHideFinance();
+  const money = useCallback((v) => maskMoney(v, hideFinance), [hideFinance]);
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [cancelingId, setCancelingId] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
 
+  const staffId = staff?._id;
   const fetchDetail = useCallback(async () => {
-    if (!staff?._id) return;
+    if (!staffId) return;
     try {
       setLoading(true);
-      const res = await api.get(`/salaries/${staff._id}`, { params: { month } });
+      const res = await api.get(`/salaries/${staffId}`, { params: { month } });
       const { ok, data, msg } = res.data;
       if (!ok) throw new Error(msg);
       setData(data);
@@ -40,10 +43,12 @@ function SalaryTransactionsListDialog({ open, staff, month, onClose, onChanged }
     } finally {
       setLoading(false);
     }
-  }, [staff?._id, month]);
+  }, [staffId, month]);
 
   useEffect(() => {
-    if (open) fetchDetail();
+    if (!open) return;
+    const t = setTimeout(fetchDetail, 0);
+    return () => clearTimeout(t);
   }, [open, fetchDetail]);
 
   const confirmCancel = async () => {
@@ -75,7 +80,7 @@ function SalaryTransactionsListDialog({ open, staff, month, onClose, onChanged }
         <div className="flex flex-col gap-4 w-full">
           <div className="flex justify-end">
             <ExportExcelButton
-              endpoint={`/salaries/${staff._id}/export`}
+              endpoint={`/salaries/${staff?._id}/export`}
               params={{ month }}
               variant="icon"
             />

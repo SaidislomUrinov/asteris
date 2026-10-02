@@ -28,7 +28,7 @@ function InfoCard({ icon, title, subtitle, badge, accent = "blue", children, cla
           {icon}
         </div>
         <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-          <p className="font-space font-bold text-lg text-slate-900 truncate">{title}</p>
+          <p className="font-space font-bold text-lg leading-snug text-slate-900 line-clamp-2 break-words">{title}</p>
           {subtitle && <p className="text-xs text-slate-400 truncate">{subtitle}</p>}
         </div>
         {badge && <div className="shrink-0">{badge}</div>}

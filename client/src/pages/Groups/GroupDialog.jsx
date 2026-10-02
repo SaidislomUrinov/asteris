@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import {
   HiBookOpen,
   HiBuildingOffice2,
@@ -50,16 +51,22 @@ function GroupDialog({
   onSaved,
 }) {
   const { t } = useTranslation();
+  // O'qituvchi o'zi guruh yaratganda — u DOIM shu guruhning o'qituvchisi
+  // bo'ladi (boshqa o'qituvchini tanlab qo'ya olmaydi), shuning uchun maydon
+  // avtomatik o'ziga qulflanadi.
+  const { authType, role, _id: ownStaffId } = useSelector((e) => e.user);
+  const isSelfTeacher = authType === "staff" && role === "teacher";
   // Hodim (Staff) bitta filialga biriktirilgan — maydon yashiriladi va qiymat
   // avtomatik qo'yiladi. Bu MUHIM: keyingi maydonlar `disabled={!form.center}`
   // bilan bog'langan, filial tanlanmasa ular ochilmaydi.
   const onlyCenter = centers.length === 1 ? centers[0]._id : "";
   const showCenterField = centers.length > 1;
-  const [form, setForm] = useState(() =>
-    fixedRoom
+  const [form, setForm] = useState(() => {
+    const base = fixedRoom
       ? { ...EMPTY_FORM, center: fixedRoom.center, room: fixedRoom._id }
-      : { ...EMPTY_FORM, center: onlyCenter },
-  );
+      : { ...EMPTY_FORM, center: onlyCenter };
+    return isSelfTeacher ? { ...base, teacher: ownStaffId } : base;
+  });
   const [disabled, setDisabled] = useState(false);
 
   const centerSubjects = useMemo(
@@ -207,7 +214,7 @@ function GroupDialog({
           <Select
             label={t("group.teacher")}
             placeholder={t("group.teacher")}
-            disabled={!form.center}
+            disabled={!form.center || isSelfTeacher}
             icon={<HiUsers />}
             value={form.teacher}
             onChange={(v) => setForm((prev) => ({ ...prev, teacher: v }))}

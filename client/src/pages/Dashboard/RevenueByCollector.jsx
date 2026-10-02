@@ -47,15 +47,17 @@ function RevenueByCollector({ month, center }) {
   }, [month, center]);
 
   useEffect(() => {
-    fetchData();
+    const t = setTimeout(fetchData, 0);
+    return () => clearTimeout(t);
   }, [fetchData]);
 
   useSocketEvent("payment:created", fetchData);
   useSocketEvent("payment:cancelled", fetchData);
+  useSocketEvent("payment:updated", fetchData);
 
   return (
-    <div className="flex flex-col w-full h-full p-4 rounded-xl border border-slate-200 bg-white gap-3">
-      <div className="flex items-start justify-between gap-2">
+    <div className="flex flex-col w-full h-full min-h-0 p-5 rounded-xl border border-slate-200 bg-white gap-3">
+      <div className="flex items-start justify-between gap-2 shrink-0">
         <div className="flex flex-col">
           <span className="flex items-center gap-2 font-semibold text-slate-800">
             <HiArrowTrendingUp className="text-emerald-500 text-xl" />
@@ -82,7 +84,9 @@ function RevenueByCollector({ month, center }) {
           {t("revenue.empty")}
         </div>
       ) : (
-        <div className="flex flex-col gap-2.5">
+        // Ro'yxat kartochka ichida scroll bo'ladi — kassirlar soni ko'paysa
+        // kartochka cho'zilib, yonidagi donutni ham cho'zib yubormasligi uchun.
+        <div className="flex flex-col gap-2.5 flex-1 min-h-0 overflow-y-auto pr-1">
           {rows.map((row) => {
             const percent = total > 0 ? Math.round((row.amount / total) * 100) : 0;
             return (
@@ -92,10 +96,13 @@ function RevenueByCollector({ month, center }) {
                     <HiUserCircle className="text-slate-400 text-lg shrink-0" />
                     <span className="truncate">{row.name || t("revenue.collectorUnknown")}</span>
                     {row.role && (
-                      <span className="text-xs text-slate-400 shrink-0">
+                      <span className="text-xs text-slate-400 shrink-0 truncate">
                         · {t(`revenue.roles.${row.role}`)}
                       </span>
                     )}
+                    <span className="text-xs text-slate-300 shrink-0">
+                      · {t("revenue.transactionCountTiny", { count: row.count })}
+                    </span>
                   </span>
                   <NumberText className="text-sm shrink-0">{money(row.amount)}</NumberText>
                 </div>
@@ -103,13 +110,23 @@ function RevenueByCollector({ month, center }) {
                   <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
                     <div className="h-full rounded-full bg-emerald-500" style={{ width: `${percent}%` }} />
                   </div>
-                  <span className="text-xs text-slate-400 w-16 text-right shrink-0">
-                    {t("revenue.transactionCountShort", { count: row.count })}
+                  <span className="text-xs tabular-nums text-slate-400 w-9 text-right shrink-0">
+                    {percent}%
                   </span>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {!loading && rows.length > 0 && (
+        <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100 shrink-0">
+          <span className="text-xs text-slate-400">{t("revenue.total")}</span>
+          <span className="flex items-baseline gap-1 shrink-0">
+            <NumberText className="text-base">{money(total)}</NumberText>
+            <span className="text-xs text-slate-400">{t("student.somSuffix")}</span>
+          </span>
         </div>
       )}
     </div>

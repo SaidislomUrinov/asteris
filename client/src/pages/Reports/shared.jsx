@@ -1,90 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HiArrowSmallDown, HiArrowSmallUp, HiChartBar } from "react-icons/hi2";
 import Button from "../../ui/Button";
-import { api } from "../../utils/fetching";
-import { errorMsg } from "../../utils/alert";
 
-// Hisobot modulida takrorlanadigan uch narsa shu yerda: ma'lumot olish,
-// mijoz tomonda saralash va xato holati. Har tab (filial/o'qituvchi/guruh...)
-// bir xil shakl bilan ishlagani uchun bularni ko'chirib yozish DRY'ni buzardi.
-
-export const money = (v) => `${Math.round(v || 0).toLocaleString("uz-UZ")}`;
-
-// O'sish foizi: musbat — yashil, manfiy — qizil. `null` bo'lsa taqqoslash
-// uchun oldingi davr ma'lumoti yo'q degani.
-export const percent = (v) => `${v > 0 ? "+" : ""}${Math.round(v || 0)}%`;
-
-/**
- * Hisobot endpointidan ma'lumot oladi. `deps` — so'rovga kirmaydigan,
- * lekin qayta yuklashni talab qiladigan qiymatlar (realtime "tick" kabi).
- *
- * @param {string} endpoint
- * @param {Object} params
- * @param {Array} [deps]
- */
-export function useReportResource(endpoint, params, deps = []) {
-  const [data, setData] = useState(null);
-  const [extra, setExtra] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  const key = JSON.stringify(params);
-  const depsKey = JSON.stringify(deps);
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(false);
-      const res = await api.get(endpoint, { params: JSON.parse(key) });
-      const { ok, data: payload, msg, ...rest } = res.data;
-      if (!ok) throw new Error(msg);
-      setData(payload ?? null);
-      setExtra(rest || {});
-    } catch (error) {
-      setError(true);
-      errorMsg(error.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [endpoint, key]);
-
-  useEffect(() => {
-    fetchData();
-    // `depsKey` — tashqi qayta yuklash signali (socket tick). Uni chaqiruvda
-    // ishlatmaymiz, faqat effektni qayta ishga tushirish uchun kerak.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchData, depsKey]);
-
-  return { data, extra, loading, error, refetch: fetchData };
-}
-
-/**
- * Jadval ustunlari bo'yicha mijoz tomonda saralash. Hisobot qatorlari
- * ko'pi bilan bir necha o'nlab bo'lgani uchun server tomon sort ortiqcha.
- */
-export function useSorted(rows, initialKey = "", initialDir = "desc") {
-  const [sort, setSort] = useState({ key: initialKey, dir: initialDir });
-
-  const sorted = useMemo(() => {
-    const list = Array.isArray(rows) ? [...rows] : [];
-    if (!sort.key) return list;
-    const sign = sort.dir === "asc" ? 1 : -1;
-    return list.sort((a, b) => {
-      const av = valueAt(a, sort.key);
-      const bv = valueAt(b, sort.key);
-      if (typeof av === "number" && typeof bv === "number") return (av - bv) * sign;
-      return String(av ?? "").localeCompare(String(bv ?? ""), "uz") * sign;
-    });
-  }, [rows, sort]);
-
-  const toggle = (key) =>
-    setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" }));
-
-  return { rows: sorted, sort, toggle };
-}
-
-const valueAt = (row, path) => path.split(".").reduce((acc, k) => (acc == null ? acc : acc[k]), row);
+// Hisobot tablarida takrorlanadigan UI bo'laklari. Ma'lumot olish/saralash
+// hook'lari va formatlovchilar `reportData.js` da (fast-refresh qoidasi).
 
 /**
  * Saralanadigan ustun sarlavhasi — `List` ustunining `header` maydoniga

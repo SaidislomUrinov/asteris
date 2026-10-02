@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HiPencilSquare, HiTrash } from "react-icons/hi2";
-import { toHHMM, toMinutes } from "../../utils/schedule";
+import {
+  DAY_RANGE_FROM,
+  DAY_RANGE_TO,
+  DAYS,
+  SNAP,
+  shiftDays,
+  toHHMM,
+  toMinutes,
+} from "../../utils/schedule";
 
-const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-
-export const RANGE_FROM = 7 * 60;
-export const RANGE_TO = 22 * 60 + 60; // oxirgi dars 22:00 da boshlanib tugashi uchun
-export const SNAP = 15;
+export const RANGE_FROM = DAY_RANGE_FROM;
+export const RANGE_TO = DAY_RANGE_TO;
+export { SNAP };
 
 const HOUR_PX = 60;
 const PX_PER_MIN = HOUR_PX / 60;
@@ -15,6 +21,7 @@ const DRAG_THRESHOLD = 4; // px — bundan kichik siljish "bosish" hisoblanadi
 
 // Guruh rangi — joylashuv tartibida barqaror beriladi, shuning uchun bitta
 // guruh timeline'da doim bir xil rangda ko'rinadi.
+// eslint-disable-next-line react-refresh/only-export-components
 export const BLOCK_COLORS = [
   { bg: "bg-blue-50", border: "border-blue-200", bar: "bg-blue-500", text: "text-blue-950", sub: "text-blue-700/75" },
   { bg: "bg-violet-50", border: "border-violet-200", bar: "bg-violet-500", text: "text-violet-950", sub: "text-violet-700/75" },
@@ -216,14 +223,6 @@ function ScheduleTimeline({
       }),
     [],
   );
-
-  // Kun naqshini `delta` qadamga suradi; hafta chegarasidan chiqsa — surilmaydi.
-  const shiftDays = (days, delta) => {
-    if (!delta) return days;
-    const next = days.map((d) => DAYS.indexOf(d) + delta);
-    if (next.some((i) => i < 0 || i > 6)) return null;
-    return next.map((i) => DAYS[i]);
-  };
 
   // Kursor jadvaldan chiqqanida (`outside`) hech qanday ko'chirish ko'rinishi
   // chizilmaydi — blok o'z joyida turaveradi.
@@ -464,7 +463,7 @@ function ScheduleTimeline({
             return (
               <div
                 key={day}
-                className={`flex-1 min-w-[8rem] px-3 py-2.5 border-l border-slate-100 transition-colors ${
+                className={`flex-1 min-w-[8rem] px-3 py-2.5 border-l border-slate-300 transition-colors ${
                   on ? "bg-blue-50/60" : ""
                 }`}
               >
@@ -495,7 +494,7 @@ function ScheduleTimeline({
             {hours.map((h, i) => (
               <div
                 key={h}
-                className={`absolute right-2 text-[11px] font-jet text-slate-300 tabular-nums ${
+                className={`absolute right-2 text-[13px] font-jet font-semibold text-slate-900 tabular-nums ${
                   i === 0 ? "" : "-translate-y-1/2"
                 }`}
                 style={{ top: i * HOUR_PX }}
@@ -510,7 +509,7 @@ function ScheduleTimeline({
             className="flex flex-1"
             style={{
               height: bodyPx,
-              backgroundImage: `repeating-linear-gradient(to bottom, rgb(241 245 249) 0 1px, transparent 1px ${HOUR_PX}px)`,
+              backgroundImage: `repeating-linear-gradient(to bottom, rgb(203 213 225) 0 1px, transparent 1px ${HOUR_PX}px)`,
             }}
           >
             {DAYS.map((day) => {
@@ -526,7 +525,7 @@ function ScheduleTimeline({
                   onMouseLeave={() => setHover((h) => (h?.day === day ? null : h))}
                   onClick={(e) => handleClick(day, e)}
                   onMouseUp={(e) => carrying && handleClick(day, e)}
-                  className={`relative flex-1 min-w-[8rem] border-l border-slate-100 ${
+                  className={`relative flex-1 min-w-[8rem] border-l border-slate-300 ${
                     target || dragTarget ? "bg-blue-50/25" : ""
                   } ${canPlace && !drag ? "cursor-pointer" : ""}`}
                 >

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { HiExclamationCircle } from "react-icons/hi2";
@@ -7,7 +7,8 @@ import Chip from "../../ui/Chip";
 import NumberText from "../../ui/NumberText";
 import ExportExcelButton from "../../ui/ExportExcelButton";
 import useFeature from "../../hooks/useFeature";
-import { ReportError, money, useReportResource } from "./shared";
+import { ReportError } from "./shared";
+import { money, useReportResource } from "./reportData";
 
 // Qarzdorlar — yagona paginatsiyali tab (ro'yxat uzun bo'lishi mumkin).
 // Backend javobi ikki shaklda kelishi mumkin: `data` to'g'ridan-to'g'ri
@@ -22,9 +23,11 @@ function DebtorsTab({ query, tick }) {
   // Filtr o'zgarsa sahifa boshiga qaytariladi, aks holda bo'sh sahifada
   // "qarzdor yo'q" degan noto'g'ri taassurot qoladi.
   const queryKey = JSON.stringify(query);
-  useEffect(() => {
+  const [prevKey, setPrevKey] = useState(queryKey);
+  if (prevKey !== queryKey) {
+    setPrevKey(queryKey);
     setPage(1);
-  }, [queryKey]);
+  }
 
   const params = useMemo(() => ({ ...query, page }), [queryKey, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -70,7 +73,9 @@ function DebtorsTab({ query, tick }) {
           {(row.months || []).length === 0 ? (
             <span className="text-xs text-slate-400">—</span>
           ) : (
-            row.months.map((m) => <Chip key={m} value={m} color="red" />)
+            row.months.map((m) => (
+              <Chip key={m ?? "unknown"} value={m ?? t("student.openingMonthUnknown")} color="red" />
+            ))
           )}
         </div>
       ),

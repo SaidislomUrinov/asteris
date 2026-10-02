@@ -26,7 +26,9 @@ export default function Logout() {
     try {
       const endpoint = SIGNOUT_ENDPOINT[getAuthType()];
       if (endpoint) await api.post(endpoint);
-    } catch {}
+    } catch {
+      // serverga yetmasa ham lokal sessiya tozalanadi
+    }
     socket.disconnect();
     localStorage.removeItem("access");
     localStorage.removeItem("authType");

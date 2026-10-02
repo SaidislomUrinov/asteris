@@ -8,6 +8,7 @@ import {
   HiCalendar,
   HiCog6Tooth,
   HiHome,
+  HiLockClosed,
   HiPencil,
   HiRectangleGroup,
   HiTrash,
@@ -23,16 +24,18 @@ import MetricCard from "../../ui/MetricCard";
 import Loading from "../../ui/Loading";
 import NumberText from "../../ui/NumberText";
 import Avatar from "../../ui/Avatar";
+import MonthInput from "../../ui/MonthInput";
 import CenterDialog from "./CenterDialog";
 import CenterSettingsDialog from "./CenterSettingsDialog";
 import PaymentDonut from "../Groups/PaymentDonut";
 import RevenueChart from "../Groups/RevenueChart";
 import ExpenseCategoryDonut from "./ExpenseCategoryDonut";
+import HiddenFinancePanel from "../../components/HiddenFinancePanel";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
+import useHideFinance from "../../hooks/useHideFinance";
 import { api, API } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
-
-const money = (v) => `${(v || 0).toLocaleString("uz-UZ")}`;
+import { maskMoney } from "../../utils/moneyFormat";
 
 const currentMonth = () => {
   const d = new Date();
@@ -43,6 +46,7 @@ function CenterDetail() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
+  const [hideFinance] = useHideFinance();
 
   const [center, setCenter] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -84,7 +88,8 @@ function CenterDetail() {
   }, [id, notFound]);
 
   useEffect(() => {
-    fetchCenter();
+    const id_ = setTimeout(fetchCenter, 0);
+    return () => clearTimeout(id_);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -128,15 +133,18 @@ function CenterDetail() {
   }, [id, month]);
 
   useEffect(() => {
-    fetchStats();
+    const t = setTimeout(fetchStats, 0);
+    return () => clearTimeout(t);
   }, [fetchStats]);
 
   useEffect(() => {
-    fetchExpenseByCategory();
+    const t = setTimeout(fetchExpenseByCategory, 0);
+    return () => clearTimeout(t);
   }, [fetchExpenseByCategory]);
 
   useEffect(() => {
-    fetchTeacherSalary();
+    const t = setTimeout(fetchTeacherSalary, 0);
+    return () => clearTimeout(t);
   }, [fetchTeacherSalary]);
 
   useEffect(() => {
@@ -158,13 +166,19 @@ function CenterDetail() {
   // Real vaqtda — to'lov/xarajat/davomat/oylik o'zgarsa markaz statistikasi
   // qayta yuklanadi, refresh talab qilinmaydi.
   useSocketEvent("payment:created", fetchStats);
+  useSocketEvent("payment:updated", fetchStats);
   useSocketEvent("expense:created", fetchStats);
   useSocketEvent("expense:updated", fetchStats);
   useSocketEvent("attendance:marked", fetchStats);
   useSocketEvent("expense:created", fetchExpenseByCategory);
   useSocketEvent("expense:updated", fetchExpenseByCategory);
+  useSocketEvent("center:statusChanged", ({ blocked = [], active = [] } = {}) => {
+    const changed = [...blocked, ...active].map(String);
+    if (changed.includes(String(id))) fetchCenter();
+  });
   useSocketEvent("salary:updated", fetchTeacherSalary);
   useSocketEvent("payment:created", fetchTeacherSalary);
+  useSocketEvent("payment:updated", fetchTeacherSalary);
 
   const confirmDelete = async () => {
     try {
@@ -204,6 +218,9 @@ function CenterDetail() {
           <HiArrowLeft />
         </IconButton>
 
+        {/* Bloklangan filial (tarif pasaygan) — Read-Only: tahrirlash
+            amallari ko'rsatilmaydi, backend ham `center.blocked` qaytaradi. */}
+        {center.status !== "blocked" && (
         <div className="flex items-center gap-2">
           <IconButton
             variant="ghost"
@@ -227,7 +244,18 @@ function CenterDetail() {
             <HiTrash />
           </IconButton>
         </div>
+        )}
       </div>
+
+      {center.status === "blocked" && (
+        <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-50 border border-amber-200">
+          <HiLockClosed className="text-lg text-amber-500 shrink-0 mt-0.5" />
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <p className="text-sm font-semibold text-amber-900">{t("center.readOnlyTitle")}</p>
+            <p className="text-xs text-amber-800">{t("center.blockedHint")}</p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <InfoCard
@@ -283,11 +311,11 @@ function CenterDetail() {
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="font-semibold text-slate-800">{t("center.statsTitle")}</p>
-        <input
-          type="month"
+        <MonthInput
+          className="w-44"
           value={month}
-          onChange={(e) => setMonth(e.target.value || currentMonth())}
-          className="px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-500"
+          onChange={(m) => setMonth(m || currentMonth())}
+          max={currentMonth()}
         />
       </div>
 
@@ -296,8 +324,8 @@ function CenterDetail() {
           icon={<HiBanknotes />}
           title={t("dashboard.monthRevenue")}
           subtitle={t("center.revenueCardDesc")}
-          value={statsLoading ? "…" : money(stats?.monthRevenue)}
-          suffix={t("student.somSuffix")}
+          value={statsLoading ? "…" : maskMoney(stats?.monthRevenue, hideFinance)}
+          suffix={hideFinance ? "" : t("student.somSuffix")}
           accent="emerald"
         />
 
@@ -305,8 +333,8 @@ function CenterDetail() {
           icon={<HiBanknotes />}
           title={t("dashboard.monthExpenses")}
           subtitle={t("center.expenseCardDesc")}
-          value={statsLoading ? "…" : money(stats?.monthExpenses)}
-          suffix={t("student.somSuffix")}
+          value={statsLoading ? "…" : maskMoney(stats?.monthExpenses, hideFinance)}
+          suffix={hideFinance ? "" : t("student.somSuffix")}
           accent="red"
         />
 
@@ -314,8 +342,8 @@ function CenterDetail() {
           icon={<HiBanknotes />}
           title={t("center.teacherSalaryCardTitle")}
           subtitle={t("center.teacherSalaryCardDesc")}
-          value={money(teacherSalary.total)}
-          suffix={t("student.somSuffix")}
+          value={maskMoney(teacherSalary.total, hideFinance)}
+          suffix={hideFinance ? "" : t("student.somSuffix")}
           accent="amber"
         >
           <p className="text-xs text-slate-400">
@@ -330,19 +358,27 @@ function CenterDetail() {
         <>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
             <div className="lg:col-span-1">
-              <PaymentDonut
-                paid={stats.currentCyclePaid || 0}
-                debt={stats.currentCycleDebt || 0}
-              />
+              {hideFinance ? (
+                <HiddenFinancePanel />
+              ) : (
+                <PaymentDonut
+                  paid={stats.currentCyclePaid || 0}
+                  debt={stats.currentCycleDebt || 0}
+                />
+              )}
             </div>
             <div className="lg:col-span-2">
-              <RevenueChart payments={stats.chartPayments} />
+              {hideFinance ? (
+                <HiddenFinancePanel />
+              ) : (
+                <RevenueChart payments={stats.chartPayments} />
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
             <div className="lg:col-span-1">
-              <ExpenseCategoryDonut data={expenseByCategory} />
+              {hideFinance ? <HiddenFinancePanel /> : <ExpenseCategoryDonut data={expenseByCategory} />}
             </div>
             <div className="lg:col-span-2 flex flex-col rounded-xl border border-slate-200 bg-white overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-100 font-semibold text-slate-800 text-sm">
@@ -365,7 +401,9 @@ function CenterDetail() {
                             </div>
                           </td>
                           <td className="px-4 py-2.5">
-                            <NumberText className="text-emerald-600">{money(p.amount)}</NumberText>
+                            <NumberText className="text-emerald-600">
+                              {maskMoney(p.amount, hideFinance)}
+                            </NumberText>
                           </td>
                           <td className="px-4 py-2.5 text-slate-400 text-xs whitespace-nowrap">
                             {p.date}

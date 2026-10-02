@@ -8,18 +8,34 @@ import Select from "../../ui/Select";
 import NumberText from "../../ui/NumberText";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
-
-const money = (v) => `${(v || 0).toLocaleString("uz-UZ")}`;
+import useFeature from "../../hooks/useFeature";
+import useHideFinance from "../../hooks/useHideFinance";
+import { maskMoney } from "../../utils/moneyFormat";
 
 const TX_TYPES = ["advance", "withdrawal", "bonus", "penalty"];
+
+// Premium turlar — tarif ochmagan bo'lsa tanlovdan chiqarib tashlanadi
+// (backend `salary.service.js#addTransaction` baribir yakuniy tekshiradi).
+const TX_TARIFF_FLAG = { advance: "staff.salary.advance", bonus: "staff.bonus" };
 
 // "To'lov/Jarima" — DropMenu'dan alohida ochiladigan, faqat qo'shish uchun
 // modal (Salary/index.jsx). Tranzaksiyalar tarixi/bekor qilish endi bu yerda
 // emas, alohida "Tranzaksiyalar" modalida (SalaryTransactionsListDialog.jsx).
 function SalaryTransactionDialog({ open, staff, month, onClose, onSaved }) {
   const { t } = useTranslation();
+  const hasFeature = useFeature();
+  const [hideFinance] = useHideFinance();
+  const money = useCallback((v) => maskMoney(v, hideFinance), [hideFinance]);
+  const availableTypes = TX_TYPES.filter((tp) => !TX_TARIFF_FLAG[tp] || hasFeature(TX_TARIFF_FLAG[tp]));
   const [form, setForm] = useState({ type: "advance", amount: "", note: "" });
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open || availableTypes.includes(form.type)) return;
+    const id = setTimeout(() => setForm((f) => ({ ...f, type: availableTypes[0] || "withdrawal" })), 0);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // Tranzaksiyalar tarixi modalidagi bilan bir xil statistika — foydalanuvchi
   // yangi tranzaksiya qo'shishdan oldin joriy holatni (hisoblangan oylik,
@@ -27,11 +43,12 @@ function SalaryTransactionDialog({ open, staff, month, onClose, onSaved }) {
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
 
+  const staffId = staff?._id;
   const fetchStats = useCallback(async () => {
-    if (!staff?._id) return;
+    if (!staffId) return;
     try {
       setStatsLoading(true);
-      const res = await api.get(`/salaries/${staff._id}`, { params: { month } });
+      const res = await api.get(`/salaries/${staffId}`, { params: { month } });
       const { ok, data, msg } = res.data;
       if (!ok) throw new Error(msg);
       setStats(data);
@@ -40,10 +57,12 @@ function SalaryTransactionDialog({ open, staff, month, onClose, onSaved }) {
     } finally {
       setStatsLoading(false);
     }
-  }, [staff?._id, month]);
+  }, [staffId, month]);
 
   useEffect(() => {
-    if (open) fetchStats();
+    if (!open) return;
+    const t = setTimeout(fetchStats, 0);
+    return () => clearTimeout(t);
   }, [open, fetchStats]);
 
   const submit = async () => {
@@ -132,7 +151,7 @@ function SalaryTransactionDialog({ open, staff, month, onClose, onSaved }) {
           label={t("salary.txTypeLabel")}
           value={form.type}
           onChange={(v) => setForm((f) => ({ ...f, type: v }))}
-          options={TX_TYPES.map((tp) => ({ value: tp, label: t(`salary.txType.${tp}`) }))}
+          options={availableTypes.map((tp) => ({ value: tp, label: t(`salary.txType.${tp}`) }))}
         />
         <Input
           type="number"

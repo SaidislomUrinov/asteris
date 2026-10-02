@@ -10,6 +10,7 @@ import {
   HiUser,
   HiUserGroup,
   HiUsers,
+  HiWallet,
 } from "react-icons/hi2";
 import useCan from "../hooks/useCan";
 import { buildTabAvailability, resolveTabKeys } from "../utils/tabBar";
@@ -25,6 +26,7 @@ const TAB_META = {
   groups: { to: "/groups", icon: HiUserGroup, labelKey: "nav.groups" },
   students: { to: "/students", icon: HiUsers, labelKey: "nav.students" },
   salary: { to: "/salary", icon: HiBanknotes, labelKey: "nav.salary" },
+  finance: { to: "/finance", icon: HiWallet, labelKey: "nav.finance" },
   profile: { to: "/profile", icon: HiUser, labelKey: "nav.profile" },
 };
 
@@ -39,8 +41,11 @@ function MobileTabBar() {
 
   if (tabs.length < 2) return null;
 
+  // Fon sidebar bilan bir xil brend ko'ki — mobilda ikkalasi bir vaqtda
+  // ko'rinadi (menyu ochilganda), turli xil to'q ranglar bo'lsa ular
+  // bir-biriga yamoqdek ko'rinardi.
   return (
-    <div className="fixed bottom-0 left-0 w-full h-16 bg-slate-900 border-t border-slate-800 flex items-center justify-around z-2 lg:hidden pb-[env(safe-area-inset-bottom)]">
+    <div className="fixed bottom-0 left-0 w-full h-16 bg-[#06122c] border-t border-white/7 flex items-center justify-around z-2 lg:hidden pb-[env(safe-area-inset-bottom)]">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = isSectionActive(pathname, tab.to);
@@ -49,7 +54,7 @@ function MobileTabBar() {
             key={tab.to}
             to={tab.to}
             className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full duration-150 ${
-              isActive ? "text-blue-400" : "text-slate-400"
+              isActive ? "text-blue-400" : "text-white/60"
             }`}
           >
             <Icon className="text-xl" />

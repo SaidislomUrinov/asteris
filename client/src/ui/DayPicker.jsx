@@ -31,7 +31,7 @@ function DayPicker({ value = [], onChange, placeholder }) {
               key={day}
               type="button"
               onClick={() => toggle(day)}
-              className={`flex-1 min-w-0 h-9 rounded-lg border text-xs font-semibold duration-150 ${
+              className={`flex-1 min-w-0 h-9 rounded-lg border text-xs font-semibold duration-150 cursor-pointer ${
                 on
                   ? "bg-blue-600 border-blue-600 text-white"
                   : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700"

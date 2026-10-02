@@ -1,6 +1,5 @@
 import NumberText from "./NumberText";
-
-const money = (v) => `${(v || 0).toLocaleString("uz-UZ")}`;
+import { maskMoney } from "../utils/moneyFormat";
 
 /**
  * Moliyaviy "ledger" qatori — alohida to'rtburchak karta o'rniga bitta
@@ -10,8 +9,10 @@ const money = (v) => `${(v || 0).toLocaleString("uz-UZ")}`;
  * @param {string} props.label
  * @param {number} props.value
  * @param {"positive"|"negative"|"neutral"} [props.tone="neutral"]
+ * @param {boolean} [props.hidden=false] — `useHideFinance` — ko'z belgisi
+ *   yopiq bo'lsa qiymat "****" bilan almashtiriladi.
  */
-function LedgerRow({ label, value, tone = "neutral" }) {
+function LedgerRow({ label, value, tone = "neutral", hidden = false }) {
   const toneClass =
     tone === "positive" ? "text-emerald-600" : tone === "negative" ? "text-rose-600" : "text-slate-800";
   const sign = tone === "positive" ? "+" : tone === "negative" ? "−" : "";
@@ -19,8 +20,8 @@ function LedgerRow({ label, value, tone = "neutral" }) {
     <div className="flex items-center justify-between py-2.5 text-sm">
       <span className="text-slate-500">{label}</span>
       <NumberText className={`${toneClass} text-[15px]`}>
-        {sign}
-        {money(value)}
+        {!hidden && sign}
+        {maskMoney(value, hidden)}
       </NumberText>
     </div>
   );

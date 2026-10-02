@@ -3,13 +3,18 @@ import { useTranslation } from "react-i18next";
 import { HiChevronDown } from "react-icons/hi";
 import uzFlag from "../assets/uz.png";
 import enFlag from "../assets/en.png";
+import ruFlag from "../assets/ru.png";
+// TODO: uzc uchun haqiqiy bayroq fayli kelganda shu importni almashtiring
+import uzcFlag from "../assets/uz.png";
 
 const langs = [
   { value: "uz", label: "O'zbekcha", flag: uzFlag },
+  { value: "uzc", label: "Ўзбекча", flag: uzcFlag },
+  { value: "ru", label: "Русский", flag: ruFlag },
   { value: "en", label: "English", flag: enFlag },
 ];
 
-// `dark` — qorong'i fon (masalan Top.jsx slate-900 panel) ustida ishlatilganda
+// `dark` — qorong'i fon (Top.jsx / Navbar brend ko'ki) ustida ishlatilganda
 // tugma kontrastini moslash uchun; Auth sahifasida (och fon) default holat qoladi.
 function UpdateLang({ dark = false }) {
   const { i18n } = useTranslation();
@@ -37,7 +42,7 @@ function UpdateLang({ dark = false }) {
         onClick={() => setOpen((o) => !o)}
         className={`flex items-center cursor-pointer gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors duration-150 ${
           dark
-            ? "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
+            ? "bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
             : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800"
         }`}
       >

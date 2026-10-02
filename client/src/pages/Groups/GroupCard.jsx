@@ -9,6 +9,7 @@ import {
 import ProgressBar from "../../ui/ProgressBar";
 import { GROUP_STATE } from "./groupLive";
 import { formatRemaining } from "../../utils/schedule";
+import GroupTelegramBadge from "./GroupTelegramBadge";
 
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
@@ -77,8 +78,20 @@ function Meta({ icon, value }) {
  * @param {string} [props.roomName]
  * @param {{state: string, current: Object|null, next: Object|null}} props.live - buildGroupLive() natijasi
  * @param {() => void} [props.onClick]
+ * @param {boolean} [props.canEditTelegram] - Telegram belgisi bosilganda tahrirlash oynasi
+ * @param {() => void} [props.onTelegramEdit]
  */
-function GroupCard({ group, label, centerName, teacherName, roomName, live, onClick }) {
+function GroupCard({
+  group,
+  label,
+  centerName,
+  teacherName,
+  roomName,
+  live,
+  onClick,
+  canEditTelegram = false,
+  onTelegramEdit,
+}) {
   const { t } = useTranslation();
   const s = STATE_STYLE[live.state] || STATE_STYLE[GROUP_STATE.ACTIVE];
   const { current, next } = live;
@@ -109,6 +122,11 @@ function GroupCard({ group, label, centerName, teacherName, roomName, live, onCl
             <h3 className="text-lg font-bold leading-tight text-slate-900 truncate">{label}</h3>
             <Meta icon={<HiBuildingOffice2 />} value={centerName || "—"} />
           </div>
+          <GroupTelegramBadge
+            link={group.telegramLink}
+            canEdit={canEditTelegram}
+            onEdit={onTelegramEdit}
+          />
         </div>
 
         <span

@@ -57,8 +57,11 @@ function DateRangeInput({ value, onChange, placeholder, variant = "slate", class
   );
 
   const variants = {
-    slate: "bg-slate-100 border-slate-200",
+    slate: "bg-white border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
     white: "bg-white border-slate-200",
+    // Faqat FilterBar ichida: Select bilan bir xil — qiymat tanlanganda
+    // ochiq ko'k fon bilan ajralib turadi.
+    filter: "bg-white border-slate-200",
   };
 
   const label = selected.from
@@ -134,13 +137,19 @@ function DateRangeInput({ value, onChange, placeholder, variant = "slate", class
           if (!open) calcPos();
           setOpen((p) => !p);
         }}
-        className={`relative w-full h-10 rounded-xl flex items-center justify-between gap-2 pl-2 pr-2 border select-none cursor-pointer duration-300 ${
+        className={`select-trigger relative w-full h-11 rounded-xl flex items-center justify-between gap-2 px-3.5 border select-none cursor-pointer duration-200 ${
           variants[variant]
-        } ${open ? "ring-2 ring-slate-500 border-slate-500" : "hover:ring-2 hover:ring-slate-500"}`}
+        } ${variant === "filter" && label ? "!bg-blue-50 !border-blue-200 hover:!border-blue-300" : ""} ${
+          open ? "ring-3 ring-blue-500/15 border-blue-500" : "hover:border-slate-300"
+        }`}
       >
         <span className="flex items-center gap-2 min-w-0">
-          <HiCalendarDays className="shrink-0 text-slate-500" />
-          <span className={`truncate ${label ? "text-slate-800" : "text-slate-400"}`}>
+          <HiCalendarDays className="shrink-0 text-slate-400" />
+          <span
+            className={`truncate text-[13px] ${label ? "text-slate-900" : "text-slate-400"} ${
+              variant === "filter" && label ? "font-medium text-blue-700" : ""
+            }`}
+          >
             {label || placeholder || t("common.dateRange")}
           </span>
         </span>

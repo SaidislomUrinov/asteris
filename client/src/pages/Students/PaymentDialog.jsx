@@ -37,6 +37,10 @@ function PaymentDialog({
   paidForCurrentCycle = 0,
   currentCycleMonth = "",
   courseStartMonth = "",
+  // min(eng eski boshlang'ich qarz oyi, courseStartMonth) — server beradi
+  // (API_CONTRACT_opening_debts.md §2). Guruh faollashmagan bo'lsa ham
+  // boshlang'ich qarz bo'lsa shu qiymat bor va oy tanlash yoqiq bo'ladi.
+  earliestPayableMonth = null,
   // "Qarzdorliklar" ro'yxatidan aynan bitta O'TGAN oy uchun to'lash
   // bosilganda beriladi — shu holatda summa/oy joriy sikl asosida emas,
   // TO'G'RIDAN-TO'G'RI shu oyning qarzi bilan to'ldiriladi.
@@ -56,7 +60,12 @@ function PaymentDialog({
   const [amount, setAmount] = useState(defaultAmount > 0 ? String(defaultAmount) : "");
   const [type, setType] = useState("cash");
   const [note, setNote] = useState("");
-  const [forMonth, setForMonth] = useState(presetForMonth || currentCycleMonth || "");
+  const minMonth = earliestPayableMonth || courseStartMonth || "";
+  // Preset (Qarzdorliklar ro'yxatidan) berilgan bo'lsa — aynan shu oy; oyi
+  // noma'lum boshlang'ich qarz (`month === null`) uchun bo'sh qoladi.
+  const [forMonth, setForMonth] = useState(
+    presetForMonth !== undefined ? presetForMonth || "" : currentCycleMonth || "",
+  );
   const [disabled, setDisabled] = useState(false);
 
   const submit = async () => {
@@ -69,7 +78,7 @@ function PaymentDialog({
         amount: val,
         type,
         note: note.trim(),
-        forMonth: courseStartMonth ? forMonth : undefined,
+        forMonth: minMonth && forMonth ? forMonth : undefined,
       });
       const { ok, data, msg } = res.data;
       if (!ok) throw new Error(msg);
@@ -85,7 +94,8 @@ function PaymentDialog({
       // (API_CONTRACT_receipt_debt_breakdown.md).
       const remainingDebt = updatedEntry?.debt || 0;
       const debtBreakdown = updatedEntry?.debtBreakdown || [];
-      const paymentId = updatedEntry?.payments?.[updatedEntry.payments.length - 1]?._id;
+      const lastPayment = updatedEntry?.payments?.[updatedEntry.payments.length - 1];
+      const paymentId = lastPayment?.code || lastPayment?._id;
       onPaid?.({ amount: val, forMonth, remainingDebt, debtBreakdown, paymentId });
       onClose();
     } catch (error) {
@@ -145,11 +155,11 @@ function PaymentDialog({
           label={t("student.forMonth")}
           icon={<HiCalendarDays />}
           value={forMonth}
-          min={courseStartMonth || undefined}
-          disabled={!courseStartMonth}
+          min={minMonth || undefined}
+          disabled={!minMonth}
           onChange={(e) => setForMonth(e.target.value)}
         />
-        {!courseStartMonth && (
+        {!minMonth && (
           <p className="pl-2 -mt-2 text-xs text-slate-400">{t("student.forMonthDisabledHint")}</p>
         )}
         <Input

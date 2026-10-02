@@ -8,12 +8,10 @@ import Button from "../../ui/Button";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 
-// O'quvchini boshqa filial/guruhga o'tkazish — bitta yangi endpoint kerak
-// emas, mavjud ikkita chaqiruv ketma-ket bajariladi: yangi guruhga
-// qo'shiladi (`POST /students` — telefon bo'yicha mavjud hujjatga yangi
-// groups[] yozuvi qo'shadi), so'ng eski guruh yozuvi "left" qilinadi
-// (`PATCH .../leave`). Shu bilan o'quvchi bir vaqtning o'zida ham eski, ham
-// yangi guruhda "faol" bo'lib qolmaydi.
+// O'quvchini boshqa filial/guruhga o'tkazish — bitta atomar endpoint
+// (API_CONTRACT_student_transfer.md §3). Oldingi baholar, davomat va
+// to'lovlar tarixi yangi guruhda o'z sanasi bilan ko'rinadi, qoldiq (avans
+// yoki qarz) ham o'tadi — hammasini server bajaradi.
 function TransferStudentDialog({
   open,
   onClose,
@@ -52,18 +50,13 @@ function TransferStudentDialog({
       if (!form.center || !form.group) throw new Error("group.fillTheRows");
       setDisabled(true);
 
-      const res = await api.post("/students", {
-        phone: student.phone,
+      const res = await api.post(`/students/${student._id}/groups/${entry._id}/transfer`, {
         centerId: form.center,
         groupId: form.group,
         price: form.price === "" ? undefined : Number(form.price),
       });
-      const { ok: createOk, msg: createMsg } = res.data;
-      if (!createOk) throw new Error(createMsg);
-
-      const leaveRes = await api.patch(`/students/${student._id}/groups/${entry._id}/leave`);
-      const { ok: leaveOk, msg: leaveMsg } = leaveRes.data;
-      if (!leaveOk) throw new Error(leaveMsg);
+      const { ok, msg } = res.data;
+      if (!ok) throw new Error(msg);
 
       successMsg("student.transferred");
       onSaved?.();

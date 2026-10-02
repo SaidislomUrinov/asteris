@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
-
-const money = (v) => `${(v || 0).toLocaleString("uz-UZ")}`;
+import { maskMoney } from "../utils/moneyFormat";
 
 const NET_COLOR = "#10b981"; // emerald-500 — hisoblangan + bonus
 const DEDUCT_COLOR = "#f43f5e"; // rose-500 — avans + oldindan olingan + jarima
@@ -19,7 +18,7 @@ const DEDUCT_COLOR = "#f43f5e"; // rose-500 — avans + oldindan olingan + jarim
  * @param {number} [props.penalty]
  * @param {number} [props.final]
  */
-function SalaryDonut({ base = 0, bonus = 0, advance = 0, withdrawal = 0, penalty = 0, final = 0 }) {
+function SalaryDonut({ base = 0, bonus = 0, advance = 0, withdrawal = 0, penalty = 0, final = 0, hidden = false }) {
   const { t } = useTranslation();
   const net = base + bonus;
   const deducted = advance + withdrawal + penalty;
@@ -64,7 +63,9 @@ function SalaryDonut({ base = 0, bonus = 0, advance = 0, withdrawal = 0, penalty
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
             {t("salary.final")}
           </span>
-          <span className="text-xl font-space font-bold text-slate-900 truncate">{money(final)}</span>
+          <span className="text-xl font-space font-bold text-slate-900 truncate">
+            {maskMoney(final, hidden)}
+          </span>
           <span className="text-[11px] text-slate-400">{t("student.somSuffix")}</span>
         </div>
       </div>

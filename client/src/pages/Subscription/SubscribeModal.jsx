@@ -25,10 +25,11 @@ function SubscribeModal({ open, onClose, tariff, onActivated }) {
         tariffId: tariff._id,
         months,
       });
-      const { ok, activated, payUrl, data, msg } = res.data;
+      const { ok, activated, payUrl, orderId, data, msg } = res.data;
       if (!ok) throw new Error(msg);
 
       if (payUrl) {
+        if (orderId) localStorage.setItem("pendingSubscriptionOrderId", orderId);
         window.location.assign(payUrl);
       } else if (activated) {
         onActivated?.(data);
@@ -80,7 +81,7 @@ function SubscribeModal({ open, onClose, tariff, onActivated }) {
                 ) : (
                   <span className="w-[18px] h-[18px] rounded-full border border-slate-300 shrink-0" />
                 )}
-                <span className="font-semibold text-slate-800">{opt.label}</span>
+                <span className="font-semibold text-slate-800">{t(opt.labelKey)}</span>
                 {opt.discount > 0 && (
                   <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-600">
                     {t("subscription.discountBadge", {

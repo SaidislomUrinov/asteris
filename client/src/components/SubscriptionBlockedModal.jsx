@@ -2,6 +2,8 @@ import { createPortal } from "react-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { HiExclamationTriangle } from "react-icons/hi2";
+import DowngradeModal from "../pages/Subscription/DowngradeModal";
+import { useBlockingModal } from "../utils/blockingModal";
 
 // Staff (Reception/Manager/Teacher) uchun — markazning Client Owner'i obunani
 // yangilamaguncha tizim Read-Only (backend `requireActiveSubscription`).
@@ -11,7 +13,13 @@ import { HiExclamationTriangle } from "react-icons/hi2";
 function SubscriptionBlockedModal() {
   const { t } = useTranslation();
   const { authType, subscriptionActive } = useSelector((e) => e.user);
+  // Yangiliklar popup'i shu modal ochiq turganda kutadi (utils/blockingModal.js).
+  useBlockingModal(authType === "staff" && subscriptionActive === false);
 
+  // Client Owner uchun: tarif pasayib faol filiallar limitdan oshsa —
+  // majburiy filial tanlash modali (App.jsx'dagi shu yagona global o'rin
+  // orqali ulanadi; holatni o'zi aniqlaydi, aks holda null qaytaradi).
+  if (authType === "owner") return <DowngradeModal />;
   if (authType !== "staff" || subscriptionActive !== false) return null;
 
   return createPortal(

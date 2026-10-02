@@ -21,20 +21,20 @@ function ExpenseCategoryDonut({ data = [] }) {
   const chartData = sorted.length ? sorted : [{ category: "other", total: 1 }];
 
   return (
-    <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 bg-white h-full">
+    <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 bg-white h-full min-h-0">
       <div className="shrink-0">
         <p className="font-semibold text-slate-800">{t("center.expenseByCategoryTitle")}</p>
         <p className="text-xs text-slate-400">{t("center.expenseByCategoryDesc")}</p>
       </div>
 
-      <div className="relative w-full flex-1 min-h-32">
+      <div className="relative w-full flex-1 min-h-32 max-h-56">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={chartData}
               dataKey="total"
               nameKey="category"
-              innerRadius="70%"
+              innerRadius="76%"
               outerRadius="100%"
               startAngle={90}
               endAngle={-270}
@@ -52,11 +52,11 @@ function ExpenseCategoryDonut({ data = [] }) {
             </Pie>
           </PieChart>
         </ResponsiveContainer>
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2 text-center">
-          <span className="text-lg font-space font-bold text-slate-800">
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-10 text-center">
+          <span className="text-[0.8rem] font-space font-bold text-slate-800 leading-tight tabular-nums">
             {total.toLocaleString("uz-UZ")}
           </span>
-          <span className="text-xs text-slate-400">{t("student.somSuffix")}</span>
+          <span className="text-[0.65rem] text-slate-400">{t("student.somSuffix")}</span>
         </div>
       </div>
 

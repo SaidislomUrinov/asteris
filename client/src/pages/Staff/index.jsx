@@ -2,14 +2,16 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
+  HiAdjustmentsHorizontal,
+  HiArchiveBox,
   HiEye,
   HiLockClosed,
   HiLockOpen,
   HiMagnifyingGlass,
   HiPencil,
   HiPlus,
-  HiTrash,
   HiUsers,
+  HiXMark,
 } from "react-icons/hi2";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
@@ -17,12 +19,16 @@ import Dialog from "../../ui/Dialog";
 import Chip from "../../ui/Chip";
 import List from "../../ui/List";
 import Select from "../../ui/Select";
-import FilterBar from "../../ui/FilterBar";
 import DropMenu from "../../ui/DropMenu";
 import StaffDialog, { ROLE_OPTIONS } from "./StaffDialog";
 import ExportExcelButton from "../../ui/ExportExcelButton";
+import useMediaQuery from "../../hooks/useMediaQuery";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
+import useQueryState from "../../hooks/useQueryState";
+
+// Tailwind `sm` breakpoint — FilterBar bilan bir xil chegara.
+const DESKTOP = "(min-width: 640px)";
 
 function Staff() {
   const { t } = useTranslation();
@@ -30,16 +36,29 @@ function Staff() {
 
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [filterCenter, setFilterCenter] = useState("");
-  const [filterRole, setFilterRole] = useState("");
+  // Filtr/qidiruv/sahifa URL query-param'da (useQueryState) — Detail'ga kirib
+  // "Orqaga" bilan qaytilganda list qayta mount bo'lsa ham joyida qoladi.
+  const [page, setPage] = useQueryState("page", 1);
+  const [search, setSearch] = useQueryState("search", "");
+  const [filterCenter, setFilterCenter] = useQueryState("filterCenter", "");
+  const [filterRole, setFilterRole] = useQueryState("filterRole", "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   const [centers, setCenters] = useState([]);
   const centerMap = Object.fromEntries(centers.map((c) => [c._id, c.name]));
   const [subjects, setSubjects] = useState([]);
+  // Bitta filialga biriktirilgan hodim (Staff) uchun Filial filtri ma'nosiz —
+  // faqat bir nechta filial ko'rinadigan (Client Owner) hollarda chiqadi.
+  const showCenterFilter = centers.length > 1;
+  const activeFilterCount = [filterCenter, filterRole].filter(Boolean).length;
+  const resetFilters = () => {
+    setPage(1);
+    setFilterCenter("");
+    setFilterRole("");
+  };
+  const isDesktop = useMediaQuery(DESKTOP);
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogKey, setDialogKey] = useState(0);
@@ -78,11 +97,13 @@ function Staff() {
   }, []);
 
   useEffect(() => {
-    fetchStaff();
+    const t = setTimeout(fetchStaff, 0);
+    return () => clearTimeout(t);
   }, [fetchStaff]);
 
   useEffect(() => {
-    fetchCenters();
+    const t = setTimeout(fetchCenters, 0);
+    return () => clearTimeout(t);
   }, [fetchCenters]);
 
   const fetchSubjects = useCallback(async () => {
@@ -98,7 +119,8 @@ function Staff() {
   }, []);
 
   useEffect(() => {
-    fetchSubjects();
+    const t = setTimeout(fetchSubjects, 0);
+    return () => clearTimeout(t);
   }, [fetchSubjects]);
 
   const openCreate = () => {
@@ -215,10 +237,13 @@ function Staff() {
                 disabled: blockingId === row._id,
                 onClick: () => toggleBlock(row),
               },
+              // "O'chirish" endi ARXIVLASH — hodim hujjati va ish haqi
+              // tarixi saqlanadi, Arxiv bo'limidan qaytariladi. `Bloklash`
+              // esa alohida, mustaqil funksiya (API_CONTRACT_archive.md).
               {
-                label: t("common.delete"),
-                icon: HiTrash,
-                iconClass: "bg-red-50 text-red-600",
+                label: t("archive.archive"),
+                icon: HiArchiveBox,
+                iconClass: "bg-amber-50 text-amber-600",
                 onClick: () => setDeleteTarget(row),
               },
             ]}
@@ -230,63 +255,177 @@ function Staff() {
 
   return (
     <div className="flex flex-col w-full h-full gap-4">
-      <FilterBar
-        cols={2}
-        activeCount={[filterCenter, filterRole].filter(Boolean).length}
-        onReset={() => {
-          setPage(1);
-          setFilterCenter("");
-          setFilterRole("");
-        }}
-        search={
-          <Input
-            placeholder={t("common.search")}
-            icon={<HiMagnifyingGlass />}
-            variant="white"
-            value={search}
-            onChange={(e) => {
-              setPage(1);
-              setSearch(e.target.value);
-            }}
-          />
-        }
-        actions={
-          <Button onClick={openCreate} className="gap-1.5">
+      {isDesktop ? (
+        <div className="flex flex-wrap items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]">
+          {/* Filtrlar bo'sh joyni to'ldiradi, amal tugmasi o'ng chekkaga
+              tiraladi — avval `w-1/4` sobit bo'lgani uchun qator "Hodim
+              qo'shish" da tugab, o'ngda bo'sh joy qolardi. */}
+          <div className={showCenterFilter ? "flex-1 min-w-[200px]" : "flex-1"}>
+            <Input
+              placeholder={t("common.search")}
+              icon={<HiMagnifyingGlass />}
+              variant="slate"
+              value={search}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
+            />
+          </div>
+
+          {showCenterFilter && (
+            <div className="flex-1 min-w-[200px]">
+              <Select
+                placeholder={t("staff.center")}
+                variant="slate"
+                value={filterCenter}
+                onChange={(v) => {
+                  setPage(1);
+                  setFilterCenter(v);
+                }}
+                options={[
+                  { value: "", label: t("common.all") },
+                  ...centers.map((c) => ({ value: c._id, label: c.name })),
+                ]}
+              />
+            </div>
+          )}
+
+          <div className="flex-1 min-w-[200px]">
+            <Select
+              placeholder={t("staff.role")}
+              variant="slate"
+              value={filterRole}
+              onChange={(v) => {
+                setPage(1);
+                setFilterRole(v);
+              }}
+              options={[
+                { value: "", label: t("common.all") },
+                ...ROLE_OPTIONS.map((o) => ({
+                  value: o.value,
+                  label: t(o.label),
+                })),
+              ]}
+            />
+          </div>
+
+          <div className="shrink-0">
+            <Button
+              variant="outlined"
+              color="red"
+              onClick={resetFilters}
+              disabled={activeFilterCount === 0}
+              className="gap-1.5"
+            >
+              <HiXMark className="text-base" />
+              {t("common.resetFilters")}
+            </Button>
+          </div>
+
+          <Button onClick={openCreate} className="gap-1.5 shrink-0 ml-auto">
             <HiPlus className="text-base" />
             {t("staff.create")}
           </Button>
-        }
-      >
-        <Select
-          placeholder={t("staff.center")}
-          variant="white"
-          value={filterCenter}
-          onChange={(v) => {
-            setPage(1);
-            setFilterCenter(v);
-          }}
-          options={[
-            { value: "", label: t("common.all") },
-            ...centers.map((c) => ({ value: c._id, label: c.name })),
-          ]}
-        />
-        <Select
-          placeholder={t("staff.role")}
-          variant="white"
-          value={filterRole}
-          onChange={(v) => {
-            setPage(1);
-            setFilterRole(v);
-          }}
-          options={[
-            { value: "", label: t("common.all") },
-            ...ROLE_OPTIONS.map((o) => ({
-              value: o.value,
-              label: t(o.label),
-            })),
-          ]}
-        />
-      </FilterBar>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0">
+              <Input
+                placeholder={t("common.search")}
+                icon={<HiMagnifyingGlass />}
+                variant="slate"
+                value={search}
+                onChange={(e) => {
+                  setPage(1);
+                  setSearch(e.target.value);
+                }}
+              />
+            </div>
+
+            <Button
+              variant="outlined"
+              color="slate"
+              className="gap-1.5 shrink-0 !px-4"
+              onClick={() => setFilterModalOpen(true)}
+            >
+              <HiAdjustmentsHorizontal className="text-base" />
+              {t("common.filter")}
+              {activeFilterCount > 0 && (
+                <span className="flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-blue-500 text-white text-[11px]">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <Button onClick={openCreate} className="gap-1.5 w-full">
+                <HiPlus className="text-base" />
+                {t("staff.create")}
+              </Button>
+            </div>
+          </div>
+
+          <Dialog
+            open={filterModalOpen}
+            onClose={() => setFilterModalOpen(false)}
+            title={t("common.filter")}
+            actions={
+              <>
+                <Button
+                  variant="text"
+                  color="red"
+                  disabled={activeFilterCount === 0}
+                  onClick={() => {
+                    resetFilters();
+                    setFilterModalOpen(false);
+                  }}
+                >
+                  {t("common.resetFilters")}
+                </Button>
+                <Button onClick={() => setFilterModalOpen(false)}>{t("common.apply")}</Button>
+              </>
+            }
+          >
+            <div className="grid grid-cols-1 gap-3">
+              {showCenterFilter && (
+                <Select
+                  placeholder={t("staff.center")}
+                  variant="slate"
+                  value={filterCenter}
+                  onChange={(v) => {
+                    setPage(1);
+                    setFilterCenter(v);
+                  }}
+                  options={[
+                    { value: "", label: t("common.all") },
+                    ...centers.map((c) => ({ value: c._id, label: c.name })),
+                  ]}
+                />
+              )}
+              <Select
+                placeholder={t("staff.role")}
+                variant="slate"
+                value={filterRole}
+                onChange={(v) => {
+                  setPage(1);
+                  setFilterRole(v);
+                }}
+                options={[
+                  { value: "", label: t("common.all") },
+                  ...ROLE_OPTIONS.map((o) => ({
+                    value: o.value,
+                    label: t(o.label),
+                  })),
+                ]}
+              />
+            </div>
+          </Dialog>
+        </div>
+      )}
 
       {error ? (
         <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
@@ -328,7 +467,7 @@ function Staff() {
       <Dialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title={t("staff.delete")}
+        title={t("archive.archiveTitle")}
         actions={
           <>
             <Button
@@ -339,12 +478,12 @@ function Staff() {
               {t("common.cancel")}
             </Button>
             <Button color="red" loading={deleting} onClick={confirmDelete}>
-              {t("common.delete")}
+              {t("archive.archive")}
             </Button>
           </>
         }
       >
-        <p>{t("staff.deleteConfirm", { name: deleteTarget?.name })}</p>
+        <p>{t("archive.archiveStaffConfirm", { name: deleteTarget?.name })}</p>
       </Dialog>
     </div>
   );

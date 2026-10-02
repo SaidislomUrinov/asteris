@@ -4,7 +4,8 @@ import List from "../../ui/List";
 import NumberText from "../../ui/NumberText";
 import ExportExcelButton from "../../ui/ExportExcelButton";
 import useFeature from "../../hooks/useFeature";
-import { RateBar, ReportError, SortHeader, money, useReportResource, useSorted } from "./shared";
+import { RateBar, ReportError, SortHeader } from "./shared";
+import { money, useReportResource, useSorted } from "./reportData";
 
 // Guruh kesimi — qaysi guruh foydali, qaysi biri qarzga botgan.
 // Guruh nomi bosilsa guruh sahifasiga o'tiladi (hisobotdan tekshiruvga

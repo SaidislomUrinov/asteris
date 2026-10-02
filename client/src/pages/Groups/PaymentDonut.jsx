@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
+import ChartCard from "../../ui/ChartCard";
 
 const PAID_COLOR = "#3b82f6"; // blue-500
 const DEBT_COLOR = "#ef4444"; // red-500
@@ -22,13 +23,13 @@ function PaymentDonut({ paid = 0, debt = 0 }) {
       : [{ key: "paid", value: 1 }];
 
   return (
-    <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 bg-white h-full">
+    <ChartCard>
       <div className="shrink-0">
         <p className="font-semibold text-slate-800">{t("group.paymentStatusTitle")}</p>
         <p className="text-xs text-slate-400">{t("group.paymentStatusDesc")}</p>
       </div>
 
-      <div className="relative w-full flex-1 min-h-32">
+      <div className="relative w-full flex-1 min-h-32 max-h-56">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -79,7 +80,7 @@ function PaymentDonut({ paid = 0, debt = 0 }) {
           </span>
         </div>
       </div>
-    </div>
+    </ChartCard>
   );
 }
 

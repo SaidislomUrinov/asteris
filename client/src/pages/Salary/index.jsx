@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import useQueryState from "../../hooks/useQueryState";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { HiBanknotes, HiClipboardDocumentList } from "react-icons/hi2";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
@@ -13,12 +13,13 @@ import DropMenu from "../../ui/DropMenu";
 import SalaryTransactionDialog from "./SalaryTransactionDialog";
 import SalaryTransactionsListDialog from "./SalaryTransactionsListDialog";
 import ExportExcelButton from "../../ui/ExportExcelButton";
+import MonthInput from "../../ui/MonthInput";
 import useCan from "../../hooks/useCan";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
+import useHideFinance from "../../hooks/useHideFinance";
 import { api } from "../../utils/fetching";
 import { errorMsg } from "../../utils/alert";
-
-const money = (v) => `${(v || 0).toLocaleString("uz-UZ")}`;
+import { maskMoney } from "../../utils/moneyFormat";
 
 const currentMonth = () => {
   const d = new Date();
@@ -29,13 +30,11 @@ function Salary() {
   const { t } = useTranslation();
   const can = useCan();
   const canManage = can("salary:manage");
-  const user = useSelector((e) => e.user);
-
-  // salary:view yo'q oddiy hodim faqat O'Z hisobini ko'radi
-  const ownOnly = !can("salary:view");
+  const [hideFinance] = useHideFinance();
+  const money = (v) => maskMoney(v, hideFinance);
 
   const [month, setMonth] = useState(currentMonth());
-  const [filterCenter, setFilterCenter] = useState("");
+  const [filterCenter, setFilterCenter] = useQueryState("filterCenter", "");
   const [centers, setCenters] = useState([]);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,29 +49,23 @@ function Salary() {
     try {
       setLoading(true);
       setError(false);
-      if (ownOnly) {
-        const res = await api.get(`/salaries/${user._id}`, { params: { month } });
-        const { ok, data, msg } = res.data;
-        if (!ok) throw new Error(msg);
-        setRows([data]);
-      } else {
-        const res = await api.get("/salaries/summary", {
-          params: { month, center: filterCenter },
-        });
-        const { ok, data, msg } = res.data;
-        if (!ok) throw new Error(msg);
-        setRows(data || []);
-      }
+      const res = await api.get("/salaries/summary", {
+        params: { month, center: filterCenter },
+      });
+      const { ok, data, msg } = res.data;
+      if (!ok) throw new Error(msg);
+      setRows(data || []);
     } catch (error) {
       setError(true);
       errorMsg(error.message);
     } finally {
       setLoading(false);
     }
-  }, [month, filterCenter, ownOnly, user._id]);
+  }, [month, filterCenter]);
 
   useEffect(() => {
-    fetchData();
+    const t = setTimeout(fetchData, 0);
+    return () => clearTimeout(t);
   }, [fetchData]);
 
   useEffect(() => {
@@ -89,6 +82,7 @@ function Salary() {
   // Oylik realtime — tranzaksiya qo'shilsa/bekor qilinsa qayta yuklaymiz
   useSocketEvent("salary:updated", fetchData);
   useSocketEvent("payment:created", fetchData);
+  useSocketEvent("payment:updated", fetchData);
 
   const openTransactionDialog = (row) => {
     setTxStaff(row.staff);
@@ -104,8 +98,6 @@ function Salary() {
     if (row.salaryType === "fixed") return <Chip value={t("salary.typeFixed")} color="blue" />;
     if (row.salaryType === "percentage")
       return <Chip value={`${row.percent ?? row.staff.salaryValue ?? 0}%`} color="violet" />;
-    if (row.salaryType === "perGroup")
-      return <Chip value={t("salary.typePerGroup")} color="orange" />;
     return <Chip value="—" color="slate" />;
   };
 
@@ -201,16 +193,15 @@ function Salary() {
           setFilterCenter("");
         }}
       >
-        <Input
-          type="month"
-          variant="white"
+        <MonthInput
           value={month}
-          onChange={(e) => setMonth(e.target.value || currentMonth())}
+          onChange={(m) => setMonth(m || currentMonth())}
+          max={currentMonth()}
         />
-        {!ownOnly && centers.length > 1 && (
+        {centers.length > 1 && (
           <Select
             placeholder={t("salary.center")}
-            variant="white"
+            variant="slate"
             value={filterCenter}
             onChange={setFilterCenter}
             options={[
@@ -238,8 +229,8 @@ function Salary() {
           rowKey={(row) => row.staff._id}
           toolbar={
             <ExportExcelButton
-              endpoint={ownOnly ? `/salaries/${user._id}/export` : "/salaries/summary/export"}
-              params={ownOnly ? { month } : { month, center: filterCenter }}
+              endpoint="/salaries/summary/export"
+              params={{ month, center: filterCenter }}
             />
           }
         />

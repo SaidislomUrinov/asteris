@@ -2,20 +2,20 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HiChevronDown, HiStar } from "react-icons/hi2";
 
-// Baho rangi — GradesTab bilan bir xil oila (5/4 yashil-ko'k, 3 sariq, past qizil).
+// Baho rangi — GradesTab bilan bir xil oila (10 ballik: 9+ yashil, 7+ ko'k, 5+ sariq, past qizil).
 const toneOf = (avg) =>
-  avg >= 4.5
+  avg >= 9
     ? "text-emerald-600"
-    : avg >= 3.5
+    : avg >= 7
       ? "text-blue-600"
-      : avg >= 2.5
+      : avg >= 5
         ? "text-amber-600"
         : "text-red-500";
 
 /**
  * O'quvchining BITTA guruh bo'yicha baho xulosasi.
  *
- * "4.5 / 5" ko'rinishida umumiy o'rtacha, ochilganda esa FAQAT baho
+ * "8.5 / 10" ko'rinishida umumiy o'rtacha, ochilganda esa FAQAT baho
  * qo'yilgan oylar kesimida (o'quvchi o'qimagan oylar ro'yxatga tushmaydi).
  *
  * @param {Object} props
@@ -54,7 +54,7 @@ function GradeSummary({ summary }) {
             <span className={`text-sm font-semibold ${toneOf(summary.average)}`}>
               {summary.average}
             </span>
-            <span className="text-xs text-slate-400">/ 5</span>
+            <span className="text-xs text-slate-400">/ 10</span>
             <span className="text-[11px] text-slate-400">
               ({t("grade.countShort", { count: summary.count })})
             </span>
@@ -79,7 +79,7 @@ function GradeSummary({ summary }) {
                 <span className={`text-[13px] font-semibold ${toneOf(m.average)}`}>
                   {m.average}
                 </span>
-                <span className="text-[11px] text-slate-400">/ 5</span>
+                <span className="text-[11px] text-slate-400">/ 10</span>
                 <span className="text-[11px] text-slate-300 tabular-nums">({m.count})</span>
               </span>
             </div>

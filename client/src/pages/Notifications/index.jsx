@@ -6,13 +6,22 @@ import { HiCheck } from "react-icons/hi2";
 import Button from "../../ui/Button";
 import Dialog from "../../ui/Dialog";
 import Loading from "../../ui/Loading";
-import NotificationHeader from "./NotificationHeader";
 import IntegrationCard from "./IntegrationCard";
 import NotificationEmptyState from "./NotificationEmptyState";
 import NotificationItem from "./NotificationItem";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
+import useFeature from "../../hooks/useFeature";
+import useQueryState from "../../hooks/useQueryState";
+import NewsTab from "./NewsTab";
+
+// "Bildirishnomalar" | "Yangiliklar" tablari — `?tab=news` (URL'da, qo'ng'iroq
+// to'g'ridan-to'g'ri shu tabga olib keladi).
+const TABS = [
+  { key: "notifications", labelKey: "notification.title" },
+  { key: "news", labelKey: "news.title" },
+];
 
 // Ulanish jarayonida havola ochilgach, foydalanuvchi Telegram'da "Start"
 // bosishini kutamiz — shu oraliqda holatni sekin-sekin so'raymiz.
@@ -29,6 +38,10 @@ function Notifications() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const user = useSelector((e) => e.user);
+  const hasFeature = useFeature();
+  const [tab, setTab] = useQueryState("tab", "notifications");
+  const newsUnread = useSelector((e) => e.news.unread);
+  const telegramAllowed = hasFeature("telegram.notifications");
   // Rolga qarab vazifalar tavsifi — Client Owner, Resepshin, O'qituvchi/
   // Yordamchi (bot/i18n.js dagi tasdiqlash matni bilan bir xil mazmun).
   const roleKey =
@@ -58,6 +71,7 @@ function Notifications() {
       const { ok, data, unread: u } = res.data;
       if (!ok) return;
       setItems(data || []);
+      listLoadedRef.current = true;
       setUnread(u || 0);
     } catch {
       // ikkinchi darajali — xato toast chiqarilmaydi
@@ -83,11 +97,19 @@ function Notifications() {
   }, [fetchList]);
 
   useEffect(() => {
-    const id = setTimeout(fetchTgStatus, 0);
+    const id = setTimeout(() => (telegramAllowed ? fetchTgStatus() : setTgLoading(false)), 0);
     return () => clearTimeout(id);
-  }, [fetchTgStatus]);
+  }, [fetchTgStatus, telegramAllowed]);
 
   useEffect(() => () => clearInterval(pollRef.current), []);
+
+  // Qo'ng'iroqdagi (NotificationBell) sonni refresh'siz sinxronlash — ro'yxat
+  // yuklangandan keyingina (boshlang'ich 0 bell sonini vaqtincha o'chirmasin).
+  const listLoadedRef = useRef(false);
+  useEffect(() => {
+    if (!listLoadedRef.current) return;
+    window.dispatchEvent(new CustomEvent("notifications:unread", { detail: unread }));
+  }, [unread]);
 
   useSocketEvent("notification:new", (payload) => {
     setUnread((n) => n + 1);
@@ -178,77 +200,109 @@ function Notifications() {
 
   return (
     <div className="flex flex-col w-full h-full gap-6">
-      <NotificationHeader title={t("notification.title")} subtitle={t("notification.subtitle")} />
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 w-full sm:w-fit overflow-x-auto">
+        {TABS.map((x) => {
+          const count = x.key === "news" ? newsUnread : unread;
+          const active = (tab === "news" ? "news" : "notifications") === x.key;
+          return (
+            <button
+              key={x.key}
+              type="button"
+              onClick={() => setTab(x.key)}
+              aria-pressed={active}
+              className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 h-8 shrink-0 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors duration-150 ${
+                active ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              {t(x.labelKey)}
+              {count > 0 && (
+                <span className="inline-flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold tabular-nums">
+                  {count > 99 ? "99+" : count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
-      {/* ── Telegram ulash + til sozlamasi ───────────────────────────── */}
-      <IntegrationCard
-        linked={!!tg?.linked}
-        loading={tgLoading}
-        connecting={connecting}
-        descriptionKey={`telegram.desc.${roleKey}`}
-        lang={tg?.lang}
-        onConnect={connectTelegram}
-        onUnlinkRequest={() => setUnlinkTarget(true)}
-        onLangChange={changeLang}
-      />
+      {tab === "news" ? (
+        <NewsTab />
+      ) : (
+        <>
+          {/* ── Telegram ulash + til sozlamasi — faqat tarif ochgan bo'lsa ──── */}
+          {telegramAllowed && (
+            <IntegrationCard
+              linked={!!tg?.linked}
+              loading={tgLoading}
+              connecting={connecting}
+              descriptionKey={`telegram.desc.${roleKey}`}
+              lang={tg?.lang}
+              onConnect={connectTelegram}
+              onUnlinkRequest={() => setUnlinkTarget(true)}
+              onLangChange={changeLang}
+              fullBleed
+            />
+          )}
 
-      {/* ── Bildirishnomalar ro'yxati ────────────────────────────────── */}
-      <div className="flex flex-col gap-1 p-5 sm:p-6 rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-        <div className="flex items-center justify-between gap-3 pb-4 flex-wrap">
-          <p className="font-semibold text-slate-800">{t("notification.title")}</p>
+          {/* ── Bildirishnomalar ro'yxati ────────────────────────────────── */}
+          <div className="flex flex-col gap-1 p-5 sm:p-6 rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <div className="flex items-center justify-between gap-3 pb-4 flex-wrap">
+              <p className="font-semibold text-slate-800">{t("notification.title")}</p>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-slate-100">
-              <button
-                type="button"
-                onClick={() => setFilter("all")}
-                aria-pressed={filter === "all"}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors ${
-                  filter === "all" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                {t("notification.filterAll")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilter("unread")}
-                aria-pressed={filter === "unread"}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors ${
-                  filter === "unread" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                {t("notification.filterUnread")}
-                {unread > 0 && <span className="ml-1 tabular-nums">({unread})</span>}
-              </button>
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-1 p-0.5 rounded-lg bg-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setFilter("all")}
+                    aria-pressed={filter === "all"}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors ${
+                      filter === "all" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    {t("notification.filterAll")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilter("unread")}
+                    aria-pressed={filter === "unread"}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors ${
+                      filter === "unread" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    {t("notification.filterUnread")}
+                    {unread > 0 && <span className="ml-1 tabular-nums">({unread})</span>}
+                  </button>
+                </div>
+
+                {unread > 0 && (
+                  <Button
+                    color="blue"
+                    variant="text"
+                    className="gap-1 !px-0 normal-case text-xs"
+                    aria-label={t("notification.markAllRead")}
+                    onClick={markAll}
+                  >
+                    <HiCheck />
+                    {t("notification.markAllRead")}
+                  </Button>
+                )}
+              </div>
             </div>
 
-            {unread > 0 && (
-              <Button
-                color="blue"
-                variant="text"
-                className="gap-1 !px-0 normal-case text-xs"
-                aria-label={t("notification.markAllRead")}
-                onClick={markAll}
-              >
-                <HiCheck />
-                {t("notification.markAllRead")}
-              </Button>
+            {loading ? (
+              <Loading height="20vh" />
+            ) : visibleItems.length === 0 ? (
+              <NotificationEmptyState />
+            ) : (
+              <div className="flex flex-col divide-y divide-slate-100">
+                {visibleItems.map((item) => (
+                  <NotificationItem key={item._id} item={item} t={t} onOpen={openItem} />
+                ))}
+              </div>
             )}
           </div>
-        </div>
-
-        {loading ? (
-          <Loading height="20vh" />
-        ) : visibleItems.length === 0 ? (
-          <NotificationEmptyState />
-        ) : (
-          <div className="flex flex-col divide-y divide-slate-100">
-            {visibleItems.map((item) => (
-              <NotificationItem key={item._id} item={item} t={t} onOpen={openItem} />
-            ))}
-          </div>
-        )}
-      </div>
+        </>
+      )}
 
       <Dialog
         open={!!unlinkTarget}

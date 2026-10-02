@@ -1,16 +1,16 @@
 import { CgSpinner } from "react-icons/cg";
 
 /**
- * Button component
+ * IconButton component — faqat ikonka sig'adigan kvadrat tugma.
  *
  * @param {Object} props
- * @param {React.ReactNode} props.children - Button ichidagi kontent (text, icon, etc)
+ * @param {React.ReactNode} props.children - Button ichidagi kontent (odatda ikonka)
  * @param {boolean} [props.disabled=false] - Button o‘chiqmi yo‘qmi
  * @param {boolean} [props.loading=false] - Loader ko‘rsatish holati
- * @param {"emerald"|"blue"|"black"|"slate"|"red"|"orange"|"yellow"} [props.color="blue"] - Button rangi
+ * @param {"emerald"|"blue"|"violet"|"black"|"slate"|"red"|"orange"|"yellow"|"cyan"|"zinc"} [props.color="blue"] - Button rangi
  * @param {"filled"|"ghost"|"text"|"outlined"|"gradient"} [props.variant="filled"] - Button varianti
  * @param {string} [props.className] - Button uchun qo'shimcha class
- * @param {boolean} [props.fullWith] - Button withd
+ * @param {boolean} [props.fullWith] - Button width
  * @param {(event: React.MouseEvent<HTMLButtonElement>) => void} [props.onClick] - Button onClick
  * @returns {JSX.Element}
  */
@@ -25,57 +25,79 @@ function IconButton({
   onClick = () => {},
   ...props
 }) {
+  // 44px — Button bilan bir xil balandlik (qatorda yonma-yon turganda
+  // tekislanadi) va barmoq uchun minimal qulay nishon o'lchami.
   const base =
-    "inline-flex select-none relative items-center cursor-pointer justify-center gap-1 min-w-10 max-h-10 min-h-10 max-w-10 rounded-xl text-base font-semibold uppercase disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 disabled:active:scale-100 duration-300";
+    "inline-flex select-none relative items-center cursor-pointer justify-center gap-1 min-w-11 max-h-11 min-h-11 max-w-11 rounded-xl text-base font-semibold disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 disabled:active:scale-100 duration-200";
 
   const variants = {
     filled: {
-      emerald: "bg-emerald-500 text-white hover:bg-emerald-600",
-      blue: "bg-blue-500 text-white hover:bg-blue-600",
-      black: "bg-black text-white hover:bg-gray-800",
-      red: "bg-red-500 text-white hover:bg-red-600",
-      orange: "bg-orange-500 text-white hover:bg-orange-600",
-      yellow: "bg-yellow-500 text-black hover:bg-yellow-600",
-      slate: "bg-slate-700 text-white hover:bg-slate-800",
+      emerald: "bg-emerald-500 text-white hover:bg-emerald-600 shadow-[0_4px_12px_-4px_rgba(16,185,129,0.5)]",
+      blue: "bg-blue-500 text-white hover:bg-blue-600 shadow-[0_4px_12px_-4px_rgba(59,130,246,0.5)]",
+      violet: "bg-violet-500 text-white hover:bg-violet-600 shadow-[0_4px_12px_-4px_rgba(139,92,246,0.5)]",
+      black: "bg-slate-900 text-white hover:bg-slate-800 shadow-[0_4px_12px_-4px_rgba(15,23,42,0.45)]",
+      red: "bg-red-500 text-white hover:bg-red-600 shadow-[0_4px_12px_-4px_rgba(239,68,68,0.5)]",
+      orange: "bg-orange-500 text-white hover:bg-orange-600 shadow-[0_4px_12px_-4px_rgba(249,115,22,0.5)]",
+      yellow: "bg-yellow-500 text-black hover:bg-yellow-600 shadow-[0_4px_12px_-4px_rgba(234,179,8,0.5)]",
+      cyan: "bg-cyan-500 text-white hover:bg-cyan-600 shadow-[0_4px_12px_-4px_rgba(6,182,212,0.5)]",
+      zinc: "bg-zinc-500 text-white hover:bg-zinc-600 shadow-[0_4px_12px_-4px_rgba(113,113,122,0.5)]",
+      slate: "bg-slate-700 text-white hover:bg-slate-800 shadow-[0_4px_12px_-4px_rgba(51,65,85,0.45)]",
     },
 
+    // Neytral chegara + oq yuza: rang faqat ikonkada qoladi, shuning uchun
+    // bir qatorda turgan bir nechta amal tugmasi bir-biri bilan raqobat
+    // qilmaydi.
     outlined: {
-      emerald: "border border-emerald-500 text-emerald-500 hover:bg-emerald-50",
-      blue: "border border-blue-500 text-blue-500 hover:bg-blue-50",
-      black: "border border-black text-black hover:bg-gray-100",
-      red: "border border-red-500 text-red-500 hover:bg-red-50",
-      orange: "border border-orange-500 text-orange-500 hover:bg-orange-50",
-      yellow: "border border-yellow-500 text-yellow-600 hover:bg-yellow-50",
-      slate: "border border-slate-500 text-slate-600 hover:bg-slate-50",
+      emerald: "bg-white border border-slate-200 text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      blue: "bg-white border border-slate-200 text-blue-600 hover:border-blue-300 hover:bg-blue-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      violet: "bg-white border border-slate-200 text-violet-600 hover:border-violet-300 hover:bg-violet-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      black: "bg-white border border-slate-200 text-slate-900 hover:border-slate-400 hover:bg-slate-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      red: "bg-white border border-slate-200 text-red-600 hover:border-red-300 hover:bg-red-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      orange: "bg-white border border-slate-200 text-orange-600 hover:border-orange-300 hover:bg-orange-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      yellow: "bg-white border border-slate-200 text-yellow-700 hover:border-yellow-300 hover:bg-yellow-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      cyan: "bg-white border border-slate-200 text-cyan-600 hover:border-cyan-300 hover:bg-cyan-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      zinc: "bg-white border border-slate-200 text-zinc-600 hover:border-zinc-400 hover:bg-zinc-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      slate: "bg-white border border-slate-200 text-slate-700 hover:border-slate-400 hover:bg-slate-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
     },
 
     ghost: {
-      emerald: "text-emerald-500 bg-emerald-100 hover:bg-emerald-200",
-      blue: "text-blue-500 bg-blue-100 hover:bg-blue-200",
-      black: "text-black bg-gray-100 hover:bg-gray-200",
-      red: "text-red-500 bg-red-100 hover:bg-red-200",
-      orange: "text-orange-500 bg-orange-100 hover:bg-orange-200",
-      yellow: "text-yellow-600 bg-yellow-100 hover:bg-yellow-200",
-      slate: "text-slate-600 bg-slate-100 hover:bg-slate-200",
+      emerald: "text-emerald-600 bg-emerald-50 hover:bg-emerald-100",
+      blue: "text-blue-600 bg-blue-50 hover:bg-blue-100",
+      violet: "text-violet-600 bg-violet-50 hover:bg-violet-100",
+      black: "text-slate-700 bg-slate-100 hover:bg-slate-200",
+      red: "text-red-600 bg-red-50 hover:bg-red-100",
+      orange: "text-orange-600 bg-orange-50 hover:bg-orange-100",
+      yellow: "text-yellow-700 bg-yellow-50 hover:bg-yellow-100",
+      cyan: "text-cyan-600 bg-cyan-50 hover:bg-cyan-100",
+      zinc: "text-zinc-600 bg-zinc-100 hover:bg-zinc-200",
+      slate: "text-slate-700 bg-slate-100 hover:bg-slate-200",
     },
 
+    // Ikonka tugmada tagiga chizish (`underline`) ko'rinmaydi — o'rniga
+    // hover'da yengil fon paydo bo'ladi.
     text: {
-      emerald: "text-emerald-500 hover:underline",
-      blue: "text-blue-500 hover:underline",
-      black: "text-black hover:underline",
-      red: "text-red-500 hover:underline",
-      orange: "text-orange-500 hover:underline",
-      yellow: "text-yellow-600 hover:underline",
-      slate: "text-slate-600 hover:underline",
+      emerald: "text-emerald-600 hover:bg-emerald-50",
+      blue: "text-blue-600 hover:bg-blue-50",
+      violet: "text-violet-600 hover:bg-violet-50",
+      black: "text-slate-700 hover:bg-slate-100",
+      red: "text-red-600 hover:bg-red-50",
+      orange: "text-orange-600 hover:bg-orange-50",
+      yellow: "text-yellow-700 hover:bg-yellow-50",
+      cyan: "text-cyan-600 hover:bg-cyan-50",
+      zinc: "text-zinc-600 hover:bg-zinc-100",
+      slate: "text-slate-700 hover:bg-slate-100",
     },
 
     gradient: {
       emerald: "bg-gradient-to-br from-emerald-400 to-emerald-800 text-white hover:from-emerald-600 hover:to-emerald-800",
       blue: "bg-gradient-to-br from-blue-400 to-blue-800 text-white hover:from-blue-600 hover:to-blue-800",
+      violet: "bg-gradient-to-br from-violet-400 to-violet-800 text-white hover:from-violet-600 hover:to-violet-800",
       black: "bg-gradient-to-br from-zinc-600 to-black text-white hover:from-black hover:to-zinc-900",
       red: "bg-gradient-to-br from-red-400 to-red-800 text-white hover:from-red-600 hover:to-red-800",
       orange: "bg-gradient-to-br from-orange-400 to-orange-800 text-white hover:from-orange-600 hover:to-orange-800",
       yellow: "bg-gradient-to-br from-yellow-300 to-yellow-600 text-black hover:from-yellow-500 hover:to-yellow-700",
+      cyan: "bg-gradient-to-br from-cyan-400 to-cyan-800 text-white hover:from-cyan-600 hover:to-cyan-800",
+      zinc: "bg-gradient-to-br from-zinc-400 to-zinc-700 text-white hover:from-zinc-600 hover:to-zinc-800",
       slate: "bg-gradient-to-br from-slate-700 to-slate-900 text-white hover:from-slate-800 hover:to-slate-950",
     },
   };

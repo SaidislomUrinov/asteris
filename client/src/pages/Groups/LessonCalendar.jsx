@@ -6,6 +6,7 @@ import LessonDayDialog from "./LessonDayDialog";
 import { dateKey } from "./useLessonSchedule";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
+import ChartCard from "../../ui/ChartCard";
 
 const WEEK_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const JS_DAY_TO_CODE = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
@@ -135,14 +136,14 @@ function LessonCalendar({
   };
 
   return (
-    <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 bg-white h-full">
+    <ChartCard>
       <div className="flex items-center justify-between gap-2 shrink-0">
         <p className="font-semibold text-slate-800">{t("group.calendarTitle")}</p>
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => changeMonth(-1)}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+            className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
           >
             <HiChevronLeft />
           </button>
@@ -152,7 +153,7 @@ function LessonCalendar({
           <button
             type="button"
             onClick={() => changeMonth(1)}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+            className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
           >
             <HiChevronRight />
           </button>
@@ -269,7 +270,7 @@ function LessonCalendar({
         onUnmark={unmarkHoliday}
         saving={saving}
       />
-    </div>
+    </ChartCard>
   );
 }
 

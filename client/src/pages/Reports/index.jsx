@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import useQueryState, { useQueryStates } from "../../hooks/useQueryState";
 import { useTranslation } from "react-i18next";
 import Select from "../../ui/Select";
 import FilterBar from "../../ui/FilterBar";
@@ -10,10 +11,14 @@ import ByTeacherTab from "./ByTeacherTab";
 import ByCollectorTab from "./ByCollectorTab";
 import ByGroupTab from "./ByGroupTab";
 import DebtorsTab from "./DebtorsTab";
-import { ReportError, useReportResource } from "./shared";
+import AttendanceTab from "./AttendanceTab";
+import { ReportError } from "./shared";
+import { useReportResource } from "./reportData";
 import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { api } from "../../utils/fetching";
+import { useSearchParams } from "react-router-dom";
+import useFeature from "../../hooks/useFeature";
 
 const PERIODS = ["daily", "weekly", "monthly", "custom"];
 const GROUP_BY = ["day", "week", "month"];
@@ -23,14 +28,20 @@ const GROUP_BY = ["day", "week", "month"];
 // bilan bittaga yig'iladi (docs/API_CONTRACT.md §2.3).
 const REALTIME_DEBOUNCE = 1500;
 
+const RANGE_DEFAULTS = { from: "", to: "" };
+
 function Reports() {
   const { t } = useTranslation();
+  const hasFeature = useFeature();
+  // Moliyaviy qism (umumiy kartalar, grafik, moliyaviy tablar) — `finance.report`;
+  // davomat hisoboti — mustaqil `attendance.report` flag'i.
+  const hasFinance = hasFeature("finance.report");
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [period, setPeriod] = useState("monthly");
-  const [range, setRange] = useState({ from: "", to: "" });
-  const [center, setCenter] = useState("");
-  const [groupBy, setGroupBy] = useState("day");
-  const [tab, setTab] = useState("center");
+  const [period, setPeriod] = useQueryState("period", "monthly");
+  const [range, setRange] = useQueryStates(RANGE_DEFAULTS);
+  const [center, setCenter] = useQueryState("center", "");
+  const [groupBy, setGroupBy] = useQueryState("groupBy", "day");
   const [tick, setTick] = useState(0);
 
   const [centers, setCenters] = useState([]);
@@ -51,8 +62,10 @@ function Reports() {
     [period, range.from, range.to, center, groupBy],
   );
 
-  const summary = useReportResource("/reports/summary", query, [tick]);
-  const timeline = useReportResource("/reports/timeline", query, [tick]);
+  // Moliyaviy tarifsiz so'rov yuborilmaydi (server baribir rad etadi) —
+  // endpoint bo'sh bo'lsa hook o'rniga null ma'lumot ko'rsatiladi.
+  const summary = useReportResource(hasFinance ? "/reports/summary" : "", query, [tick]);
+  const timeline = useReportResource(hasFinance ? "/reports/timeline" : "", query, [tick]);
 
   const fetchCenters = useCallback(async () => {
     try {
@@ -65,37 +78,59 @@ function Reports() {
   }, []);
 
   useEffect(() => {
-    fetchCenters();
+    const id = setTimeout(fetchCenters, 0);
+    return () => clearTimeout(id);
   }, [fetchCenters]);
 
   const refetchAll = useDebouncedCallback(() => setTick((v) => v + 1), REALTIME_DEBOUNCE);
 
   useSocketEvent("payment:created", refetchAll);
   useSocketEvent("payment:cancelled", refetchAll);
+  useSocketEvent("payment:updated", refetchAll);
   useSocketEvent("expense:created", refetchAll);
   useSocketEvent("expense:updated", refetchAll);
   useSocketEvent("attendance:marked", refetchAll);
 
   const tabs = [
-    { key: "center", label: t("report.tabCenter"), Component: ByCenterTab },
-    { key: "teacher", label: t("report.tabTeacher"), Component: ByTeacherTab },
-    { key: "collector", label: t("report.tabCollector"), Component: ByCollectorTab },
-    { key: "group", label: t("report.tabGroup"), Component: ByGroupTab },
-    { key: "debtors", label: t("report.tabDebtors"), Component: DebtorsTab },
-  ];
+    hasFinance && { key: "center", label: t("report.tabCenter"), Component: ByCenterTab },
+    hasFinance &&
+      hasFeature("teacher.performance") && { key: "teacher", label: t("report.tabTeacher"), Component: ByTeacherTab },
+    hasFinance && { key: "collector", label: t("report.tabCollector"), Component: ByCollectorTab },
+    hasFinance && { key: "group", label: t("report.tabGroup"), Component: ByGroupTab },
+    hasFinance && { key: "debtors", label: t("report.tabDebtors"), Component: DebtorsTab },
+    hasFeature("attendance.report") && {
+      key: "attendance",
+      label: t("report.tabAttendance"),
+      Component: AttendanceTab,
+    },
+  ].filter(Boolean);
 
-  const ActiveTab = tabs.find((x) => x.key === tab)?.Component || ByCenterTab;
+  // Tanlangan tab URL'da (`?tab=attendance`) — havola orqali to'g'ridan-to'g'ri
+  // ochish va sahifa yangilanganda saqlanib qolishi uchun.
+  const active = tabs.find((x) => x.key === searchParams.get("tab")) || tabs[0];
+  const tab = active?.key;
+  const ActiveTab = active?.Component;
+  // Boshqa filtr paramlari (period/center/from/to) saqlanib qoladi.
+  const setTab = (key) =>
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("tab", key);
+        return next;
+      },
+      { replace: true },
+    );
 
   return (
     <div className="flex flex-col w-full h-full gap-4">
       <FilterBar
-        cols={showCenterFilter ? 3 : 2}
+        cols={1 + (showCenterFilter ? 1 : 0) + (hasFinance ? 1 : 0)}
         activeCount={[center, groupBy !== "day", period === "custom" && range.from].filter(Boolean).length}
         onReset={() => {
           setCenter("");
           setGroupBy("day");
           setPeriod("monthly");
-          setRange({ from: "", to: "" });
+          setRange(RANGE_DEFAULTS);
         }}
         search={
           // Davr tanlagichi — hisobotning asosiy boshqaruvi, shuning uchun
@@ -119,17 +154,19 @@ function Reports() {
         {/* Sana oralig'i faqat "Oraliq" rejimida ma'noli — boshqa rejimda
             davrni serverning o'zi hisoblaydi. */}
         {period === "custom" && (
-          <DateRangeInput
-            variant="white"
-            value={range}
-            onChange={setRange}
-            placeholder={t("report.customRange")}
-          />
+          <div className="flex flex-col gap-1 w-full">
+            <DateRangeInput
+              variant="slate"
+              value={range}
+              onChange={setRange}
+              placeholder={t("report.customRange")}
+            />
+          </div>
         )}
         {showCenterFilter && (
           <Select
             placeholder={t("report.center")}
-            variant="white"
+            variant="slate"
             value={center}
             onChange={setCenter}
             options={[
@@ -138,26 +175,28 @@ function Reports() {
             ]}
           />
         )}
-        <Select
-          placeholder={t("report.groupBy")}
-          variant="white"
-          value={groupBy}
-          onChange={setGroupBy}
-          options={GROUP_BY.map((g) => ({ value: g, label: t(`report.groupByOptions.${g}`) }))}
-        />
+        {hasFinance && (
+          <Select
+            placeholder={t("report.groupBy")}
+            variant="slate"
+            value={groupBy}
+            onChange={setGroupBy}
+            options={GROUP_BY.map((g) => ({ value: g, label: t(`report.groupByOptions.${g}`) }))}
+          />
+        )}
       </FilterBar>
 
       {customIncomplete ? (
         <div className="flex items-center justify-center w-full flex-1 min-h-60 text-sm text-slate-400 rounded-2xl bg-white border border-slate-200/80">
           {t("report.pickRange")}
         </div>
-      ) : summary.error ? (
+      ) : hasFinance && summary.error ? (
         <ReportError onRetry={summary.refetch} />
       ) : (
         <>
-          <SummaryCards summary={summary.data} loading={summary.loading} />
+          {hasFinance && <SummaryCards summary={summary.data} loading={summary.loading} />}
 
-          <TimelineChart rows={timeline.data || []} loading={timeline.loading} />
+          {hasFinance && <TimelineChart rows={timeline.data || []} loading={timeline.loading} />}
 
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 overflow-x-auto">
@@ -178,7 +217,7 @@ function Reports() {
             </div>
 
             {/* `key` — tab almashganda ichki holat (sort, sahifa) tozalanadi */}
-            <ActiveTab key={tab} query={query} tick={tick} />
+            {ActiveTab && <ActiveTab key={tab} query={query} tick={tick} />}
           </div>
         </>
       )}

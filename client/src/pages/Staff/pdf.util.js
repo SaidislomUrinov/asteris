@@ -1,4 +1,12 @@
 import { jsPDF } from "jspdf";
+import i18n from "../../utils/i18n";
+
+// jsPDF'ning standart "helvetica" shrifti kirill harflarini chiza olmaydi —
+// ru/uzc tanlangan bo'lsa PDF matni lotin (uz) tilida chiqariladi.
+const pdfT = (key) => {
+  const lng = ["ru", "uzc"].includes(i18n.language) ? "uz" : i18n.language;
+  return i18n.t(key, { lng });
+};
 
 // Hodim yaratilgach uning kirish rekvizitlarini (ism, login, parol) chiroyli
 // PDF sifatida avtomatik yuklab beradi — parol faqat shu paytda oq-qora
@@ -15,13 +23,13 @@ export function downloadStaffCredentialsPdf({ name, login, password }) {
   doc.setTextColor(59, 130, 246); // blue-500
   doc.setFont("helvetica", "bold");
   doc.setFontSize(26);
-  doc.text("A", margin, 55);
+  doc.text("WE", margin, 55);
   doc.setTextColor(255, 255, 255);
-  doc.text("steris", margin + doc.getTextWidth("A"), 55);
+  doc.text("NET", margin + doc.getTextWidth("WE"), 55);
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
-  doc.text("Hodim kirish rekvizitlari", margin, 75);
+  doc.text(pdfT("staff.pdfTitle"), margin, 75);
 
   // Body card
   let y = 130;
@@ -31,8 +39,8 @@ export function downloadStaffCredentialsPdf({ name, login, password }) {
   doc.text(name || "", margin, y);
 
   const rows = [
-    ["Login", login],
-    ["Parol", password],
+    [pdfT("auth.login"), login],
+    [pdfT("auth.password"), password],
   ];
 
   y += 25;
@@ -60,7 +68,7 @@ export function downloadStaffCredentialsPdf({ name, login, password }) {
   doc.setFontSize(9);
   doc.setTextColor(148, 163, 184); // slate-400
   doc.text(
-    "Ushbu hujjatni maxfiy saqlang. Parolni faqat hodimning o'ziga bering.",
+    pdfT("staff.pdfConfidentialNote"),
     margin,
     y,
     { maxWidth: pageWidth - margin * 2 },

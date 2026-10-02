@@ -5,6 +5,7 @@ import { HiChevronLeft, HiChevronRight } from "react-icons/hi2";
 import Loading from "../../ui/Loading";
 import { api } from "../../utils/fetching";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
+import ChartCard from "../../ui/ChartCard";
 
 const PRESENT_COLOR = "#10b981"; // emerald-500
 const EXCUSED_COLOR = "#f59e0b"; // amber-500
@@ -110,7 +111,7 @@ function AttendanceDonut({ groupId, courseStartMonth }) {
   };
 
   return (
-    <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 bg-white h-full">
+    <ChartCard>
       <div className="flex items-center justify-between gap-2 shrink-0">
         <div>
           <p className="font-semibold text-slate-800">{t("group.attendanceTitle")}</p>
@@ -121,7 +122,7 @@ function AttendanceDonut({ groupId, courseStartMonth }) {
             type="button"
             disabled={!canGoPrev}
             onClick={() => setMonth((m) => shiftMonth(m, -1))}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             <HiChevronLeft />
           </button>
@@ -130,7 +131,7 @@ function AttendanceDonut({ groupId, courseStartMonth }) {
             type="button"
             disabled={!canGoNext}
             onClick={() => setMonth((m) => shiftMonth(m, 1))}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             <HiChevronRight />
           </button>
@@ -204,7 +205,7 @@ function AttendanceDonut({ groupId, courseStartMonth }) {
           </div>
         </>
       )}
-    </div>
+    </ChartCard>
   );
 }
 

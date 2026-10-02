@@ -4,7 +4,7 @@ import { api, setSession } from "../../utils/fetching";
 import { useDispatch } from "react-redux";
 import { updateUser } from "../../contexts/user";
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import UpdateLang from "../../components/UpdateLang";
 import Input from "../../ui/Input";
 import {
@@ -16,29 +16,6 @@ import {
   HiUserGroup,
 } from "react-icons/hi2";
 import Button from "../../ui/Button";
-
-// `App.jsx`dagi haqiqiy marshrutlar bilan bir xil ro'yxat — login'dan keyin
-// faqat SHU prefikslardan biriga mos manzilga qaytariladi. Aks holda (eskirgan
-// bookmark, "/login" kabi Auth'ning o'zi joylashgan yo'l, yozuv xatosi...)
-// `<Routes>` hech biriga mos kelmay bo'sh sahifa qolib ketardi.
-const KNOWN_PATH_PREFIXES = [
-  "/dashboard",
-  "/centers",
-  "/staff",
-  "/subjects",
-  "/rooms",
-  "/groups",
-  "/schedule",
-  "/lesson",
-  "/students",
-  "/qr-attendance",
-  "/salary",
-  "/expenses",
-  "/revenue",
-  "/subscription",
-  "/profile",
-  "/notifications",
-];
 
 // Bitta panel — Client Owner ("Boshliq") va Staff ("Hodim") shu yerdan tanlab
 // kiradi. Ikkalasi ham backendda mustaqil auth zanjiri (/client-auth va
@@ -98,7 +75,6 @@ function Auth() {
   const dp = useDispatch();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
   // Faqat React state (`disabled`) yetarli emas — Enter tugmasi (div'dagi
   // onKeyDown) va tugma bosilishi bir vaqtda ikkita submit() chaqirsa, ikkala
   // chaqiruv HAM "disabled hali false" holatida boshlanib ketishi mumkin
@@ -132,23 +108,15 @@ function Auth() {
           ? { phone: form.identifier, password: form.password }
           : { login: form.identifier, password: form.password };
       const res = await api.post(endpoint, body);
-      const { ok, data, access, refresh, msg } = res.data;
+      const { ok, data, access, msg } = res.data;
       if (!ok) throw new Error(msg);
-      setSession(authType, access, refresh);
+      setSession(authType, access);
       successMsg(msg);
       dp(updateUser({ ...data, authType }));
-      // `App.jsx` login bo'lmaganda ham URL'ni o'zgartirmaydi (shu joyda
-      // `<Auth/>` chizadi) — shuning uchun foydalanuvchi to'g'ridan-to'g'ri
-      // (masalan) `/groups/123`ga kirgan yoki sessiyasi o'sha sahifada
-      // tugagan bo'lsa, `location.pathname` aynan o'sha manzil. Har doim
-      // `/dashboard`ga tashlash o'rniga, mumkin bo'lsa o'sha yerga qaytariladi
-      // — lekin FAQAT haqiqiy marshrutlardan biriga mos kelsa (aks holda
-      // `<Routes>` hech biriga mos kelmay bo'sh sahifa qolardi).
-      const known = KNOWN_PATH_PREFIXES.some(
-        (p) => location.pathname === p || location.pathname.startsWith(`${p}/`),
-      );
-      const target = known ? `${location.pathname}${location.search || ""}` : "/dashboard";
-      navigate(target, { replace: true });
+      // Login bo'lgach har doim `/dashboard`ga yo'naltiriladi — Client Owner
+      // ham, Staff (Manager/Reception/Teacher/Assistant) ham, joriy URL
+      // qanday bo'lishidan qat'i nazar.
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       errorMsg(error.message);
       setDisabled(false);
@@ -165,7 +133,7 @@ function Auth() {
       <div
         className={`hidden lg:flex flex-col justify-between flex-1 p-12 text-white bg-gradient-to-br ${info.gradient} duration-500 relative overflow-hidden`}
       >
-        <p className="text-2xl font-space font-semibold z-10">Asteris</p>
+        <p className="text-2xl font-space font-semibold z-10">WENET</p>
 
         <div key={authType} className="flex flex-col gap-5 z-10 max-w-md">
           <div className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center text-2xl animate-rise-in [animation-delay:0ms]">
@@ -180,14 +148,14 @@ function Auth() {
         </div>
 
         <p className="text-white/40 text-xs z-10">
-          © {new Date().getFullYear()} Asteris
+          © {new Date().getFullYear()} WENET
         </p>
       </div>
 
       {/* O'ng panel — tizimga kirish containeri */}
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4">
         <p className="lg:hidden text-[40px] font-space font-semibold animate-rise-in [animation-delay:0ms]">
-          <span className="font-space text-blue-500">A</span>steris
+          <span className="font-space text-blue-500">WE</span>NET
         </p>
         <div className="flex flex-col w-full sm:w-110 bg-white border border-slate-200 rounded-xl overflow-hidden">
           {/* Header */}
@@ -252,7 +220,7 @@ function Auth() {
                 <Input
                   key="login"
                   label={t("auth.login")}
-                  placeholder="login"
+                  placeholder={t("auth.loginPlaceholder")}
                   required
                   icon={<HiUser />}
                   onChange={(e) => {

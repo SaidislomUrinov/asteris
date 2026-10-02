@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
-import { HiChevronLeft, HiChevronRight } from "react-icons/hi2";
+import { HiCheck, HiChevronLeft, HiChevronRight, HiExclamationCircle, HiQuestionMarkCircle, HiXMark } from "react-icons/hi2";
 import Avatar from "../../ui/Avatar";
+import RowNumber from "../../ui/RowNumber";
+import RankMedal from "../../ui/RankMedal";
+import Button from "../../ui/Button";
+import Dialog from "../../ui/Dialog";
 import AttendanceCheckbox from "./AttendanceCheckbox";
 import MatrixSkeleton from "./MatrixSkeleton";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { api } from "../../utils/fetching";
-import { errorMsg } from "../../utils/alert";
+import { errorMsg, successMsg } from "../../utils/alert";
 
 const MONTH_KEYS = [
   "yanvar", "fevral", "mart", "aprel", "may", "iyun",
@@ -23,6 +27,16 @@ const CELL = {
 };
 
 const STATUSES = ["present", "absent", "excused"];
+
+// Mobil kartadagi status belgisi — rang + ikonka + matn, bitta qarashda
+// ajraladigan bo'lishi uchun (AttendanceCheckbox faqat ikonka, kartada esa
+// yorliq ham kerak).
+const STATUS_TONE = {
+  present: { icon: HiCheck, cls: "bg-emerald-500/12 text-emerald-600 ring-emerald-500/25" },
+  absent: { icon: HiXMark, cls: "bg-red-500/12 text-red-500 ring-red-500/25" },
+  excused: { icon: HiExclamationCircle, cls: "bg-amber-500/15 text-amber-600 ring-amber-500/25" },
+  unmarked: { icon: null, cls: "bg-slate-100 text-slate-500 ring-slate-200" },
+};
 
 const monthOf = (str) => Number(str.slice(5, 7)) - 1;
 const yearOf = (str) => Number(str.slice(0, 4));
@@ -57,14 +71,36 @@ const currentMonth = () => {
  * Davomat belgilanganda matritsa QAYTA YUKLANMAYDI — o'zgargan katak
  * (va o'sha o'quvchining foizi) socket eventi asosida joyida yangilanadi.
  */
-function MonthlyAttendance({ groupId, students, canMark, minDate = "" }) {
+// O'quvchi ismi — `onOpen` berilsa bosiladigan (o'qituvchi → yutuqlar sahifasi).
+function StudentName({ student, onOpen, className }) {
+  if (!onOpen) return <span className={className}>{student.fullName}</span>;
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(student)}
+      className={`${className} text-left cursor-pointer hover:text-blue-600 hover:underline underline-offset-2 decoration-blue-300`}
+    >
+      {student.fullName}
+    </button>
+  );
+}
+
+/**
+ * `onOpenStudent(student)` — ixtiyoriy: ism bosilganda (o'qituvchiga o'quvchi
+ * yutuqlari sahifasi, API_CONTRACT_student_achievements.md).
+ */
+function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "", onOpenStudent }) {
   const { t } = useTranslation();
   const [month, setMonth] = useState(currentMonth);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [picker, setPicker] = useState(null); // { studentId, date, x, y }
   const [saving, setSaving] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(""); // mobil kun tanlovi
+  const [bulkConfirm, setBulkConfirm] = useState(false);
+  const [bulkSaving, setBulkSaving] = useState(false);
   const scrollRef = useRef(null);
+  const dateScrollRef = useRef(null);
 
   const fetchMonth = useCallback(async () => {
     try {
@@ -104,8 +140,54 @@ function MonthlyAttendance({ groupId, students, canMark, minDate = "" }) {
     return map;
   }, [data]);
 
+  // Mobil kun tanlovi — yangi oy yuklanganda bugungi kun (agar shu oy ichida
+  // bo'lsa) yoki oyning oxirgi kuni default qilib tanlanadi. `setTimeout(…, 0)`
+  // — boshqa effektlar bilan bir xil naqsh (react-hooks/set-state-in-effect).
+  useEffect(() => {
+    if (!data?.days?.length) return;
+    const id = setTimeout(() => {
+      setSelectedDate((prev) => {
+        if (prev && data.days.some((d) => d.date === prev)) return prev;
+        const today = data.days.find((d) => d.date === data.today);
+        return today ? today.date : data.days[data.days.length - 1].date;
+      });
+    }, 0);
+    return () => clearTimeout(id);
+  }, [data]);
+
+  // Tanlangan kun pill'i horizontal ro'yxatda ko'rinib tursin.
+  useEffect(() => {
+    const el = dateScrollRef.current;
+    if (!el || !selectedDate) return;
+    const pill = el.querySelector(`[data-date="${selectedDate}"]`);
+    if (pill) pill.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [selectedDate, data?.month]);
+
   const isCurrent = month === currentMonth();
   const label = `${t(`common.monthNames.${monthOf(month)}`, MONTH_KEYS[monthOf(month)])} ${yearOf(month)}`;
+
+  const selectedDay = useMemo(
+    () => data?.days?.find((d) => d.date === selectedDate) || null,
+    [data, selectedDate],
+  );
+  const selectedLocked =
+    !!selectedDay &&
+    (!!selectedDay.holiday ||
+      selectedDay.future ||
+      !!selectedDay.transferred ||
+      (!!minDate && selectedDay.date < minDate));
+
+  // Tanlangan kun uchun holat yig'indisi — mobil sarlavhada "32 o'quvchi,
+  // 28 Kelgan..." ko'rinishi shu yerdan hisoblanadi.
+  const selectedSummary = useMemo(() => {
+    const counts = { present: 0, absent: 0, excused: 0, unmarked: 0 };
+    if (!selectedDate) return counts;
+    for (const s of students) {
+      const status = byStudent.get(s._id)?.records?.[selectedDate]?.status;
+      counts[status && counts[status] !== undefined ? status : "unmarked"] += 1;
+    }
+    return counts;
+  }, [students, byStudent, selectedDate]);
 
   // Bitta katakni joyida yangilaydi va o'sha o'quvchining foizini qayta
   // hisoblaydi — serverdan qayta so'ramaymiz.
@@ -173,6 +255,39 @@ function MonthlyAttendance({ groupId, students, canMark, minDate = "" }) {
     }
   };
 
+  // Mobil tezkor amal — tanlangan kunda hali "Keldi" deb belgilanmagan
+  // barcha o'quvchini bittada belgilaydi. Alohida bulk endpoint yo'q
+  // (server o'zgartirilmaydi), shuning uchun mavjud `/mark`ni har bir
+  // o'quvchi uchun parallel chaqiramiz.
+  const bulkTargets = useMemo(
+    () => students.filter((s) => byStudent.get(s._id)?.records?.[selectedDate]?.status !== "present"),
+    [students, byStudent, selectedDate],
+  );
+
+  const markAllPresent = async () => {
+    const date = selectedDate;
+    const targets = bulkTargets;
+    if (!targets.length) {
+      setBulkConfirm(false);
+      return;
+    }
+    try {
+      setBulkSaving(true);
+      await Promise.all(
+        targets.map((s) =>
+          api.post(`/attendance/${groupId}/mark`, { studentId: s._id, status: "present", date }),
+        ),
+      );
+      for (const s of targets) patchCell({ studentId: s._id, date, status: "present" });
+      successMsg("group.mobileMarkAllDone");
+      setBulkConfirm(false);
+    } catch (error) {
+      errorMsg(error.message);
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
   return (
     // `flex-1` — ota konteynerdagi barqaror maydonni to'ldiradi, shuning
     // uchun yuklanishdan jadvalga o'tishda blok balandligi sakramaydi.
@@ -202,9 +317,27 @@ function MonthlyAttendance({ groupId, students, canMark, minDate = "" }) {
           </button>
         </div>
 
-        {/* Katta ekranda izohlar sarlavha qatorida; mobilda sig'magani
-            uchun jadval OSTIGA tushadi. */}
-        <Legend t={t} className="hidden sm:flex" />
+        {/* Katta ekranda izohlar sarlavha qatorida; mobilda mutlaqo
+            boshqa UX (pastda) ishlatiladi, shuning uchun bu yerda
+            umuman ko'rsatilmaydi. */}
+        <div className="hidden md:flex items-center gap-3">
+          <Legend t={t} className="flex" />
+          {/* Mobilda mavjud "tanlangan kun uchun hammasini kelgan qilish"
+              tezkor amali — PC matritsasida ustun sarlavhasini bosib kun
+              tanlanadi (pastda), shu yerda esa amal tugmasi turadi. Bir xil
+              `bulkConfirm` Dialog ikkala UX uchun ham umumiy. */}
+          {canMark && selectedDate && !selectedLocked && (
+            <Button
+              variant="outlined"
+              color="emerald"
+              className="!px-3 !h-8 !min-h-0 !text-[12px]"
+              onClick={() => setBulkConfirm(true)}
+              disabled={!bulkTargets.length}
+            >
+              {t("group.mobileMarkAllPresent")} — {selectedDate}
+            </Button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -219,52 +352,200 @@ function MonthlyAttendance({ groupId, students, canMark, minDate = "" }) {
           {t("group.monthlyNoStudents")}
         </div>
       ) : (
-        /* `isolate` — jadvaldagi sticky ustunlar (z-10/z-20) SHU konteyner
-           ichida qatlamlanadi. Aks holda ular ilovaning kichik z-shkalasidan
-           (mobil tab bar `z-2`, Navbar `z-3`) oshib ketib, tab bar ustidan
-           chiqib qolardi. */
+        <>
+        {/* Mobil (<768px) — butunlay boshqa UX: kun tanlovi + kartalar
+            ro'yxati, matritsa emas (MonthlyAttendance.jsx tepasidagi
+            hujjat izohiga qarang). */}
+        <div className="flex md:hidden flex-col gap-3">
+          {/* Kun tanlovi — 31 kunlik vertikal kalendar emas, horizontal
+              scroll bilan compact carousel. */}
+          <div ref={dateScrollRef} className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-4 px-4">
+            {data.days.map((d) => {
+              const today = d.date === data.today;
+              const active = d.date === selectedDate;
+              return (
+                <button
+                  key={d.date}
+                  type="button"
+                  data-date={d.date}
+                  onClick={() => setSelectedDate(d.date)}
+                  className={`flex flex-col items-center justify-center shrink-0 w-11 h-12 rounded-xl border text-center transition-colors duration-150 ${
+                    active
+                      ? "bg-blue-500 border-blue-500 text-white"
+                      : d.holiday
+                        ? "bg-violet-50 border-violet-200 text-violet-500"
+                        : d.transferred
+                          ? "bg-slate-50 border-dashed border-slate-300 text-slate-400"
+                          : today
+                            ? "bg-blue-50 border-blue-200 text-blue-700"
+                            : "bg-white border-slate-200 text-slate-600"
+                  }`}
+                >
+                  <span className={`text-[10px] font-semibold uppercase leading-tight ${active ? "text-white/80" : ""}`}>
+                    {t(`group.dayShort.${d.day}`)}
+                  </span>
+                  <span className="text-sm font-bold tabular-nums leading-tight">
+                    {Number(d.date.slice(8, 10))}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Xulosa + tezkor bulk amal */}
+          <div className="flex items-center justify-between gap-3 px-0.5">
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className="text-sm font-semibold text-slate-800">
+                {t("group.studentsCount", { count: students.length })}
+              </span>
+              <span className="flex items-center gap-2.5 text-[11px] text-slate-500">
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  {selectedSummary.present}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                  {selectedSummary.absent}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  {selectedSummary.excused}
+                </span>
+                <span className="flex items-center gap-1 text-slate-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                  {selectedSummary.unmarked}
+                </span>
+              </span>
+            </div>
+            {canMark && !selectedLocked && selectedSummary.unmarked + selectedSummary.absent + selectedSummary.excused > 0 && (
+              <Button
+                variant="outlined"
+                color="emerald"
+                className="!px-3 !h-9 !min-h-0 shrink-0 !text-[11px]"
+                onClick={() => setBulkConfirm(true)}
+              >
+                {t("group.mobileMarkAllPresent")}
+              </Button>
+            )}
+          </div>
+
+          {/* O'quvchilar ro'yxati — tap orqali tezkor status o'zgartirish */}
+          <div className="flex flex-col gap-2">
+            {students.map((s, index) => {
+              const rec = byStudent.get(s._id)?.records?.[selectedDate];
+              const status = rec?.status || "unmarked";
+              const tone = STATUS_TONE[status];
+              const Icon = tone.icon;
+              const locked = !canMark || selectedLocked || !!rec?.transferred;
+              return (
+                <div
+                  key={s._id}
+                  className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200/70"
+                >
+                  <RowNumber value={index + 1} />
+                  {/* Tor mobil kartada (o'ngda keng status tugmasi) medal ism
+                      yonida emas, avatar burchagida — ism to'liq sig'sin. */}
+                  <span className="relative shrink-0">
+                    <Avatar user={{ _id: s._id, name: s.fullName }} size={38} />
+                    <span className="absolute -right-1.5 -bottom-2 flex">
+                      <RankMedal position={ranks[s._id]} size={17} />
+                    </span>
+                  </span>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <StudentName
+                      student={s}
+                      onOpen={onOpenStudent}
+                      className="text-[13px] font-semibold text-slate-800 truncate leading-tight"
+                    />
+                    <span className="text-[11px] text-slate-400 truncate leading-tight">{s.phone}</span>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={locked}
+                    title={rec?.transferred ? t("group.transferredRecord") : undefined}
+                    onClick={(e) => {
+                      const r = e.currentTarget.getBoundingClientRect();
+                      setPicker({
+                        studentId: s._id,
+                        date: selectedDate,
+                        x: r.left + r.width / 2,
+                        y: r.bottom + 6,
+                      });
+                    }}
+                    className={`flex items-center justify-center gap-1.5 shrink-0 h-9 px-3 rounded-full ring-1 ring-inset text-[12px] font-semibold transition-all duration-150 ${tone.cls} ${
+                      rec?.transferred ? "outline-1 outline-dashed outline-offset-1 outline-slate-400" : ""
+                    } ${
+                      locked ? "cursor-default opacity-70" : "cursor-pointer active:scale-95"
+                    }`}
+                  >
+                    {Icon && <Icon className="text-base" />}
+                    {t(
+                      status === "unmarked"
+                        ? "group.attendanceUnmarked"
+                        : `group.attendance${status[0].toUpperCase()}${status.slice(1)}Short`,
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Desktop/tablet (>=768px) — mavjud matritsa ko'rinishi. `isolate` —
+            jadvaldagi sticky ustunlar (z-10/z-20) SHU konteyner ichida
+            qatlamlanadi. Aks holda ular ilovaning kichik z-shkalasidan
+            (mobil tab bar `z-2`, Navbar `z-3`) oshib ketib, tab bar ustidan
+            chiqib qolardi. */}
         <div
           ref={scrollRef}
-          className="w-full isolate overflow-x-auto rounded-xl border border-slate-200"
+          className="hidden md:block w-full isolate overflow-x-auto rounded-xl border border-slate-200"
         >
           {/* `w-max` — jadval kontent kengligiga cho'ziladi, ustunlar
               siqilib bir-birining ustiga chiqmaydi. */}
           <table className="w-max min-w-full border-separate border-spacing-0">
             <thead>
               <tr>
-                <th className="sticky left-0 z-20 w-36 min-w-36 sm:w-52 sm:min-w-52 px-2 sm:px-3 py-2 bg-slate-50 border-b border-r border-slate-200 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                <th className="sticky left-0 z-20 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-slate-50 border-b border-r border-slate-200 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                   {t("student.fullName")}
                 </th>
                 {data.days.map((d) => {
                   const today = d.date === data.today;
+                  const active = d.date === selectedDate;
                   return (
                     <th
                       key={d.date}
                       title={
                         d.holiday
                           ? `${t("group.monthlyHoliday")}${d.holiday.note ? ` — ${d.holiday.note}` : ""}`
-                          : d.date
+                          : d.transferred
+                            ? `${d.date} · ${t("group.transferredDay")}`
+                            : d.date
                       }
-                      className={`w-11 min-w-11 px-1 py-1.5 border-b border-slate-200 text-center ${
-                        d.holiday ? "bg-violet-50" : today ? "bg-blue-50/70" : "bg-slate-50"
+                      onClick={() => setSelectedDate(d.date)}
+                      className={`w-11 min-w-11 px-1 py-1.5 border-b text-center cursor-pointer transition-colors ${
+                        active
+                          ? "border-blue-400 bg-blue-100"
+                          : `border-slate-200 ${d.holiday ? "bg-violet-50" : d.transferred ? "bg-slate-100/70" : today ? "bg-blue-50/70" : "bg-slate-50"} hover:bg-slate-100`
                       }`}
                     >
                       <span
                         className={`block text-[10px] font-semibold uppercase leading-tight ${
-                          d.holiday ? "text-violet-500" : today ? "text-blue-500" : "text-slate-400"
+                          active ? "text-blue-600" : d.holiday ? "text-violet-500" : today ? "text-blue-500" : "text-slate-400"
                         }`}
                       >
                         {t(`group.dayShort.${d.day}`)}
                       </span>
                       <span
                         className={`block text-[13px] font-semibold tabular-nums leading-tight ${
-                          d.holiday
-                            ? "text-violet-600"
-                            : today
-                              ? "text-blue-700"
-                              : d.future
-                                ? "text-slate-400"
-                                : "text-slate-700"
+                          active
+                            ? "text-blue-700"
+                            : d.holiday
+                              ? "text-violet-600"
+                              : today
+                                ? "text-blue-700"
+                                : d.future || d.transferred
+                                  ? "text-slate-400"
+                                  : "text-slate-700"
                         }`}
                       >
                         {Number(d.date.slice(8, 10))}
@@ -281,16 +562,22 @@ function MonthlyAttendance({ groupId, students, canMark, minDate = "" }) {
             </thead>
 
             <tbody>
-              {students.map((s) => {
+              {students.map((s, index) => {
                 const row = byStudent.get(s._id);
                 return (
                   <tr key={s._id} className="group/row">
-                    <td className="sticky left-0 z-10 w-36 min-w-36 sm:w-52 sm:min-w-52 px-2 sm:px-3 py-2 bg-white border-b border-r border-slate-100 group-hover/row:bg-slate-50 transition-colors">
+                    <td className="sticky left-0 z-10 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-white border-b border-r border-slate-100 group-hover/row:bg-slate-50 transition-colors">
                       <div className="flex items-center gap-2.5 min-w-0">
+                        <RowNumber value={index + 1} />
                         <Avatar user={{ _id: s._id, name: s.fullName }} size={32} />
                         <div className="flex flex-col min-w-0">
-                          <span className="text-[13px] font-semibold text-slate-800 truncate leading-tight">
-                            {s.fullName}
+                          <span className="flex items-center gap-1.5 min-w-0">
+                            <StudentName
+                              student={s}
+                              onOpen={onOpenStudent}
+                              className="text-[13px] font-semibold text-slate-800 truncate leading-tight"
+                            />
+                            <RankMedal position={ranks[s._id]} size={19} />
                           </span>
                           <span className="hidden sm:block text-[11px] text-slate-400 truncate leading-tight">
                             {s.phone}
@@ -309,8 +596,15 @@ function MonthlyAttendance({ groupId, students, canMark, minDate = "" }) {
                       // O'qituvchi faqat bugun/kecha uchun belgilaydi —
                       // undan eskisi qulflanadi (server ham rad etadi).
                       const tooOld = !!minDate && d.date < minDate;
-                      const locked = !!holiday || d.future || tooOld;
-                      const title = holiday
+                      // Oldingi guruhdan o'tgan yozuv yoki shu guruhda dars
+                      // bo'lmagan (faqat oldingi guruh darsi) kun — faqat ko'rish.
+                      const carried = !!rec?.transferred || !!d.transferred;
+                      const locked = !!holiday || d.future || tooOld || carried;
+                      const title = carried
+                        ? `${d.date} · ${
+                            rec ? `${t(`group.attendance${rec.status[0].toUpperCase()}${rec.status.slice(1)}`)} · ` : ""
+                          }${t(rec?.transferred ? "group.transferredRecord" : "group.transferredDay")}`
+                        : holiday
                         ? `${d.date} · ${t("group.monthlyHoliday")} — ${
                             holiday.note ||
                             t(holiday.chargeable ? "group.holidayChargeable" : "group.holidayNotChargeable")
@@ -334,7 +628,9 @@ function MonthlyAttendance({ groupId, students, canMark, minDate = "" }) {
                           }`}
                         >
                           <AttendanceCheckbox
-                            className="mx-auto"
+                            className={`mx-auto ${
+                              rec?.transferred ? "outline-1 outline-dashed outline-offset-1 outline-slate-400" : ""
+                            }`}
                             status={rec?.status}
                             holiday={!!holiday}
                             future={d.future}
@@ -369,11 +665,7 @@ function MonthlyAttendance({ groupId, students, canMark, minDate = "" }) {
             </tbody>
           </table>
         </div>
-      )}
-
-      {/* Mobil: izohlar jadval ostida, o'ralib chiqadi */}
-      {!loading && data && data.days.length > 0 && students.length > 0 && (
-        <Legend t={t} className="flex sm:hidden flex-wrap gap-y-1" />
+        </>
       )}
 
       {/* Katakni belgilash — kichik menyu, katak ostida ochiladi */}
@@ -409,6 +701,28 @@ function MonthlyAttendance({ groupId, students, canMark, minDate = "" }) {
           </>,
           document.body,
         )}
+
+      {/* Mobil bulk amal tasdiqlash — CLAUDE.md talabiga ko'ra ta'sirli
+          amal (bir nechta yozuv) tasdiqsiz bajarilmaydi. */}
+      <Dialog
+        open={bulkConfirm}
+        onClose={() => !bulkSaving && setBulkConfirm(false)}
+        title={t("group.mobileMarkAllPresent")}
+        actions={
+          <>
+            <Button color="black" variant="text" onClick={() => setBulkConfirm(false)} disabled={bulkSaving}>
+              {t("common.cancel")}
+            </Button>
+            <Button color="emerald" onClick={markAllPresent} loading={bulkSaving}>
+              {t("common.confirm")}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-slate-600">
+          {t("group.mobileMarkAllConfirm", { count: bulkTargets.length, date: selectedDate })}
+        </p>
+      </Dialog>
     </div>
   );
 }

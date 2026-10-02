@@ -1,22 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import {
-  HiBolt,
-  HiCheckCircle,
-  HiClock,
-  HiHome,
-  HiMagnifyingGlass,
-  HiPencil,
-  HiPlus,
-  HiTrash,
-} from "react-icons/hi2";
+import { HiArchiveBox, HiHome, HiMagnifyingGlass, HiPencil, HiPlus } from "react-icons/hi2";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
 import Dialog from "../../ui/Dialog";
 import List from "../../ui/List";
 import Select from "../../ui/Select";
-import FilterBar from "../../ui/FilterBar";
 import DropMenu from "../../ui/DropMenu";
 import RoomDialog from "./RoomDialog";
 import RoomCard from "./RoomCard";
@@ -25,21 +15,7 @@ import { getTashkentNow } from "../../utils/schedule";
 import { ROOM_STATE, STATE_ORDER, buildRoomLive } from "./roomLive";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
-
-// Yuqoridagi ixcham statistika kartasi.
-function StatCard({ icon, value, label, tone }) {
-  return (
-    <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-      <div className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center text-base ${tone}`}>
-        {icon}
-      </div>
-      <div className="flex flex-col min-w-0">
-        <span className="text-xl font-space font-bold leading-none text-slate-900">{value}</span>
-        <span className="text-xs text-slate-400 truncate">{label}</span>
-      </div>
-    </div>
-  );
-}
+import useQueryState from "../../hooks/useQueryState";
 
 function Rooms() {
   const { t } = useTranslation();
@@ -47,9 +23,11 @@ function Rooms() {
 
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [filterCenter, setFilterCenter] = useState("");
+  // Filtr/qidiruv/sahifa URL query-param'da (useQueryState) — Detail'ga kirib
+  // "Orqaga" bilan qaytilganda list qayta mount bo'lsa ham joyida qoladi.
+  const [page, setPage] = useQueryState("page", 1);
+  const [search, setSearch] = useQueryState("search", "");
+  const [filterCenter, setFilterCenter] = useQueryState("filterCenter", "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -123,15 +101,18 @@ function Rooms() {
   }, []);
 
   useEffect(() => {
-    fetchRooms();
+    const t = setTimeout(fetchRooms, 0);
+    return () => clearTimeout(t);
   }, [fetchRooms]);
 
   useEffect(() => {
-    fetchCenters();
+    const t = setTimeout(fetchCenters, 0);
+    return () => clearTimeout(t);
   }, [fetchCenters]);
 
   useEffect(() => {
-    fetchActivity();
+    const t = setTimeout(fetchActivity, 0);
+    return () => clearTimeout(t);
   }, [fetchActivity]);
 
   // Har daqiqada "hozir"ni yangilaymiz — progress bar va qolgan vaqt jonli
@@ -162,16 +143,6 @@ function Rooms() {
     (a, b) =>
       (STATE_ORDER[liveMap[a._id]?.state] ?? 9) - (STATE_ORDER[liveMap[b._id]?.state] ?? 9),
   );
-
-  const stats = useMemo(() => {
-    const list = rows.map((r) => liveMap[r._id]?.state);
-    return {
-      total: meta.total || rows.length,
-      active: list.filter((s) => s === ROOM_STATE.ACTIVE).length,
-      available: list.filter((s) => s === ROOM_STATE.AVAILABLE).length,
-      upcoming: list.filter((s) => s === ROOM_STATE.UPCOMING).length,
-    };
-  }, [rows, liveMap, meta.total]);
 
   const openCreate = () => {
     if (centers.length === 0) {
@@ -208,78 +179,57 @@ function Rooms() {
 
   return (
     <div className="flex flex-col w-full h-full gap-4">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          icon={<HiHome />}
-          value={stats.total}
-          label={t("room.statTotal")}
-          tone="bg-slate-100 text-slate-500"
-        />
-        <StatCard
-          icon={<HiBolt />}
-          value={stats.active}
-          label={t("room.statActive")}
-          tone="bg-blue-50 text-blue-600"
-        />
-        <StatCard
-          icon={<HiCheckCircle />}
-          value={stats.available}
-          label={t("room.statAvailable")}
-          tone="bg-emerald-50 text-emerald-600"
-        />
-        <StatCard
-          icon={<HiClock />}
-          value={stats.upcoming}
-          label={t("room.statUpcoming")}
-          tone="bg-amber-50 text-amber-600"
-        />
-      </div>
-
-      <FilterBar
-        cols={3}
-        activeCount={filterCenter ? 1 : 0}
-        onReset={() => {
-          setPage(1);
-          setFilterCenter("");
-        }}
-        search={
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]">
+        {/* Filtrlar bo'sh joyni to'ldiradi, amallar (Excel / Xona qo'shish)
+            o'ng chekkaga tiraladi — /groups va /staff bilan bir xil naqsh.
+            Avval sobit `sm:w-[30%]` / `sm:w-1/5` bo'lgani uchun Excel tugmasi
+            keraksiz keng chiqib, o'ngda bo'sh joy qolardi. */}
+        <div className={`w-full ${showCenterFilter ? "sm:flex-1 sm:min-w-[200px]" : "sm:flex-1"}`}>
           <Input
             placeholder={t("common.search")}
             icon={<HiMagnifyingGlass />}
-            variant="white"
+            variant="slate"
             value={search}
             onChange={(e) => {
               setPage(1);
               setSearch(e.target.value);
             }}
           />
-        }
-        actions={
-          <>
-            <ExportExcelButton endpoint="/rooms/export" params={{ search, center: filterCenter }} />
-            <Button onClick={openCreate} className="gap-1.5">
-              <HiPlus className="text-base" />
-              {t("room.create")}
-            </Button>
-          </>
-        }
-      >
-        {showCenterFilter && (
-          <Select
-            placeholder={t("room.center")}
-            variant="white"
-            value={filterCenter}
-            onChange={(v) => {
-              setPage(1);
-              setFilterCenter(v);
-            }}
-            options={[
-              { value: "", label: t("common.all") },
-              ...centers.map((c) => ({ value: c._id, label: c.name })),
-            ]}
-          />
-        )}
-      </FilterBar>
+        </div>
+
+        <div className="flex gap-2.5 sm:contents">
+          {showCenterFilter && (
+            <div className="flex-1 min-w-0 sm:flex-1 sm:min-w-[200px]">
+              <Select
+                placeholder={t("room.center")}
+                variant="slate"
+                value={filterCenter}
+                onChange={(v) => {
+                  setPage(1);
+                  setFilterCenter(v);
+                }}
+                options={[
+                  { value: "", label: t("common.all") },
+                  ...centers.map((c) => ({ value: c._id, label: c.name })),
+                ]}
+              />
+            </div>
+          )}
+
+          <div className="flex-1 sm:flex-none sm:shrink-0 sm:ml-auto">
+            <ExportExcelButton
+              endpoint="/rooms/export"
+              params={{ search, center: filterCenter }}
+              className="w-full sm:w-auto"
+            />
+          </div>
+        </div>
+
+        <Button onClick={openCreate} className="gap-1.5 w-full sm:w-auto sm:shrink-0">
+          <HiPlus className="text-base" />
+          {t("room.create")}
+        </Button>
+      </div>
 
       {error ? (
         <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
@@ -316,10 +266,12 @@ function Rooms() {
                       iconClass: "bg-blue-50 text-blue-600",
                       onClick: () => openEdit(row),
                     },
+                    // "O'chirish" endi ARXIVLASH — xona yo'qolmaydi,
+                    // Arxiv bo'limidan qaytariladi (API_CONTRACT_archive.md).
                     {
-                      label: t("common.delete"),
-                      icon: HiTrash,
-                      iconClass: "bg-red-50 text-red-600",
+                      label: t("archive.archive"),
+                      icon: HiArchiveBox,
+                      iconClass: "bg-amber-50 text-amber-600",
                       onClick: () => setDeleteTarget(row),
                     },
                   ]}
@@ -348,19 +300,19 @@ function Rooms() {
       <Dialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title={t("room.delete")}
+        title={t("archive.archiveTitle")}
         actions={
           <>
             <Button color="black" variant="text" onClick={() => setDeleteTarget(null)}>
               {t("common.cancel")}
             </Button>
             <Button color="red" loading={deleting} onClick={confirmDelete}>
-              {t("common.delete")}
+              {t("archive.archive")}
             </Button>
           </>
         }
       >
-        <p>{t("room.deleteConfirm", { name: deleteTarget?.name })}</p>
+        <p>{t("archive.archiveRoomConfirm", { name: deleteTarget?.name })}</p>
       </Dialog>
     </div>
   );

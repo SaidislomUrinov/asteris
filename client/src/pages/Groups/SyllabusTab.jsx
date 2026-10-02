@@ -17,10 +17,12 @@ import Dialog from "../../ui/Dialog";
 import Loading from "../../ui/Loading";
 import ProgressBar from "../../ui/ProgressBar";
 import SyllabusDialog from "./SyllabusDialog";
+import CurrentLessonPicker from "./CurrentLessonPicker";
 import ImportSyllabusDialog from "./ImportSyllabusDialog";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
+import useFeature from "../../hooks/useFeature";
 
 /**
  * "Reja" tabi — guruhning kurs dasturi (Syllabus).
@@ -38,10 +40,11 @@ import { errorMsg, successMsg } from "../../utils/alert";
  */
 function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
   const { t } = useTranslation();
+  const hasFeature = useFeature();
+  const showHomework = hasFeature("homework.manage");
 
   const [modules, setModules] = useState([]);
   const [progress, setProgress] = useState(null);
-  const [lessonOffset, setLessonOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -53,13 +56,12 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
   const [removeTarget, setRemoveTarget] = useState(null); // { kind, ... }
   const [importOpen, setImportOpen] = useState(false);
   const [offsetOpen, setOffsetOpen] = useState(false);
-  const [offsetValue, setOffsetValue] = useState("0");
+  const [currentNo, setCurrentNo] = useState(1);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const applyData = useCallback((data) => {
     setModules(data?.modules || []);
     setProgress(data?.progress || null);
-    setLessonOffset(data?.lessonOffset || 0);
   }, []);
 
   const fetchSyllabus = useCallback(async () => {
@@ -216,12 +218,13 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
   const saveOffset = async () => {
     try {
       setSaving(true);
-      const value = Math.max(0, Number(offsetValue) || 0);
-      const res = await api.patch(`/syllabus/${groupId}/offset`, { lessonOffset: value });
+      const res = await api.patch(`/syllabus/${groupId}/offset`, {
+        currentLessonNo: currentNo,
+      });
       const { ok, data, msg } = res.data;
       if (!ok) throw new Error(msg);
       applyData(data);
-      successMsg(msg || "syllabus.offsetSaved");
+      successMsg(msg || "syllabus.currentLessonSaved");
       setOffsetOpen(false);
     } catch (error) {
       errorMsg(error.message);
@@ -281,7 +284,7 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
               <IconButton
                 variant="ghost"
                 color="black"
-                title={t("syllabus.offset")}
+                title={t("syllabus.changeCurrentLesson")}
                 onClick={() => setMenuOpen((v) => !v)}
               >
                 <HiEllipsisVertical />
@@ -295,11 +298,11 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
                       className="w-full px-3 py-2 text-left text-sm text-slate-700 rounded-lg hover:bg-slate-50 cursor-pointer"
                       onClick={() => {
                         setMenuOpen(false);
-                        setOffsetValue(String(lessonOffset));
+                        setCurrentNo(nextNo || 1);
                         setOffsetOpen(true);
                       }}
                     >
-                      {t("syllabus.offset")}
+                      {t("syllabus.changeCurrentLesson")}
                     </button>
                   </div>
                 </>
@@ -474,7 +477,7 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
                                   {lesson.description}
                                 </p>
                               )}
-                              {lesson.homework && (
+                              {showHomework && lesson.homework && (
                                 <p className={`text-xs ${isDone ? "text-slate-300" : "text-blue-600"}`}>
                                   <span className="text-slate-400">
                                     {t("syllabus.homeworkLabel")}:{" "}
@@ -538,14 +541,24 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
           </>
         }
       >
-        <Input
-          label={t("syllabus.moduleTitleLabel")}
-          placeholder={t("syllabus.moduleTitlePlaceholder")}
-          variant="white"
-          required
-          value={moduleTitle}
-          onChange={(e) => setModuleTitle(e.target.value)}
-        />
+        <div className="flex flex-col gap-3 w-full">
+          <Input
+            label={t("syllabus.moduleTitleLabel")}
+            placeholder={t("syllabus.moduleTitlePlaceholder")}
+            variant="white"
+            required
+            value={moduleTitle}
+            onChange={(e) => setModuleTitle(e.target.value)}
+          />
+          {/* Yangi modul qo'shilganda ham eslatma — mavzular qanday
+              kalendarga tushishini bilmasdan qo'shilsa, keyin "nega o'tgan
+              kunga yozilmadi" degan savol tug'iladi. */}
+          {!moduleDialog?.module && (
+            <p className="text-xs text-slate-400 leading-relaxed pt-1 border-t border-slate-100">
+              {t("syllabus.calendarHint")}
+            </p>
+          )}
+        </div>
       </Dialog>
 
       {/* Mavzu modali */}
@@ -558,6 +571,7 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
         modules={modules}
         saving={saving}
         canImport={canImport}
+        showHomework={showHomework}
         onImport={() => {
           setLessonDialog(null);
           setImportOpen(true);
@@ -575,32 +589,32 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
         onImported={applyData}
       />
 
-      {/* Boshlanish nuqtasi (lessonOffset) */}
+      {/* Joriy darsni o'zgartirish — PATCH /offset { currentLessonNo } */}
       <Dialog
         open={offsetOpen}
         onClose={() => setOffsetOpen(false)}
-        title={t("syllabus.offset")}
+        title={t("syllabus.changeCurrentLesson")}
         actions={
           <>
             <Button color="black" variant="text" onClick={() => setOffsetOpen(false)}>
               {t("common.cancel")}
             </Button>
-            <Button loading={saving} onClick={saveOffset}>
+            <Button loading={saving} disabled={!numbering.total} onClick={saveOffset}>
               {t("common.save")}
             </Button>
           </>
         }
       >
-        <div className="flex flex-col gap-2 w-full">
-          <Input
-            type="number"
-            min="0"
-            label={t("syllabus.offsetLabel")}
-            variant="white"
-            value={offsetValue}
-            onChange={(e) => setOffsetValue(e.target.value)}
+        <div className="flex flex-col gap-3 w-full">
+          <p className="text-sm font-semibold text-slate-800">
+            {t("syllabus.currentLessonQuestion")}
+          </p>
+          <CurrentLessonPicker
+            key={offsetOpen ? "picker-open" : "picker-closed"}
+            modules={modules}
+            value={currentNo}
+            onChange={setCurrentNo}
           />
-          <p className="text-xs text-slate-400">{t("syllabus.offsetHint")}</p>
         </div>
       </Dialog>
 

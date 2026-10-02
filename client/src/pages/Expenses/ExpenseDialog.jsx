@@ -37,6 +37,9 @@ function ExpenseDialog({ open, onClose, expense, centers = [], onSaved }) {
     try {
       if (!isEdit && !form.center) throw new Error("expense.fillTheRows");
       if (!form.title.trim() || form.amount === "") throw new Error("expense.fillTheRows");
+      if (Number.isNaN(Number(form.amount)) || Number(form.amount) <= 0) {
+        throw new Error("expense.fillTheRows");
+      }
       setDisabled(true);
 
       const body = {

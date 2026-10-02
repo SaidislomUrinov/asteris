@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import useQueryState, { useQueryStates } from "../../hooks/useQueryState";
 import { useTranslation } from "react-i18next";
 import { HiClipboardDocumentList, HiEye, HiMagnifyingGlass } from "react-icons/hi2";
 import Input from "../../ui/Input";
@@ -20,18 +21,20 @@ import { errorMsg } from "../../utils/alert";
 
 // Audit log — "kim, qachon, nima qildi" (CLAUDE.md). Faqat Client Owner
 // ko'radi, backend `requireOwner` bilan yopilgan (docs/API_CONTRACT.md §1.4).
+const RANGE_DEFAULTS = { from: "", to: "" };
+
 function AuditLog() {
   const { t } = useTranslation();
   const feature = useFeature();
 
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [filterCenter, setFilterCenter] = useState("");
-  const [filterActor, setFilterActor] = useState("");
-  const [filterAction, setFilterAction] = useState("");
-  const [range, setRange] = useState({ from: "", to: "" });
+  const [page, setPage] = useQueryState("page", 1);
+  const [search, setSearch] = useQueryState("search", "");
+  const [filterCenter, setFilterCenter] = useQueryState("filterCenter", "");
+  const [filterActor, setFilterActor] = useQueryState("filterActor", "");
+  const [filterAction, setFilterAction] = useQueryState("filterAction", "");
+  const [range, setRange] = useQueryStates(RANGE_DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -103,12 +106,16 @@ function AuditLog() {
   }, []);
 
   useEffect(() => {
-    fetchLogs();
+    const id = setTimeout(fetchLogs, 0);
+    return () => clearTimeout(id);
   }, [fetchLogs]);
 
   useEffect(() => {
-    fetchFilters();
-    fetchCenters();
+    const id = setTimeout(() => {
+      fetchFilters();
+      fetchCenters();
+    }, 0);
+    return () => clearTimeout(id);
   }, [fetchFilters, fetchCenters]);
 
   // Jonli qo'shilish: yangi yozuv ro'yxat BOSHIGA qo'yiladi (audit doim
@@ -126,7 +133,7 @@ function AuditLog() {
     setFilterCenter("");
     setFilterActor("");
     setFilterAction("");
-    setRange({ from: "", to: "" });
+    setRange(RANGE_DEFAULTS);
   };
 
   const columns = [
@@ -211,7 +218,7 @@ function AuditLog() {
           <Input
             placeholder={t("common.search")}
             icon={<HiMagnifyingGlass />}
-            variant="white"
+            variant="slate"
             value={search}
             onChange={(e) => {
               setPage(1);
@@ -220,18 +227,20 @@ function AuditLog() {
           />
         }
       >
-        <DateRangeInput
-          variant="white"
-          value={range}
-          onChange={(v) => {
-            setPage(1);
-            setRange(v);
-          }}
-        />
+        <div className="flex flex-col gap-1 w-full">
+          <DateRangeInput
+            variant="slate"
+            value={range}
+            onChange={(v) => {
+              setPage(1);
+              setRange(v);
+            }}
+          />
+        </div>
         {showCenterFilter && (
           <Select
             placeholder={t("audit.center")}
-            variant="white"
+            variant="slate"
             value={filterCenter}
             onChange={(v) => {
               setPage(1);
@@ -245,7 +254,7 @@ function AuditLog() {
         )}
         <Select
           placeholder={t("audit.actor")}
-          variant="white"
+          variant="slate"
           value={filterActor}
           onChange={(v) => {
             setPage(1);
@@ -258,7 +267,7 @@ function AuditLog() {
         />
         <Select
           placeholder={t("audit.action")}
-          variant="white"
+          variant="slate"
           value={filterAction}
           onChange={(v) => {
             setPage(1);

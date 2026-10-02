@@ -22,7 +22,9 @@ import Loading from "../../ui/Loading";
 import DropMenu from "../../ui/DropMenu";
 import CenterDialog from "./CenterDialog";
 import { api, API } from "../../utils/fetching";
+import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { errorMsg, successMsg } from "../../utils/alert";
+import useQueryState from "../../hooks/useQueryState";
 
 function Centers() {
   const { t } = useTranslation();
@@ -31,8 +33,10 @@ function Centers() {
 
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
+  // Qidiruv/sahifa URL query-param'da (useQueryState) — Detail'ga kirib "Orqaga"
+  // bilan qaytilganda list qayta mount bo'lsa ham joyida qoladi.
+  const [page, setPage] = useQueryState("page", 1);
+  const [search, setSearch] = useQueryState("search", "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -69,8 +73,12 @@ function Centers() {
   }, [page, search]);
 
   useEffect(() => {
-    fetchCenters();
+    const t = setTimeout(fetchCenters, 0);
+    return () => clearTimeout(t);
   }, [fetchCenters]);
+
+  // Tarif o'zgarishi / downgrade tanlovi — kartalar holati realtime yangilanadi.
+  useSocketEvent("center:statusChanged", fetchCenters);
 
   const openCreate = () => {
     const limit = subscription?.tariffSnapshot?.centerLimit;
@@ -139,10 +147,12 @@ function Centers() {
             }}
           />
         </div>
-        <Button onClick={openCreate} className="gap-1.5">
-          <HiPlus className="text-base" />
-          {t("center.create")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={openCreate} className="gap-1.5">
+            <HiPlus className="text-base" />
+            {t("center.create")}
+          </Button>
+        </div>
       </div>
 
       {error ? (
@@ -171,10 +181,10 @@ function Centers() {
               return (
               <div
                 key={center._id}
-                onClick={() => !blocked && navigate(`/centers/${center._id}`)}
+                onClick={() => navigate(`/centers/${center._id}`)}
                 className={`flex flex-col gap-3 p-5 rounded-xl border bg-white duration-200 ${
                   blocked
-                    ? "border-slate-200 bg-slate-50 cursor-default"
+                    ? "border-slate-200 bg-slate-50 cursor-pointer"
                     : "border-slate-200 hover:-translate-y-1 hover:shadow-xl cursor-pointer"
                 }`}
               >
@@ -208,12 +218,17 @@ function Centers() {
                           iconClass: "bg-slate-50 text-slate-600",
                           onClick: () => navigate(`/centers/${center._id}`),
                         },
-                        {
-                          label: t("common.edit"),
-                          icon: HiPencil,
-                          iconClass: "bg-blue-50 text-blue-600",
-                          onClick: () => openEdit(center),
-                        },
+                        // Bloklangan filial Read-Only — tahrirlash yashiriladi.
+                        ...(blocked
+                          ? []
+                          : [
+                              {
+                                label: t("common.edit"),
+                                icon: HiPencil,
+                                iconClass: "bg-blue-50 text-blue-600",
+                                onClick: () => openEdit(center),
+                              },
+                            ]),
                         {
                           label: t("common.delete"),
                           icon: HiTrash,

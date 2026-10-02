@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { api, getAuthType } from "./utils/fetching";
 import { updateUser } from "./contexts/user";
+import { setTutorialVideos } from "./contexts/tutorialVideos";
+import { useSocketEvent } from "./hooks/useSocketEvent";
 import Loading from "./ui/Loading";
 import Auth from "./pages/Auth";
 import Navbar from "./components/Navbar";
@@ -10,6 +12,10 @@ import Logout from "./components/Logout";
 import SubscriptionExpiredBanner from "./components/SubscriptionExpiredBanner";
 import SubscriptionBlockedModal from "./components/SubscriptionBlockedModal";
 import GlobalQrScanner from "./components/GlobalQrScanner";
+import FloatingVideoLessonsButton from "./components/FloatingVideoLessonsButton";
+import ChatWidget from "./components/ChatWidget";
+import Introduction from "./components/Introduction/Introduction";
+import NewsPopup from "./components/news/NewsPopup";
 import ReceptionHome from "./pages/ReceptionHome";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
@@ -25,15 +31,31 @@ import Groups from "./pages/Groups";
 import GroupDetail from "./pages/Groups/GroupDetail";
 import Schedule from "./pages/Schedule";
 import Lesson from "./pages/Lesson";
+import MyPlans from "./pages/MyPlans";
+import PlanEditor from "./pages/MyPlans/PlanEditor";
 import Students from "./pages/Students";
 import StudentDetail from "./pages/Students/StudentDetail";
+import StudentAchievements from "./pages/Students/StudentAchievements";
+import { BADGE_FEATURE } from "./utils/badges";
+import Leads from "./pages/Leads";
 import Subscription from "./pages/Subscription";
 import Salary from "./pages/Salary";
 import Expenses from "./pages/Expenses";
 import StaffProfile from "./pages/StaffProfile";
+import Finance from "./pages/Finance";
+import OwnerProfile from "./pages/OwnerProfile";
 import Notifications from "./pages/Notifications";
 import QrAttendance from "./pages/QrAttendance";
 import Revenue from "./pages/Revenue";
+import TeacherPerformance from "./pages/Reports/TeacherPerformance";
+import Reports from "./pages/Reports";
+import AuditLog from "./pages/AuditLog";
+import Certificates from "./pages/Certificates";
+import TemplateEditor from "./pages/Certificates/TemplateEditor";
+import CertificateVerify from "./pages/CertificateVerify";
+import UiLab from "./pages/UiLab";
+import Calendar from "./pages/Calendar";
+import Archive from "./pages/Archive";
 import useCan from "./hooks/useCan";
 import useFeature from "./hooks/useFeature";
 
@@ -46,7 +68,7 @@ const VERIFY_ENDPOINT = {
 
 function App() {
   const dp = useDispatch();
-  const { _id, authType, role } = useSelector((e) => e?.user);
+  const { _id, authType, role, introSeen } = useSelector((e) => e?.user);
   // O'qituvchi o'quvchilar ro'yxati/kartochkasiga kirmaydi (u yerda moliyaviy
   // ma'lumot bor) — o'quvchilarni faqat o'z guruhi ichida ko'radi.
   // O'qituvchi va yordamchi o'qituvchi umumiy o'quvchilar ro'yxatini
@@ -55,24 +77,66 @@ function App() {
   const can = useCan();
   const hasFeature = useFeature();
   const [load, setLoad] = useState(false);
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
 
+  // Admin tarif biriktirsa/o'zgartirsa (`subscription:updated` socket
+  // hodisasi) shu funksiya qayta chaqiriladi — Refresh yoki logout kutmasdan
+  // `user.subscription`/`tariffFeatures` yangilanadi.
+  const verifyUser = useCallback(async () => {
+    try {
+      const authType = getAuthType();
+      const endpoint = VERIFY_ENDPOINT[authType];
+      if (!endpoint) return;
+
+      const res = await api.get(endpoint);
+      const { ok, data } = res.data;
+      if (ok) dp(updateUser({ ...data, authType }));
+    } catch {
+      // token yaroqsiz/tarmoq xatosi — Auth sahifasi ko'rsatiladi
+    } finally {
+      setLoad(true);
+    }
+  }, [dp]);
+
+  useEffect(() => {
+    const t = setTimeout(verifyUser, 0);
+    return () => clearTimeout(t);
+  }, [verifyUser]);
+
+  // Video darslik ro'yxati — GET ochiq, auth kutmasdan bir marta yuklanadi.
   useEffect(() => {
     (async () => {
       try {
-        const authType = getAuthType();
-        const endpoint = VERIFY_ENDPOINT[authType];
-        if (!endpoint) return;
-
-        const res = await api.get(endpoint);
+        const res = await api.get("/tutorial-videos");
         const { ok, data } = res.data;
-        if (ok) dp(updateUser({ ...data, authType }));
+        if (ok) dp(setTutorialVideos(data || {}));
       } catch {
-      } finally {
-        setLoad(true);
+        // sahifa ochilishida yuklanmasa ham sahifalar bo'sh holatni ko'rsatadi
       }
     })();
-  }, []);
+  }, [dp]);
+
+  useSocketEvent("subscription:updated", verifyUser, !!_id);
+
+  // Sertifikat QR tekshiruvi — LOGIN talab qilmaydi (ish stolidan tashqarida
+  // istalgan tashrif buyuruvchi skanerlaydi), shuning uchun auth holatini
+  // KUTMASDAN, `load`/`_id` tekshiruvidan OLDIN alohida render qilinadi.
+  if (pathname.startsWith("/certificate/verify/")) {
+    return (
+      <Routes>
+        <Route path="/certificate/verify/:code" element={<CertificateVerify />} />
+      </Routes>
+    );
+  }
+
+  // UI Lab — form komponentlarining barcha holatlari bitta sahifada. Faqat
+  // `vite dev` rejimida mavjud (prod bundlega tushmaydi) va login talab
+  // qilmaydi, shuning uchun auth tekshiruvidan OLDIN render qilinadi.
+  // `/ui-lab` — komponentlar ro'yxati; `?uilab=1` esa lab'ni ISTALGAN manzilda
+  // ochadi (masalan `/groups?uilab=1`), shunda Navbar aktiv bo'limni to'g'ri
+  // ko'rsatadi — u manzilni `useLocation()` dan o'qiydi.
+  if (import.meta.env.DEV && (pathname === "/ui-lab" || search.includes("uilab")))
+    return <UiLab />;
 
   if (!load)
     return (
@@ -144,10 +208,18 @@ function App() {
               {can("group:view") && (
                 <Route path="/groups" element={<Groups />} />
               )}
-              {can("group:update") && (
+              {can("group:update") && !isTeacher && (
                 <Route path="/schedule" element={<Schedule />} />
               )}
               {isTeacher && <Route path="/lesson" element={<Lesson />} />}
+              {/* Dars rejalarim — o'qituvchining shablon rejalari
+                  (API_CONTRACT_teaching_plans.md §6). */}
+              {isTeacher && hasFeature("lesson.planning") && (
+                <Route path="/my-plans" element={<MyPlans />} />
+              )}
+              {isTeacher && hasFeature("lesson.planning") && (
+                <Route path="/my-plans/:id" element={<PlanEditor />} />
+              )}
               {can("group:view") && (
                 <Route path="/groups/:id" element={<GroupDetail />} />
               )}
@@ -157,12 +229,27 @@ function App() {
               {can("student:view") && !isTeacher && (
                 <Route path="/students/:id" element={<StudentDetail />} />
               )}
+              {/* O'qituvchi — faqat o'z guruhlaridagi yutuqlar (pul/kontaktsiz) */}
+              {isTeacher && hasFeature(BADGE_FEATURE) && (
+                <Route path="/students/:id" element={<StudentAchievements />} />
+              )}
+              {can("lead:view") && !isTeacher && <Route path="/leads" element={<Leads />} />}
               {can("attendance:create") && hasFeature("attendance.qr") && (
                 <Route path="/qr-attendance" element={<QrAttendance />} />
               )}
-              <Route path="/salary" element={<Salary />} />
+              {can("salary:view") && <Route path="/salary" element={<Salary />} />}
               {can("expense:view") && (
                 <Route path="/expenses" element={<Expenses />} />
+              )}
+              {/* Hisobotlar — moliyaviy (`finance.report`) va/yoki davomat
+                  (`attendance.report`) hisoboti tarifda bo'lsa ochiladi. */}
+              {can("report:view") && (hasFeature("finance.report") || hasFeature("attendance.report")) && (
+                <Route path="/reports" element={<Reports />} />
+              )}
+              {/* Audit jurnali — FAQAT Client Owner (`audit:view` hodimga berilmaydi). */}
+              {authType === "owner" && <Route path="/audit-log" element={<AuditLog />} />}
+              {can("report:view") && hasFeature("teacher.performance") && (
+                <Route path="/reports/teacher-performance" element={<TeacherPerformance />} />
               )}
               {authType === "owner" && (
                 <Route path="/revenue" element={<Revenue />} />
@@ -171,7 +258,26 @@ function App() {
                 <Route path="/subscription" element={<Subscription />} />
               )}
               {authType === "staff" && <Route path="/profile" element={<StaffProfile />} />}
+              {authType === "staff" && <Route path="/finance" element={<Finance />} />}
+              {authType === "owner" && <Route path="/profile" element={<OwnerProfile />} />}
               <Route path="/notifications" element={<Notifications />} />
+              {can("certificate:view") && hasFeature("certificate.manage") && (
+                <Route path="/certificates" element={<Certificates />} />
+              )}
+              {can("certificate:create") && hasFeature("certificate.manage") && (
+                <Route path="/certificates/template/new" element={<TemplateEditor />} />
+              )}
+              {can("certificate:update") && hasFeature("certificate.manage") && (
+                <Route path="/certificates/template/:id" element={<TemplateEditor />} />
+              )}
+              {can("calendar:view") && (
+                <Route path="/calendar" element={<Calendar />} />
+              )}
+              {/* Arxiv — API_CONTRACT_archive.md. O'qituvchi/yordamchi uchun
+                  butunlay yopiq (backendda ham `blockTeachingRoles`). */}
+              {can("archive:view") && !isTeacher && (
+                <Route path="/archive" element={<Archive />} />
+              )}
             </Routes>
           </div>
         </div>
@@ -180,6 +286,13 @@ function App() {
       <SubscriptionBlockedModal />
       {/* Apparat QR skaner — istalgan sahifada ishlaydi */}
       <GlobalQrScanner />
+      <FloatingVideoLessonsButton />
+      {/* Qo'llab-quvvatlash chati — Owner/Staff har doim ko'radi, permission talab qilinmaydi. */}
+      <ChatWidget />
+      {!introSeen && <Introduction />}
+      {/* Yangiliklar: store sinxroni + o'qilmaganlar oynasi (API_CONTRACT_news.md §5).
+          Faqat shu autentifikatsiyadan keyingi layout'da — login'da yo'q. */}
+      <NewsPopup />
     </div>
   );
 }

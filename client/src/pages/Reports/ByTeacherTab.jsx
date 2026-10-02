@@ -4,7 +4,8 @@ import Avatar from "../../ui/Avatar";
 import NumberText from "../../ui/NumberText";
 import ExportExcelButton from "../../ui/ExportExcelButton";
 import useFeature from "../../hooks/useFeature";
-import { RateBar, ReportError, SortHeader, money, useReportResource, useSorted } from "./shared";
+import { RateBar, ReportError, SortHeader } from "./shared";
+import { money, useReportResource, useSorted } from "./reportData";
 
 // O'qituvchi kesimi: kim qancha dars o'tgan, qancha tushum keltirgan va
 // shundan qanchasi uning oyligiga ketgan.

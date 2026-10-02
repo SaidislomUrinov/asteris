@@ -25,60 +25,79 @@ function Button({
   onClick = () => {},
   ...props
 }) {
+  // `shrink-0 whitespace-nowrap` — max-h-10 qat'iy balandlikni belgilaydi,
+  // shuning uchun matn ikki qatorga tushib qolsa pastki yarmi kesilib
+  // ko'rinardi (torg'in flex qatorda bir nechta tugma sig'dirilganda —
+  // masalan "VIDEO DARSLIK" ikki so'zga bo'linib ketardi). Endi tugma hech
+  // qachon o'z tarkibidagi matnni bukmaydi — joy yetmasa ota flex qator
+  // (agar `flex-wrap` bo'lsa) o'zi keyingi qatorga o'tkazadi.
+  // `shrink-0 whitespace-nowrap` — max-h qat'iy balandlikni belgilaydi,
+  // shuning uchun matn ikki qatorga tushib qolsa pastki yarmi kesilib
+  // ko'rinardi (torg'in flex qatorda bir nechta tugma sig'dirilganda —
+  // masalan "VIDEO DARSLIK" ikki so'zga bo'linib ketardi). Endi tugma hech
+  // qachon o'z tarkibidagi matnni bukmaydi — joy yetmasa ota flex qator
+  // (agar `flex-wrap` bo'lsa) o'zi keyingi qatorga o'tkazadi.
+  //
+  // Matn CAPS emas: 15px (`text-[13px]`) sentence-case yorliq uzun
+  // so'zlarda ("O'quvchi qo'shish") ancha tez o'qiladi va maydonlar bilan
+  // bir tipografik shkalada turadi.
   const base =
-    "inline-flex select-none relative items-center cursor-pointer justify-center gap-1 px-6 max-h-10 min-h-10 rounded-xl text-xs font-semibold uppercase disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 disabled:active:scale-100 duration-300";
+    "inline-flex shrink-0 whitespace-nowrap select-none relative items-center cursor-pointer justify-center gap-2 px-5 max-h-11 min-h-11 rounded-xl text-[13px] font-semibold disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 disabled:active:scale-100 duration-200";
 
   const variants = {
     filled: {
-      emerald: "bg-emerald-500 text-white hover:bg-emerald-600",
-      blue: "bg-blue-500 text-white hover:bg-blue-600",
-      violet: "bg-violet-500 text-white hover:bg-violet-600",
-      black: "bg-black text-white hover:bg-gray-800",
-      red: "bg-red-500 text-white hover:bg-red-600",
-      orange: "bg-orange-500 text-white hover:bg-orange-600",
-      yellow: "bg-yellow-500 text-black hover:bg-yellow-600",
-      cyan: "bg-cyan-500 text-white hover:bg-cyan-600",
-      zinc: "bg-zinc-500 text-white hover:bg-zinc-600",
-      slate: "bg-slate-700 text-white hover:bg-slate-800",
+      emerald: "bg-emerald-500 text-white hover:bg-emerald-600 shadow-[0_4px_12px_-4px_rgba(16,185,129,0.5)]",
+      blue: "bg-blue-500 text-white hover:bg-blue-600 shadow-[0_4px_12px_-4px_rgba(59,130,246,0.5)]",
+      violet: "bg-violet-500 text-white hover:bg-violet-600 shadow-[0_4px_12px_-4px_rgba(139,92,246,0.5)]",
+      black: "bg-slate-900 text-white hover:bg-slate-800 shadow-[0_4px_12px_-4px_rgba(15,23,42,0.45)]",
+      red: "bg-red-500 text-white hover:bg-red-600 shadow-[0_4px_12px_-4px_rgba(239,68,68,0.5)]",
+      orange: "bg-orange-500 text-white hover:bg-orange-600 shadow-[0_4px_12px_-4px_rgba(249,115,22,0.5)]",
+      yellow: "bg-yellow-500 text-black hover:bg-yellow-600 shadow-[0_4px_12px_-4px_rgba(234,179,8,0.5)]",
+      cyan: "bg-cyan-500 text-white hover:bg-cyan-600 shadow-[0_4px_12px_-4px_rgba(6,182,212,0.5)]",
+      zinc: "bg-zinc-500 text-white hover:bg-zinc-600 shadow-[0_4px_12px_-4px_rgba(113,113,122,0.5)]",
+      slate: "bg-slate-700 text-white hover:bg-slate-800 shadow-[0_4px_12px_-4px_rgba(51,65,85,0.45)]",
     },
 
+    // Ikkilamchi amal: oq yuza + yengil soya. Rangli chegara o'rniga neytral
+    // chegara — "Bekor qilish" birlamchi tugma bilan raqobatlashmaydi, rang
+    // esa faqat matnda qoladi.
     outlined: {
-      emerald: "border border-emerald-500 text-emerald-500 hover:bg-emerald-50",
-      blue: "border border-blue-500 text-blue-500 hover:bg-blue-50",
-      violet: "border border-violet-500 text-violet-500 hover:bg-violet-50",
-      black: "border border-black text-black hover:bg-gray-100",
-      red: "border border-red-500 text-red-500 hover:bg-red-50",
-      orange: "border border-orange-500 text-orange-500 hover:bg-orange-50",
-      yellow: "border border-yellow-500 text-yellow-600 hover:bg-yellow-50",
-      cyan: "border border-cyan-500 text-cyan-500 hover:bg-cyan-50",
-      zinc: "border border-zinc-500 text-zinc-500 hover:bg-zinc-50",
-      slate: "border border-slate-500 text-slate-600 hover:bg-slate-50",
+      emerald: "bg-white border border-slate-200 text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      blue: "bg-white border border-slate-200 text-blue-600 hover:border-blue-300 hover:bg-blue-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      violet: "bg-white border border-slate-200 text-violet-600 hover:border-violet-300 hover:bg-violet-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      black: "bg-white border border-slate-200 text-slate-900 hover:border-slate-400 hover:bg-slate-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      red: "bg-white border border-slate-200 text-red-600 hover:border-red-300 hover:bg-red-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      orange: "bg-white border border-slate-200 text-orange-600 hover:border-orange-300 hover:bg-orange-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      yellow: "bg-white border border-slate-200 text-yellow-700 hover:border-yellow-300 hover:bg-yellow-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      cyan: "bg-white border border-slate-200 text-cyan-600 hover:border-cyan-300 hover:bg-cyan-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      zinc: "bg-white border border-slate-200 text-zinc-600 hover:border-zinc-400 hover:bg-zinc-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      slate: "bg-white border border-slate-200 text-slate-700 hover:border-slate-400 hover:bg-slate-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
     },
 
     ghost: {
-      emerald: "text-emerald-500 bg-emerald-100 hover:bg-emerald-200",
-      blue: "text-blue-500 bg-blue-100 hover:bg-blue-200",
-      violet: "text-violet-500 bg-violet-100 hover:bg-violet-200",
-      black: "text-black bg-gray-100 hover:bg-gray-200",
-      red: "text-red-500 bg-red-100 hover:bg-red-200",
-      orange: "text-orange-500 bg-orange-100 hover:bg-orange-200",
-      yellow: "text-yellow-600 bg-yellow-100 hover:bg-yellow-200",
-      cyan: "text-cyan-500 bg-cyan-100 hover:bg-cyan-200",
-      zinc: "text-zinc-500 bg-zinc-100 hover:bg-zinc-200",
-      slate: "text-slate-600 bg-slate-100 hover:bg-slate-200",
+      emerald: "text-emerald-600 bg-emerald-50 hover:bg-emerald-100",
+      blue: "text-blue-600 bg-blue-50 hover:bg-blue-100",
+      violet: "text-violet-600 bg-violet-50 hover:bg-violet-100",
+      black: "text-slate-900 bg-slate-100 hover:bg-slate-200",
+      red: "text-red-600 bg-red-50 hover:bg-red-100",
+      orange: "text-orange-600 bg-orange-50 hover:bg-orange-100",
+      yellow: "text-yellow-700 bg-yellow-50 hover:bg-yellow-100",
+      cyan: "text-cyan-600 bg-cyan-50 hover:bg-cyan-100",
+      zinc: "text-zinc-600 bg-zinc-100 hover:bg-zinc-200",
+      slate: "text-slate-700 bg-slate-100 hover:bg-slate-200",
     },
 
     text: {
-      emerald: "text-emerald-500 hover:underline",
-      blue: "text-blue-500 hover:underline",
-      violet: "text-violet-500 hover:underline",
-      black: "text-black hover:underline",
-      red: "text-red-500 hover:underline",
-      orange: "text-orange-500 hover:underline",
-      yellow: "text-yellow-600 hover:underline",
-      cyan: "text-cyan-500 hover:underline",
-      zinc: "text-zinc-500 hover:underline",
-      slate: "text-slate-600 hover:underline",
+      emerald: "text-emerald-600 px-2.5 hover:bg-emerald-50",
+      blue: "text-blue-600 px-2.5 hover:bg-blue-50",
+      violet: "text-violet-600 px-2.5 hover:bg-violet-50",
+      black: "text-slate-900 px-2.5 hover:bg-slate-100",
+      red: "text-red-600 px-2.5 hover:bg-red-50",
+      orange: "text-orange-600 px-2.5 hover:bg-orange-50",
+      yellow: "text-yellow-700 px-2.5 hover:bg-yellow-50",
+      cyan: "text-cyan-600 px-2.5 hover:bg-cyan-50",
+      zinc: "text-zinc-600 px-2.5 hover:bg-zinc-100",
+      slate: "text-slate-700 px-2.5 hover:bg-slate-100",
     },
 
     gradient: {
@@ -108,9 +127,10 @@ function Button({
         ${fullWith ? "w-full" : ""}
       `}
     >
-      {loading && (
-        <CgSpinner className="animate-spin text-base absolute right-1" />
-      )}
+      {/* Spinner INLINE — avval `absolute right-1` edi va matn uzunroq bo'lsa
+          uning ustiga tushib, ikkalasi ham o'qilmay qolardi. Endi u matndan
+          oldin turadi va tugma tabiiy ravishda kengayadi. */}
+      {loading && <CgSpinner className="animate-spin text-base shrink-0" />}
       {children}
     </button>
   );

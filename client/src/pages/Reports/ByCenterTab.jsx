@@ -3,7 +3,8 @@ import List from "../../ui/List";
 import NumberText from "../../ui/NumberText";
 import ExportExcelButton from "../../ui/ExportExcelButton";
 import useFeature from "../../hooks/useFeature";
-import { RateBar, ReportError, SortHeader, money, useReportResource, useSorted } from "./shared";
+import { RateBar, ReportError, SortHeader } from "./shared";
+import { money, useReportResource, useSorted } from "./reportData";
 
 // Filial kesimi — qaysi markaz qancha keltirayotgani bir qarashda ko'rinadi.
 function ByCenterTab({ query, tick }) {

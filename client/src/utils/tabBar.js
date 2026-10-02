@@ -8,10 +8,10 @@
 // mos keluvchi 5 tasi olinadi).
 const ROLE_TAB_KEYS = {
   owner: ["dashboard", "centers", "staff", "groups", "students"],
-  teacher: ["dashboard", "lesson", "groups", "salary", "profile"],
+  teacher: ["dashboard", "lesson", "groups", "finance", "profile"],
   // Yordamchi o'qituvchi — o'qituvchi bilan bir xil ish oqimi.
-  assistant: ["dashboard", "lesson", "groups", "salary", "profile"],
-  default: ["dashboard", "students", "groups", "salary", "profile"],
+  assistant: ["dashboard", "lesson", "groups", "finance", "profile"],
+  default: ["dashboard", "students", "groups", "finance", "profile"],
 };
 
 // `availability` xaritasi — qaysi bo'lim umuman mavjud (rol/permission
@@ -24,7 +24,8 @@ export const buildTabAvailability = (authType, can) => ({
   groups: can("group:view"),
   students: can("student:view"),
   lesson: authType === "staff",
-  salary: true,
+  salary: can("salary:view"),
+  finance: authType === "staff",
   profile: authType === "staff",
 });
 

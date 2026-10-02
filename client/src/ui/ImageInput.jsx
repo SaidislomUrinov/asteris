@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { HiOutlinePhotograph } from "react-icons/hi";
 import LazyImage from "./LazyImage";
 
@@ -12,6 +13,7 @@ function ImageInput({
   className = "",
 }) {
   const inputRef = useRef(null);
+  const { t } = useTranslation();
   const [preview, setPreview] = useState(null);
 
   const handleChange = (e) => {
@@ -63,7 +65,7 @@ function ImageInput({
         ) : preview ? (
           <img
             src={preview}
-            alt="preview"
+            alt={t("common.imagePreview")}
             className="w-full h-full object-cover"
           />
         ) : (

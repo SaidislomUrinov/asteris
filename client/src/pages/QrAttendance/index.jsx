@@ -115,13 +115,16 @@ function QrAttendance() {
           return;
         }
 
-        setResult(data);
-        setHistory((prev) => [{ ...data, via, at: Date.now() }, ...prev].slice(0, 20));
+        const item = { ...data, via, at: Date.now() };
+        setResult(item);
+        setHistory((prev) => [item, ...prev].slice(0, 20));
         if (data.duplicate) successMsg("attendance.alreadyMarked");
         else successMsg(data.late ? "attendance.markedLate" : "attendance.marked");
       } catch (error) {
         errorMsg(error.message);
-        setResult({ failed: true });
+        const failed = { failed: true, message: error.message, via, at: Date.now() };
+        setResult(failed);
+        setHistory((prev) => [failed, ...prev].slice(0, 20));
       } finally {
         busyRef.current = false;
       }
@@ -213,10 +216,10 @@ function QrAttendance() {
   // Bugungi jamlanma — faqat shu seansdagi skanlardan (tarix 20 tagacha).
   const stats = useMemo(
     () => ({
-      total: history.length,
-      present: history.filter((h) => !h.duplicate && !h.late).length,
-      late: history.filter((h) => !h.duplicate && h.late).length,
-      duplicate: history.filter((h) => h.duplicate).length,
+      total: history.filter((h) => !h.failed).length,
+      present: history.filter((h) => !h.failed && !h.duplicate && !h.late).length,
+      late: history.filter((h) => !h.failed && !h.duplicate && h.late).length,
+      failed: history.filter((h) => h.failed).length,
     }),
     [history],
   );
@@ -228,12 +231,27 @@ function QrAttendance() {
   // boshidan ijro etiladi.
   const flashKey = history[0]?.at || 0;
 
+  // Kamera ustidagi katta natija kartasi ~2.5 soniya turadi — operator
+  // ekranga uzoqdan qarab ham natijani ko'radi, keyin navbatdagi skan uchun
+  // kadr yana ochiladi.
+  const [overlayAt, setOverlayAt] = useState(0);
+  useEffect(() => {
+    if (!result?.at) return undefined;
+    const show = setTimeout(() => setOverlayAt(result.at), 0);
+    const hide = setTimeout(() => setOverlayAt(0), 2500);
+    return () => {
+      clearTimeout(show);
+      clearTimeout(hide);
+    };
+  }, [result?.at]);
+  const showOverlay = !!result && overlayAt === result.at;
+
   return (
     <div className="flex flex-col gap-4">
       {/* ── Sarlavha ──────────────────────────────────────────────────────
           Sahifaning "shaxsi": qorong'i terminal bandi, o'ngda kamera va
           Barcode (Skayner) holati jonli badge'lar bo'lib turadi. */}
-      <div className="relative overflow-hidden rounded-2xl bg-slate-900 px-5 py-5 sm:px-6">
+      <div className="order-1 relative overflow-hidden rounded-2xl bg-slate-900 px-4 py-4 sm:px-6 sm:py-5">
         <div className="absolute -top-20 -right-8 w-64 h-64 rounded-full bg-blue-500/20 blur-3xl" />
         <div className="absolute -bottom-24 left-24 w-56 h-56 rounded-full bg-indigo-500/10 blur-3xl" />
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -266,7 +284,7 @@ function QrAttendance() {
       </div>
 
       {/* ── Bugungi jamlanma — ixcham qator ─────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+      <div className="order-3 lg:order-2 grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         <StatCard label={t("attendance.statTotal")} value={stats.total} tone="text-slate-900" />
         <StatCard
           label={t("attendance.presentShort")}
@@ -274,22 +292,18 @@ function QrAttendance() {
           tone="text-emerald-600"
         />
         <StatCard label={t("attendance.lateShort")} value={stats.late} tone="text-orange-600" />
-        <StatCard
-          label={t("attendance.alreadyMarkedShort")}
-          value={stats.duplicate}
-          tone="text-amber-600"
-        />
+        <StatCard label={t("attendance.scanErrorShort")} value={stats.failed} tone="text-red-600" />
       </div>
 
       {/* ── Asosiy maydon: skaner (~62%) + jonli tasma (~38%) ───────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 items-start">
+      <div className="order-2 lg:order-3 grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 items-start">
         <div className="flex flex-col gap-3">
           {/* Kamera maydoni ataylab jilovlangan (`max-w-sm`) — QR kartani
               o'qish uchun katta oyna shart emas, ortiqcha joy operatorni
               chalg'itadi. Tugma va natija banneri ham shu kenglikda
               tekislanadi. */}
           <div className="flex flex-col items-center p-3 sm:p-4 rounded-2xl bg-white ring-1 ring-slate-200/70 shadow-[0_1px_3px_rgba(15,23,42,0.05)]">
-            <div className="relative w-full max-w-sm aspect-[4/3] rounded-2xl overflow-hidden bg-slate-950">
+            <div className="relative w-full max-w-2xl aspect-square sm:aspect-[4/3] rounded-2xl overflow-hidden bg-slate-950">
               <video ref={videoRef} playsInline muted className="w-full h-full object-cover" />
               <canvas ref={canvasRef} className="hidden" />
 
@@ -344,6 +358,34 @@ function QrAttendance() {
                 </>
               )}
 
+              {/* Natija kartasi — kamera ustida, katta va aniq */}
+              {showOverlay && (
+                <div className="absolute inset-0 flex items-center justify-center p-5 bg-slate-950/55 backdrop-blur-[2px] pointer-events-none">
+                  <div className="flex flex-col items-center gap-2 w-full max-w-xs px-5 py-5 rounded-2xl bg-white text-center shadow-[0_8px_24px_-6px_rgba(15,23,42,0.35)]">
+                    <span
+                      className={`w-14 h-14 rounded-full flex items-center justify-center text-3xl ${resultTone.chip}`}
+                    >
+                      <ResultIcon />
+                    </span>
+                    <p className="font-space font-bold text-lg text-slate-900 leading-tight line-clamp-2">
+                      {result.failed ? t("attendance.scanFailed") : result.student?.fullName}
+                    </p>
+                    <p className={`text-sm font-medium ${resultTone.text}`}>
+                      {result.failed
+                        ? t(result.message || "attendance.scanFailed")
+                        : result.duplicate
+                          ? t("attendance.alreadyMarked")
+                          : result.late
+                            ? t("attendance.markedLate")
+                            : t("attendance.marked")}
+                    </p>
+                    {!result.failed && result.subject && (
+                      <p className="text-xs text-slate-500 truncate max-w-full">{result.subject}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Muvaffaqiyatli skan — kadr chekkasi bir lahza yashil
                   chaqnaydi (natija ko'rsatkichi). */}
               {flashKey > 0 && (
@@ -355,7 +397,7 @@ function QrAttendance() {
             </div>
 
             {/* Asosiy amal — kattaligi bilan ajralib turadi */}
-            <div className="w-full max-w-sm mt-3">
+            <div className="w-full max-w-2xl mt-3">
               {scanning ? (
                 <button
                   type="button"
@@ -381,7 +423,7 @@ function QrAttendance() {
                 uzoqdan qarab ham kim skanerlanganini ko'radi. */}
             {result && (
               <div
-                className={`flex items-center gap-3 w-full max-w-sm mt-3 p-3 rounded-2xl ring-1 ${resultTone.banner}`}
+                className={`flex items-center gap-3 w-full max-w-2xl mt-3 p-3 rounded-2xl ring-1 ${resultTone.banner}`}
               >
                 {result.failed ? (
                   <div className="w-11 h-11 shrink-0 rounded-full bg-white/60 flex items-center justify-center text-2xl">
@@ -402,7 +444,8 @@ function QrAttendance() {
                     {result.student?.fullName || t("attendance.scanFailed")}
                   </p>
                   <p className="text-xs opacity-80 truncate">
-                    {result.subject ||
+                    {(result.failed && t(result.message || "attendance.scanFailed")) ||
+                      result.subject ||
                       (result.duplicate
                         ? t("attendance.alreadyMarked")
                         : result.late
@@ -474,17 +517,23 @@ function QrAttendance() {
                     key={`${item.student?._id}-${item.at}-${i}`}
                     className="flex items-center gap-3 px-2.5 py-2.5 rounded-xl hover:bg-slate-50 transition-colors duration-150"
                   >
-                    <Avatar
-                      user={{
-                        _id: item.student?._id,
-                        name: item.student?.fullName,
-                        avatar: item.student?.photo,
-                      }}
-                      size={38}
-                    />
+                    {item.failed ? (
+                      <span className="w-[38px] h-[38px] shrink-0 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-xl">
+                        <Icon />
+                      </span>
+                    ) : (
+                      <Avatar
+                        user={{
+                          _id: item.student?._id,
+                          name: item.student?.fullName,
+                          avatar: item.student?.photo,
+                        }}
+                        size={38}
+                      />
+                    )}
                     <div className="flex flex-col min-w-0 flex-1">
                       <span className="font-semibold text-slate-800 truncate leading-snug">
-                        {item.student?.fullName}
+                        {item.failed ? t(item.message || "attendance.scanFailed") : item.student?.fullName}
                       </span>
                       <span className="flex items-center gap-1.5 text-xs text-slate-400 truncate leading-snug">
                         {item.subject && (
@@ -505,7 +554,9 @@ function QrAttendance() {
                       className={`flex items-center gap-1 shrink-0 px-2 h-6 rounded-lg text-[11px] font-semibold ${tone.chip}`}
                     >
                       <Icon className="text-sm" />
-                      {item.duplicate
+                      {item.failed
+                        ? t("attendance.scanErrorShort")
+                        : item.duplicate
                         ? t("attendance.alreadyMarkedShort")
                         : item.late
                           ? t("attendance.lateShort")
@@ -524,6 +575,7 @@ function QrAttendance() {
         onClose={() => setGroupChoice(null)}
         title={t("attendance.chooseGroupTitle")}
         className="md:w-100"
+        zIndex="z-40"
       >
         <p className="text-sm text-slate-600 mb-2">
           {t("attendance.chooseGroupHint", { name: groupChoice?.student?.fullName })}

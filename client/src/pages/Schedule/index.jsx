@@ -1,20 +1,18 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import {
   HiArrowPath,
   HiArrowUturnLeft,
+  HiBuildingOffice2,
   HiCheck,
   HiCheckCircle,
-  HiClock,
+  HiChevronRight,
   HiCursorArrowRays,
   HiHome,
-  HiUserGroup,
-  HiXMark,
 } from "react-icons/hi2";
 import Button from "../../ui/Button";
 import IconButton from "../../ui/IconButton";
-import Select from "../../ui/Select";
 import TimeInput from "../../ui/TimeInput";
 import Dialog from "../../ui/Dialog";
 import ScheduleTimeline from "./ScheduleTimeline";
@@ -22,10 +20,10 @@ import useMediaQuery from "../../hooks/useMediaQuery";
 import { toHHMM, toMinutes } from "../../utils/schedule";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
+import { useSocketEvent } from "../../hooks/useSocketEvent";
 
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const DEFAULT_DURATION = 90;
-const DURATIONS = [45, 60, 75, 90, 105, 120];
 
 // Guruhning DB'dagi hozirgi jadvalidan joylashuv yasaydi. Jadvali to'liq
 // bo'lmagan guruhlar (xona/kun/vaqt yo'q) joylashtirilmagan bo'lib qoladi.
@@ -54,9 +52,14 @@ const findClash = (placements, { groupId, roomId, days, start, end }) => {
  *
  * Sahifa ochilganda barcha guruhlar **hozirgi jadvali bilan joylashgan** holda
  * ko'rinadi (`GET /groups/schedule`). Joylashuvlar FRONTENDDA (React state)
- * saqlanadi: joylashtirish, surish, almashtirish — hammasi so'rovsiz va darhol.
- * "Qayta tartiblash" ish maydonini bir zumda bo'shatadi (serverga tegmaydi),
- * "Saqlash" esa yakuniy holatni `POST /groups/reschedule/commit` ga yuboradi.
+ * saqlanadi: joylashtirish, surish, almashtirish — hammasi darhol va uzilishsiz.
+ *
+ * **Avto-saqlash:** "Saqlash" tugmasi YO'Q. Har bir o'zgarish (joylashtirish,
+ * surish, cho'zish, xonaga ko'chirish, slotdan olish, "Qayta tartiblash")
+ * debounce bilan `POST /groups/reschedule/commit` (`mode: "full"`) ga yuboriladi.
+ * `mode: "full"` — jadvalda qolmagan guruhlarning xona/kun/vaqti serverda
+ * TOZALANADI, ya'ni ular Guruhlar sahifasida "Kun/vaqt belgilanmagan" holatiga
+ * qaytadi. Pastki paneldagi indikator saqlash holatini ko'rsatib turadi.
  *
  * Kichik ekranda sahifa FAQAT KO'RISH uchun: tartiblash amallari (joylashtirish,
  * surish, qayta tartiblash, saqlash) berkitiladi — jadval barmoq bilan
@@ -74,20 +77,36 @@ function Schedule() {
 
   const [data, setData] = useState(null); // { groups, rooms }
   const [placements, setPlacements] = useState({});
+  // Har bir joylashuv o'zgarishidan OLDINGI holat shu yerga to'planadi (Ctrl+Z
+  // uchun) — cheksiz o'smasin deb oxirgi 50 tasi saqlanadi.
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  // Hozir saqlanayotgan guruhlar — RoomDetail.jsx:47 bilan bir xil naqsh,
+  // blok kutish holatida ko'rinadi.
+  const [savingIds, setSavingIds] = useState([]);
+  // O'z saqlashimiz `group:changed` bo'lib qaytadi — o'zimizni qayta
+  // yuklamaslik uchun shu bayroq. Ketma-ket bir nechta guruh saqlanayotganda
+  // (swap, ko'p guruhni joylashtirish) bayroq faqat OXIRGI saqlash tugab,
+  // grace vaqti o'tgachgina tushadi — shuning uchun uchta ref:
+  //   pendingSaves — hozir uchayotgan PATCH'lar soni,
+  //   graceTimer   — oxirgi PATCH'dan keyingi kutish taymeri,
+  //   selfSaveRef  — natijaviy "hozir o'zimiz saqlayapmiz" holati.
+  const selfSaveRef = useRef(false);
+  const pendingSaves = useRef(0);
+  const graceTimer = useRef(null);
 
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [roomId, setRoomId] = useState("");
-  // Kunlar OLDINDAN tanlanmaydi — bo'sh bo'lsa bosilgan kundan avto naqsh
-  // (Du·Cho·Ju / Se·Pa·Sha) olinadi. To'liq haftalik guruhlar uchun qo'lda
-  // tanlash ham mumkin.
-  const [overrideDays, setOverrideDays] = useState([]);
-  const [duration, setDuration] = useState(DEFAULT_DURATION);
+  // Kunlar tanlanmaydi — bosilgan kundan har doim avto naqsh (Du·Cho·Ju /
+  // Se·Pa·Sha) olinadi, davomiylik esa doim standart qiymatda qoladi —
+  // ikkalasini ham qo'lda o'zgartiradigan boshqaruv olib tashlangan.
+  const duration = DEFAULT_DURATION;
   const [cursor, setCursor] = useState(null); // tanlangan guruh kursor bilan yuradi
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  // "Qayta tartiblash" ketma-ket PATCH yuborayotganda: { done, total }. Modal
+  // shu paytda yopilmaydi (non-dismissible).
+  const [resetProgress, setResetProgress] = useState(null);
   // Modal holati: { block, day, mode: "swap" | "edit", clash }. "swap" — guruh
   // tanlangan holda blokka bosilsa, "edit" — blokdagi qalam ikonidan.
   const [blockAction, setBlockAction] = useState(null);
@@ -98,23 +117,32 @@ function Schedule() {
   // jadvalga tashlansa darsning o'zi joylashadi.
   const [carrying, setCarrying] = useState(false);
 
-  const boot = useCallback(async () => {
+  // `opts.silent` — socketdan kelgan sinxronizatsiya: skeleton ko'rsatilmaydi,
+  // ochiq turgan xona va tarix saqlanib qoladi (ish jarayoni uzilmasin).
+  const boot = useCallback(async (opts = {}) => {
+    const silent = opts.silent === true;
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await api.get("/groups/schedule");
       const { ok, data: payload, msg } = res.data;
       if (!ok) throw new Error(msg);
       setData(payload);
       setPlacements(seedPlacements(payload.groups));
+      if (!silent) setHistory([]);
       // Agar `?roomId=` orqali kelingan bo'lsa (Xona detail'dagi "Tahrirlash"
       // tugmasi) va shu xona ro'yxatda bo'lsa — o'sha ochiladi. Aks holda
       // birinchi xona darhol ochilib turadi — bo'sh ekran ko'rinmasin.
-      const hasInitialRoom = payload.rooms.some((r) => r._id === initialRoomId);
-      setRoomId(hasInitialRoom ? initialRoomId : payload.rooms[0]?._id || "");
+      const fallback = () => {
+        const hasInitialRoom = payload.rooms.some((r) => r._id === initialRoomId);
+        return hasInitialRoom ? initialRoomId : payload.rooms[0]?._id || "";
+      };
+      setRoomId((current) =>
+        current && payload.rooms.some((r) => r._id === current) ? current : fallback(),
+      );
     } catch (error) {
-      errorMsg(error.message);
+      if (!silent) errorMsg(error.message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -123,6 +151,16 @@ function Schedule() {
     const id = setTimeout(boot, 0);
     return () => clearTimeout(id);
   }, [boot]);
+
+  // Boshqa tab/xodim guruh jadvalini o'zgartirsa (masalan xona detalidan
+  // sudrab), shu sahifa darhol yangilanadi. Avto-saqlash tufayli mahalliy
+  // holat doim server bilan bir xil, shuning uchun qayta yuklash xavfsiz —
+  // faqat O'Z saqlashimiz qaytib kelganda (`selfSaveRef`) e'tiborsiz
+  // qoldiriladi, aks holda har surishdan keyin jadval sakrab ketardi.
+  useSocketEvent("group:changed", () => {
+    if (selfSaveRef.current || pendingSaves.current > 0) return;
+    boot({ silent: true });
+  });
 
   // Tanlangan guruh kursor bilan birga yuradi — qayerga qo'yilayotgani
   // ko'z bilan uzilmasin.
@@ -148,6 +186,34 @@ function Schedule() {
     window.addEventListener("mouseup", up);
     return () => window.removeEventListener("mouseup", up);
   }, [carrying]);
+
+  // Joylashuvni o'zgartirishdan oldin joriy holatni tarixga yozadi —
+  // barcha mutatsion amallar (`put`, `resizeLesson`, `unplace`,
+  // `unplaceDay`, `swap`, `resetBoard`) shu yerdan foydalanadi.
+  const pushHistory = useCallback(() => {
+    setHistory((h) => [...h.slice(-49), placements]);
+  }, [placements]);
+
+  // Ctrl+Z (yoki Cmd+Z) — oxirgi amalni bitta qadam ortga qaytaradi.
+  // Faqat tartiblash rejimida (katta ekran) ishlaydi.
+  const undo = useCallback(() => {
+    setHistory((h) => {
+      if (!h.length) return h;
+      setPlacements(h[h.length - 1]);
+      return h.slice(0, -1);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!canEdit) return;
+    const onKeyDown = (e) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "z" || e.shiftKey) return;
+      e.preventDefault();
+      undo();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [canEdit, undo]);
 
   const placedIds = useMemo(() => new Set(Object.keys(placements)), [placements]);
 
@@ -175,6 +241,16 @@ function Schedule() {
   }, [data, placedIds, activeCenter]);
 
   const assignedCount = placedIds.size;
+
+  // "Qayta tartiblash" faqat ochiq filialga tegadi — tugma va tasdiq oynasi
+  // ham aynan shu filialdagi darslar sonini ko'rsatadi.
+  const centerAssignedCount = useMemo(() => {
+    if (!data) return 0;
+    return Object.values(placements).filter((p) => {
+      const room = data.rooms.find((r) => r._id === p.roomId);
+      return room && room.center === activeCenter;
+    }).length;
+  }, [data, placements, activeCenter]);
 
   // Xonalar chapda to'liq ro'yxat bo'lib turadi. Guruh tanlangan bo'lsa faqat
   // shu filialning xonalari ko'rinadi (boshqa filialga qo'yib bo'lmaydi).
@@ -262,11 +338,78 @@ function Schedule() {
     [t],
   );
 
-  // ─── Joylashuv amallari (hammasi lokal, so'rovsiz) ──────────────────────
+  // ─── Saqlash ─────────────────────────────────────────────────────────────
+  // Bitta guruhni saqlaydi — RoomDetail.jsx:100-148 bilan bir xil naqsh:
+  // optimistik `setPlacements` → `PATCH /groups/:id/schedule` → xato bo'lsa
+  // rollback. `next` — placements state'iga yoziladigan yangi qiymat, `null`
+  // bo'lsa guruh jadvaldan butunlay olib tashlanadi (state'dan o'chiriladi).
+  // `prev` — o'zgarishdan OLDINGI qiymat (rollback nishoni), yo'q bo'lsa
+  // guruh avval joylashmagan degani. `opts.silent` — ko'p qadamli amallarda
+  // (swap, "Qayta tartiblash") oraliq muvaffaqiyat/xato xabarlarini
+  // bostiradi — yakuniy xabarni chaqiruvchi o'zi ko'rsatadi.
+  const saveGroup = useCallback(
+    async (groupId, next, prev, opts = {}) => {
+      const id = String(groupId);
+      const body = next
+        ? { roomId: next.roomId, days: next.days, startTime: next.startTime, endTime: next.endTime }
+        : { roomId: null, days: [], startTime: "", endTime: "" };
+
+      setSavingIds((list) => [...list, id]);
+      pendingSaves.current += 1;
+      selfSaveRef.current = true;
+      clearTimeout(graceTimer.current);
+      setPlacements((p) => {
+        const copy = { ...p };
+        if (next) copy[id] = next;
+        else delete copy[id];
+        return copy;
+      });
+
+      const rollback = () =>
+        setPlacements((p) => {
+          const copy = { ...p };
+          if (prev) copy[id] = prev;
+          else delete copy[id];
+          return copy;
+        });
+
+      try {
+        const res = await api.patch(`/groups/${id}/schedule`, body);
+        const { ok, msg, conflict } = res.data;
+        if (!ok) {
+          rollback();
+          if (!opts.silent) errorMsg(conflictMsg(conflict, msg));
+          return { ok: false, msg, conflict };
+        }
+        if (!opts.silent) successMsg(msg);
+        return { ok: true, msg };
+      } catch (error) {
+        rollback();
+        if (!opts.silent) errorMsg(error.message);
+        return { ok: false, msg: error.message };
+      } finally {
+        setSavingIds((list) => list.filter((x) => x !== id));
+        pendingSaves.current = Math.max(0, pendingSaves.current - 1);
+        // Bayroq faqat BARCHA saqlashlar tugagach va grace vaqti o'tgachgina
+        // tushadi. Aks holda ketma-ket saqlashda birinchi PATCH'ning taymeri
+        // ikkinchisi uchayotganda ishga tushib, o'z eventimizdan qayta boot
+        // bo'lardi — jadval ish ustida "yangilanib" ketardi.
+        if (pendingSaves.current === 0) {
+          clearTimeout(graceTimer.current);
+          graceTimer.current = setTimeout(() => {
+            selfSaveRef.current = false;
+          }, 1500);
+        }
+      }
+    },
+    [conflictMsg],
+  );
+
+  // ─── Joylashuv amallari ──────────────────────────────────────────────────
 
   // `targetRoomId` — odatda ochiq turgan xona; boshqa xonaga ko'chirishda
   // (blok xona kartasiga tashlanganda) aynan o'sha xona uzatiladi.
-  const put = (groupId, targetDays, start, end, targetRoomId = roomId) => {
+  const put = (groupId, targetDays, start, end, targetRoomId = roomId, opts) => {
     const clash = findClash(placements, {
       groupId,
       roomId: targetRoomId,
@@ -285,15 +428,15 @@ function Schedule() {
         }),
       );
     }
-    setPlacements((prev) => ({
-      ...prev,
-      [groupId]: {
-        roomId: targetRoomId,
-        days: targetDays,
-        startTime: toHHMM(start),
-        endTime: toHHMM(end),
-      },
-    }));
+    pushHistory();
+    const prev = placements[groupId];
+    const next = {
+      roomId: targetRoomId,
+      days: targetDays,
+      startTime: toHHMM(start),
+      endTime: toHHMM(end),
+    };
+    saveGroup(groupId, next, prev, opts);
     return true;
   };
 
@@ -343,6 +486,7 @@ function Schedule() {
       toMinutes(current.startTime),
       toMinutes(current.endTime),
       targetRoomId,
+      { silent: true },
     );
     if (ok !== true) return;
     successMsg(t("group.rescheduleRoomMoved", { label: block.label, room: room.name }));
@@ -351,14 +495,17 @@ function Schedule() {
   // Blok cho'zildi: cho'zilgan darsning yangi vaqti + unga qarab surilgan
   // qo'shni darslar bitta o'zgarish sifatida qo'llanadi. Kesishuv tekshiruvi
   // shart emas — joylashuvni timeline to'qnashuvsiz hisoblab beradi.
-  const resizeLesson = (changes) =>
-    setPlacements((prev) => {
-      const next = { ...prev };
-      for (const c of changes) {
-        if (next[c.id]) next[c.id] = { ...next[c.id], startTime: c.startTime, endTime: c.endTime };
-      }
-      return next;
-    });
+  const resizeLesson = (changes) => {
+    pushHistory();
+    // Bir necha dars bitta cho'zishdan (o'ziniki + surilgan qo'shnilar)
+    // o'zgarishi mumkin — har biri o'z PATCH'ini olib alohida saqlanadi.
+    for (const c of changes) {
+      const prev = placements[c.id];
+      if (!prev) continue;
+      const next = { ...prev, startTime: c.startTime, endTime: c.endTime };
+      saveGroup(c.id, next, prev);
+    }
+  };
 
   // Joylashtirilgan darsning kunlarini o'zgartirish (kun qo'shish/olib tashlash).
   const toggleBlockDay = (block, day) => {
@@ -370,27 +517,24 @@ function Schedule() {
     setBlockAction((prev) => (prev ? { ...prev, block: { ...prev.block, days: next } } : prev));
   };
 
-  const unplace = (groupId) =>
-    setPlacements((prev) => {
-      const next = { ...prev };
-      delete next[groupId];
-      return next;
-    });
+  // Guruhni jadvaldan butunlay olib tashlaydi — server ham
+  // `{ roomId: null, days: [], startTime: "", endTime: "" }` bilan tozalanadi.
+  const unplace = (groupId) => {
+    pushHistory();
+    const prev = placements[groupId];
+    saveGroup(groupId, null, prev);
+  };
 
   // Faqat bitta kunni (bosilgan slotni) olib tashlaydi. Oxirgi kun bo'lsa
-  // dars butunlay joyidan olinadi.
-  const unplaceDay = (groupId, day) =>
-    setPlacements((prev) => {
-      const p = prev[groupId];
-      if (!p) return prev;
-      const days = p.days.filter((d) => d !== day);
-      if (!days.length) {
-        const next = { ...prev };
-        delete next[groupId];
-        return next;
-      }
-      return { ...prev, [groupId]: { ...p, days } };
-    });
+  // dars butunlay joyidan olinadi (yuqoridagi `unplace` bilan bir xil).
+  const unplaceDay = (groupId, day) => {
+    pushHistory();
+    const prev = placements[groupId];
+    if (!prev) return;
+    const days = prev.days.filter((d) => d !== day);
+    if (!days.length) return saveGroup(groupId, null, prev);
+    saveGroup(groupId, { ...prev, days }, prev);
+  };
 
   // Dars vaqtini modaldan o'zgartirish. Faqat to'g'ri "HH:mm" va start < end
   // bo'lganda qo'llanadi (yozib turganda har harfda urinmasin).
@@ -444,56 +588,83 @@ function Schedule() {
   };
 
   // Eski guruhni joyidan olib, tanlangan guruhni aynan o'sha slotga qo'yadi.
-  const swap = () => {
+  // Bitta so'rov yetmaydi (API_CONTRACT 3.2): A vaqtincha bo'shatiladi → B A
+  // ning eski joyiga qo'yiladi → A B ning eski joyiga qo'yiladi. Oraliq
+  // qadamda xato bo'lsa — oldingi qadamlar kompensatsion PATCH bilan
+  // qaytariladi.
+  const swap = async () => {
     const { block } = blockAction;
     const start = toMinutes(block.startTime);
-    setPlacements((prev) => {
-      const next = { ...prev };
-      delete next[block.id];
-      next[selectedGroup._id] = {
-        roomId,
-        days: block.days,
-        startTime: block.startTime,
-        endTime: toHHMM(start + duration),
-      };
-      return next;
-    });
-    successMsg(t("group.rescheduleSwapDone", { from: block.label, to: selectedGroup.label }));
+    const groupAId = block.id;
+    const groupBId = selectedGroup._id;
+    const prevA = placements[groupAId];
+    const prevB = placements[groupBId];
+    const bNext = {
+      roomId,
+      days: block.days,
+      startTime: block.startTime,
+      endTime: toHHMM(start + duration),
+    };
+    const aNext = prevB
+      ? { roomId: prevB.roomId, days: prevB.days, startTime: prevB.startTime, endTime: prevB.endTime }
+      : null;
+
+    pushHistory();
     setSelectedGroup(null);
     setBlockAction(null);
+
+    // 1) A vaqtincha bo'shatiladi.
+    const step1 = await saveGroup(groupAId, null, prevA, { silent: true });
+    if (!step1.ok) return errorMsg(conflictMsg(step1.conflict, step1.msg));
+
+    // 2) B — A ning eski slotiga.
+    const step2 = await saveGroup(groupBId, bNext, prevB, { silent: true });
+    if (!step2.ok) {
+      await saveGroup(groupAId, prevA || null, null, { silent: true }); // A ni qaytarish
+      return errorMsg(conflictMsg(step2.conflict, step2.msg));
+    }
+
+    // 3) A — B ning eski slotiga.
+    const step3 = await saveGroup(groupAId, aNext, null, { silent: true });
+    if (!step3.ok) {
+      await saveGroup(groupBId, prevB || null, bNext, { silent: true }); // B ni qaytarish
+      await saveGroup(groupAId, prevA || null, null, { silent: true }); // A ni qaytarish
+      return errorMsg(conflictMsg(step3.conflict, step3.msg));
+    }
+
+    successMsg(t("group.rescheduleSwapDone", { from: block.label, to: selectedGroup.label }));
   };
 
-  // "Qayta tartiblash" — ish maydonini butunlay bo'shatadi. FAQAT frontendda:
-  // serverga hech narsa yuborilmaydi, DB "Saqlash"gacha tegilmaydi.
-  const resetBoard = () => {
-    setPlacements({});
+  // "Qayta tartiblash" — tasdiqdan keyin FAQAT ochiq turgan filialning har
+  // bir guruhi uchun ALOHIDA `PATCH { roomId: null, ... }` yuboriladi (bulk
+  // so'rov yo'q). Boshqa filiallarning joylashuvlariga tegilmaydi. Atomar
+  // emas — ba'zi guruhlar saqlanib, ba'zilari xato bersa ham qolganlari
+  // bazada saqlanib qoladi, xato bergan guruhlar toastda ro'yxatlanadi.
+  const resetBoard = async () => {
+    const entries = Object.entries(placements).filter(([, p]) => {
+      const room = data?.rooms.find((r) => r._id === p.roomId);
+      return room && room.center === activeCenter;
+    });
+    if (!entries.length) return setResetOpen(false);
+
+    pushHistory();
     setSelectedGroup(null);
-    setOverrideDays([]);
+    setResetProgress({ done: 0, total: entries.length });
+    const failedLabels = [];
+    for (const [gid, prev] of entries) {
+      const res = await saveGroup(gid, null, prev, { silent: true });
+      if (!res.ok) failedLabels.push(labelOf(gid));
+      setResetProgress((p) => (p ? { ...p, done: p.done + 1 } : p));
+    }
+    setResetProgress(null);
     setResetOpen(false);
-  };
-
-  const commit = async () => {
-    try {
-      setSaving(true);
-      const res = await api.post("/groups/reschedule/commit", { mode: "full", placements });
-      const { ok, msg, conflict } = res.data;
-      if (!ok) throw new Error(conflictMsg(conflict, msg));
-      successMsg(msg);
-      await boot();
-    } catch (error) {
-      errorMsg(error.message);
-    } finally {
-      setSaving(false);
-      setConfirmOpen(false);
+    if (failedLabels.length) {
+      errorMsg(t("group.rescheduleResetFailed", { list: failedLabels.join(", ") }));
     }
   };
 
   if (loading) return <ScheduleSkeleton />;
   if (!data) return null;
-
-  const clearedCount = data.groups.filter(
-    (g) => !placedIds.has(g._id) && g.original.days?.length && g.original.startTime,
-  ).length;
 
   return (
     <div className={`flex flex-col w-full h-full gap-4 min-h-0 ${carrying ? "select-none" : ""}`}>
@@ -519,42 +690,6 @@ function Schedule() {
         />
       )}
 
-      {/* Sarlavha */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex flex-col gap-0.5 flex-1 min-w-[200px]">
-          <h1 className="text-lg font-space font-bold text-slate-900 leading-tight">
-            {t("nav.schedule")}
-          </h1>
-          <p className="text-xs text-slate-400">
-            {canEdit ? t("schedule.hint") : t("schedule.readOnlyHint")}
-          </p>
-        </div>
-        <div className="hidden lg:flex items-center gap-3">
-          <Button
-            variant="outlined"
-            color="orange"
-            className="gap-1.5"
-            disabled={!assignedCount}
-            onClick={() => setResetOpen(true)}
-          >
-            <HiArrowPath className="text-base" />
-            {t("schedule.reset")}
-          </Button>
-          <Button
-            color="emerald"
-            className="gap-1.5"
-            disabled={!assignedCount}
-            onClick={() => setConfirmOpen(true)}
-          >
-            <HiCheckCircle className="text-base" />
-            {t("common.save")}
-            <span className="px-1.5 rounded-full bg-white/25 text-xs tabular-nums">
-              {assignedCount}
-            </span>
-          </Button>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-4 flex-1 min-h-0">
         {/* Chap ustun — Xonalar va Guruhlar TENG ikki panel. Mobilda sahifa
             faqat ko'rish uchun bo'lgani sabab "Joylashtirilmaganlar" paneli
@@ -572,7 +707,14 @@ function Schedule() {
               : "lg:grid-rows-1"
           }`}
         >
-          <Panel title={t("room.title")} count={rooms.length} scrollX compact>
+          {/* Filial bir nechta bo'lsa panel aynan shu ierarxiyani nomlaydi —
+              chapdagi ustun nima ekani sarlavhadanoq ko'rinib tursin. */}
+          <Panel
+            title={roomSections.length > 1 ? t("schedule.branchesAndRooms") : t("room.title")}
+            count={rooms.length}
+            scrollX
+            compact
+          >
             {rooms.length === 0 ? (
               <p className="px-3 py-2 rounded-lg bg-slate-50 text-xs text-slate-400">
                 {t("room.empty")}
@@ -581,19 +723,70 @@ function Schedule() {
               /* Xonalar FILIAL bo'limlariga ajratilgan — sarlavha qayerdan
                  qaysi filial boshlanishini ko'rsatib turadi. Filial bitta
                  bo'lsa sarlavha chizilmaydi (ortiqcha shovqin). */
-              roomSections.map((sec) => (
-                <Fragment key={sec.id}>
-                  {roomSections.length > 1 && (
-                    <div className="flex items-center gap-2 px-1 pt-1.5 pb-0.5 shrink-0 max-lg:pt-0 max-lg:self-center">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 truncate">
-                        {sec.name}
-                      </span>
-                      <span className="flex-1 h-px bg-slate-100 max-lg:hidden" />
-                      <span className="shrink-0 text-[11px] font-semibold text-slate-300 tabular-nums">
+              roomSections.map((sec) => {
+                // Filiali bitta bo'lsa akkordeon keraksiz — xonalar ochiq
+                // turadi. Aks holda ochiq bo'lim = ish maydonidagi xonaning
+                // filiali (alohida state kerak emas, ikkalasi doim mos).
+                const single = roomSections.length === 1;
+                const open = single || activeCenter === sec.id;
+                return (
+                /* Butun bo'lim (sarlavha + xonalar) BITTA slate konteynerda —
+                   qaysi filial ochiqligi bir qarashda ko'rinadi. Mobilda
+                   `contents` bilan o'rovchi layoutdan chiqib ketadi: u yerda
+                   panel gorizontal tasma, akkordeon ishlatilmaydi. */
+                <div
+                  key={sec.id}
+                  className={`max-lg:contents lg:flex lg:flex-col lg:gap-1.5 lg:p-1.5 lg:rounded-xl lg:transition-colors lg:duration-300 ${
+                    open && !single ? "lg:bg-slate-100 lg:ring-1 lg:ring-slate-200/70" : ""
+                  }`}
+                >
+                  {!single && (
+                    <button
+                      type="button"
+                      // Filialga bosilsa uning xonalari ochiladi, oldingisi
+                      // yopiladi. Ish maydoni ham shu filialning birinchi
+                      // xonasiga o'tadi — panel bilan jadval mos bo'lib qolsin.
+                      onClick={() => setRoomId(sec.rooms[0]?._id || "")}
+                      // Yopiq holatda — oq karta (bosiladigan qator ekani
+                      // ko'rinib tursin), ochiq holatda esa slate konteyner
+                      // ustidagi sarlavha bo'lib qoladi.
+                      className={`flex items-center gap-2 px-2 h-11 shrink-0 rounded-[10px] text-left cursor-pointer transition-colors duration-300 max-lg:self-center ${
+                        open
+                          ? "text-slate-900"
+                          : "bg-white border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      <HiBuildingOffice2
+                        className={`shrink-0 text-[17px] transition-colors duration-300 ${
+                          open ? "text-blue-500" : "text-slate-400"
+                        }`}
+                      />
+                      <span className="flex-1 text-[13px] font-semibold truncate">{sec.name}</span>
+                      <span
+                        className={`shrink-0 min-w-5 px-1.5 h-5 flex items-center justify-center rounded-md text-[11px] font-semibold tabular-nums transition-colors duration-300 ${
+                          open ? "bg-white text-slate-600" : "bg-slate-100 text-slate-500"
+                        }`}
+                      >
                         {sec.rooms.length}
                       </span>
-                    </div>
+                      <HiChevronRight
+                        className={`shrink-0 text-[13px] transition-transform duration-300 ${
+                          open ? "rotate-90 text-slate-400" : "text-slate-300"
+                        }`}
+                      />
+                    </button>
                   )}
+                  {/* Ochilish/yopilish animatsiyasi: grid qatori `0fr → 1fr`
+                      bo'ladi, shu sabab kontent balandligini oldindan bilish
+                      shart emas. Xonalar DOM'da doim turadi — aks holda
+                      yopilish animatsiyasi ko'rinmasdi. */}
+                  <div
+                    className={`max-lg:contents lg:grid lg:transition-[grid-template-rows] lg:duration-300 lg:ease-out ${
+                      open ? "lg:grid-rows-[1fr]" : "lg:grid-rows-[0fr]"
+                    }`}
+                  >
+                    <div className="max-lg:contents lg:min-h-0 lg:overflow-hidden">
+                      <div className="max-lg:contents lg:flex lg:flex-col lg:gap-1.5">
                   {sec.rooms.map((r) => {
                 const on = roomId === r._id;
                 return (
@@ -604,10 +797,12 @@ function Schedule() {
                     onClick={() => setRoomId(r._id)}
                     // Tanlangan xona to'liq ko'k fon bilan ajraladi, chap
                     // chizig'i oq — qaysi xona ochiqligi bir qarashda ko'rinadi.
+                    // Slate konteyner ichida xonalar OQ karta bo'lib turadi —
+                    // "filial → xonalari" bolalik munosabati shundan ko'rinadi.
                     className={`group relative flex items-center gap-2 h-11 shrink-0 pl-2.5 pr-2 rounded-[10px] text-left cursor-pointer transition-colors duration-150 ${
                       on
                         ? "bg-blue-500 text-white"
-                        : "text-slate-700 hover:bg-slate-50"
+                        : "bg-white text-slate-700 hover:bg-slate-50 max-lg:border max-lg:border-slate-200"
                     } ${(carrying || blockDrag) && !on ? "ring-2 ring-blue-400/70" : ""}`}
                   >
                     <HiHome
@@ -632,8 +827,12 @@ function Schedule() {
                   </button>
                 );
               })}
-                </Fragment>
-              ))
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                );
+              })
             )}
           </Panel>
 
@@ -695,102 +894,6 @@ function Schedule() {
         </div>
 
         <div className="flex flex-col gap-3 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] min-h-0 min-w-0 max-lg:min-h-[34rem]">
-          {/* Toolbar — barcha sozlamalar bitta panelda, chapdan o'ngga tabiiy
-              tartibda: Xona → Guruh → Kunlar → Davomiylik. Raqamli bosqichlar
-              o'rniga tartib va tipografiya yo'l ko'rsatadi. */}
-          <div className="flex flex-wrap items-end gap-x-3 gap-y-3 p-2.5 rounded-2xl border border-slate-200/70 bg-slate-50/50">
-            <Field label={t("group.room")} className="w-full max-w-[13rem] lg:w-[11.5rem]">
-              <Select
-                variant="white"
-                icon={<HiHome className="text-[15px]" />}
-                value={roomId}
-                onChange={setRoomId}
-                placeholder={t("group.rescheduleStepRoomEmpty")}
-                options={rooms.map((r) => ({ value: r._id, label: r.name }))}
-              />
-            </Field>
-
-            <div className="hidden lg:flex items-end gap-x-3 gap-y-3 flex-wrap">
-              {/* Joylashtiriladigan guruh qolmagan bo'lsa maydon ham keraksiz. */}
-              {unassigned.length > 0 && (
-                <>
-                  <Divider />
-                  <Field label={t("group.rescheduleStepGroup")} className="w-[12.5rem]">
-                    <Select
-                      variant="white"
-                      icon={<HiUserGroup className="text-[15px]" />}
-                      value={selectedGroup?._id || ""}
-                      onChange={(v) => pickGroup(unassigned.find((g) => g._id === v))}
-                      placeholder={t("group.rescheduleStepGroupEmpty")}
-                      options={unassigned.map((g) => ({ value: g._id, label: g.label }))}
-                    />
-                  </Field>
-                </>
-              )}
-
-              <Divider />
-
-              {/* Kunlar OLDINDAN tanlanmaydi — bo'sh bo'lsa bosilgan kundan
-                  avto naqsh olinadi. To'liq haftalik guruhlar uchun qo'lda
-                  belgilash ham mumkin. */}
-              <Field
-                label={t("group.days")}
-                hint={overrideDays.length ? null : t("group.rescheduleDaysAuto")}
-              >
-                <div className="flex items-center gap-1.5">
-                  {DAYS.map((d) => {
-                    const on = overrideDays.includes(d);
-                    return (
-                      <button
-                        key={d}
-                        type="button"
-                        title={t("group.rescheduleDaysAutoHint")}
-                        onClick={() =>
-                          setOverrideDays((prev) =>
-                            prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d],
-                          )
-                        }
-                        className={`w-9 h-10 rounded-xl border text-xs font-semibold transition-all duration-150 ${
-                          on
-                            ? "bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-600/20"
-                            : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
-                        }`}
-                      >
-                        {t(`group.dayShort.${d}`)}
-                      </button>
-                    );
-                  })}
-                  {overrideDays.length > 0 && (
-                    <IconButton
-                      variant="ghost"
-                      color="black"
-                      title={t("group.rescheduleDaysReset")}
-                      className="!w-9 !h-10"
-                      onClick={() => setOverrideDays([])}
-                    >
-                      <HiXMark />
-                    </IconButton>
-                  )}
-                </div>
-              </Field>
-
-              <Divider />
-
-              <Field label={t("group.rescheduleDuration")} className="w-[7.5rem]">
-                <Select
-                  variant="white"
-                  icon={<HiClock className="text-[15px]" />}
-                  value={String(duration)}
-                  onChange={(v) => setDuration(Number(v))}
-                  options={DURATIONS.map((d) => ({
-                    value: String(d),
-                    label: `${d} ${t("room.minShort")}`,
-                  }))}
-                />
-              </Field>
-            </div>
-          </div>
-
           {/* Ish maydoni */}
           <div className="flex-1 min-h-0">
             {!step1 ? (
@@ -799,7 +902,7 @@ function Schedule() {
               <ScheduleTimeline
                 blocks={blocks}
                 duration={duration}
-                overrideDays={overrideDays}
+                overrideDays={[]}
                 canPlace={canPlace}
                 readOnly={!canEdit}
                 carrying={carrying}
@@ -815,6 +918,30 @@ function Schedule() {
                 onResize={resizeLesson}
               />
             )}
+          </div>
+
+          {/* Pastki panel — ish maydonining pastki chetida, ajratuvchi chiziq bilan. */}
+          <div className="hidden lg:flex items-center justify-end gap-3 -mx-4 -mb-4 px-4 py-3 border-t border-slate-200 rounded-b-2xl bg-slate-50/70">
+            <IconButton
+              variant="outlined"
+              color="black"
+              title={`${t("schedule.undo")} (Ctrl+Z)`}
+              disabled={!history.length}
+              onClick={undo}
+            >
+              <HiArrowUturnLeft />
+            </IconButton>
+            <Button
+              variant="outlined"
+              color="orange"
+              className="gap-1.5"
+              disabled={!centerAssignedCount}
+              onClick={() => setResetOpen(true)}
+            >
+              <HiArrowPath className="text-base" />
+              {t("schedule.reset")}
+            </Button>
+            <SaveStatus saving={savingIds.length > 0} count={assignedCount} t={t} />
           </div>
         </div>
       </div>
@@ -854,7 +981,7 @@ function Schedule() {
                   setBlockAction(null);
                 }}
               >
-                {t("group.rescheduleUnplaceAll")}
+                {t("group.rescheduleUnplaceOne")}
               </Button>
             )}
           </>
@@ -955,54 +1082,68 @@ function Schedule() {
         )}
       </Dialog>
 
-      {/* Qayta tartiblash — faqat ish maydoni bo'shaydi, DB tegilmaydi */}
+      {/* Qayta tartiblash — tasdiqdan keyin ochiq filialning har bir guruhi
+          uchun alohida PATCH yuboriladi. Jarayon davomida modal yopilmaydi
+          (non-dismissible) — faqat tugagach. */}
       <Dialog
         open={resetOpen}
-        onClose={() => setResetOpen(false)}
+        onClose={() => {
+          if (!resetProgress) setResetOpen(false);
+        }}
         title={t("schedule.reset")}
         actions={
           <>
-            <Button color="black" variant="text" onClick={() => setResetOpen(false)}>
+            <Button
+              color="black"
+              variant="text"
+              disabled={!!resetProgress}
+              onClick={() => setResetOpen(false)}
+            >
               {t("common.cancel")}
             </Button>
-            <Button color="orange" onClick={resetBoard}>
-              {t("schedule.reset")}
-            </Button>
-          </>
-        }
-      >
-        <p className="text-sm text-slate-600 leading-relaxed">
-          {t("schedule.resetConfirm", { count: assignedCount })}
-        </p>
-      </Dialog>
-
-      <Dialog
-        open={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-        title={t("common.save")}
-        actions={
-          <>
-            <Button color="black" variant="text" onClick={() => setConfirmOpen(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button color="emerald" loading={saving} onClick={commit}>
-              {t("common.save")}
+            <Button color="orange" disabled={!!resetProgress} onClick={resetBoard}>
+              {resetProgress
+                ? t("group.rescheduleResetProgress", resetProgress)
+                : t("schedule.reset")}
             </Button>
           </>
         }
       >
         <div className="flex flex-col gap-2.5 text-sm text-slate-600">
-          <p className="flex items-center gap-2">
-            <HiCheck className="text-emerald-600 shrink-0" />
-            {t("group.rescheduleConfirm", { count: assignedCount })}
+          <p className="leading-relaxed">
+            {t("group.rescheduleResetConfirm", { count: centerAssignedCount })}
           </p>
-          {clearedCount > 0 && (
+          {centerAssignedCount > 0 && !resetProgress && (
             <p className="px-3 py-2.5 rounded-xl bg-red-50 text-red-700 font-medium leading-relaxed">
-              {t("group.rescheduleWillClear", { count: clearedCount })}
+              {t("group.rescheduleWillClear", { count: centerAssignedCount })}
             </p>
           )}
         </div>
       </Dialog>
+
+    </div>
+  );
+}
+
+// Saqlash indikatori — endi guruh darajasida (`savingIds`): kamida bitta
+// guruh saqlanayotganda spinner, aks holda bosilgan darslar soni ko'rinadi.
+// Server-keng "saved"/"error" holati yo'q — har amal o'z xatosini alohida
+// toast bilan bildiradi.
+function SaveStatus({ saving, count, t }) {
+  const icon = saving ? (
+    <HiArrowPath className="text-base animate-spin" />
+  ) : (
+    <HiCheckCircle className="text-base" />
+  );
+  const label = t(saving ? "schedule.saving" : "schedule.autoSave");
+  return (
+    <div
+      className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-sm font-medium bg-slate-100 text-slate-500"
+      aria-live="polite"
+    >
+      {icon}
+      {label}
+      <span className="px-1.5 rounded-full bg-black/5 text-xs tabular-nums">{count}</span>
     </div>
   );
 }
@@ -1020,7 +1161,7 @@ function Panel({ title, count, scrollX = false, compact = false, children }) {
       <div
         className={`items-center justify-between gap-2 px-1 pt-0.5 ${compact ? "hidden lg:flex" : "flex"}`}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 truncate">
+        <p className="text-[12px] font-bold uppercase tracking-wider text-slate-500 truncate">
           {title}
         </p>
         <span className="shrink-0 min-w-5 px-1.5 h-5 flex items-center justify-center rounded-md bg-slate-100 text-slate-500 text-[11px] font-semibold tabular-nums">
@@ -1038,28 +1179,6 @@ function Panel({ title, count, scrollX = false, compact = false, children }) {
       </div>
     </div>
   );
-}
-
-// Toolbar maydoni — yorliq va uning ostidagi boshqaruv.
-function Field({ label, hint, className = "", children }) {
-  return (
-    <div className={`flex flex-col gap-1.5 ${className}`}>
-      <span className="flex items-center gap-1.5 px-0.5 text-[11px] font-medium text-slate-400">
-        {label}
-        {hint && (
-          <span className="px-1.5 rounded-full bg-white border border-slate-200/80 text-[10px] text-slate-400">
-            {hint}
-          </span>
-        )}
-      </span>
-      {children}
-    </div>
-  );
-}
-
-// Toolbar maydonlari orasidagi nozik ajratgich.
-function Divider() {
-  return <span className="self-end mb-2.5 w-px h-5 bg-slate-200" />;
 }
 
 // Tanlangan guruh kursor bilan birga yuradigan yorliq.

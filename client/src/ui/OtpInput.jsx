@@ -29,17 +29,17 @@ function OtpInput({
   const inputRefs = useRef([]);
 
   const colors = {
-    emerald: "focus:border-emerald-500 ring-emerald-500",
-    blue:    "focus:border-blue-500 ring-blue-500",
-    black:   "focus:border-black ring-black",
-    red:     "focus:border-red-500 ring-red-500",
-    orange:  "focus:border-orange-500 ring-orange-500",
-    yellow:  "focus:border-yellow-500 ring-yellow-500",
-    slate:   "focus:border-slate-500 ring-slate-500",
+    emerald: "focus:border-emerald-500 ring-emerald-500/15",
+    blue:    "focus:border-blue-500 ring-blue-500/15",
+    black:   "focus:border-slate-900 ring-slate-900/10",
+    red:     "focus:border-red-500 ring-red-500/15",
+    orange:  "focus:border-orange-500 ring-orange-500/15",
+    yellow:  "focus:border-yellow-500 ring-yellow-500/20",
+    slate:   "focus:border-slate-500 ring-slate-500/15",
   };
 
   const variants = {
-    slate: "bg-slate-100 border-slate-200",
+    slate: "bg-white border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
     white: "bg-white border-slate-200",
   };
 
@@ -88,9 +88,9 @@ function OtpInput({
   return (
     <div className={`flex flex-col gap-1 w-full ${className}`}>
       {label && (
-        <span className="pl-2 text-sm text-slate-800">
+        <span className="text-xs font-medium text-slate-600">
           {label}
-          {required && <span className="text-red-500">*</span>}
+          {required && <span className="text-rose-500">*</span>}
         </span>
       )}
 
@@ -109,10 +109,10 @@ function OtpInput({
             onKeyDown={(e) => handleKeyDown(e, index)}
             onPaste={handlePaste}
             className={`
-              w-10 h-10 text-center text-slate-800 font-semibold text-base
-              outline-none rounded-xl border-2 duration-300
-              focus:ring-2 caret-transparent
-              disabled:opacity-50 disabled:cursor-not-allowed
+              w-11 h-11 text-center text-slate-900 font-semibold text-base
+              outline-none rounded-xl border duration-200
+              focus:ring-3 caret-transparent
+              disabled:bg-slate-50 disabled:shadow-none disabled:cursor-not-allowed
               ${variants[variant]} ${colors[color]}
             `}
           />

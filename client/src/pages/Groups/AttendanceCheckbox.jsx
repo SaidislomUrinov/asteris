@@ -4,13 +4,14 @@ import { HiCheck, HiExclamationCircle, HiQuestionMarkCircle, HiXMark } from "rea
 // bu yerda uch xil holat (keldi / kelmadi / sababli) + dam olish va hali
 // o'tmagan kun bor, ya'ni oddiy "belgilangan/belgilanmagan" yetmaydi.
 //
-// Belgilanmagan holatda fon `slate-200` — jadval ichida katak borligi va
-// bosilishi mumkinligi darhol ko'rinadi (oq katak qator fonida yo'qolib
-// ketardi).
+// Ko'rinish `AttendanceStatusCell` (o'quvchilar ro'yxatidagi pill) bilan bir
+// xil tilda: to'q to'ldirilgan kvadrat emas, yumshoq `color/10` fon + to'q
+// ikonka + ichki `ring`. Matritsa shu tufayli "svetofor devori" bo'lib
+// ko'rinmaydi, lekin holat baribir bir qarashda o'qiladi.
 const TONE = {
-  present: { icon: HiCheck, cls: "bg-emerald-500 text-white border-emerald-500" },
-  absent: { icon: HiXMark, cls: "bg-red-500 text-white border-red-500" },
-  excused: { icon: HiExclamationCircle, cls: "bg-amber-500 text-white border-amber-500" },
+  present: { icon: HiCheck, cls: "bg-emerald-500/12 text-emerald-600 ring-emerald-500/30" },
+  absent: { icon: HiXMark, cls: "bg-red-500/12 text-red-500 ring-red-500/30" },
+  excused: { icon: HiExclamationCircle, cls: "bg-amber-500/15 text-amber-600 ring-amber-500/30" },
 };
 
 /**
@@ -29,12 +30,14 @@ function AttendanceCheckbox({ status, holiday, future, disabled, title, onClick,
   const locked = disabled || holiday || future;
 
   const look = holiday
-    ? "bg-violet-100 border-violet-300 text-violet-500"
+    ? "bg-violet-500/10 text-violet-500 ring-violet-500/25"
     : tone
       ? tone.cls
       : future
-        ? "bg-slate-100 border-slate-200 text-transparent"
-        : "bg-slate-200 border-slate-300 text-transparent";
+        ? // Hali o'tmagan kun — deyarli ko'rinmas, faqat "joy band" belgisi.
+          "bg-slate-50 text-transparent ring-slate-200/70"
+        : // Belgilanmagan o'tgan kun — bosiladigan bo'sh katak.
+          "bg-slate-100 text-transparent ring-slate-200";
 
   return (
     <button
@@ -42,13 +45,11 @@ function AttendanceCheckbox({ status, holiday, future, disabled, title, onClick,
       title={title}
       disabled={locked}
       onClick={onClick}
-      className={`flex items-center justify-center shrink-0 w-7 h-7 rounded-md border text-[15px] transition-all duration-150 ${className} ${look} ${
-        locked
-          ? "cursor-default"
-          : "cursor-pointer hover:border-slate-400 hover:brightness-95 active:scale-95"
+      className={`flex items-center justify-center shrink-0 w-8 h-8 rounded-xl ring-1 ring-inset text-base transition-all duration-150 ${className} ${look} ${
+        locked ? "cursor-default" : "cursor-pointer hover:brightness-95 active:scale-90"
       }`}
     >
-      {Icon ? <Icon /> : null}
+      {Icon ? <Icon className="shrink-0" /> : null}
     </button>
   );
 }

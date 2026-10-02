@@ -17,9 +17,10 @@ import Checkbox from "../../ui/Checkbox";
 import Button from "../../ui/Button";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
-import { PERMISSION_LABELS } from "../Subscription/permissionLabels";
+import { featureLabelKey } from "../Subscription/permissionLabels";
 import { downloadStaffCredentialsPdf } from "./pdf.util";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const ROLE_OPTIONS = [
   { value: "reception", label: "role.reception" },
   { value: "teacher", label: "role.teacher" },
@@ -57,7 +58,19 @@ const PERMISSION_GROUPS = [
       { key: "student:view", labelKey: "staff.actionView" },
       { key: "student:create", labelKey: "common.create" },
       { key: "student:update", labelKey: "common.edit" },
+      // Faqat kontakt (ism/raqam/ota-ona raqami) — o'qituvchi/yordamchiga
+      // beriladigan tor ruxsat (API_CONTRACT_student_contact_telegram.md §1).
+      { key: "student:contact", labelKey: "staff.actionEditContact" },
       { key: "student:delete", labelKey: "common.delete" },
+    ],
+  },
+  {
+    titleKey: "staff.groupLeads",
+    items: [
+      { key: "lead:view", labelKey: "staff.actionView" },
+      { key: "lead:create", labelKey: "common.create" },
+      { key: "lead:update", labelKey: "common.edit" },
+      { key: "lead:delete", labelKey: "common.delete" },
     ],
   },
   {
@@ -114,6 +127,39 @@ const PERMISSION_GROUPS = [
       { key: "expense:update", labelKey: "common.edit" },
     ],
   },
+  {
+    titleKey: "staff.groupCertificate",
+    items: [
+      { key: "certificate:view", labelKey: "staff.actionView" },
+      { key: "certificate:create", labelKey: "staff.actionCertificateIssue" },
+      { key: "certificate:update", labelKey: "common.edit" },
+      { key: "certificate:delete", labelKey: "common.delete" },
+    ],
+  },
+  // Markaz kalendari — /calendar sahifasi va "Dam olish kuni" belgilash.
+  // Ilgari bu ruxsatlar (`calendar:view`/`calendar:manage`) faqat backend
+  // route'larida (calendar.routes.js) va Navbar'da tekshirilardi, lekin
+  // Hodim ruxsat formasida umuman ko'rsatilmagan edi — natijada
+  // "Cheksiz kirish"siz Resepshin xodimiga kalendarni HECH QACHON berib
+  // bo'lmasdi.
+  {
+    titleKey: "staff.groupCalendar",
+    items: [
+      { key: "calendar:view", labelKey: "staff.actionView" },
+      { key: "calendar:manage", labelKey: "staff.actionCalendarManage" },
+    ],
+  },
+  // Arxiv — API_CONTRACT_archive.md §4. ARXIVLASH huquqi alohida emas: u
+  // o'sha modulning `*:delete` ruxsatidan kelib chiqadi (guruhni arxivlash
+  // = `group:delete`). Bu yerdagi ikki ruxsat faqat Arxiv BO'LIMIGA
+  // tegishli — ko'rish va qaytarish.
+  {
+    titleKey: "archive.permGroup",
+    items: [
+      { key: "archive:view", labelKey: "archive.permView" },
+      { key: "archive:restore", labelKey: "archive.permRestore" },
+    ],
+  },
 ];
 
 // O'qituvchi va yordamchi o'qituvchi FAQAT dars jarayoniga tegishli ishlarni
@@ -125,7 +171,12 @@ const PERMISSION_GROUPS = [
 const TEACHING_ROLES = ["teacher", "assistant"];
 const TEACHING_ALLOWED_PERMISSIONS = [
   "group:view",
+  "group:create",
+  "group:update",
   "student:view",
+  "student:create",
+  "student:contact",
+  "subject:view",
   "attendance:view",
   "attendance:create",
   "attendance:update",
@@ -146,16 +197,13 @@ const TEACHING_ALLOWED_PERMISSIONS = [
 const SALARY_TYPE_OPTIONS = [
   "staff.salary.percentage",
   "staff.salary.fixed",
-  "staff.salary.perGroup",
 ];
 
 // Har bir oylik variantining qisqacha tushuntirishi — konteyner kartalarda
 // nom ostida ko'rsatiladi.
-const SALARY_DESCRIPTIONS = {
-  "staff.salary.percentage":
-    "Hodim oyligi o'quvchi to'lovlaridan belgilangan foiz asosida avtomatik hisoblanadi.",
-  "staff.salary.fixed": "Har oy o'zgarmas, oldindan belgilangan summa oylik hisoblanadi.",
-  "staff.salary.perGroup": "Har bir guruh uchun alohida oylik stavkasi belgilanadi.",
+const SALARY_DESCRIPTION_KEYS = {
+  "staff.salary.percentage": "staff.salaryDescPercentage",
+  "staff.salary.fixed": "staff.salaryDescFixed",
 };
 
 const EMPTY_FORM = {
@@ -181,7 +229,19 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
 
   const allowedTariffPermissions =
     useSelector((e) => e.user.subscription?.tariffSnapshot?.allowedPermissions) || [];
-  const isTariffAllowed = (perm) => allowedTariffPermissions.includes(perm);
+  // Hodimda allaqachon saqlangan oylik turi — tarif pasaygan bo'lsa ham
+  // tahrirlashda saqlanib qoladi (backend ham o'zgarmagan turni o'tkazadi).
+  const savedSalaryType =
+    (isEdit &&
+      Array.isArray(staff.permissions) &&
+      staff.permissions.find((p) => SALARY_TYPE_OPTIONS.includes(p))) ||
+    "";
+  // `staff.salary.*` bu yerda TARIF FLAGI sifatida tekshiriladi (hodim oylik
+  // turi bilan bir xil satr — server staffPermission.util.js izohiga qara).
+  const isTariffAllowed = (perm) =>
+    allowedTariffPermissions.includes(perm) || (!!perm && perm === savedSalaryType);
+  // Tarifda yo'q oylik turlari umuman ko'rsatilmaydi.
+  const visibleSalaryTypes = SALARY_TYPE_OPTIONS.filter(isTariffAllowed);
 
   const [form, setForm] = useState(() =>
     isEdit
@@ -227,24 +287,37 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
   // o'qituvchiga o'tib ketardi (backend baribir tashlab yuborardi, lekin
   // foydalanuvchi buni ko'rmasdi).
   const isTeachingRole = TEACHING_ROLES.includes(form.role);
+  // Yordamchi o'qituvchi HECH QACHON guruh yarata OLMAYDI va guruh holatini
+  // (activate/finish/jadval) o'zgartira OLMAYDI (faqat O'qituvchiga xos
+  // imkoniyat) — shu sabab checkboxlar unga umuman ko'rsatilmaydi (backend
+  // ham `group.routes.js`da qat'iy bloklaydi).
+  const allowedForRole =
+    form.role === "assistant"
+      ? TEACHING_ALLOWED_PERMISSIONS.filter((p) => p !== "group:create" && p !== "group:update")
+      : TEACHING_ALLOWED_PERMISSIONS;
   const permissionGroups = isTeachingRole
     ? PERMISSION_GROUPS.map((group) => ({
         ...group,
-        items: group.items.filter((i) => TEACHING_ALLOWED_PERMISSIONS.includes(i.key)),
+        items: group.items.filter((i) => allowedForRole.includes(i.key)),
       })).filter((group) => group.items.length)
     : PERMISSION_GROUPS;
 
-  const changeRole = (role) =>
+  const changeRole = (role) => {
+    const allowed =
+      role === "assistant"
+        ? TEACHING_ALLOWED_PERMISSIONS.filter((p) => p !== "group:create" && p !== "group:update")
+        : TEACHING_ALLOWED_PERMISSIONS;
     setForm((prev) => ({
       ...prev,
       role,
       unlimited: TEACHING_ROLES.includes(role) ? false : prev.unlimited,
       permissions: TEACHING_ROLES.includes(role)
-        ? prev.permissions.filter((p) => TEACHING_ALLOWED_PERMISSIONS.includes(p))
+        ? prev.permissions.filter((p) => allowed.includes(p))
         : prev.permissions,
       // Resepshinda fan tanlovi ma'nosiz — rol o'zgarganda tozalanadi.
       subjects: TEACHING_ROLES.includes(role) ? prev.subjects : [],
     }));
+  };
 
   const togglePermission = (perm) => {
     setForm((prev) => ({
@@ -280,7 +353,7 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
 
       if (needsSalaryValue && isTariffAllowed(form.salaryType)) {
         const val = Number(form.salaryValue);
-        if (!form.salaryValue || Number.isNaN(val) || val <= 0) {
+        if (form.salaryValue === "" || Number.isNaN(val) || val < 0) {
           throw new Error("staff.fillTheRows");
         }
         if (form.salaryType === "staff.salary.percentage" && val > 100) {
@@ -295,9 +368,24 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
         form.salaryType && isTariffAllowed(form.salaryType)
           ? [form.salaryType]
           : [];
-      const permissions = form.unlimited
+      // `group:create`/`group:update` berilgan bo'lsa, guruh yaratish/tahrirlash
+      // formasida fan tanlash SHART (subjectId majburiy) — shu sabab
+      // `subject:view` ham avtomatik qo'shiladi, aks holda admin buni alohida
+      // eslamasa fan ro'yxati bo'sh kelib, tugma ishlamay qoladi.
+      const impliedPermissions =
+        !form.unlimited &&
+        (form.permissions.includes("group:create") || form.permissions.includes("group:update"))
+          ? ["subject:view"]
+          : [];
+      let permissions = form.unlimited
         ? ["all", ...salaryPermissions]
-        : [...form.permissions, ...salaryPermissions];
+        : [...new Set([...form.permissions, ...salaryPermissions, ...impliedPermissions])];
+      // Yakuniy kafolat — Yordamchi o'qituvchida `group:create`/`group:update`
+      // hech qachon qolmasin (checkboxlar allaqachon yashirin, bu shunchaki
+      // ikkinchi to'siq).
+      if (form.role === "assistant") {
+        permissions = permissions.filter((p) => p !== "group:create" && p !== "group:update");
+      }
 
       const body = {
         centerId: form.centerId,
@@ -495,7 +583,14 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
             {t("staff.salaryType")}
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {SALARY_TYPE_OPTIONS.map((perm) => {
+            {visibleSalaryTypes.length === 0 && (
+              <span className="flex items-center gap-1.5 pl-2 text-xs text-slate-400 sm:col-span-2">
+                <HiLockClosed className="text-sm" />
+                {t("staff.salaryTypeNoneInTariff")}
+              </span>
+            )}
+            {visibleSalaryTypes.map((perm) => {
+              const inTariff = allowedTariffPermissions.includes(perm);
               const allowed = isTariffAllowed(perm);
               const selected = form.salaryType === perm;
               return (
@@ -527,13 +622,13 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
                   </span>
                   <div className="flex flex-col gap-0.5 min-w-0">
                     <span className="text-sm font-semibold text-slate-800">
-                      {PERMISSION_LABELS[perm] || perm}
+                      {t(featureLabelKey(perm))}
                     </span>
                     <span className="text-xs text-slate-500 leading-snug">
-                      {SALARY_DESCRIPTIONS[perm]}
+                      {SALARY_DESCRIPTION_KEYS[perm] ? t(SALARY_DESCRIPTION_KEYS[perm]) : ""}
                     </span>
-                    {!allowed && (
-                      <span className="flex items-center gap-1 text-[11px] text-slate-400 pt-0.5">
+                    {!inTariff && (
+                      <span className="flex items-center gap-1 text-[11px] text-amber-600 pt-0.5">
                         <HiLockClosed className="text-xs" />
                         {t("staff.notInTariff")}
                       </span>

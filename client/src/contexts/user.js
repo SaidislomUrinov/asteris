@@ -16,6 +16,8 @@ const initialState = {
   // `subscription.tariffSnapshot.allowedPermissions` ichida keladi) — ikkalasini
   // ham `useFeature()` hooki o'qiydi
   tariffFeatures: [],
+  tariffName: null, // faqat staff uchun: Client Owner tarifining nomi (profil sarlavhasi uchun)
+  introSeen: false, // Interactive Introduction turi ko'rsatilganmi (verify/signIn javobidan)
 };
 
 const user = createSlice({
@@ -25,7 +27,7 @@ const user = createSlice({
     updateUser: (state, { payload }) => {
       return { ...state, ...payload };
     },
-    resetUser: (state) => {
+    resetUser: () => {
       return initialState;
     },
   },

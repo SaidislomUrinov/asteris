@@ -20,7 +20,9 @@ import GroupDialog from "../Groups/GroupDialog";
 import WeeklyRoomSchedule from "./WeeklyRoomSchedule";
 import ExportExcelButton from "../../ui/ExportExcelButton";
 import { api } from "../../utils/fetching";
-import { errorMsg } from "../../utils/alert";
+import { errorMsg, successMsg } from "../../utils/alert";
+import useCan from "../../hooks/useCan";
+import { useSocketEvent } from "../../hooks/useSocketEvent";
 
 function RoomDetail() {
   const { t } = useTranslation();
@@ -40,6 +42,11 @@ function RoomDetail() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createKey, setCreateKey] = useState(0);
+  // Hozir saqlanayotgan guruhlar — blok kutish holatida ko'rinadi va
+  // saqlanguncha qayta surilmaydi.
+  const [savingIds, setSavingIds] = useState([]);
+
+  const can = useCan();
 
   const fetchData = useCallback(async () => {
     try {
@@ -63,7 +70,8 @@ function RoomDetail() {
   }, [id]);
 
   useEffect(() => {
-    fetchData();
+    const t = setTimeout(fetchData, 0);
+    return () => clearTimeout(t);
   }, [fetchData]);
 
   useEffect(() => {
@@ -85,6 +93,71 @@ function RoomDetail() {
     })();
   }, []);
 
+  // Blok surildi yoki cho'zildi — darhol saqlanadi (qoralama yo'q).
+  // Optimistik: UI zudlik bilan yangilanadi, server rad etsa eski holat
+  // qaytariladi. Konflikt xabari GroupScheduleDialog bilan bir xil formatda.
+  const handleGroupMove = useCallback(
+    async (group, next) => {
+      const id = String(group._id);
+      const prev = {
+        days: group.days,
+        startTime: group.startTime,
+        endTime: group.endTime,
+      };
+
+      setSavingIds((list) => [...list, id]);
+      setData((d) =>
+        d
+          ? {
+              ...d,
+              groups: d.groups.map((g) => (String(g._id) === id ? { ...g, ...next } : g)),
+            }
+          : d,
+      );
+
+      const rollback = () =>
+        setData((d) =>
+          d
+            ? {
+                ...d,
+                groups: d.groups.map((g) => (String(g._id) === id ? { ...g, ...prev } : g)),
+              }
+            : d,
+        );
+
+      try {
+        const res = await api.patch(`/groups/${id}/schedule`, next);
+        const { ok, msg, conflict } = res.data;
+        if (!ok) {
+          rollback();
+          if (conflict) {
+            return errorMsg(msg, {
+              room: conflict.room,
+              day: t(`group.day.${conflict.day}`),
+              start: conflict.startTime,
+              end: conflict.endTime,
+              label: conflict.label,
+            });
+          }
+          return errorMsg(msg);
+        }
+        successMsg(msg);
+      } catch (error) {
+        rollback();
+        errorMsg(error.message);
+      } finally {
+        setSavingIds((list) => list.filter((x) => x !== id));
+      }
+    },
+    [t],
+  );
+
+  // Jadvalni surish `group:changed` eventini chiqaradi (group.service.js
+  // #reschedule) — boshqa foydalanuvchi surganini refresh'siz ko'ramiz.
+  useSocketEvent("group:changed", (payload) => {
+    if ((data?.groups || []).some((g) => String(g._id) === String(payload?.groupId))) fetchData();
+  });
+
   if (loading) return <Loading height="40vh" />;
 
   if (notFound || error) {
@@ -103,6 +176,11 @@ function RoomDetail() {
 
   const { room, groupsCount, studentsCount, groups } = data;
 
+  // Jadvalni joyida tahrirlash `group:update` ruxsatini talab qiladi — backend
+  // ham (`requireGroupScheduleAccess`) shu ruxsatni tekshiradi. Ruxsat yo'q
+  // bo'lsa bloklar faqat bosiladi (guruh detailiga o'tadi), surilmaydi.
+  const canEditSchedule = can("group:update");
+
   // Pending guruh yaratilganda kun/vaqt ixtiyoriy (GroupDialog.jsx) —
   // shu maydonlar hali to'ldirilmagan bo'lsa haftalik jadvalning HECH bir
   // kun ustuniga tushmaydi va butunlay ko'rinmay qolar edi. Shu turdagi
@@ -112,7 +190,7 @@ function RoomDetail() {
   );
 
   return (
-    <div className="flex flex-col w-full h-full gap-4">
+    <div className="flex flex-col w-full h-full min-h-0 gap-4">
       <div className="flex items-center justify-between gap-3">
         <IconButton variant="ghost" color="black" onClick={() => navigate(-1)}>
           <HiArrowLeft />
@@ -198,15 +276,18 @@ function RoomDetail() {
         </div>
       )}
 
-      <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 bg-white">
-        <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col flex-1 min-h-0 gap-3 p-4 rounded-xl border border-slate-200 bg-white">
+        <div className="flex items-center justify-between gap-3 shrink-0">
           <div className="flex flex-col gap-0.5 min-w-0">
             <p className="font-semibold text-slate-800">{t("room.weeklyScheduleTitle")}</p>
-            <p className="text-xs text-slate-400">{t("room.weeklyScheduleHint")}</p>
+            <p className="text-xs text-slate-400">
+              {t(canEditSchedule ? "room.weeklyScheduleHintEditable" : "room.weeklyScheduleHint")}
+            </p>
           </div>
-          {/* Bu yerda faqat ko'rish — joylashtirish/surish imkoniyati
-              "Jadval" ish maydonida (drag&drop, saqlash oqimi bilan). Shu
-              xona oldindan tanlangan holda o'sha yerga o'tkazadi. */}
+          {/* Bloklarni shu yerning o'zida surish/cho'zish mumkin (darhol
+              saqlanadi). "Jadval" ish maydoni esa OMMAVIY qayta tartiblash
+              uchun qoladi — u yerda qoralama, undo va xonalar aro ko'chirish
+              bor. Shu xona oldindan tanlangan holda o'sha yerga o'tkazadi. */}
           <Button
             variant="outlined"
             color="blue"
@@ -218,7 +299,14 @@ function RoomDetail() {
           </Button>
         </div>
 
-        <WeeklyRoomSchedule groups={groups} onGroupClick={(g) => navigate(`/groups/${g._id}`)} />
+        <WeeklyRoomSchedule
+          groups={groups}
+          onGroupClick={(g) => navigate(`/groups/${g._id}`)}
+          editable={canEditSchedule}
+          onGroupMove={canEditSchedule ? handleGroupMove : undefined}
+          savingIds={savingIds}
+          fill
+        />
       </div>
 
       <GroupDialog

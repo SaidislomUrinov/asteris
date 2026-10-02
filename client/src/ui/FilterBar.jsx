@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HiAdjustmentsHorizontal } from "react-icons/hi2";
+import { HiAdjustmentsHorizontal, HiXMark } from "react-icons/hi2";
 import Button from "./Button";
 import Dialog from "./Dialog";
 import useMediaQuery from "../hooks/useMediaQuery";
@@ -63,10 +63,18 @@ function FilterBar({
       }`}
     >
       {children}
-      {/* Katta ekranda "Tozalash" filtrlar gridining oxirgi katagi bo'ladi
-          (mobilda esa modal footerida) — va faqat tanlangan filtr bo'lsa. */}
-      {isDesktop && onReset && activeCount > 0 && (
-        <Button variant="outlined" color="slate" onClick={onReset}>
+      {/* Katta ekranda "Tozalash" filtrlar gridining oxirgi katagi — HAR DOIM
+          turadi (filtr yo'q bo'lsa o'chirilgan), shunda filtr tanlanganda
+          yangi element "paydo bo'lib" layout sakramaydi. */}
+      {isDesktop && onReset && (
+        <Button
+          variant="outlined"
+          color="red"
+          disabled={activeCount === 0}
+          onClick={onReset}
+          className="gap-1.5"
+        >
+          <HiXMark className="text-base" />
           {t("common.resetFilters")}
         </Button>
       )}
@@ -121,7 +129,8 @@ function FilterBar({
               {onReset && (
                 <Button
                   variant="text"
-                  color="slate"
+                  color="red"
+                  disabled={activeCount === 0}
                   onClick={() => {
                     onReset();
                     setOpen(false);

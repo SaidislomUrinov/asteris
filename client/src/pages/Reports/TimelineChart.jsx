@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HiChartBar } from "react-icons/hi2";
-import { money } from "./shared";
+import { money } from "./reportData";
 
 // Diagramma TASHQI KUTUBXONASIZ, sof SVG bilan chizilgan (docs/API_CONTRACT.md §2.3).
 // Koordinatalar doim shu ichki tizimda hisoblanadi, `viewBox` esa uni

@@ -6,23 +6,31 @@ import {
   HiCalendarDays,
   HiChevronRight,
   HiClipboardDocumentCheck,
+  HiChartPie,
   HiClock,
+  HiExclamationTriangle,
   HiUserGroup,
   HiUsers,
 } from "react-icons/hi2";
 import Chip from "../../ui/Chip";
-import MetricCard from "../../ui/MetricCard";
+import ChartCard from "../../ui/ChartCard";
+import MoneyCard from "../../components/dashboard/MoneyCard";
+import StatCard from "../../components/dashboard/StatCard";
+import DashboardHeader from "../../components/dashboard/DashboardHeader";
+import SectionError from "../../components/dashboard/SectionError";
 import Avatar from "../../ui/Avatar";
 import Loading from "../../ui/Loading";
 import PaymentDonut from "../Groups/PaymentDonut";
 import RevenueChart from "../Groups/RevenueChart";
+import HideFinanceToggle from "../../components/HideFinanceToggle";
+import HiddenFinancePanel from "../../components/HiddenFinancePanel";
+import useHideFinance from "../../hooks/useHideFinance";
 import useCan from "../../hooks/useCan";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { getTashkentNow, toMinutes } from "../../utils/schedule";
 import { api } from "../../utils/fetching";
 import { errorMsg } from "../../utils/alert";
-
-const money = (v) => `${(v || 0).toLocaleString("uz-UZ")}`;
+import { maskMoney } from "../../utils/moneyFormat";
 
 // Dars holati — chap rangli chegara va kichik yorliq uchun. Reception uchun
 // eng muhim savol "hozir nima bo'layapti", shuning uchun bo'layotgan dars
@@ -48,10 +56,10 @@ const totalDebtOf = (row) =>
     .filter((g) => g.status === "active")
     .reduce((sum, g) => sum + (g.debt || 0), 0);
 
-// Teacher panelidan (ko'k, oylik-markazli) ATAYLAB farqli — Reception kunlik
-// front-desk ish oqimiga mos: bugungi darslar, qarzdor o'quvchilar va
-// O'quvchilar/Guruhlar/Davomatga tezkor o'tish. Rang sxemasi emerald/teal —
-// CLAUDE.md "har rol o'z panelida boshqacha dizayn" talabiga mos.
+// Reception kunlik front-desk ish oqimi: bugungi darslar, qarzdor o'quvchilar va
+// O'quvchilar/Guruhlar/Davomatga tezkor o'tish. Vizual til Owner Dashboard bilan
+// BIR XIL (DashboardHeader/MoneyCard/StatCard/ChartCard) — video darsliklarda
+// rollar almashganda sahifa boshqacha ko'rinmasligi uchun.
 function ReceptionHome() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -59,6 +67,7 @@ function ReceptionHome() {
 
   const canViewGroups = can("group:view");
   const canViewStudents = can("student:view");
+  const [hideFinance, toggleHideFinance] = useHideFinance();
 
   const [groups, setGroups] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -74,6 +83,11 @@ function ReceptionHome() {
 
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  // Xato holatlari — muvaffaqiyatsiz so'rov "bo'sh" ro'yxat bo'lib
+  // ko'rinmasligi uchun (avval "Bugun dars yo'q" deb noto'g'ri xabar berardi).
+  const [statsFailed, setStatsFailed] = useState(false);
+  const [groupsFailed, setGroupsFailed] = useState(false);
+  const [debtorsFailed, setDebtorsFailed] = useState(false);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -82,7 +96,9 @@ function ReceptionHome() {
       const { ok, data, msg } = res.data;
       if (!ok) throw new Error(msg);
       setStats(data);
+      setStatsFailed(false);
     } catch (error) {
+      setStatsFailed(true);
       errorMsg(error.message);
     } finally {
       setStatsLoading(false);
@@ -100,7 +116,9 @@ function ReceptionHome() {
       const { ok, data, msg } = res.data;
       if (!ok) throw new Error(msg);
       setGroups(data || []);
+      setGroupsFailed(false);
     } catch (error) {
+      setGroupsFailed(true);
       errorMsg(error.message);
     } finally {
       setGroupsLoading(false);
@@ -140,7 +158,10 @@ function ReceptionHome() {
         setDebtors(all.slice(0, 5));
       }
       if (activeRes.data.ok) setActiveStudents(activeRes.data.meta?.total ?? 0);
+      if (!debtorsRes.data.ok || !activeRes.data.ok) throw new Error(debtorsRes.data.msg || activeRes.data.msg);
+      setDebtorsFailed(false);
     } catch (error) {
+      setDebtorsFailed(true);
       errorMsg(error.message);
     } finally {
       setDebtorsLoading(false);
@@ -148,61 +169,84 @@ function ReceptionHome() {
   }, [canViewStudents]);
 
   useEffect(() => {
-    fetchGroups();
+    const t = setTimeout(fetchGroups, 0);
+    return () => clearTimeout(t);
   }, [fetchGroups]);
 
   useEffect(() => {
-    fetchLookups();
+    const t = setTimeout(fetchLookups, 0);
+    return () => clearTimeout(t);
   }, [fetchLookups]);
 
   useEffect(() => {
-    fetchStudents();
+    const t = setTimeout(fetchStudents, 0);
+    return () => clearTimeout(t);
   }, [fetchStudents]);
 
   useEffect(() => {
-    fetchStats();
+    const t = setTimeout(fetchStats, 0);
+    return () => clearTimeout(t);
   }, [fetchStats]);
 
   useSocketEvent("payment:created", fetchStudents);
   useSocketEvent("payment:cancelled", fetchStudents);
+  useSocketEvent("payment:updated", fetchStudents);
   useSocketEvent("student:leftGroup", fetchStudents);
   useSocketEvent("payment:created", fetchStats);
   useSocketEvent("payment:cancelled", fetchStats);
+  useSocketEvent("payment:updated", fetchStats);
 
   return (
     <div className="flex flex-col w-full h-full gap-4">
-      {/* Statistika — sahifa banner o'rniga to'g'ridan-to'g'ri asosiy
-          ko'rsatkichlar bilan boshlanadi. Mobilda 2 ustunli compact grid,
-          desktopda 4 ustun. */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MetricCard
+      <DashboardHeader
+        icon={<HiChartPie />}
+        title={t("dashboard.title")}
+        toggle={<HideFinanceToggle hidden={hideFinance} onToggle={toggleHideFinance} />}
+      />
+
+      {/* Moliya — gradient kartalar. Moliyani yashirish tugmasi sarlavhada. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <MoneyCard
+          icon={<HiBanknotes />}
+          label={t("receptionHome.monthRevenue")}
+          value={statsLoading ? "…" : statsFailed && !stats ? "—" : maskMoney(stats?.monthRevenue, hideFinance)}
+          suffix={hideFinance || (statsFailed && !stats) ? "" : t("student.somSuffix")}
+          gradient="from-emerald-500 to-teal-600"
+          shadow="shadow-emerald-500/20"
+        />
+        <MoneyCard
+          icon={<HiExclamationTriangle />}
+          label={t("student.debt")}
+          value={statsLoading ? "…" : statsFailed && !stats ? "—" : maskMoney(stats?.currentCycleDebt, hideFinance)}
+          suffix={hideFinance || (statsFailed && !stats) ? "" : t("student.somSuffix")}
+          hint={t("dashboard.debtHint")}
+          gradient="from-amber-500 to-orange-600"
+          shadow="shadow-amber-500/20"
+        />
+      </div>
+
+      {/* Ixcham hisoblagichlar */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <StatCard
           icon={<HiUsers />}
-          title={t("receptionHome.activeStudents")}
-          value={debtorsLoading ? "…" : activeStudents}
-          accent="cyan"
+          label={t("receptionHome.activeStudents")}
+          value={debtorsLoading ? "…" : debtorsFailed ? "—" : activeStudents}
+          color="bg-cyan-50 text-cyan-500"
         />
-
-        <MetricCard
+        <StatCard
           icon={<HiCalendarDays />}
-          title={t("receptionHome.todayLessons")}
-          value={groupsLoading ? "…" : groups.length}
-          accent="orange"
+          label={t("receptionHome.todayLessons")}
+          value={groupsLoading ? "…" : groupsFailed ? "—" : groups.length}
+          color="bg-orange-50 text-orange-500"
         />
-
-        <MetricCard
-          icon={<HiBanknotes />}
-          title={t("receptionHome.debtors")}
-          value={debtorsLoading ? "…" : debtorsTotal}
-          accent="red"
-        />
-
-        <MetricCard
-          icon={<HiBanknotes />}
-          title={t("receptionHome.monthRevenue")}
-          value={statsLoading ? "…" : money(stats?.monthRevenue)}
-          suffix={t("student.somSuffix")}
-          accent="emerald"
-        />
+        <div className="col-span-2 sm:col-span-1 min-w-0">
+          <StatCard
+            icon={<HiBanknotes />}
+            label={t("receptionHome.debtors")}
+            value={debtorsLoading ? "…" : debtorsFailed ? "—" : debtorsTotal}
+            color="bg-red-50 text-red-500"
+          />
+        </div>
       </div>
 
       {/* Bugungi darslar (chap) va Qarzdorlar (o'ng) — yonma-yon, statistikadan
@@ -210,14 +254,9 @@ function ReceptionHome() {
           cheklangan, shuning uchun ro'yxat uzun bo'lsa ham sahifa cho'zilib
           ketmaydi. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-        <div className="flex flex-col rounded-xl border border-slate-200 bg-white overflow-hidden">
-          <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 shrink-0 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center">
-                <HiCalendarDays />
-              </div>
-              <p className="font-semibold text-slate-800">{t("receptionHome.todayLessons")}</p>
-            </div>
+        <ChartCard className="overflow-hidden">
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-semibold text-slate-800">{t("receptionHome.todayLessons")}</p>
             {!groupsLoading && groups.length > 0 && (
               <Chip value={groups.length} color="orange" variant="ghost" />
             )}
@@ -227,17 +266,19 @@ function ReceptionHome() {
             <p className="text-sm text-slate-400 py-8 text-center">{t("receptionHome.noPermission")}</p>
           ) : groupsLoading ? (
             <Loading height="15vh" />
+          ) : groupsFailed ? (
+            <SectionError message={t("receptionHome.loadError")} onRetry={fetchGroups} />
           ) : groups.length === 0 ? (
             <p className="text-sm text-slate-400 py-8 text-center">{t("receptionHome.noLessonsToday")}</p>
           ) : (
-            <div className="flex flex-col divide-y divide-slate-100 max-h-80 overflow-y-auto">
+            <div className="flex flex-col divide-y divide-slate-100 border-t border-slate-100 -mx-5 -mb-5 max-h-80 overflow-y-auto">
               {groups.map((g) => {
                 const state = lessonState(g);
                 return (
                   <div
                     key={g._id}
                     onClick={() => navigate(`/groups/${g._id}`)}
-                    className={`flex items-center gap-3 px-4 py-2.5 border-l-3 hover:bg-slate-50 cursor-pointer transition-colors ${state.border}`}
+                    className={`flex items-center gap-3 px-5 py-2.5 border-l-3 hover:bg-slate-50 cursor-pointer transition-colors ${state.border}`}
                   >
                     <div className="flex flex-col min-w-0 flex-1">
                       <span className="font-semibold text-slate-800 truncate">
@@ -261,16 +302,11 @@ function ReceptionHome() {
               })}
             </div>
           )}
-        </div>
+        </ChartCard>
 
-        <div className="flex flex-col rounded-xl border border-slate-200 bg-white overflow-hidden">
-          <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 shrink-0 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
-                <HiBanknotes />
-              </div>
-              <p className="font-semibold text-slate-800">{t("receptionHome.debtors")}</p>
-            </div>
+        <ChartCard className="overflow-hidden">
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-semibold text-slate-800">{t("receptionHome.debtors")}</p>
             {!debtorsLoading && debtorsTotal > 0 && (
               <Chip value={debtorsTotal} color="red" variant="ghost" />
             )}
@@ -280,16 +316,18 @@ function ReceptionHome() {
             <p className="text-sm text-slate-400 py-8 text-center">{t("receptionHome.noPermission")}</p>
           ) : debtorsLoading ? (
             <Loading height="15vh" />
+          ) : debtorsFailed ? (
+            <SectionError message={t("receptionHome.loadError")} onRetry={fetchStudents} />
           ) : debtors.length === 0 ? (
             <p className="text-sm text-slate-400 py-8 text-center">{t("receptionHome.noDebtors")}</p>
           ) : (
             <>
-              <div className="flex flex-col divide-y divide-slate-100 max-h-80 overflow-y-auto">
+              <div className="flex flex-col divide-y divide-slate-100 border-t border-slate-100 -mx-5 -mb-5 max-h-80 overflow-y-auto">
                 {debtors.map((s) => (
                   <div
                     key={s._id}
                     onClick={() => navigate(`/students/${s._id}`)}
-                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50/60 cursor-pointer transition-colors"
+                    className="flex items-center gap-3 px-5 py-2.5 hover:bg-red-50/60 cursor-pointer transition-colors"
                   >
                     <Avatar user={{ _id: s._id, name: s.fullName, avatar: s.photo }} size={34} />
                     <div className="flex flex-col min-w-0 flex-1">
@@ -297,7 +335,7 @@ function ReceptionHome() {
                       <span className="text-xs text-slate-400 truncate">{s.phone}</span>
                     </div>
                     <span className="font-semibold text-red-600 shrink-0 text-sm">
-                      {money(totalDebtOf(s))} {t("student.somSuffix")}
+                      {maskMoney(totalDebtOf(s), hideFinance)} {hideFinance ? "" : t("student.somSuffix")}
                     </span>
                   </div>
                 ))}
@@ -306,29 +344,42 @@ function ReceptionHome() {
                 <button
                   type="button"
                   onClick={() => navigate("/students?debtStatus=debtor")}
-                  className="px-4 py-2.5 border-t border-slate-100 text-sm font-semibold text-red-600 hover:bg-red-50 cursor-pointer transition-colors"
+                  className="-mx-5 -mb-5 px-5 py-2.5 border-t border-slate-100 text-sm font-semibold text-red-600 hover:bg-red-50 cursor-pointer transition-colors"
                 >
                   {t("receptionHome.viewAllDebtors", { count: debtorsTotal })}
                 </button>
               )}
             </>
           )}
-        </div>
+        </ChartCard>
       </div>
 
-      {/* Moliyaviy analitika — to'lov holati va tushum dinamikasi */}
-      {!statsLoading && stats && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <PaymentDonut
-            paid={stats.currentCyclePaid || 0}
-            debt={stats.currentCycleDebt || 0}
-          />
-          <RevenueChart payments={stats.chartPayments} />
+      {/* Moliyaviy analitika — to'lov holati (1) va tushum dinamikasi (2) */}
+      {statsFailed && !stats && (
+        <ChartCard>
+          <SectionError message={t("receptionHome.loadError")} onRetry={fetchStats} />
+        </ChartCard>
+      )}
+
+      {/* `stats` bo'lsa yetarli — socket bilan qayta yuklanganda grafiklar
+          yo'qolib-qaytib "miltillamasin". */}
+      {stats && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch lg:h-88">
+          <div className="lg:col-span-1 min-h-0">
+            {hideFinance ? (
+              <HiddenFinancePanel />
+            ) : (
+              <PaymentDonut paid={stats.currentCyclePaid || 0} debt={stats.currentCycleDebt || 0} />
+            )}
+          </div>
+          <div className="lg:col-span-2 min-h-0">
+            {hideFinance ? <HiddenFinancePanel /> : <RevenueChart payments={stats.chartPayments} />}
+          </div>
         </div>
       )}
 
       {/* Tezkor amallar — eng past prioritet, shuning uchun eng pastda */}
-      <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 bg-white">
+      <ChartCard className="h-auto">
         <p className="font-semibold text-slate-800">{t("receptionHome.quickActions")}</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {canViewStudents && (
@@ -375,7 +426,7 @@ function ReceptionHome() {
             </button>
           )}
         </div>
-      </div>
+      </ChartCard>
     </div>
   );
 }

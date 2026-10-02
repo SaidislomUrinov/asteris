@@ -1,42 +1,61 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import useQueryState from "../../hooks/useQueryState";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { HiBanknotes, HiEye, HiMagnifyingGlass, HiPlus, HiUsers } from "react-icons/hi2";
+import { useNavigate } from "react-router-dom";
+import {
+  HiBanknotes,
+  HiEye,
+  HiMagnifyingGlass,
+  HiPencilSquare,
+  HiPlus,
+  HiUsers,
+  HiXMark,
+} from "react-icons/hi2";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
 import Chip from "../../ui/Chip";
 import List from "../../ui/List";
 import Select from "../../ui/Select";
 import FilterBar from "../../ui/FilterBar";
+import useMediaQuery from "../../hooks/useMediaQuery";
 import DropMenu from "../../ui/DropMenu";
 import IconButton from "../../ui/IconButton";
 import Dialog from "../../ui/Dialog";
 import StudentDialog from "./StudentDialog";
+import StudentEditDialog from "./StudentEditDialog";
+import StudentContactDialog from "./StudentContactDialog";
+import TelegramStatusBadges from "../../ui/TelegramStatusBadges";
+import { useSocketEvent } from "../../hooks/useSocketEvent";
 import PaymentDialog from "./PaymentDialog";
 import ReceiptPromptDialog from "./ReceiptPromptDialog";
 import ExportExcelButton from "../../ui/ExportExcelButton";
 import { api } from "../../utils/fetching";
 import { errorMsg } from "../../utils/alert";
+import useFeature from "../../hooks/useFeature";
+import useCan from "../../hooks/useCan";
+import useHideFinance from "../../hooks/useHideFinance";
+import useClosingValue from "../../hooks/useClosingValue";
+import { maskMoney } from "../../utils/moneyFormat";
+
 
 function Students() {
   const { t } = useTranslation();
+  const isDesktop = useMediaQuery("(min-width: 640px)");
   const navigate = useNavigate();
-  // Boshqa sahifadan tayyor filtr bilan kelish mumkin — masalan Reception
-  // Dashboard'dagi "Hammasini ko'rish" `/students?debtStatus=debtor` ga
-  // olib keladi va qarzdorlar filtri darhol tanlangan bo'lishi kerak.
-  const [searchParams] = useSearchParams();
-
+  const hasFeature = useFeature();
+  const can = useCan();
+  const [hideFinance] = useHideFinance();
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [filterCenter, setFilterCenter] = useState("");
-  const [filterGroup, setFilterGroup] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
-  const [debtStatus, setDebtStatus] = useState(() => {
-    const v = searchParams.get("debtStatus");
-    return v === "debtor" || v === "noDebt" ? v : "";
-  });
+  // Filtr/qidiruv/sahifa URL query-param'da (useQueryState) — Detail'ga kirib
+  // "Orqaga" qaytilganda joyida qoladi, boshqa sahifadan tayyor havola bilan
+  // kelish ham ishlaydi (Reception Dashboard → `/students?debtStatus=debtor`).
+  const [page, setPage] = useQueryState("page", 1);
+  const [search, setSearch] = useQueryState("search", "");
+  const [filterCenter, setFilterCenter] = useQueryState("filterCenter", "");
+  const [filterGroup, setFilterGroup] = useQueryState("filterGroup", "");
+  const [filterStatus, setFilterStatus] = useQueryState("filterStatus", "");
+  const [debtStatus, setDebtStatus] = useQueryState("debtStatus", "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -85,7 +104,50 @@ function Students() {
 
   const [entryPickerRow, setEntryPickerRow] = useState(null);
   const [payTarget, setPayTarget] = useState(null);
+  const payTargetView = useClosingValue(payTarget);
   const [receipt, setReceipt] = useState(null);
+  const [editRow, setEditRow] = useState(null);
+  const editRowView = useClosingValue(editRow);
+  // Faqat `student:contact` (lekin `student:update` emas) bo'lgan hodim uchun.
+  const [contactRow, setContactRow] = useState(null);
+  const contactRowView = useClosingValue(contactRow);
+
+  // Kontakt maydonlarini (tahrirlash javobi yoki socket payload'idan)
+  // ro'yxatdagi qatorga refetchsiz birlashtiradi.
+  const mergeContact = useCallback((studentId, patch) => {
+    if (!studentId || !patch) return;
+    setRows((prev) =>
+      prev.map((r) =>
+        r._id !== studentId
+          ? r
+          : {
+              ...r,
+              fullName: patch.fullName ?? r.fullName,
+              phone: patch.phone ?? r.phone,
+              parentPhone: patch.parentPhone ?? r.parentPhone,
+              telegramSame: patch.telegramSame ?? r.telegramSame,
+              telegramPhone: patch.telegramPhone ?? r.telegramPhone,
+              parentTelegramSame: patch.parentTelegramSame ?? r.parentTelegramSame,
+              parentTelegramPhone: patch.parentTelegramPhone ?? r.parentTelegramPhone,
+              parentTelegram: patch.parentTelegram ?? r.parentTelegram,
+              studentTelegram: patch.studentTelegram ?? r.studentTelegram,
+            },
+      ),
+    );
+  }, []);
+
+  // docs/API_CONTRACT_student_contact_telegram.md §4.
+  useSocketEvent("student:updated", (payload) => mergeContact(payload?.studentId, payload));
+  useSocketEvent("student:telegram", (payload) => {
+    if (!Array.isArray(payload?.items)) return;
+    const byId = new Map(payload.items.map((it) => [String(it.studentId), it]));
+    setRows((prev) =>
+      prev.map((r) => {
+        const it = byId.get(r._id);
+        return it ? { ...r, parentTelegram: it.parentTelegram, studentTelegram: it.studentTelegram } : r;
+      }),
+    );
+  });
 
   // Qidiruv ustuvor: search bo'sh bo'lmasa, boshqa BARCHA filtrlar
   // (filial/guruh/holat/qarzdorlik) so'rovga yuborilmaydi — filtr state'lari
@@ -104,6 +166,7 @@ function Students() {
     setFilterGroup("");
     setFilterStatus("");
   };
+
 
   const fetchStudents = useCallback(async () => {
     try {
@@ -149,11 +212,13 @@ function Students() {
   }, []);
 
   useEffect(() => {
-    fetchStudents();
+    const t = setTimeout(fetchStudents, 0);
+    return () => clearTimeout(t);
   }, [fetchStudents]);
 
   useEffect(() => {
-    fetchLookups();
+    const t = setTimeout(fetchLookups, 0);
+    return () => clearTimeout(t);
   }, [fetchLookups]);
 
   const openCreate = () => {
@@ -192,6 +257,91 @@ function Students() {
     setEntryPickerRow(null);
   };
 
+  const renderCard = (row) => {
+    const debt = totalDebtOf(row);
+    const actives = activeGroupsOf(row);
+    const centerIds = [...new Set(actives.map((g) => g.center))];
+    return (
+      <div className="flex flex-col gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-white">
+        <div className="flex items-start justify-between gap-2">
+          <div
+            className="flex-1 min-w-0"
+            onClick={() => navigate(`/students/${row._id}`)}
+          >
+            <p className="font-semibold text-slate-800 hover:text-blue-600 transition-colors cursor-pointer">
+              {row.fullName}
+            </p>
+            <p className="text-xs text-slate-400 mt-0.5">{row.phone}</p>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <IconButton
+              variant="ghost"
+              color="emerald"
+              title={t("student.addPayment")}
+              onClick={() => openPay(row)}
+            >
+              <HiBanknotes />
+            </IconButton>
+            <DropMenu
+              items={[
+                {
+                  label: t("common.detail"),
+                  icon: HiEye,
+                  iconClass: "bg-slate-50 text-slate-600",
+                  onClick: () => navigate(`/students/${row._id}`),
+                },
+                ...(can("student:update")
+                  ? [
+                      {
+                        label: t("common.edit"),
+                        icon: HiPencilSquare,
+                        iconClass: "bg-blue-50 text-blue-600",
+                        onClick: () => setEditRow(row),
+                      },
+                    ]
+                  : can("student:contact")
+                    ? [
+                        {
+                          label: t("common.edit"),
+                          icon: HiPencilSquare,
+                          iconClass: "bg-blue-50 text-blue-600",
+                          onClick: () => setContactRow(row),
+                        },
+                      ]
+                    : []),
+              ]}
+            />
+          </div>
+        </div>
+
+        <TelegramStatusBadges student={row.studentTelegram} parent={row.parentTelegram} />
+
+        <div className="flex flex-wrap gap-1">
+          {actives.length ? (
+            actives.map((g) => (
+              <Chip key={g._id} value={groupLabelMap[g.group] || "?"} color="slate" variant="ghost" />
+            ))
+          ) : (
+            <span className="text-slate-400 text-sm">—</span>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 text-sm">
+          <span className="text-slate-500 truncate">
+            {centerIds.map((id) => centerMap[id] || "—").join(", ") || "—"}
+          </span>
+          {debt > 0 ? (
+            <span className="font-semibold text-red-600 shrink-0">
+              {maskMoney(debt, hideFinance)} {t("student.somSuffix")}
+            </span>
+          ) : (
+            <span className="text-emerald-600 shrink-0">{t("student.noDebt")}</span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const columns = [
     {
       key: "fullName",
@@ -205,7 +355,16 @@ function Students() {
         </span>
       ),
     },
-    { key: "phone", header: t("student.phone") },
+    {
+      key: "phone",
+      header: t("student.phone"),
+      render: (row) => (
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+          <span>{row.phone}</span>
+          <TelegramStatusBadges student={row.studentTelegram} parent={row.parentTelegram} />
+        </span>
+      ),
+    },
     {
       key: "groups",
       header: t("student.activeGroups"),
@@ -236,7 +395,7 @@ function Students() {
         const debt = totalDebtOf(row);
         return debt > 0 ? (
           <span className="font-semibold text-red-600">
-            {debt.toLocaleString("uz-UZ")} {t("student.somSuffix")}
+            {maskMoney(debt, hideFinance)} {t("student.somSuffix")}
           </span>
         ) : (
           <span className="text-emerald-600">{t("student.noDebt")}</span>
@@ -265,6 +424,25 @@ function Students() {
                 iconClass: "bg-slate-50 text-slate-600",
                 onClick: () => navigate(`/students/${row._id}`),
               },
+              ...(can("student:update")
+                ? [
+                    {
+                      label: t("common.edit"),
+                      icon: HiPencilSquare,
+                      iconClass: "bg-blue-50 text-blue-600",
+                      onClick: () => setEditRow(row),
+                    },
+                  ]
+                : can("student:contact")
+                  ? [
+                      {
+                        label: t("common.edit"),
+                        icon: HiPencilSquare,
+                        iconClass: "bg-blue-50 text-blue-600",
+                        onClick: () => setContactRow(row),
+                      },
+                    ]
+                  : []),
             ]}
           />
         </div>
@@ -274,49 +452,147 @@ function Students() {
 
   return (
     <div className="flex flex-col w-full h-full gap-4">
-      <FilterBar
-        cols={showCenterFilter ? 3 : 2}
-        dim={isSearching}
-        activeCount={activeFilterCount}
-        onReset={resetFilters}
-        search={
-          <Input
-            placeholder={t("common.search")}
-            icon={<HiMagnifyingGlass />}
-            variant="white"
-            value={search}
-            onChange={(e) => {
+      {isDesktop ? (
+        <div className={`flex flex-col gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02] duration-150 ${isSearching ? "opacity-50 pointer-events-none" : ""}`}>
+          {/* Filtr qatori konvensiyasi: maydonlar flex-1 (tor ekranda yangi
+              qatorga o'tadi), amallar bitta guruhda ml-auto bilan o'ngda. */}
+          <div className="flex flex-wrap items-center gap-2.5 [&>*]:flex-1 [&>*]:min-w-[180px]">
+            <Input
+              placeholder={t("common.search")}
+              icon={<HiMagnifyingGlass />}
+              variant="slate"
+              value={search}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
+            />
+            <Select
+              placeholder={t("student.debt")}
+              variant="slate"
+              disabled={isSearching}
+              value={debtStatus}
+              onChange={(v) => {
+                setPage(1);
+                setDebtStatus(v);
+              }}
+              options={[
+                { value: "", label: t("student.debtFilterAll") },
+                { value: "debtor", label: t("student.debtFilterDebtors") },
+                { value: "noDebt", label: t("student.debtFilterNoDebt") },
+              ]}
+            />
+            {showCenterFilter && (
+              <Select
+                placeholder={t("student.center")}
+                variant="slate"
+                disabled={isSearching}
+                value={filterCenter}
+                onChange={(v) => {
+                  setPage(1);
+                  setFilterCenter(v);
+                }}
+                options={[
+                  { value: "", label: t("common.all") },
+                  ...centers.map((c) => ({ value: c._id, label: c.name })),
+                ]}
+              />
+            )}
+            <Select
+              placeholder={t("student.group")}
+              variant="slate"
+              disabled={isSearching}
+              value={filterGroup}
+              onChange={(v) => {
+                setPage(1);
+                setFilterGroup(v);
+              }}
+              options={[
+                { value: "", label: t("common.all") },
+                ...groupOptions.map((g) => ({ value: g._id, label: g.filterLabel })),
+              ]}
+            />
+            <Select
+              placeholder={t("student.status")}
+              variant="slate"
+              disabled={isSearching}
+              value={filterStatus}
+              onChange={(v) => {
+                setPage(1);
+                setFilterStatus(v);
+              }}
+              options={[
+                { value: "", label: t("common.all") },
+                { value: "active", label: t("student.statusActive") },
+                { value: "left", label: t("student.statusLeft") },
+              ]}
+            />
+            <div className="!flex-none !min-w-0">
+              <Button
+                variant="outlined"
+                color="red"
+                onClick={resetFilters}
+                disabled={activeFilterCount === 0}
+                className="gap-1.5"
+              >
+                <HiXMark className="text-base" />
+                {t("common.resetFilters")}
+              </Button>
+            </div>
+            <div className="flex items-center gap-2 !flex-none !min-w-0 ml-auto">
+              <Button onClick={openCreate} className="gap-1.5">
+                <HiPlus className="text-base" />
+                {t("student.create")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <FilterBar
+          cols={showCenterFilter ? 3 : 2}
+          dim={isSearching}
+          activeCount={activeFilterCount}
+          onReset={resetFilters}
+          search={
+            <Input
+              placeholder={t("common.search")}
+              icon={<HiMagnifyingGlass />}
+              variant="slate"
+              value={search}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
+            />
+          }
+          actions={
+            <>
+              <Button onClick={openCreate} className="gap-1.5">
+                <HiPlus className="text-base" />
+                {t("student.create")}
+              </Button>
+            </>
+          }
+        >
+          <Select
+            placeholder={t("student.debt")}
+            variant="slate"
+            disabled={isSearching}
+            value={debtStatus}
+            onChange={(v) => {
               setPage(1);
-              setSearch(e.target.value);
+              setDebtStatus(v);
             }}
+            options={[
+              { value: "", label: t("student.debtFilterAll") },
+              { value: "debtor", label: t("student.debtFilterDebtors") },
+              { value: "noDebt", label: t("student.debtFilterNoDebt") },
+            ]}
           />
-        }
-        actions={
-          <Button onClick={openCreate} className="gap-1.5">
-            <HiPlus className="text-base" />
-            {t("student.create")}
-          </Button>
-        }
-      >
-        <Select
-          placeholder={t("student.debt")}
-          variant="white"
-          disabled={isSearching}
-          value={debtStatus}
-          onChange={(v) => {
-            setPage(1);
-            setDebtStatus(v);
-          }}
-          options={[
-            { value: "", label: t("student.debtFilterAll") },
-            { value: "debtor", label: t("student.debtFilterDebtors") },
-            { value: "noDebt", label: t("student.debtFilterNoDebt") },
-          ]}
-        />
-        {showCenterFilter && (
+          {showCenterFilter && (
             <Select
               placeholder={t("student.center")}
-              variant="white"
+              variant="slate"
               disabled={isSearching}
               value={filterCenter}
               onChange={(v) => {
@@ -331,7 +607,7 @@ function Students() {
           )}
           <Select
             placeholder={t("student.group")}
-            variant="white"
+            variant="slate"
             disabled={isSearching}
             value={filterGroup}
             onChange={(v) => {
@@ -345,7 +621,7 @@ function Students() {
           />
           <Select
             placeholder={t("student.status")}
-            variant="white"
+            variant="slate"
             disabled={isSearching}
             value={filterStatus}
             onChange={(v) => {
@@ -358,7 +634,8 @@ function Students() {
               { value: "left", label: t("student.statusLeft") },
             ]}
           />
-      </FilterBar>
+        </FilterBar>
+      )}
 
       {error ? (
         <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
@@ -373,6 +650,9 @@ function Students() {
           columns={columns}
           rows={rows}
           loading={loading}
+          view={isDesktop ? "table" : "grid"}
+          renderItem={renderCard}
+          gridClassName="grid grid-cols-1 gap-2 p-2"
           empty={t("student.empty")}
           page={meta.page}
           totalPages={meta.totalPages}
@@ -430,24 +710,26 @@ function Students() {
         </div>
       </Dialog>
 
-      {payTarget && (
+      {payTargetView && (
         <PaymentDialog
           open={!!payTarget}
-          studentId={payTarget.student._id}
-          groupEntryId={payTarget.entry._id}
-          debt={payTarget.entry.debt}
-          currentCyclePrice={payTarget.entry.currentCyclePrice}
-          paidForCurrentCycle={payTarget.entry.paidForCurrentCycle}
-          currentCycleMonth={payTarget.entry.currentCycleMonth}
-          courseStartMonth={payTarget.entry.courseStartMonth}
+          studentId={payTargetView.student._id}
+          groupEntryId={payTargetView.entry._id}
+          debt={payTargetView.entry.debt}
+          currentCyclePrice={payTargetView.entry.currentCyclePrice}
+          paidForCurrentCycle={payTargetView.entry.paidForCurrentCycle}
+          currentCycleMonth={payTargetView.entry.currentCycleMonth}
+          courseStartMonth={payTargetView.entry.courseStartMonth}
+          earliestPayableMonth={payTargetView.entry.earliestPayableMonth}
           onClose={() => setPayTarget(null)}
           onSaved={fetchStudents}
           onPaid={({ amount, forMonth, remainingDebt, debtBreakdown, paymentId }) =>
+            hasFeature("receipt.manage") &&
             setReceipt({
-              centerName: centerMap[payTarget.entry.center],
-              groupLabel: groupLabelMap[payTarget.entry.group],
-              studentName: payTarget.student.fullName,
-              phone: payTarget.student.phone,
+              centerName: centerMap[payTargetView.entry.center],
+              groupLabel: groupLabelMap[payTargetView.entry.group],
+              studentName: payTargetView.student.fullName,
+              phone: payTargetView.student.phone,
               amount,
               forMonth,
               remainingDebt,
@@ -459,6 +741,31 @@ function Students() {
       )}
 
       <ReceiptPromptDialog open={!!receipt} receipt={receipt} onClose={() => setReceipt(null)} />
+
+      {editRowView && (
+        <StudentEditDialog
+          key={editRowView._id}
+          open={!!editRow}
+          student={editRowView}
+          entries={activeGroupsOf(editRowView).map((g) => ({
+            _id: g._id,
+            label: groupLabelMap[g.group],
+            price: g.price,
+          }))}
+          onClose={() => setEditRow(null)}
+          onSaved={fetchStudents}
+        />
+      )}
+
+      {contactRowView && (
+        <StudentContactDialog
+          key={contactRowView._id}
+          open={!!contactRow}
+          student={contactRowView}
+          onClose={() => setContactRow(null)}
+          onSaved={(data) => mergeContact(data?._id, data)}
+        />
+      )}
     </div>
   );
 }

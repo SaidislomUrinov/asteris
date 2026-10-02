@@ -5,7 +5,7 @@ import IconButton from "./IconButton";
 
 const MENU_WIDTH = 224; // w-56
 
-function DropdownMenu({ items = [], onOpenChange }) {
+function DropdownMenu({ items = [], onOpenChange, trigger }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const menuRef = useRef(null);
@@ -24,6 +24,7 @@ function DropdownMenu({ items = [], onOpenChange }) {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -37,7 +38,7 @@ function DropdownMenu({ items = [], onOpenChange }) {
     onOpenChange?.(!open);
     if (!open && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      const menuHeight = items.length * 44 + 48;
+      const menuHeight = items.length * 40 + 20;
       const spaceBelow = window.innerHeight - rect.bottom;
       const top =
         spaceBelow < menuHeight && rect.top > menuHeight
@@ -54,15 +55,16 @@ function DropdownMenu({ items = [], onOpenChange }) {
 
   return (
     <div ref={menuRef} className="">
-      <div ref={triggerRef}>
-        <IconButton
-          onClick={handleOpen}
-          color={open ? "blue" : "black"}
-          variant="ghost"
-          className={`transition-all duration-200 ${open ? "rotate-90" : ""}`}
-        >
-          <HiEllipsisVertical className="text-xl" />
-        </IconButton>
+      <div ref={triggerRef} onClick={handleOpen}>
+        {trigger || (
+          <IconButton
+            color={open ? "blue" : "black"}
+            variant="ghost"
+            className={`transition-all duration-200 ${open ? "rotate-90" : ""}`}
+          >
+            <HiEllipsisVertical className="text-xl" />
+          </IconButton>
+        )}
       </div>
 
       {open &&
@@ -70,7 +72,7 @@ function DropdownMenu({ items = [], onOpenChange }) {
           <div
             ref={dropdownRef}
             style={{ top: pos.top, left: pos.left, zIndex: 9999 }}
-            className="fixed w-56 bg-white rounded-2xl shadow-2xl border border-zinc-100 py-2 overflow-hidden"
+            className="fixed w-56 flex flex-col gap-0.5 bg-white rounded-xl border border-slate-200 shadow-[0_12px_28px_-8px_rgba(15,23,42,0.18)] p-1.5"
           >
             {items.map((item, index) => (
               <button
@@ -80,14 +82,14 @@ function DropdownMenu({ items = [], onOpenChange }) {
                   item.onClick?.();
                   setOpen(false);
                 }}
-                className="w-full disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed flex items-center gap-3 px-3 py-2 text-[13px] font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] font-medium text-slate-700 text-left transition-colors enabled:cursor-pointer enabled:hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${item.iconClass}`}
+                <span
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${item.iconClass}`}
                 >
-                  <item.icon className="text-lg" />
-                </div>
-                {item.label}
+                  <item.icon className="text-base" />
+                </span>
+                <span className="truncate">{item.label}</span>
               </button>
             ))}
           </div>,

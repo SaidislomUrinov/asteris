@@ -1,19 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  HiArchiveBox,
   HiBookOpen,
   HiDocumentDuplicate,
   HiMagnifyingGlass,
   HiPencil,
   HiPlus,
-  HiTrash,
 } from "react-icons/hi2";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
 import Dialog from "../../ui/Dialog";
 import List from "../../ui/List";
 import Select from "../../ui/Select";
-import FilterBar from "../../ui/FilterBar";
 import DropMenu from "../../ui/DropMenu";
 import SubjectDialog from "./SubjectDialog";
 import ExportExcelButton from "../../ui/ExportExcelButton";
@@ -73,11 +72,13 @@ function Subjects() {
   }, []);
 
   useEffect(() => {
-    fetchSubjects();
+    const t = setTimeout(fetchSubjects, 0);
+    return () => clearTimeout(t);
   }, [fetchSubjects]);
 
   useEffect(() => {
-    fetchCenters();
+    const t = setTimeout(fetchCenters, 0);
+    return () => clearTimeout(t);
   }, [fetchCenters]);
 
   const openCreate = () => {
@@ -160,10 +161,12 @@ function Subjects() {
                 iconClass: "bg-slate-100 text-slate-600",
                 onClick: () => openDuplicate(row),
               },
+              // "O'chirish" endi ARXIVLASH — fan yo'qolmaydi, Arxiv
+              // bo'limidan qaytariladi (API_CONTRACT_archive.md).
               {
-                label: t("common.delete"),
-                icon: HiTrash,
-                iconClass: "bg-red-50 text-red-600",
+                label: t("archive.archive"),
+                icon: HiArchiveBox,
+                iconClass: "bg-amber-50 text-amber-600",
                 onClick: () => setDeleteTarget(row),
               },
             ]}
@@ -175,48 +178,45 @@ function Subjects() {
 
   return (
     <div className="flex flex-col w-full h-full gap-4">
-      <FilterBar
-        cols={3}
-        activeCount={filterCenter ? 1 : 0}
-        onReset={() => {
-          setPage(1);
-          setFilterCenter("");
-        }}
-        search={
-          <Input
-            placeholder={t("common.search")}
-            icon={<HiMagnifyingGlass />}
-            variant="white"
-            value={search}
-            onChange={(e) => {
-              setPage(1);
-              setSearch(e.target.value);
-            }}
-          />
-        }
-        actions={
-          <Button onClick={openCreate} className="gap-1.5">
-            <HiPlus className="text-base" />
-            {t("subject.create")}
-          </Button>
-        }
-      >
-        {showCenterFilter && (
-          <Select
-            placeholder={t("subject.center")}
-            variant="white"
-            value={filterCenter}
-            onChange={(v) => {
-              setPage(1);
-              setFilterCenter(v);
-            }}
-            options={[
-              { value: "", label: t("common.all") },
-              ...centers.map((c) => ({ value: c._id, label: c.name })),
-            ]}
-          />
-        )}
-      </FilterBar>
+      <div className="flex flex-col sm:flex-row gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]">
+        <div className="flex gap-2.5 sm:contents">
+          <div className={`flex-1 min-w-0 ${showCenterFilter ? "sm:w-[40%]" : "sm:flex-1"}`}>
+            <Input
+              placeholder={t("common.search")}
+              icon={<HiMagnifyingGlass />}
+              variant="slate"
+              value={search}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
+            />
+          </div>
+
+          {showCenterFilter && (
+            <div className="flex-1 min-w-0 sm:w-[40%]">
+              <Select
+                placeholder={t("subject.center")}
+                variant="slate"
+                value={filterCenter}
+                onChange={(v) => {
+                  setPage(1);
+                  setFilterCenter(v);
+                }}
+                options={[
+                  { value: "", label: t("common.all") },
+                  ...centers.map((c) => ({ value: c._id, label: c.name })),
+                ]}
+              />
+            </div>
+          )}
+        </div>
+
+        <Button onClick={openCreate} className="gap-1.5 w-full sm:w-auto">
+          <HiPlus className="text-base" />
+          {t("subject.create")}
+        </Button>
+      </div>
 
       {error ? (
         <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
@@ -252,7 +252,7 @@ function Subjects() {
       <Dialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title={t("subject.delete")}
+        title={t("archive.archiveTitle")}
         actions={
           <>
             <Button
@@ -263,12 +263,12 @@ function Subjects() {
               {t("common.cancel")}
             </Button>
             <Button color="red" loading={deleting} onClick={confirmDelete}>
-              {t("common.delete")}
+              {t("archive.archive")}
             </Button>
           </>
         }
       >
-        <p>{t("subject.deleteConfirm", { name: deleteTarget?.name })}</p>
+        <p>{t("archive.archiveSubjectConfirm", { name: deleteTarget?.name })}</p>
       </Dialog>
     </div>
   );

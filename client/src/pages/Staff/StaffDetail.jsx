@@ -5,6 +5,7 @@ import {
   HiArrowLeft,
   HiBanknotes,
   HiBuildingOffice2,
+  HiChartBar,
   HiClipboardDocumentList,
   HiEye,
   HiLockClosed,
@@ -24,14 +25,17 @@ import Dialog from "../../ui/Dialog";
 import Chip from "../../ui/Chip";
 import Loading from "../../ui/Loading";
 import NumberText from "../../ui/NumberText";
+import MonthInput from "../../ui/MonthInput";
 import StaffDialog from "./StaffDialog";
 import SalaryTransactionDialog from "../Salary/SalaryTransactionDialog";
+import { RateBar } from "../Reports/shared";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import useCan from "../../hooks/useCan";
+import useFeature from "../../hooks/useFeature";
+import useHideFinance from "../../hooks/useHideFinance";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
-
-const money = (v) => `${(v || 0).toLocaleString("uz-UZ")}`;
+import { maskMoney } from "../../utils/moneyFormat";
 
 const currentMonth = () => {
   const d = new Date();
@@ -45,6 +49,9 @@ function StaffDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
   const can = useCan();
+  const hasFeature = useFeature();
+  const [hideFinance] = useHideFinance();
+  const money = (v) => maskMoney(v, hideFinance);
   const canManageSalary = can("salary:manage");
 
   const [staff, setStaff] = useState(null);
@@ -67,6 +74,9 @@ function StaffDetail() {
   const [txKey, setTxKey] = useState(0);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelingId, setCancelingId] = useState(null);
+
+  const [performance, setPerformance] = useState(null);
+  const [performanceLoading, setPerformanceLoading] = useState(true);
 
   const [groups, setGroups] = useState([]);
   const [groupsLoading, setGroupsLoading] = useState(true);
@@ -120,6 +130,38 @@ function StaffDetail() {
     }
   }, [id, month]);
 
+  // Samaradorlik bo'limi — faqat O'qituvchi/Yordamchi uchun, ko'ruvchida
+  // `report:view` ruxsati bo'lsa VA tarif "teacher.performance" ochgan bo'lsa.
+  const showPerformance =
+    staff && ["teacher", "assistant"].includes(staff.role) && can("report:view") && hasFeature("teacher.performance");
+
+  const fetchPerformance = useCallback(async () => {
+    if (!staff || !showPerformance) {
+      setPerformanceLoading(false);
+      return;
+    }
+    try {
+      setPerformanceLoading(true);
+      const [y, m] = month.split("-").map(Number);
+      const lastDay = new Date(y, m, 0).getDate();
+      const res = await api.get("/reports/by-teacher", {
+        params: {
+          period: "custom",
+          from: `${month}-01`,
+          to: `${month}-${String(lastDay).padStart(2, "0")}`,
+          center: staff.center,
+        },
+      });
+      const { ok, data, msg } = res.data;
+      if (!ok) throw new Error(msg);
+      setPerformance((data || []).find((row) => String(row.staff._id) === String(id)) || null);
+    } catch (error) {
+      errorMsg(error.message);
+    } finally {
+      setPerformanceLoading(false);
+    }
+  }, [staff, showPerformance, month, id]);
+
   // Hodim qamrovidagi guruhlar: Teacher — faqat o'zi biriktirilgan guruhlar,
   // Manager/Reception — markazdagi barcha guruhlar (feedback_staff_salary_scope
   // bilan bir xil naqsh: [[feedback_staff_salary_scope]]).
@@ -145,25 +187,38 @@ function StaffDetail() {
   }, [staff, id]);
 
   useEffect(() => {
-    fetchStaff();
+    const t = setTimeout(fetchStaff, 0);
+    return () => clearTimeout(t);
   }, [fetchStaff]);
 
   useEffect(() => {
-    fetchCenters();
+    const t = setTimeout(fetchCenters, 0);
+    return () => clearTimeout(t);
   }, [fetchCenters]);
 
   useEffect(() => {
-    fetchSalary();
+    const t = setTimeout(fetchSalary, 0);
+    return () => clearTimeout(t);
   }, [fetchSalary]);
 
   useEffect(() => {
-    fetchGroups();
+    const t = setTimeout(fetchGroups, 0);
+    return () => clearTimeout(t);
   }, [fetchGroups]);
+
+  useEffect(() => {
+    const timer = setTimeout(fetchPerformance, 0);
+    return () => clearTimeout(timer);
+  }, [fetchPerformance]);
 
   // Boshqa joydan (Salary sahifasi, to'lov qabul qilinishi) shu hodimning
   // oyligi o'zgarsa — realtime qayta yuklanadi, refresh talab qilinmaydi.
   useSocketEvent("salary:updated", fetchSalary);
   useSocketEvent("payment:created", fetchSalary);
+  useSocketEvent("payment:cancelled", fetchPerformance);
+  useSocketEvent("payment:updated", fetchSalary);
+  useSocketEvent("payment:updated", fetchPerformance);
+  useSocketEvent("attendance:marked", fetchPerformance);
 
   const toggleBlock = async () => {
     try {
@@ -218,8 +273,6 @@ function StaffDetail() {
     if (salary.salaryType === "fixed") return <Chip value={t("salary.typeFixed")} color="blue" />;
     if (salary.salaryType === "percentage")
       return <Chip value={`${salary.percent ?? staff?.salaryValue ?? 0}%`} color="violet" />;
-    if (salary.salaryType === "perGroup")
-      return <Chip value={t("salary.typePerGroup")} color="orange" />;
     return <Chip value="—" color="slate" />;
   }, [salary, staff, t]);
 
@@ -314,11 +367,11 @@ function StaffDetail() {
           accent="emerald"
         >
           {/* Oy tanlagich aynan shu kartaga tegishli — oylik summa shunga bog'liq */}
-          <input
-            type="month"
+          <MonthInput
+            className="self-start w-44"
             value={month}
-            onChange={(e) => setMonth(e.target.value || currentMonth())}
-            className="self-start px-2 py-1.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-blue-500"
+            onChange={(m) => setMonth(m || currentMonth())}
+            max={currentMonth()}
           />
         </MetricCard>
       </div>
@@ -424,6 +477,42 @@ function StaffDetail() {
           </>
         )}
       </div>
+
+      {showPerformance && (
+        <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 bg-white">
+          <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+            <HiChartBar className="text-fuchsia-500" />
+            {t("report.teacherPerformanceTitle")}
+          </p>
+
+          {performanceLoading ? (
+            <Loading height="12vh" />
+          ) : !performance ? (
+            <div className="flex items-center justify-center w-full py-6 text-slate-400 text-sm">
+              {t("report.empty")}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
+                <span className="text-xs text-slate-400">{t("report.lessonsHeld")}</span>
+                <NumberText>{performance.lessonsHeld}</NumberText>
+              </div>
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
+                <span className="text-xs text-slate-400">{t("report.attendanceRate")}</span>
+                <RateBar value={performance.attendanceRate} />
+              </div>
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
+                <span className="text-xs text-slate-400">{t("report.revenueGenerated")}</span>
+                <NumberText className="text-emerald-600">{money(performance.revenueGenerated)}</NumberText>
+              </div>
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
+                <span className="text-xs text-slate-400">{t("report.students")}</span>
+                <NumberText>{performance.students}</NumberText>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 bg-white">
         <p className="font-semibold text-slate-800">{t("nav.groups")}</p>

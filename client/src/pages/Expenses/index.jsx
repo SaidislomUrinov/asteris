@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HiBanknotes, HiMagnifyingGlass, HiPencil, HiPlus, HiTrash } from "react-icons/hi2";
+import useQueryState from "../../hooks/useQueryState";
+import { HiBanknotes, HiMagnifyingGlass, HiPencil, HiPlus, HiTrash, HiXMark } from "react-icons/hi2";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
 import Dialog from "../../ui/Dialog";
@@ -8,13 +9,17 @@ import Chip from "../../ui/Chip";
 import List from "../../ui/List";
 import Select from "../../ui/Select";
 import FilterBar from "../../ui/FilterBar";
+import useMediaQuery from "../../hooks/useMediaQuery";
 import DropMenu from "../../ui/DropMenu";
 import NumberText from "../../ui/NumberText";
+import MonthNav from "../../ui/MonthNav";
 import ExpenseDialog from "./ExpenseDialog";
 import ExportExcelButton from "../../ui/ExportExcelButton";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
+import useHideFinance from "../../hooks/useHideFinance";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
+import { maskMoney } from "../../utils/moneyFormat";
 
 const CATEGORIES = ["rent", "utilities", "equipment", "marketing", "repair", "other"];
 const CATEGORY_COLOR = {
@@ -26,18 +31,28 @@ const CATEGORY_COLOR = {
   other: "slate",
 };
 
-const money = (v) => `${(v || 0).toLocaleString("uz-UZ")}`;
+const monthOf = (str) => Number(str.slice(5, 7)) - 1;
+const yearOf = (str) => Number(str.slice(0, 4));
+const currentMonth = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+
 
 function Expenses() {
   const { t } = useTranslation();
+  const isDesktop = useMediaQuery("(min-width: 640px)");
+  const [hideFinance] = useHideFinance();
+  const money = (v) => maskMoney(v, hideFinance);
 
   const [rows, setRows] = useState([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [filterCenter, setFilterCenter] = useState("");
-  const [filterCategory, setFilterCategory] = useState("");
+  const [page, setPage] = useQueryState("page", 1);
+  const [search, setSearch] = useQueryState("search", "");
+  const [filterCenter, setFilterCenter] = useQueryState("filterCenter", "");
+  const [filterCategory, setFilterCategory] = useQueryState("filterCategory", "");
+  const [filterMonth, setFilterMonth] = useQueryState("filterMonth", currentMonth());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -58,7 +73,7 @@ function Expenses() {
       setLoading(true);
       setError(false);
       const res = await api.get("/expenses", {
-        params: { page, search, center: filterCenter, category: filterCategory },
+        params: { page, search, center: filterCenter, category: filterCategory, month: filterMonth },
       });
       const { ok, data, totalAmount: total, meta: m, msg } = res.data;
       if (!ok) throw new Error(msg);
@@ -71,7 +86,7 @@ function Expenses() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, filterCenter, filterCategory]);
+  }, [page, search, filterCenter, filterCategory, filterMonth]);
 
   const fetchCenters = useCallback(async () => {
     try {
@@ -84,11 +99,13 @@ function Expenses() {
   }, []);
 
   useEffect(() => {
-    fetchExpenses();
+    const t = setTimeout(fetchExpenses, 0);
+    return () => clearTimeout(t);
   }, [fetchExpenses]);
 
   useEffect(() => {
-    fetchCenters();
+    const t = setTimeout(fetchCenters, 0);
+    return () => clearTimeout(t);
   }, [fetchCenters]);
 
   useSocketEvent("expense:created", fetchExpenses);
@@ -202,73 +219,178 @@ function Expenses() {
     },
   ];
 
+  const monthNames = t("common.monthNames", { returnObjects: true });
+  const monthLabel = `${monthNames[monthOf(filterMonth)]} ${yearOf(filterMonth)}`;
+
+  const totalCard = (
+    <div className="flex items-center justify-between gap-2 h-10 px-3 rounded-xl border border-emerald-200 bg-emerald-50">
+      <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-700">
+        <HiBanknotes className="text-emerald-500" />
+        {t("expense.total")}
+      </span>
+      <NumberText className="text-emerald-700">{money(totalAmount)}</NumberText>
+    </div>
+  );
+
   return (
     <div className="flex flex-col w-full h-full gap-4">
-      <FilterBar
-        cols={showCenterFilter ? 3 : 2}
-        activeCount={[filterCenter, filterCategory].filter(Boolean).length}
-        onReset={() => {
-          setPage(1);
-          setFilterCenter("");
-          setFilterCategory("");
-        }}
-        search={
-          <Input
-            placeholder={t("common.search")}
-            icon={<HiMagnifyingGlass />}
-            variant="white"
-            value={search}
-            onChange={(e) => {
-              setPage(1);
-              setSearch(e.target.value);
-            }}
-          />
-        }
-        actions={
-          <Button onClick={openCreate} className="gap-1.5">
-            <HiPlus className="text-base" />
-            {t("expense.create")}
-          </Button>
-        }
-        extras={
-          <div className="flex items-center justify-between gap-2 h-10 px-3 rounded-xl border border-slate-200 bg-slate-50">
-            <span className="flex items-center gap-1.5 text-sm text-slate-500">
-              <HiBanknotes className="text-emerald-500" />
-              {t("expense.total")}
-            </span>
-            <NumberText>{money(totalAmount)}</NumberText>
+      {isDesktop ? (
+        <div className={`flex flex-col gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]`}>
+          {/* Filtr qatori konvensiyasi: maydonlar flex-1 (tor ekranda yangi
+              qatorga o'tadi), amallar bitta guruhda ml-auto bilan o'ngda. */}
+          <div className="flex flex-wrap items-center gap-2.5 [&>*]:flex-1 [&>*]:min-w-[200px]">
+            <Input
+              placeholder={t("common.search")}
+              icon={<HiMagnifyingGlass />}
+              variant="slate"
+              value={search}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
+            />
+            {showCenterFilter && (
+              <Select
+                placeholder={t("expense.center")}
+                variant="slate"
+                value={filterCenter}
+                onChange={(v) => {
+                  setPage(1);
+                  setFilterCenter(v);
+                }}
+                options={[
+                  { value: "", label: t("common.all") },
+                  ...centers.map((c) => ({ value: c._id, label: c.name })),
+                ]}
+              />
+            )}
+            <Select
+              placeholder={t("expense.category")}
+              variant="slate"
+              value={filterCategory}
+              onChange={(v) => {
+                setPage(1);
+                setFilterCategory(v);
+              }}
+              options={[
+                { value: "", label: t("common.all") },
+                ...CATEGORIES.map((c) => ({ value: c, label: t(`expense.categories.${c}`) })),
+              ]}
+            />
+            <div className="!flex-none !min-w-0">
+              <Button
+                variant="outlined"
+                color="red"
+                onClick={() => {
+                setPage(1);
+                setFilterCenter("");
+                setFilterCategory("");
+                }}
+                disabled={[filterCenter, filterCategory].filter(Boolean).length === 0}
+                className="gap-1.5"
+              >
+                <HiXMark className="text-base" />
+                {t("common.resetFilters")}
+              </Button>
+            </div>
+            <div className="flex items-center gap-2 !flex-none !min-w-0 ml-auto">
+              <Button onClick={openCreate} className="gap-1.5">
+                <HiPlus className="text-base" />
+                {t("expense.create")}
+              </Button>
+            </div>
           </div>
-        }
-      >
-        {showCenterFilter && (
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="flex items-center justify-center h-11 px-2 rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <MonthNav
+                month={filterMonth}
+                label={monthLabel}
+                onChange={(m) => {
+                  setPage(1);
+                  setFilterMonth(m);
+                }}
+                max={currentMonth()}
+              />
+            </div>
+            {totalCard}
+          </div>
+        </div>
+      ) : (
+        <FilterBar
+          cols={showCenterFilter ? 3 : 2}
+          activeCount={[filterCenter, filterCategory].filter(Boolean).length}
+          onReset={() => {
+            setPage(1);
+            setFilterCenter("");
+            setFilterCategory("");
+          }}
+          search={
+            <Input
+              placeholder={t("common.search")}
+              icon={<HiMagnifyingGlass />}
+              variant="slate"
+              value={search}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
+            />
+          }
+          actions={
+            <>
+              <Button onClick={openCreate} className="gap-1.5">
+                <HiPlus className="text-base" />
+                {t("expense.create")}
+              </Button>
+            </>
+          }
+          extras={
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="flex items-center justify-center h-11 px-2 rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <MonthNav
+                  month={filterMonth}
+                  label={monthLabel}
+                  onChange={(m) => {
+                    setPage(1);
+                    setFilterMonth(m);
+                  }}
+                  max={currentMonth()}
+                />
+              </div>
+              {totalCard}
+            </div>
+          }
+        >
+          {showCenterFilter && (
+            <Select
+              placeholder={t("expense.center")}
+              variant="slate"
+              value={filterCenter}
+              onChange={(v) => {
+                setPage(1);
+                setFilterCenter(v);
+              }}
+              options={[
+                { value: "", label: t("common.all") },
+                ...centers.map((c) => ({ value: c._id, label: c.name })),
+              ]}
+            />
+          )}
           <Select
-            placeholder={t("expense.center")}
-            variant="white"
-            value={filterCenter}
+            placeholder={t("expense.category")}
+            variant="slate"
+            value={filterCategory}
             onChange={(v) => {
               setPage(1);
-              setFilterCenter(v);
+              setFilterCategory(v);
             }}
             options={[
               { value: "", label: t("common.all") },
-              ...centers.map((c) => ({ value: c._id, label: c.name })),
+              ...CATEGORIES.map((c) => ({ value: c, label: t(`expense.categories.${c}`) })),
             ]}
           />
-        )}
-        <Select
-          placeholder={t("expense.category")}
-          variant="white"
-          value={filterCategory}
-          onChange={(v) => {
-            setPage(1);
-            setFilterCategory(v);
-          }}
-          options={[
-            { value: "", label: t("common.all") },
-            ...CATEGORIES.map((c) => ({ value: c, label: t(`expense.categories.${c}`) })),
-          ]}
-        />
-      </FilterBar>
+        </FilterBar>
+      )}
 
       {error ? (
         <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
@@ -291,7 +413,7 @@ function Expenses() {
           toolbar={
             <ExportExcelButton
               endpoint="/expenses/export"
-              params={{ search, center: filterCenter, category: filterCategory }}
+              params={{ search, center: filterCenter, category: filterCategory, month: filterMonth }}
             />
           }
         />

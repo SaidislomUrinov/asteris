@@ -5,7 +5,8 @@ import Avatar from "../../ui/Avatar";
 import NumberText from "../../ui/NumberText";
 import ExportExcelButton from "../../ui/ExportExcelButton";
 import useFeature from "../../hooks/useFeature";
-import { ReportError, SortHeader, money, useReportResource, useSorted } from "./shared";
+import { ReportError, SortHeader } from "./shared";
+import { money, useReportResource, useSorted } from "./reportData";
 
 const KIND_COLOR = { client: "violet", staff: "blue", admin: "slate" };
 

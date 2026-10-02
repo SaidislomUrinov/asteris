@@ -14,73 +14,32 @@ import {
 } from "react-icons/hi2";
 import Button from "../../ui/Button";
 import Select from "../../ui/Select";
-import NumberText from "../../ui/NumberText";
+import MonthInput from "../../ui/MonthInput";
 import Loading from "../../ui/Loading";
 import PaymentDonut from "../Groups/PaymentDonut";
 import RevenueChart from "../Groups/RevenueChart";
 import ExpenseCategoryDonut from "../Centers/ExpenseCategoryDonut";
 import TodayLessonsScroll from "./TodayLessonsScroll";
 import RevenueByCollector from "./RevenueByCollector";
+import LeadDonut from "./LeadDonut";
+import LeadsBySubject from "./LeadsBySubject";
+import useCan from "../../hooks/useCan";
+import MoneyCard from "../../components/dashboard/MoneyCard";
+import StatCard from "../../components/dashboard/StatCard";
+import DashboardHeader from "../../components/dashboard/DashboardHeader";
+import HideFinanceToggle from "../../components/HideFinanceToggle";
+import HiddenFinancePanel from "../../components/HiddenFinancePanel";
+import useHideFinance from "../../hooks/useHideFinance";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
 import { api } from "../../utils/fetching";
 import { errorMsg } from "../../utils/alert";
-
-const money = (v) => `${(v || 0).toLocaleString("uz-UZ")}`;
+import { maskMoney } from "../../utils/moneyFormat";
 
 const currentMonth = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 };
-
-// Moliyaviy ko'rsatkichlar — sahifadagi ENG muhim raqamlar, shuning uchun
-// katta, rangli (gradient) kartalarda. `NumberText`da `text-black` qat'iy
-// yozilgani uchun oq rang `!` bilan bekor qilinadi.
-function MoneyCard({ icon, label, value, suffix, hint, gradient, shadow }) {
-  return (
-    <div
-      className={`relative overflow-hidden flex flex-col justify-between gap-4 p-5 rounded-2xl text-white bg-gradient-to-br ${gradient} shadow-lg ${shadow}`}
-    >
-      {/* Fon dekoratsiyasi — ikonka suvbelgi sifatida */}
-      <span className="absolute -right-5 -bottom-6 text-[6.5rem] leading-none text-white/[0.07] pointer-events-none">
-        {icon}
-      </span>
-
-      <div className="relative flex items-center gap-2">
-        <span className="flex items-center justify-center w-9 h-9 shrink-0 rounded-xl bg-white/20 text-lg">
-          {icon}
-        </span>
-        <span className="text-sm font-medium text-white/90">{label}</span>
-      </div>
-
-      <div className="relative flex flex-col gap-0.5 min-w-0">
-        <span className="flex items-baseline gap-1.5 min-w-0">
-          <NumberText className="!text-white !text-2xl sm:!text-3xl 2xl:!text-[2rem] font-bold leading-none truncate">
-            {value}
-          </NumberText>
-          {suffix && <span className="text-sm text-white/70 shrink-0">{suffix}</span>}
-        </span>
-        {hint && <span className="text-xs text-white/70 truncate">{hint}</span>}
-      </div>
-    </div>
-  );
-}
-
-// Ikkilamchi hisoblagichlar — ixcham oq kartalar, moliyaviy bloklardan
-// aniq past darajada turadi.
-function StatCard({ icon, label, value, color }) {
-  return (
-    <div className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:border-slate-300">
-      <div className={`flex items-center justify-center w-10 h-10 shrink-0 rounded-lg text-xl ${color}`}>
-        {icon}
-      </div>
-      <div className="flex flex-col min-w-0">
-        <NumberText className="text-lg leading-none">{value}</NumberText>
-        <span className="text-xs text-slate-400 truncate">{label}</span>
-      </div>
-    </div>
-  );
-}
 
 function Dashboard() {
   const { t } = useTranslation();
@@ -97,6 +56,13 @@ function Dashboard() {
   const [teacherSalary, setTeacherSalary] = useState({ total: 0, count: 0 });
   const [roomsCount, setRoomsCount] = useState(0);
   const [subjectsCount, setSubjectsCount] = useState(0);
+  // Moliyaviy raqamlarni vaqtincha yashirish — resepshin oldida odam
+  // o'tirgan yoki noutbuk HDMI orqali proyektorga ulangan holatlar uchun.
+  const [hideFinance, toggleHideFinance] = useHideFinance();
+  const can = useCan();
+  const canLeads = can("lead:view");
+  const [leadStats, setLeadStats] = useState(null);
+  const [subjectNames, setSubjectNames] = useState({});
 
   const fetchStats = useCallback(async () => {
     try {
@@ -139,16 +105,43 @@ function Dashboard() {
     }
   }, [month, filterCenter]);
 
+  // Oylik lid statistikasi — yuqoridagi oy/filial tanlovi bilan birga o'zgaradi.
+  const fetchLeadStats = useCallback(async () => {
+    if (!canLeads) return;
+    try {
+      const [statsRes, subjectsRes] = await Promise.all([
+        api.get("/student-leads/stats", { params: { month, center: filterCenter } }),
+        api.get("/subjects", { params: { page: 1 } }),
+      ]);
+      if (statsRes.data.ok) setLeadStats(statsRes.data.data);
+      if (subjectsRes.data.ok) {
+        setSubjectNames(Object.fromEntries((subjectsRes.data.data || []).map((s) => [s._id, s.name])));
+      }
+    } catch (error) {
+      errorMsg(error.message);
+    }
+  }, [month, filterCenter, canLeads]);
+
+  useSocketEvent("lead:changed", () => fetchLeadStats(), canLeads);
+
   useEffect(() => {
-    fetchStats();
+    const t = setTimeout(fetchStats, 0);
+    return () => clearTimeout(t);
   }, [fetchStats]);
 
   useEffect(() => {
-    fetchExpenseByCategory();
+    const id = setTimeout(fetchLeadStats, 0);
+    return () => clearTimeout(id);
+  }, [fetchLeadStats]);
+
+  useEffect(() => {
+    const t = setTimeout(fetchExpenseByCategory, 0);
+    return () => clearTimeout(t);
   }, [fetchExpenseByCategory]);
 
   useEffect(() => {
-    fetchTeacherSalary();
+    const t = setTimeout(fetchTeacherSalary, 0);
+    return () => clearTimeout(t);
   }, [fetchTeacherSalary]);
 
   useEffect(() => {
@@ -189,13 +182,21 @@ function Dashboard() {
   const reloadSalary = useDebouncedCallback(fetchTeacherSalary, 3000);
 
   useSocketEvent("payment:created", reloadStats);
+  useSocketEvent("payment:cancelled", reloadStats);
+  useSocketEvent("payment:updated", reloadStats);
   useSocketEvent("expense:created", reloadStats);
   useSocketEvent("expense:updated", reloadStats);
   useSocketEvent("attendance:marked", reloadStats);
+  // Arxivlash/qaytarish va guruhdan chiqish qarzdorlik/o'quvchi sonini
+  // o'zgartiradi — server keshi shu hodisalarda bekor qilinadi
+  // (emitter.util.js CACHE_BUSTING), Dashboard ham shu yerda qayta so'raydi.
+  useSocketEvent("archive:changed", reloadStats);
+  useSocketEvent("student:leftGroup", reloadStats);
   useSocketEvent("expense:created", reloadExpenses);
   useSocketEvent("expense:updated", reloadExpenses);
   useSocketEvent("salary:updated", reloadSalary);
   useSocketEvent("payment:created", reloadSalary);
+  useSocketEvent("payment:updated", reloadSalary);
 
   if (loading && !data) return <Loading height="60vh" />;
 
@@ -213,20 +214,16 @@ function Dashboard() {
 
   return (
     <div className="flex flex-col w-full h-full gap-4">
-      <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-        <div className="flex items-center gap-2.5 flex-1 min-w-[200px]">
-          <span className="flex items-center justify-center w-9 h-9 shrink-0 rounded-xl bg-amber-50 text-amber-500 text-lg">
-            <HiChartPie />
-          </span>
-          <span className="text-lg font-space font-bold text-slate-900">
-            {t("dashboard.title")}
-          </span>
-        </div>
-        <input
-          type="month"
+      <DashboardHeader
+        icon={<HiChartPie />}
+        title={t("dashboard.title")}
+        toggle={<HideFinanceToggle hidden={hideFinance} onToggle={toggleHideFinance} />}
+      >
+        <MonthInput
+          className="w-full sm:w-44"
           value={month}
-          onChange={(e) => setMonth(e.target.value || currentMonth())}
-          className="px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-500"
+          onChange={(m) => setMonth(m || currentMonth())}
+          max={currentMonth()}
         />
         {centers.length > 1 && (
           <Select
@@ -241,31 +238,35 @@ function Dashboard() {
             ]}
           />
         )}
-      </div>
+      </DashboardHeader>
 
-      {/* MOLIYA — sahifadagi eng muhim raqamlar */}
+      {/* MOLIYA — sahifadagi eng muhim raqamlar. Ko'z tugmasi bosilganda
+          har bir son ANIQ "****" bilan almashadi (blur emas — blur bilan
+          asl piksel DOM'da qolib, ba'zi holatda o'qilishi mumkin edi).
+          Resepshin oldida odam o'tirgani yoki noutbuk HDMI orqali
+          proyektorga ulanganida shu tugma bilan darhol yashiriladi. */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <MoneyCard
           icon={<HiBanknotes />}
           label={t("dashboard.monthRevenue")}
-          value={money(data.monthRevenue)}
-          suffix={t("student.somSuffix")}
+          value={maskMoney(data.monthRevenue, hideFinance)}
+          suffix={hideFinance ? "" : t("student.somSuffix")}
           gradient="from-emerald-500 to-teal-600"
           shadow="shadow-emerald-500/20"
         />
         <MoneyCard
           icon={<HiArrowTrendingDown />}
           label={t("dashboard.monthExpenses")}
-          value={money(data.monthExpenses)}
-          suffix={t("student.somSuffix")}
+          value={maskMoney(data.monthExpenses, hideFinance)}
+          suffix={hideFinance ? "" : t("student.somSuffix")}
           gradient="from-rose-500 to-red-600"
           shadow="shadow-rose-500/20"
         />
         <MoneyCard
           icon={<HiWallet />}
           label={t("center.teacherSalaryCardTitle")}
-          value={money(teacherSalary.total)}
-          suffix={t("student.somSuffix")}
+          value={maskMoney(teacherSalary.total, hideFinance)}
+          suffix={hideFinance ? "" : t("student.somSuffix")}
           hint={t("dashboard.teacherSalaryHint", { count: teacherSalary.count })}
           gradient="from-violet-500 to-indigo-600"
           shadow="shadow-violet-500/20"
@@ -273,8 +274,8 @@ function Dashboard() {
         <MoneyCard
           icon={<HiExclamationTriangle />}
           label={t("student.debt")}
-          value={money(data.currentCycleDebt)}
-          suffix={t("student.somSuffix")}
+          value={maskMoney(data.currentCycleDebt, hideFinance)}
+          suffix={hideFinance ? "" : t("student.somSuffix")}
           hint={t("dashboard.debtHint")}
           gradient="from-amber-500 to-orange-600"
           shadow="shadow-amber-500/20"
@@ -321,36 +322,60 @@ function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
-        <div className="lg:col-span-1">
-          <PaymentDonut
-            paid={data.currentCyclePaid || 0}
-            debt={data.currentCycleDebt || 0}
-          />
+      {/* Analitika qatorlari SOBIT balandlikda (lg+). Aks holda yonidagi
+          kartochka (masalan kassirlar ro'yxati) uzayganda grid qatori
+          o'sib, donut ham keraksiz cho'zilib ketardi — ro'yxat endi
+          kartochka ichida scroll bo'ladi. */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch lg:h-88">
+        <div className="lg:col-span-1 min-h-0">
+          {hideFinance ? (
+            <HiddenFinancePanel />
+          ) : (
+            <PaymentDonut paid={data.currentCyclePaid || 0} debt={data.currentCycleDebt || 0} />
+          )}
         </div>
-        <div className="lg:col-span-2">
-          <RevenueChart payments={data.chartPayments} />
+        <div className="lg:col-span-2 min-h-0">
+          {hideFinance ? <HiddenFinancePanel /> : <RevenueChart payments={data.chartPayments} />}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
-        <div className="lg:col-span-1">
-          <ExpenseCategoryDonut data={expenseByCategory} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch lg:h-88">
+        <div className="lg:col-span-1 min-h-0">
+          {hideFinance ? <HiddenFinancePanel /> : <ExpenseCategoryDonut data={expenseByCategory} />}
         </div>
 
         {/* Owner'da yonida "kim qancha yig'gani", staff'da esa (kartochka
             ko'rinmagani uchun) o'rnini bugungi darslar egallaydi — bo'sh
-            ustun qolmasligi kerak. */}
-        <div className="lg:col-span-2">
+            ustun qolmasligi kerak. Bugungi darslar pul emas, yashirilmaydi. */}
+        <div className="lg:col-span-2 min-h-0">
           {authType === "owner" ? (
-            <RevenueByCollector month={month} center={filterCenter} />
+            hideFinance ? (
+              <HiddenFinancePanel />
+            ) : (
+              <RevenueByCollector month={month} center={filterCenter} />
+            )
           ) : (
             <TodayLessonsScroll center={filterCenter} />
           )}
         </div>
       </div>
 
-      {authType === "owner" && <TodayLessonsScroll center={filterCenter} />}
+      {canLeads && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch lg:h-88">
+          <div className="lg:col-span-1 min-h-0">
+            <LeadDonut stats={leadStats} />
+          </div>
+          <div className="lg:col-span-2 min-h-0">
+            <LeadsBySubject rows={leadStats?.bySubject || []} subjectNames={subjectNames} />
+          </div>
+        </div>
+      )}
+
+      {authType === "owner" && (
+        <div className="shrink-0">
+          <TodayLessonsScroll center={filterCenter} />
+        </div>
+      )}
     </div>
   );
 }

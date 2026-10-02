@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
 
-const RECEIPT_VERIFY_BASE = "https://aseteris.uz/payment/info";
+const RECEIPT_VERIFY_BASE = "https://wenet.uz/payment/verify";
 
 function formatMonth(forMonth, monthNames) {
   if (!forMonth) return "—";
@@ -36,16 +36,34 @@ function drawPerforation(doc, y, pageWidth) {
   doc.setLineDashPattern([], 0);
 }
 
+const PAGE_W = 320;
+const MARGIN = 26;
+const QR_SIZE = 64;
+const DEBT_ROW_H = 15;
+const MAX_DEBT_ROWS = 8;
+
+const INK = [15, 23, 42];
+const MUTED = [100, 116, 139];
+const FAINT = [148, 163, 184];
+const LINE = [226, 232, 240];
+const GREEN = [15, 150, 96];
+const RED = [220, 38, 38];
+
 // To'lovdan keyin ochiladigan "Chek yuklansinmi?" modalidagi "Yuklash"
-// tugmasi shu funksiyani chaqiradi. Dizayn — boarding-pass/chipta uslubidagi
-// namuna (receipt example.png) asosida: yuqorida markaz/guruh "yo'nalishi",
-// tishli (perforatsiya) ajratuvchi chiziq, pastda o'quvchi ma'lumotlari va
-// QR kod (chekni https://aseteris.uz/payment/info/:paymentId orqali
-// tekshirish uchun).
+// tugmasi shu funksiyani chaqiradi.
+//
+// Dizayn ("summa birinchi", 2026-09-21): tepada markazda katta yashil
+// to'langan summa, tishli ajratuvchi, pastda kalit–qiymat qatorlari
+// (O'quvchi / Guruh / Filial), qarzdorlik qutisi, QR va brend. Filial, guruh
+// va o'quvchi nomlari HAR QANDAY uzunlikda bo'lishi mumkin — ular chap
+// ustunda label bilan yonma-yon, `splitTextToSize` orqali bir necha qatorga
+// o'raladi, hech narsa ustma-ust tushmaydi. Chek balandligi shunga qarab
+// o'sadi: jsPDF'da sahifa formati keyin o'zgarmagani uchun avval "quruq"
+// o'tishda balandlik o'lchanadi, keyin haqiqiy hujjat chiziladi.
 //
 // `t` — chaqiruvchi komponentdan (useTranslation) uzatiladi, chunki bu
 // oddiy util funksiya, React komponent emas — ko'p tillik tizimga moslash
-// uchun barcha matnlar shu orqali tarjima qilinadi (asteris.uz brend nomi
+// uchun barcha matnlar shu orqali tarjima qilinadi (wenet.uz brend nomi
 // bundan mustasno — u tarjima qilinmaydi).
 export async function downloadPaymentReceiptPdf(
   {
@@ -55,7 +73,7 @@ export async function downloadPaymentReceiptPdf(
     phone,
     amount,
     remainingDebt,
-    // [{ month: "2026-04", debt: 350000 }] — qarzi bor HAR BIR oy.
+    // [{ kind: "opening"|"cycle", month: "2026-04"|null, debt: 350000 }] — qarzi bor HAR BIR oy.
     // Backend `student.service.js` → `computeBilling().debtBreakdown`
     // (API_CONTRACT_receipt_debt_breakdown.md). Berilmasa chek eskicha,
     // faqat jami summa bilan chiqadi.
@@ -69,188 +87,188 @@ export async function downloadPaymentReceiptPdf(
   const somSuffix = t("student.somSuffix");
   const hasDebt = remainingDebt > 0;
 
-  // Chekka sig'adigan qatorlar soni cheklangan — undan ortig'i "va yana N oy"
-  // qatoriga yig'iladi, aks holda chek cheksiz cho'zilib ketardi.
-  const MAX_DEBT_ROWS = 8;
   const allDebtRows = (debtBreakdown || []).filter((r) => r?.debt > 0);
   const debtRows = allDebtRows.slice(0, MAX_DEBT_ROWS);
   const hiddenRowCount = allDebtRows.length - debtRows.length;
 
-  // Qarzdorlik qutisi balandligi qatorlar soniga qarab o'sadi, sahifa
-  // formati esa shunga mos ravishda cho'ziladi (jsPDF'da format hujjat
-  // yaratilgandan keyin o'zgarmaydi, shuning uchun oldindan hisoblanadi).
-  const DEBT_ROW_H = 15;
-  const debtBoxH = debtRows.length
-    ? 26 + debtRows.length * DEBT_ROW_H + (hiddenRowCount > 0 ? DEBT_ROW_H : 0) + 22
-    : 40;
-  const pageHeight = 400 + Math.max(0, debtBoxH - 40);
-
-  const doc = new jsPDF({ unit: "pt", format: [320, pageHeight] });
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 26;
-  const qrSize = 64;
-  const leftWidth = pageWidth - margin * 2 - qrSize - 14;
-
-  // Chap tomondagi rang chizig'i — qarz bo'lsa qizil, bo'lmasa yashil
-  const accent = hasDebt ? [239, 68, 68] : [16, 185, 129];
-  doc.setFillColor(...accent);
-  doc.rect(0, 0, 6, 150, "F");
-
-  // Sarlavha — markaz va guruh "yo'nalish" ko'rinishida
-  let y = 40;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(17);
-  doc.setTextColor(15, 23, 42);
-  doc.text(centerName || "—", margin, y);
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(148, 163, 184);
-  doc.text(t("student.receiptCenterLabel").toUpperCase(), margin, y + 13);
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(17);
-  doc.setTextColor(15, 23, 42);
-  doc.text(groupLabel || "—", pageWidth - margin, y, { align: "right" });
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(148, 163, 184);
-  doc.text(t("student.receiptGroupLabel").toUpperCase(), pageWidth - margin, y + 13, {
-    align: "right",
-  });
-
-  y += 34;
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(100, 116, 139);
-  const now = new Date();
-  doc.text(now.toLocaleString("uz-UZ"), margin, y);
-
-  y += 26;
-  drawPerforation(doc, y, pageWidth);
-  y += 34;
-
-  // O'quvchi
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(148, 163, 184);
-  doc.text(t("student.receiptStudentLabel").toUpperCase(), margin, y);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.setTextColor(15, 23, 42);
-  doc.text(studentName || "", margin, y + 16);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text(phone || "", margin, y + 30);
-
-  // QR kod — chekni tekshirish uchun (yuqori o'ng, https://aseteris.uz/payment/info/:paymentId)
-  const qrValue = paymentId
-    ? `${RECEIPT_VERIFY_BASE}/${paymentId}`
-    : RECEIPT_VERIFY_BASE;
+  const qrValue = paymentId ? `${RECEIPT_VERIFY_BASE}/${paymentId}` : RECEIPT_VERIFY_BASE;
   const qrDataUrl = await QRCode.toDataURL(qrValue, {
     margin: 0,
     width: 256,
     color: { dark: "#0f172a", light: "#ffffff" },
   });
-  doc.addImage(qrDataUrl, "PNG", pageWidth - margin - qrSize, y - 6, qrSize, qrSize);
 
-  y += 56;
+  const dateStr = new Date().toLocaleString("uz-UZ");
+  const contentW = PAGE_W - MARGIN * 2;
 
-  // Chapdagi ustunga (QR maydonini bosib o'tmaydigan kenglikda) summa/oy
-  const cols = [
-    { label: t("student.receiptAmountLabel"), value: formatSum(amount, somSuffix), color: [16, 150, 90] },
-    { label: t("student.receiptMonthLabel"), value: formatMonth(forMonth, monthNames), color: [30, 41, 59] },
+  // Kalit–qiymat qatorlari: label ustuni sobit, qiymat qolgan kenglikni
+  // oladi va kerak bo'lsa o'raladi.
+  const KV_LABEL_W = 62;
+  const kvValueW = contentW - KV_LABEL_W;
+  const kvRows = [
+    {
+      label: t("student.receiptStudentLabel"),
+      value: studentName || "—",
+      sub: phone || "",
+    },
+    { label: t("student.receiptGroupLabel"), value: groupLabel || "—" },
+    { label: t("student.receiptCenterLabel"), value: centerName || "—" },
   ];
-  const colWidth = leftWidth / 2;
-  cols.forEach((col, i) => {
-    const x = margin + i * colWidth;
+
+  // `dry` — faqat balandlikni o'lchash; chizmaydi.
+  const render = (doc, dry) => {
+    const text = (...args) => {
+      if (!dry) doc.text(...args);
+    };
+    let y = 38;
+
+    // ---- Summa (hero) ----
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184);
-    doc.text(col.label.toUpperCase(), x, y);
+    doc.setTextColor(...FAINT);
+    text(t("student.receiptPaidLabel").toUpperCase(), PAGE_W / 2, y, { align: "center" });
+    y += 26;
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(...col.color);
-    doc.text(String(col.value), x, y + 16, { maxWidth: colWidth - 6 });
-  });
-
-  y += 46;
-
-  // Qarzdorlik — "SEAT" uslubidagi ramkali quti. Qarzi bor oylar bo'lsa
-  // quti kengayadi va har bir oy alohida qator bo'lib chiqadi
-  // ("04-2026 ....... 350,000 so'm"), oxirida jami.
-  const boxW = debtRows.length ? pageWidth - margin * 2 : 140;
-  const boxH = debtBoxH;
-  const boxRight = margin + boxW - 10;
-  doc.setDrawColor(226, 232, 240);
-  doc.setLineWidth(1);
-  doc.roundedRect(margin, y, boxW, boxH, 4, 4, "S");
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(148, 163, 184);
-  doc.text(t("student.receiptDebtLabel").toUpperCase(), margin + 10, y + 14);
-
-  if (debtRows.length) {
-    let rowY = y + 30;
-    doc.setFontSize(10);
-    debtRows.forEach((row) => {
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(51, 65, 85);
-      doc.text(monthCode(row.month), margin + 10, rowY);
-      doc.setTextColor(220, 38, 38);
-      doc.text(formatSum(row.debt, somSuffix), boxRight, rowY, { align: "right" });
-      rowY += DEBT_ROW_H;
+    doc.setFontSize(26);
+    doc.setTextColor(...GREEN);
+    text(formatSum(amount, somSuffix), PAGE_W / 2, y, { align: "center", maxWidth: contentW });
+    y += 16;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...MUTED);
+    text(`${formatMonth(forMonth, monthNames)}  ·  ${dateStr}`, PAGE_W / 2, y, {
+      align: "center",
+      maxWidth: contentW,
     });
 
-    if (hiddenRowCount > 0) {
+    y += 24;
+    if (!dry) drawPerforation(doc, y, PAGE_W);
+    y += 30;
+
+    // ---- Kalit–qiymat ----
+    for (const row of kvRows) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      const lines = doc.splitTextToSize(String(row.value), kvValueW);
+
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(148, 163, 184);
-      doc.text(t("student.receiptDebtMoreMonths", { count: hiddenRowCount }), margin + 10, rowY);
-      rowY += DEBT_ROW_H;
+      doc.setFontSize(8);
+      doc.setTextColor(...FAINT);
+      text(row.label.toUpperCase(), MARGIN, y);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(...INK);
+      text(lines, MARGIN + KV_LABEL_W, y);
+      y += lines.length * 13;
+
+      if (row.sub) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        doc.setTextColor(...MUTED);
+        text(row.sub, MARGIN + KV_LABEL_W, y);
+        y += 12;
+      }
+      y += 8;
     }
 
-    // Jami qatori — ustidagi ingichka ajratuvchi chiziq bilan
-    doc.setDrawColor(226, 232, 240);
-    doc.line(margin + 10, rowY - 6, boxRight, rowY - 6);
+    y += 8;
+
+    // ---- Qarzdorlik qutisi ----
+    const boxH = debtRows.length
+      ? 26 + debtRows.length * DEBT_ROW_H + (hiddenRowCount > 0 ? DEBT_ROW_H : 0) + 22
+      : 40;
+    const boxRight = MARGIN + contentW - 10;
+    if (!dry) {
+      doc.setDrawColor(...LINE);
+      doc.setLineWidth(1);
+      doc.roundedRect(MARGIN, y, contentW, boxH, 4, 4, "S");
+    }
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184);
-    doc.text(t("student.receiptDebtTotalLabel").toUpperCase(), margin + 10, rowY + 8);
+    doc.setTextColor(...FAINT);
+    text(t("student.receiptDebtLabel").toUpperCase(), MARGIN + 10, y + 14);
+
+    if (debtRows.length) {
+      let rowY = y + 30;
+      doc.setFontSize(10);
+      for (const row of debtRows) {
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(51, 65, 85);
+        // Ko'chirishdan oldingi (boshlang'ich) qarz — belgisi bilan, oyi
+        // noma'lum bo'lsa "Oyi ko'rsatilmagan" (API_CONTRACT_opening_debts.md §4).
+        const rowLabel =
+          row.kind === "opening"
+            ? `${row.month ? monthCode(row.month) : t("student.openingMonthUnknown")} - ${t("student.openingBadge")}`
+            : monthCode(row.month);
+        text(rowLabel, MARGIN + 10, rowY, { maxWidth: contentW - 110 });
+        doc.setTextColor(...RED);
+        text(formatSum(row.debt, somSuffix), boxRight, rowY, { align: "right" });
+        rowY += DEBT_ROW_H;
+      }
+      if (hiddenRowCount > 0) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(...FAINT);
+        text(t("student.receiptDebtMoreMonths", { count: hiddenRowCount }), MARGIN + 10, rowY);
+        rowY += DEBT_ROW_H;
+      }
+      if (!dry) {
+        doc.setDrawColor(...LINE);
+        doc.line(MARGIN + 10, rowY - 6, boxRight, rowY - 6);
+      }
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(...FAINT);
+      text(t("student.receiptDebtTotalLabel").toUpperCase(), MARGIN + 10, rowY + 8);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(...RED);
+      text(formatSum(remainingDebt, somSuffix), boxRight, rowY + 8, { align: "right" });
+    } else {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(...(hasDebt ? RED : MUTED));
+      text(hasDebt ? formatSum(remainingDebt, somSuffix) : t("student.noDebt"), MARGIN + 10, y + 30);
+    }
+    y += boxH + 26;
+
+    // ---- QR (markazda) ----
+    if (!dry) doc.addImage(qrDataUrl, "PNG", (PAGE_W - QR_SIZE) / 2, y, QR_SIZE, QR_SIZE);
+    y += QR_SIZE + 14;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...FAINT);
+    const hintLines = doc.splitTextToSize(t("student.receiptVerifyHint"), contentW - 40);
+    text(hintLines, PAGE_W / 2, y, { align: "center" });
+    y += hintLines.length * 10 + 14;
+
+    // ---- Brend qatori ----
+    if (!dry) {
+      doc.setDrawColor(...LINE);
+      doc.setLineDashPattern([3, 3], 0);
+      doc.line(MARGIN, y, PAGE_W - MARGIN, y);
+      doc.setLineDashPattern([], 0);
+    }
+    y += 20;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.setTextColor(220, 38, 38);
-    doc.text(formatSum(remainingDebt, somSuffix), boxRight, rowY + 8, { align: "right" });
-  } else {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(...(hasDebt ? [220, 38, 38] : [100, 116, 139]));
-    doc.text(
-      hasDebt ? formatSum(remainingDebt, somSuffix) : t("student.noDebt"),
-      margin + 10,
-      y + 30,
-    );
-  }
+    doc.setTextColor(59, 130, 246);
+    text("W", MARGIN, y);
+    doc.setTextColor(...INK);
+    text("enet", MARGIN + doc.getTextWidth("W"), y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...FAINT);
+    text("wenet.uz", PAGE_W - MARGIN, y, { align: "right" });
 
-  y += boxH + 34;
+    return y + 30;
+  };
 
-  // Pastki brend qatori
-  doc.setDrawColor(226, 232, 240);
-  doc.setLineDashPattern([3, 3], 0);
-  doc.line(margin, y, pageWidth - margin, y);
-  doc.setLineDashPattern([], 0);
-
-  y += 22;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(59, 130, 246);
-  doc.text("A", margin, y);
-  doc.setTextColor(15, 23, 42);
-  doc.text("steris", margin + doc.getTextWidth("A"), y);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(148, 163, 184);
-  doc.text("asteris.uz", pageWidth - margin, y, { align: "right" });
+  // 1-o'tish: balandlik. 2-o'tish: haqiqiy chizish.
+  const pageHeight = render(new jsPDF({ unit: "pt", format: [PAGE_W, 2000] }), true);
+  const doc = new jsPDF({ unit: "pt", format: [PAGE_W, pageHeight] });
+  render(doc, false);
 
   const safeName = (studentName || "chek").trim().replace(/[\\/:*?"<>|]+/g, "");
   doc.save(`chek-${safeName}.pdf`);

@@ -6,6 +6,7 @@ import Loading from "../../ui/Loading";
 import { getTashkentNow } from "../../utils/schedule";
 import { api } from "../../utils/fetching";
 import { errorMsg } from "../../utils/alert";
+import { useSocketEvent } from "../../hooks/useSocketEvent";
 
 const TICK_MS = 30000;
 const CARD_WIDTH = 224; // w-56
@@ -108,8 +109,15 @@ function TodayLessonsScroll({ center }) {
   }, [center]);
 
   useEffect(() => {
-    fetchLessons();
+    const t = setTimeout(fetchLessons, 0);
+    return () => clearTimeout(t);
   }, [fetchLessons]);
+
+  // Jadval boshqa joydan (/schedule, xona detali) o'zgartirilsa — bugungi
+  // darslar polosasi refresh'siz eskirib qolmasin deb qayta yuklanadi.
+  useSocketEvent("group:changed", () => {
+    fetchLessons();
+  });
 
   // Vaqt statik emas — 30 soniyada bir marta holatlarni (tugadi/boshlandi)
   // qayta hisoblash va markazlashtirishni yangilash uchun tick.
@@ -178,7 +186,7 @@ function TodayLessonsScroll({ center }) {
   };
 
   return (
-    <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 bg-white h-full">
+    <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 bg-white h-full min-h-0">
       <div className="flex items-center justify-between gap-2 shrink-0">
         <p className="font-semibold text-slate-800">{t("dashboard.todayLessons")}</p>
         <span className="text-xs text-slate-400">{getTashkentNow().time}</span>

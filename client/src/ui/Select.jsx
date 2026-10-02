@@ -16,19 +16,19 @@ function Select({
   icon = null,
 }) {
   const colors = {
-    emerald: "hover:ring-emerald-500 ring-emerald-500",
-    blue: "hover:ring-blue-500 ring-blue-500",
-    black: "hover:ring-black ring-black",
-    red: "hover:ring-red-500 ring-red-500",
-    orange: "hover:ring-orange-500 ring-orange-500",
-    yellow: "hover:ring-yellow-500 ring-yellow-500",
-    slate: "hover:ring-slate-500 ring-slate-500",
+    emerald: "ring-emerald-500/15",
+    blue: "ring-blue-500/15",
+    black: "ring-slate-900/10",
+    red: "ring-red-500/15",
+    orange: "ring-orange-500/15",
+    yellow: "ring-yellow-500/20",
+    slate: "ring-slate-500/15",
   };
 
   const openBorderColors = {
     emerald: "border-emerald-500",
     blue: "border-blue-500",
-    black: "border-black",
+    black: "border-slate-900",
     red: "border-red-500",
     orange: "border-orange-500",
     yellow: "border-yellow-500",
@@ -38,17 +38,28 @@ function Select({
   const selectedItemColors = {
     emerald: "bg-emerald-50 text-emerald-700",
     blue: "bg-blue-50 text-blue-700",
-    black: "bg-zinc-100 text-black",
+    black: "bg-slate-100 text-slate-900",
     red: "bg-red-50 text-red-700",
     orange: "bg-orange-50 text-orange-700",
     yellow: "bg-yellow-50 text-yellow-700",
     slate: "bg-slate-100 text-slate-700",
   };
 
+  // Qiymat tanlanganda maydon avval butunlay rangga bo'yalardi; yangi dizaynda
+  // u oq qoladi (qatordagi barcha maydonlar bir xil ko'rinadi) va tanlangani
+  // faqat matnning to'qligi bilan ajralib turadi — shu sabab alohida
+  // "active trigger" ranglari kerak emas.
   const variants = {
-    slate: "bg-slate-100 border-slate-200",
+    slate: "bg-white border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
     white: "bg-white border-slate-200",
+    // Faqat FilterBar ichida ishlatiladi: bo'sh bo'lganda oddiy oq, qiymat
+    // tanlanganda ochiq ko'k fon bilan ajralib turadi — foydalanuvchi qaysi
+    // filtrlar faol ekanini qatorga qarab darhol ko'radi.
+    filter: "bg-white border-slate-200",
   };
+
+  const filterSelectedClasses =
+    "!bg-blue-50 !border-blue-200 hover:!border-blue-300";
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(value);
   const [pos, setPos] = useState({
@@ -62,9 +73,12 @@ function Select({
   const triggerRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  useEffect(() => {
+  // Tashqi `value` o'zgarsa — render fazasida sinxronlanadi (effect emas).
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
     setSelected(value);
-  }, [value]);
+  }
 
   const calcPos = () => {
     if (!triggerRef.current) return;
@@ -129,32 +143,39 @@ function Select({
   }, [open]);
 
   return (
-    <div className={`flex flex-col gap-1 w-full ${className}`}>
+    <div className={`flex flex-col gap-1 w-full min-w-[100px] ${className}`}>
       {label && (
-        <span className="pl-2 text-sm text-slate-800">
-          {label} {required && <span className="text-red-500">*</span>}
+        <span className="text-xs font-medium text-slate-600">
+          {label} {required && <span className="text-rose-500">*</span>}
         </span>
       )}
 
       <div
         ref={triggerRef}
         onClick={handleOpen}
-        className={`relative w-full h-10 rounded-xl flex items-center duration-300 justify-between border select-none ${icon ? "pl-2 pr-3" : "px-3"} ${variants[variant]} ${
+        className={`select-trigger relative w-full h-11 rounded-xl flex items-center transition-colors duration-200 justify-between border select-none ${icon ? "pl-3.5 pr-3" : "px-3.5"} ${
+          variants[variant]
+        } ${
           disabled
-            ? "opacity-50 cursor-not-allowed"
-            : `cursor-pointer hover:ring-2 ${colors[color]}`
-        } ${open ? `ring-2 ${colors[color]} ${openBorderColors[color]}` : ""}`}
+            ? "bg-slate-50 border-slate-200 shadow-none cursor-not-allowed"
+            : `cursor-pointer hover:border-slate-300`
+        } ${variant === "filter" && selected ? filterSelectedClasses : ""} ${open ? `ring-3 ${colors[color]} ${openBorderColors[color]}` : ""}`}
       >
-        <span className="flex items-center gap-2 overflow-hidden">
-          {icon && <span className="text-slate-500 shrink-0">{icon}</span>}
+        <span className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+          {icon && <span className="text-slate-400 shrink-0 text-[15px]">{icon}</span>}
           <span
-            className={`truncate ${selected ? "text-slate-800" : "text-slate-400"}`}
+            className={`truncate min-w-0 text-[13px] ${selected ? "text-slate-900" : "text-slate-400"} ${
+              variant === "filter" && selected ? "font-medium text-blue-700" : ""
+            } ${disabled ? "text-slate-400" : ""}`}
           >
             {selected
               ? options.find((o) => o.value === selected)?.label
               : placeholder}
           </span>
         </span>
+        <HiChevronDown
+          className={`shrink-0 text-slate-400 text-base transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
       </div>
 
       {open &&
@@ -170,17 +191,17 @@ function Select({
               maxHeight: pos.maxHeight,
               zIndex: 9999,
             }}
-            className="bg-white border border-zinc-200 rounded-xl shadow-xl overflow-y-auto py-1"
+            className="bg-white border border-slate-200 rounded-xl shadow-[0_12px_28px_-8px_rgba(15,23,42,0.18)] overflow-y-auto p-1.5 flex flex-col gap-0.5"
           >
             {options.map((option) => (
               <div
                 key={option.value}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSelect(option)}
-                className={`flex items-center gap-2 px-3 py-2 cursor-pointer text-[13px] font-medium transition-colors ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-[13px] transition-colors ${
                   option.value === selected
                     ? `${selectedItemColors[color]} font-semibold`
-                    : "text-zinc-700 hover:bg-zinc-50"
+                    : "text-slate-700 hover:bg-slate-50"
                 }`}
               >
                 {option.icon && <span>{option.icon}</span>}

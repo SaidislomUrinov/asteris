@@ -16,6 +16,7 @@ import LazyImage from "../../ui/LazyImage";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { api, API } from "../../utils/fetching";
 import i18n from "../../utils/i18n";
+import { useBlockingModal } from "../../utils/blockingModal";
 
 // Tarif pasayganda ortiqcha filiallardan qaysilari ishlashda davom etishini
 // SO'RAYDIGAN modal. CLAUDE.md talabi: MAJBURIY va YOPILMAYDI —
@@ -34,6 +35,8 @@ function DowngradeDialog({ overflow, onResolved }) {
   // Kirish animatsiyasi: opacity 0→1 + translateY(12px)→0 (CLAUDE.md —
   // motion faqat modal/Auth uchun). Birinchi kadrdan keyin yoqiladi.
   const [shown, setShown] = useState(false);
+  // Yangiliklar popup'i shu modal ochiq turganda kutadi (utils/blockingModal.js).
+  useBlockingModal(!!overflow?.needsAction);
 
   const centers = overflow?.centers || [];
   const limit = overflow?.limit ?? 0;
@@ -234,15 +237,17 @@ function DowngradeModal({ overflow: provided }) {
   }, [authType]);
 
   useEffect(() => {
-    if (provided) {
-      setOverflow(provided);
-      return;
-    }
-    check();
+    const t = setTimeout(() => (provided ? setOverflow(provided) : check()), 0);
+    return () => clearTimeout(t);
   }, [provided, check]);
 
   // Tarif o'zgarganda (ko'tarilsa ham, pasaysa ham) qayta tekshiriladi.
-  useSocketEvent("subscription:changed", check, authType === "owner");
+  // Server shu nomlar bilan emit qiladi: admin change-tariff/subscribe →
+  // `subscription:updated`, inPAY to'lov → `subscription:activated`,
+  // boshqa tabdagi tanlov/qayta ochish → `center:statusChanged`.
+  useSocketEvent("subscription:updated", check, authType === "owner");
+  useSocketEvent("subscription:activated", check, authType === "owner");
+  useSocketEvent("center:statusChanged", check, authType === "owner");
 
   if (authType !== "owner" || !overflow?.needsAction) return null;
 

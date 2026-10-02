@@ -6,7 +6,6 @@ import {
   HiCheckCircle,
   HiChevronDown,
   HiCreditCard,
-  HiSparkles,
   HiClock,
   HiAcademicCap,
   HiExclamationTriangle,
@@ -16,11 +15,18 @@ import {
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 import { updateUser } from "../../contexts/user";
-import { PERMISSION_LABELS, AI_PERMISSIONS } from "./permissionLabels";
+import { useSocketEvent } from "../../hooks/useSocketEvent";
+import { TARIFF_FEATURE_KEYS, featureLabelKey } from "./permissionLabels";
+import { FORCE_DISABLED } from "../../hooks/useFeature";
 import Loading from "../../ui/Loading";
 import Button from "../../ui/Button";
 import Chip from "../../ui/Chip";
 import SubscribeModal from "./SubscribeModal";
+import SubscriptionActivatedModal from "./SubscriptionActivatedModal";
+
+const PENDING_ORDER_KEY = "pendingSubscriptionOrderId";
+const POLL_INTERVAL_MS = 3000;
+const POLL_MAX_ATTEMPTS = 20; // ~60s — shundan keyin ham hali "pending" bo'lsa fon ishi (15 daqiqa) yakunlaydi
 
 // 2 qatorli grid tartibi: 1-qator Filial/O'qituvchi, 2-qator Resepshin/O'quvchi
 const LIMIT_FIELDS = [
@@ -78,12 +84,14 @@ function TariffsTab() {
   const dp = useDispatch();
   const { subscription, trialUsed } = useSelector((e) => e.user);
   const [rows, setRows] = useState([]);
+  const [activeCenterCount, setActiveCenterCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [expanded, setExpanded] = useState(() => new Set());
   const [subscribingId, setSubscribingId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTariff, setModalTariff] = useState(null);
+  const [activatedModal, setActivatedModal] = useState(null); // { tariffName } | null
 
   const toggleExpanded = (id) => {
     setExpanded((prev) => {
@@ -111,9 +119,10 @@ function TariffsTab() {
       setLoading(true);
       setError(false);
       const res = await api.get("/client-auth/tariffs");
-      const { ok, data, msg } = res.data;
+      const { ok, data, activeCenterCount, msg } = res.data;
       if (!ok) throw new Error(msg);
       setRows([...(data || [])].sort((a, b) => a.price - b.price));
+      setActiveCenterCount(activeCenterCount || 0);
     } catch (error) {
       setError(true);
       errorMsg(error.message);
@@ -123,8 +132,73 @@ function TariffsTab() {
   }, []);
 
   useEffect(() => {
-    fetchTariffs();
+    const t = setTimeout(fetchTariffs, 0);
+    return () => clearTimeout(t);
   }, [fetchTariffs]);
+
+  // inPAY `return_url`dan qaytilgach (yoki hatto webhook tezroq kelib
+  // ulgurmagan bo'lsa) — shu tabda boshlangan to'lovni kutamiz. Webhook
+  // kelmay qolsa ham (masalan tarmoq sekinligi) foydalanuvchi bu orqali
+  // baribir natijani ko'radi.
+  useEffect(() => {
+    const orderId = localStorage.getItem(PENDING_ORDER_KEY);
+    if (!orderId) return;
+
+    let attempts = 0;
+    let cancelled = false;
+
+    const clearPending = () => localStorage.removeItem(PENDING_ORDER_KEY);
+
+    const poll = async () => {
+      if (cancelled) return;
+      attempts += 1;
+      try {
+        const res = await api.get(`/client-auth/subscription/status/${orderId}`);
+        const { ok, status, data } = res.data;
+        if (!ok) return;
+
+        if (status === "paid") {
+          clearPending();
+          dp(updateUser({ ...data }));
+          fetchTariffs();
+          setActivatedModal({ tariffName: data?.subscription?.tariffSnapshot?.name || "" });
+          return;
+        }
+        if (status === "cancelled" || status === "failed") {
+          clearPending();
+          errorMsg("subscription.paymentFailed");
+          return;
+        }
+      } catch {
+        // navbatdagi tikda qayta urinib ko'riladi
+      }
+
+      if (attempts < POLL_MAX_ATTEMPTS) {
+        setTimeout(poll, POLL_INTERVAL_MS);
+      }
+    };
+
+    poll();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Boshqa hodim (yoki Boshliqning boshqa tabi) to'lov qilgan bo'lsa ham
+  // — `client:{clientId}` xonasidagi HAMMA shu holatni realtime oladi.
+  useSocketEvent("subscription:activated", ({ data, tariffName, orderId }) => {
+    dp(updateUser({ ...data }));
+    fetchTariffs();
+
+    const pending = localStorage.getItem(PENDING_ORDER_KEY);
+    if (pending && pending === orderId) {
+      localStorage.removeItem(PENDING_ORDER_KEY);
+      setActivatedModal({ tariffName });
+    } else {
+      successMsg("subscription.activatedByOther");
+    }
+  });
 
   // Faqat trial holatida (showTrialOffer === true) darhol chaqiriladi — bu
   // mantiq o'zgarmagan, modal orqali o'tmaydi.
@@ -134,7 +208,7 @@ function TariffsTab() {
       const res = await api.post("/client-auth/subscription/initiate", {
         tariffId: tariff._id,
       });
-      const { ok, activated, payUrl, msg, data } = res.data;
+      const { ok, activated, payUrl, orderId, msg, data } = res.data;
       if (!ok) throw new Error(msg);
 
       if (activated) {
@@ -142,6 +216,7 @@ function TariffsTab() {
         dp(updateUser({ ...data }));
         fetchTariffs();
       } else if (payUrl) {
+        if (orderId) localStorage.setItem("pendingSubscriptionOrderId", orderId);
         window.location.assign(payUrl);
       }
     } catch (error) {
@@ -224,18 +299,22 @@ function TariffsTab() {
       {rows.map((tariff, index) => {
         const isCurrent = isSubscriptionActive && currentTariffId === tariff._id;
         const accent = getAccent(index, rows.length);
-        const hasAi = tariff.allowedPermissions?.some((p) =>
-          AI_PERMISSIONS.includes(p),
-        );
         const showTrialOffer =
           !isCurrent && tariff.trialDays > 0 && !hasUsedTrial;
+        // Hozirgi faol filiallar soni tarifning centerLimit'idan ko'p bo'lsa
+        // — bu tarifga ulanib bo'lmaydi (overflow-modal endi faqat admin
+        // tomonidan changeTariff bilan tayinlangan holatlar uchun zaxira).
+        const insufficientCenters =
+          !isCurrent && tariff.centerLimit !== -1 && tariff.centerLimit < activeCenterCount;
 
         return (
           <div
             key={tariff._id}
-            className={`flex flex-col gap-4 p-5 rounded-xl border-2 bg-white duration-200 hover:-translate-y-1 hover:shadow-xl ${
-              isCurrent ? "border-emerald-500" : `${accent.border} ${accent.ring}`
-            }`}
+            className={`flex flex-col gap-4 p-5 rounded-xl border-2 bg-white duration-200 ${
+              insufficientCenters
+                ? "opacity-60 grayscale-[30%]"
+                : "hover:-translate-y-1 hover:shadow-xl"
+            } ${isCurrent ? "border-emerald-500" : `${accent.border} ${accent.ring}`}`}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex flex-col gap-1">
@@ -253,20 +332,20 @@ function TariffsTab() {
                 {isCurrent && (
                   <Chip value={t("subscription.currentPlan")} color="emerald" variant="filled" />
                 )}
-                {hasAi && (
-                  <Chip
-                    value={
-                      <span className="flex items-center gap-1">
-                        <HiSparkles className="text-[13px]" />
-                        {t("subscription.aiBadge")}
-                      </span>
-                    }
-                    color="violet"
-                    variant="filled"
-                  />
-                )}
               </div>
             </div>
+
+            {insufficientCenters && (
+              <div className="flex items-start gap-2 p-2.5 rounded-lg bg-red-50 text-red-600 text-xs">
+                <HiExclamationTriangle className="text-sm shrink-0 mt-0.5" />
+                <span>
+                  {t("subscription.insufficientCenterLimit", {
+                    count: activeCenterCount,
+                    limit: tariff.centerLimit,
+                  })}
+                </span>
+              </div>
+            )}
 
             <p className="text-base font-semibold text-slate-500">
               {tariff.price.toLocaleString("uz-UZ")}{" "}
@@ -310,6 +389,7 @@ function TariffsTab() {
                 <Button
                   fullWith
                   color={accent.color}
+                  disabled={insufficientCenters}
                   onClick={() =>
                     showTrialOffer ? activateTrial(tariff) : openSubscribeModal(tariff)
                   }
@@ -344,11 +424,19 @@ function TariffsTab() {
 
                 {expanded.has(tariff._id) && (
                   <div className="flex flex-col gap-1.5">
-                    {tariff.allowedPermissions.map((p) => (
+                    {/* Vaqtincha production'da o'chirilgan funksiyalar (QR
+                        davomat, AI) eski tarif hujjatida qolib ketgan bo'lsa
+                        ham mijozga reklama qilinmaydi (useFeature.js). */}
+                    {tariff.allowedPermissions
+                      .filter(
+                        (p) =>
+                          TARIFF_FEATURE_KEYS.includes(p) && !p.startsWith("ai.") && !FORCE_DISABLED.includes(p),
+                      )
+                      .map((p) => (
                       <div key={p} className="flex items-center gap-2 text-sm">
                         <HiCheckCircle className="text-emerald-500 text-base shrink-0" />
                         <span className="text-slate-700">
-                          {PERMISSION_LABELS[p] || p}
+                          {t(featureLabelKey(p))}
                         </span>
                       </div>
                     ))}
@@ -366,6 +454,12 @@ function TariffsTab() {
       onClose={closeSubscribeModal}
       tariff={modalTariff}
       onActivated={handleModalActivated}
+    />
+
+    <SubscriptionActivatedModal
+      open={!!activatedModal}
+      onClose={() => setActivatedModal(null)}
+      tariffName={activatedModal?.tariffName}
     />
     </>
   );

@@ -11,10 +11,17 @@ import { useSelector } from "react-redux";
 // hodimga esa faqat flaglar ro'yxati beriladi (`tariffFeatures`) — unga
 // obunaning narx/limit tafsilotlari kerak emas
 // (docs/API_CONTRACT_qr_attendance_staff.md).
+// Vaqtincha production'da o'chirilgan flaglar — tarifda yoqilgan bo'lsa ham
+// har doim yopiq ko'rsatiladi. Qayta ochish uchun shunchaki shu ro'yxatdan
+// olib tashlash kifoya.
+// Subscription/TariffsTab.jsx "Tarif imkoniyatlari" ro'yxatida ham shu
+// flaglar reklama qilinmasligi uchun eksport qilinadi.
+export const FORCE_DISABLED = ["ai.report", "ai.advice"];
+
 export default function useFeature() {
   const allowed = useSelector(
     (e) => e.user.subscription?.tariffSnapshot?.allowedPermissions || e.user.tariffFeatures,
   );
 
-  return (feature) => (allowed || []).includes(feature);
+  return (feature) => !FORCE_DISABLED.includes(feature) && (allowed || []).includes(feature);
 }

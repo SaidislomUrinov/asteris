@@ -38,16 +38,16 @@ function SearchSelect({
   const _searchPlaceholder = searchPlaceholder ?? t("common.search");
 
   const colors = {
-    emerald: "hover:ring-emerald-500 ring-emerald-500",
-    blue: "hover:ring-blue-500 ring-blue-500",
-    black: "hover:ring-black ring-black",
-    red: "hover:ring-red-500 ring-red-500",
-    orange: "hover:ring-orange-500 ring-orange-500",
-    yellow: "hover:ring-yellow-500 ring-yellow-500",
-    slate: "hover:ring-slate-500 ring-slate-500",
+    emerald: "ring-emerald-500/15 border-emerald-500",
+    blue: "ring-blue-500/15 border-blue-500",
+    black: "ring-slate-900/10 border-slate-900",
+    red: "ring-red-500/15 border-red-500",
+    orange: "ring-orange-500/15 border-orange-500",
+    yellow: "ring-yellow-500/20 border-yellow-500",
+    slate: "ring-slate-500/15 border-slate-500",
   };
   const variants = {
-    slate: "bg-slate-100 border-slate-200",
+    slate: "bg-white border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
     white: "bg-white border-slate-200",
   };
 
@@ -99,16 +99,29 @@ function SearchSelect({
   useEffect(() => {
     if (!open) return;
     clearTimeout(searchTimer.current);
-    if (!query.trim()) { setOptions([]); return; }
-    setLoading(true);
-    searchTimer.current = setTimeout(async () => {
-      try {
-        const res = await onSearch(query.trim());
-        setOptions(res || []);
-      } catch { setOptions([]); }
-      finally { setLoading(false); }
-    }, 300);
+    // Debounce'ning o'zi taymer — setState'lar ham taymer ichida (effect
+    // tanasida sinxron setState yo'q).
+    const q = query.trim();
+    searchTimer.current = setTimeout(
+      async () => {
+        if (!q) {
+          setOptions([]);
+          return;
+        }
+        setLoading(true);
+        try {
+          const res = await onSearch(q);
+          setOptions(res || []);
+        } catch {
+          setOptions([]);
+        } finally {
+          setLoading(false);
+        }
+      },
+      q ? 300 : 0,
+    );
     return () => clearTimeout(searchTimer.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, open]);
 
   // Outside click + scroll reposition
@@ -142,20 +155,20 @@ function SearchSelect({
   return (
     <div className={`flex flex-col gap-1 w-full ${className}`}>
       {label && (
-        <span className="pl-2 text-sm text-slate-800">
-          {label}{required && <span className="text-red-500">*</span>}
+        <span className="text-xs font-medium text-slate-600">
+          {label}{required && <span className="text-rose-500">*</span>}
         </span>
       )}
 
       <div
         ref={triggerRef}
         onClick={handleOpen}
-        className={`relative w-full h-10 rounded-xl flex items-center justify-between border px-3 select-none duration-200
+        className={`relative w-full h-11 rounded-xl flex items-center justify-between border px-3.5 select-none duration-200
           ${variants[variant]}
-          ${disabled ? "opacity-50 cursor-not-allowed" : `cursor-pointer hover:ring-2 ${colors[color]}`}
-          ${open ? `ring-2 ${colors[color]}` : ""}`}
+          ${disabled ? "bg-slate-50 border-slate-200 shadow-none cursor-not-allowed" : "cursor-pointer hover:border-slate-300"}
+          ${open ? `ring-3 ${colors[color]}` : ""}`}
       >
-        <span className={`truncate text-[13px] ${value ? "text-slate-800" : "text-slate-400"}`}>
+        <span className={`truncate text-[13px] ${value ? "text-slate-900" : "text-slate-400"}`}>
           {value ? shown : _placeholder}
         </span>
         <div className="flex items-center gap-1 shrink-0 ml-2">

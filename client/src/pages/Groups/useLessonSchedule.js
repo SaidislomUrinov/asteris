@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { api } from "../../utils/fetching";
 
-const JS_DAY_TO_CODE = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+import { buildLessonByDate, dateKey } from "./lessonMapping";
 
-export const dateKey = (d) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+// `dateKey` eski importlar (LessonCalendar va b.) buzilmasligi uchun shu
+// yerdan ham qayta eksport qilinadi.
+export { dateKey };
 
 const monthKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 
@@ -34,6 +35,17 @@ export function useLessonSchedule({
 }) {
   const [lessons, setLessons] = useState([]);
   const [lessonOffset, setLessonOffset] = useState(0);
+  const [progress, setProgress] = useState(null);
+  // Haqiqiy davomat sanalari, xronologik ("YYYY-MM-DD"[]) — backend
+  // `syllabusProgress.util.js#getDoneDates`. `attendanceDates[i]` ↔
+  // `lessons[lessonOffset + i]`: har bir O'TILGAN dars AYNAN qaysi kunda
+  // bo'lgani shundan ma'lum. Ilgari o'tilgan darslar sanasi `activatedAt`dan
+  // boshlab, guruhning haftalik kunlarini oddiy sanab chiqarilardi — bu
+  // dars kuni bilan haqiqiy davomat belgilangan kun deyarli hech qachon 1:1
+  // mos kelmagani sababli (kunlar o'tkazib yuboriladi, kech belgilanadi)
+  // butunlay noto'g'ri edi: masalan kurs dasturiga YANGI dars qo'shilganda
+  // u eski (davomat allaqachon o'tgan) kunlarga umuman "yopishmasdi".
+  const [attendanceDates, setAttendanceDates] = useState([]);
   const [holidays, setHolidays] = useState({}); // { "YYYY-MM-DD": { chargeable, note } }
   // Qaysi sanagacha hisoblanadi. Kalendar oyni oldinga surganda `extendTo`
   // orqali o'sadi; boshlang'ich qiymat — keyingi oyning oxiri, ya'ni
@@ -58,6 +70,8 @@ export function useLessonSchedule({
       }
       setLessons(flat);
       setLessonOffset(data?.lessonOffset || 0);
+      setProgress(data?.progress || null);
+      setAttendanceDates(data?.attendanceDates || []);
     } catch {
       // jim o'tkazamiz — kalendar dastursiz ham ishlaydi
     }
@@ -124,26 +138,22 @@ export function useLessonSchedule({
     setHorizon((prev) => (date > prev ? new Date(date) : prev));
   }, []);
 
-  const lessonByDate = useMemo(() => {
-    if (!activatedAt || status === "pending") return {};
-    const map = {};
-    let index = lessonOffset;
-    const start = new Date(activatedAt * 1000);
-    const finishKey = finishedAt ? dateKey(new Date(finishedAt * 1000)) : null;
-    const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-    while (cursor <= horizon) {
-      const key = dateKey(cursor);
-      const isLessonWeekday = days.includes(JS_DAY_TO_CODE[cursor.getDay()]);
-      const isHoliday = !!holidays[key];
-      const afterFinish = finishKey && key > finishKey;
-      if (isLessonWeekday && !isHoliday && !afterFinish) {
-        map[key] = lessons[index] || null; // null → "Mavzu biriktirilmagan"
-        index += 1;
-      }
-      cursor.setDate(cursor.getDate() + 1);
-    }
-    return map;
-  }, [activatedAt, status, finishedAt, days, holidays, lessons, lessonOffset, horizon]);
+  // Moslash mantig'i sof funksiyada (lessonMapping.js) — unit-test qilinadi.
+  const lessonByDate = useMemo(
+    () =>
+      buildLessonByDate({
+        activatedAt,
+        status,
+        finishedAt,
+        days,
+        holidays,
+        lessons,
+        lessonOffset,
+        horizon,
+        attendanceDates,
+      }),
+    [activatedAt, status, finishedAt, days, holidays, lessons, lessonOffset, horizon, attendanceDates],
+  );
 
   // Bugungi va keyingi dars — kartochka uchun. `lesson: null` ham to'liq
   // haqiqiy javob: dars bor, ammo mavzu biriktirilmagan.
@@ -163,6 +173,8 @@ export function useLessonSchedule({
   return {
     lessons,
     lessonOffset,
+    progress,
+    attendanceDates,
     holidays,
     lessonByDate,
     todayLesson,

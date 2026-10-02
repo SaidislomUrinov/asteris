@@ -1,70 +1,42 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
-import socket from "../socket";
-import { HiGlobeAlt } from "react-icons/hi2";
 import UpdateLang from "./UpdateLang";
 import NotificationBell from "./NotificationBell";
+import KnowledgeBaseButton from "./knowledge/KnowledgeBaseButton";
 import { resolveSectionTitleKey } from "../utils/navSections";
 
 export default function Top() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const p = useLocation().pathname;
-  const { _id } = useSelector((e) => e.user);
-  const [socketStatus, setSocketStatus] = useState("reconnecting");
 
   // Barcha bo'limlar (detail sahifalari ham) — utils/navSections.js.
   const resolvedKey = resolveSectionTitleKey(p);
 
+  // Brauzer tab sarlavhasi ham joriy bo'lim va tilga mos bo'lishi uchun —
+  // `resolvedKey` bilan bir xil manba, til almashsa `i18n.language`
+  // o'zgarishi effektni qayta ishga tushiradi.
   useEffect(() => {
-    if (!_id) return;
-    socket.auth = { token: localStorage.getItem("access") };
-    if (!socket.connected) socket.connect();
-
-    const onConn = () => setSocketStatus("online");
-    const onDisc = () => setSocketStatus("offline");
-    const onReconn = () => setSocketStatus("reconnecting");
-
-    socket.on("connect", onConn);
-    socket.on("disconnect", onDisc);
-    socket.io.on("reconnect", onReconn);
-
-    return () => {
-      socket.off("connect", onConn);
-      socket.off("disconnect", onDisc);
-      socket.io.off("reconnect", onReconn);
-    };
-  }, [_id]);
-
-  const statusStyle = {
-    online: "bg-emerald-500/15 text-emerald-400",
-    reconnecting: "bg-yellow-500/15 text-yellow-400",
-    offline: "bg-red-500/15 text-red-400",
-  };
-
-  const statusLabel = {
-    online: t("socket.online"),
-    reconnecting: t("socket.reconnecting"),
-    offline: t("socket.offline"),
-  };
+    document.title = resolvedKey ? `${t(resolvedKey)} · WENET` : "WENET";
+  }, [resolvedKey, t, i18n.language]);
 
   return (
-    <div className="flex items-center justify-between w-full h-15 px-4 bg-slate-900 border-b border-slate-800">
+    // Fon — sidebar gradientining BOSHLANG'ICH rangi (`#0b2050`). Ikkalasi
+    // bir balandlikda (h-15) yonma-yon turgani uchun shu rang ularni bitta
+    // uzluksiz gorizontal lentaga birlashtiradi; neytral slate bo'lsa,
+    // logotip yonida rang keskin sinib ko'rinardi.
+    <div className="flex items-center justify-between w-full h-15 px-4 bg-[#0b2050] border-b border-white/7">
       <div className="lg:hidden w-10" />
 
-      <p className="font-semibold font-space uppercase text-white text-[18px] lg:text-[28px]">
-        {resolvedKey ? t(resolvedKey) : "ASTERIS"}
-      </p>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 min-w-0">
+        <p className="font-semibold font-space uppercase text-white text-[18px] lg:text-[28px] truncate">
+          {resolvedKey ? t(resolvedKey) : "WENET"}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <KnowledgeBaseButton titleKey={resolvedKey} />
         <NotificationBell />
         <UpdateLang dark />
-        <div
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold ${statusStyle[socketStatus]}`}
-        >
-          <HiGlobeAlt size={14} />
-          <span className="hidden lg:inline">{statusLabel[socketStatus]}</span>
-        </div>
       </div>
     </div>
   );

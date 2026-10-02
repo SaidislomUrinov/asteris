@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { HiAcademicCap } from "react-icons/hi2";
-import MetricCard from "../../ui/MetricCard";
+import HeaderCard from "./HeaderCard";
 
 /**
  * "Bugungi dars" — guruh detali tepasidagi kartochkalar qatorining o'ng
@@ -24,7 +24,7 @@ function TodayLessonCard({ todayLesson, nextLesson }) {
   const isToday = !!todayLesson;
 
   return (
-    <MetricCard
+    <HeaderCard
       icon={<HiAcademicCap />}
       title={isToday ? t("group.todayLesson") : t("group.nextLesson")}
       subtitle={entry ? entry.date : t("group.noUpcomingLesson")}
@@ -42,9 +42,9 @@ function TodayLessonCard({ todayLesson, nextLesson }) {
               <span className="text-[11px] text-slate-400 truncate">{lesson.moduleTitle}</span>
             )}
           </div>
-          <p className="font-semibold text-slate-800 line-clamp-2">{lesson.title}</p>
+          <p className="text-sm font-semibold text-slate-800 line-clamp-1">{lesson.title}</p>
           {lesson.homework && (
-            <p className="text-xs text-blue-600 line-clamp-2">
+            <p className="text-xs text-blue-600 line-clamp-1">
               <span className="text-slate-400">{t("syllabus.homeworkLabel")}: </span>
               {lesson.homework}
             </p>
@@ -52,9 +52,9 @@ function TodayLessonCard({ todayLesson, nextLesson }) {
         </div>
       ) : (
         // Dars kuni bor, ammo kurs dasturidan mavzu tushmagan.
-        <p className="text-sm font-medium text-slate-400">{t("syllabus.unassigned")}</p>
+        <p className="text-sm font-medium text-slate-500">{t("syllabus.unassigned")}</p>
       )}
-    </MetricCard>
+    </HeaderCard>
   );
 }
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HiBanknotes, HiMagnifyingGlass, HiReceiptPercent, HiUserCircle } from "react-icons/hi2";
+import useQueryState from "../../hooks/useQueryState";
+import { HiBanknotes, HiMagnifyingGlass, HiReceiptPercent, HiUserCircle, HiXMark } from "react-icons/hi2";
 import { useNavigate } from "react-router-dom";
 import Input from "../../ui/Input";
 import DateRangeInput from "../../ui/DateRangeInput";
@@ -9,17 +10,20 @@ import Chip from "../../ui/Chip";
 import List from "../../ui/List";
 import Select from "../../ui/Select";
 import FilterBar from "../../ui/FilterBar";
+import useMediaQuery from "../../hooks/useMediaQuery";
 import NumberText from "../../ui/NumberText";
 import ExportExcelButton from "../../ui/ExportExcelButton";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
+import useHideFinance from "../../hooks/useHideFinance";
 import { api } from "../../utils/fetching";
 import { errorMsg } from "../../utils/alert";
+import { maskMoney } from "../../utils/moneyFormat";
+
 
 const TYPES = ["cash", "card", "mixed", "previousMonth"];
 const TYPE_COLOR = { cash: "emerald", card: "blue", mixed: "violet", previousMonth: "slate" };
 const STATUS_COLOR = { paid: "emerald", cancelled: "red", refunded: "orange" };
 
-const money = (v) => `${(v || 0).toLocaleString("uz-UZ")}`;
 const formatUnix = (unix) =>
   unix ? new Date(unix * 1000).toLocaleString("uz-UZ", { dateStyle: "short", timeStyle: "short" }) : "—";
 
@@ -29,19 +33,22 @@ const formatUnix = (unix) =>
 // moliyaviy yozuvlar qayta yozilmaydi, shuning uchun "Noma'lum" deb turadi.
 function Revenue() {
   const { t } = useTranslation();
+  const isDesktop = useMediaQuery("(min-width: 640px)");
   const navigate = useNavigate();
+  const [hideFinance] = useHideFinance();
+  const money = (v) => maskMoney(v, hideFinance);
 
   const [rows, setRows] = useState([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [byCollector, setByCollector] = useState([]);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [filterCenter, setFilterCenter] = useState("");
-  const [filterType, setFilterType] = useState("");
-  const [filterCollector, setFilterCollector] = useState("");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [page, setPage] = useQueryState("page", 1);
+  const [search, setSearch] = useQueryState("search", "");
+  const [filterCenter, setFilterCenter] = useQueryState("filterCenter", "");
+  const [filterType, setFilterType] = useQueryState("filterType", "");
+  const [filterCollector, setFilterCollector] = useQueryState("filterCollector", "");
+  const [from, setFrom] = useQueryState("from", "");
+  const [to, setTo] = useQueryState("to", "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -82,16 +89,19 @@ function Revenue() {
   }, []);
 
   useEffect(() => {
-    fetchRevenue();
+    const t = setTimeout(fetchRevenue, 0);
+    return () => clearTimeout(t);
   }, [fetchRevenue]);
 
   useEffect(() => {
-    fetchCenters();
+    const t = setTimeout(fetchCenters, 0);
+    return () => clearTimeout(t);
   }, [fetchCenters]);
 
   // Kassada to'lov qabul qilinishi bilan sahifa o'zi yangilanadi.
   useSocketEvent("payment:created", fetchRevenue);
   useSocketEvent("payment:cancelled", fetchRevenue);
+  useSocketEvent("payment:updated", fetchRevenue);
 
   const resetFilters = () => {
     setPage(1);
@@ -193,120 +203,166 @@ function Revenue() {
         />
       </div>
 
-      <FilterBar
-        cols={4}
-        activeCount={[filterCenter, filterType, filterCollector, from || to].filter(Boolean).length}
-        onReset={resetFilters}
-        search={
-          <Input
-            placeholder={t("common.search")}
-            icon={<HiMagnifyingGlass />}
-            variant="white"
-            value={search}
-            onChange={(e) => {
-              setPage(1);
-              setSearch(e.target.value);
-            }}
-          />
-        }
-      >
-        {/* "Dan — gacha" bitta maydonda (react-day-picker) */}
-        <DateRangeInput
-          variant="white"
-          value={{ from, to }}
-          onChange={(v) => {
-            setPage(1);
-            setFrom(v.from);
-            setTo(v.to);
-          }}
-        />
-        {showCenterFilter && (
+      {isDesktop ? (
+        <div className={`flex flex-col gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]`}>
+          {/* Filtr qatori konvensiyasi: maydonlar flex-1 (tor ekranda yangi
+              qatorga o'tadi), amallar bitta guruhda ml-auto bilan o'ngda. */}
+          <div className="flex flex-wrap items-center gap-2.5 [&>*]:flex-1 [&>*]:min-w-[200px]">
+            <Input
+              placeholder={t("common.search")}
+              icon={<HiMagnifyingGlass />}
+              variant="slate"
+              value={search}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
+            />
+            {/* "Dan — gacha" bitta maydonda (react-day-picker) */}
+            <div className="flex flex-col gap-1 w-full">
+              <DateRangeInput
+                variant="slate"
+                value={{ from, to }}
+                onChange={(v) => {
+                  setPage(1);
+                  setFrom(v.from);
+                  setTo(v.to);
+                }}
+              />
+            </div>
+            {showCenterFilter && (
+              <Select
+                placeholder={t("revenue.center")}
+                variant="slate"
+                value={filterCenter}
+                onChange={(v) => {
+                  setPage(1);
+                  setFilterCenter(v);
+                }}
+                options={[
+                  { value: "", label: t("common.all") },
+                  ...centers.map((c) => ({ value: c._id, label: c.name })),
+                ]}
+              />
+            )}
+            <Select
+              placeholder={t("revenue.type")}
+              variant="slate"
+              value={filterType}
+              onChange={(v) => {
+                setPage(1);
+                setFilterType(v);
+              }}
+              options={[
+                { value: "", label: t("common.all") },
+                ...TYPES.map((v) => ({ value: v, label: t(`revenue.types.${v}`) })),
+              ]}
+            />
+            <Select
+              placeholder={t("revenue.collectedBy")}
+              variant="slate"
+              value={filterCollector}
+              onChange={(v) => {
+                setPage(1);
+                setFilterCollector(v);
+              }}
+              options={[
+                { value: "", label: t("common.all") },
+                ...byCollector.map((c) => ({
+                  value: c.id || "unknown",
+                  label: c.name || t("revenue.collectorUnknown"),
+                })),
+              ]}
+            />
+            <div className="!flex-none !min-w-0">
+              <Button
+                variant="outlined"
+                color="red"
+                onClick={resetFilters}
+                disabled={[filterCenter, filterType, filterCollector, from || to].filter(Boolean).length === 0}
+                className="gap-1.5"
+              >
+                <HiXMark className="text-base" />
+                {t("common.resetFilters")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <FilterBar
+          cols={4}
+          activeCount={[filterCenter, filterType, filterCollector, from || to].filter(Boolean).length}
+          onReset={resetFilters}
+          search={
+            <Input
+              placeholder={t("common.search")}
+              icon={<HiMagnifyingGlass />}
+              variant="slate"
+              value={search}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
+            />
+          }
+        >
+          {/* "Dan — gacha" bitta maydonda (react-day-picker) */}
+          <div className="flex flex-col gap-1 w-full">
+            <DateRangeInput
+              variant="slate"
+              value={{ from, to }}
+              onChange={(v) => {
+                setPage(1);
+                setFrom(v.from);
+                setTo(v.to);
+              }}
+            />
+          </div>
+          {showCenterFilter && (
+            <Select
+              placeholder={t("revenue.center")}
+              variant="slate"
+              value={filterCenter}
+              onChange={(v) => {
+                setPage(1);
+                setFilterCenter(v);
+              }}
+              options={[
+                { value: "", label: t("common.all") },
+                ...centers.map((c) => ({ value: c._id, label: c.name })),
+              ]}
+            />
+          )}
           <Select
-            placeholder={t("revenue.center")}
-            variant="white"
-            value={filterCenter}
+            placeholder={t("revenue.type")}
+            variant="slate"
+            value={filterType}
             onChange={(v) => {
               setPage(1);
-              setFilterCenter(v);
+              setFilterType(v);
             }}
             options={[
               { value: "", label: t("common.all") },
-              ...centers.map((c) => ({ value: c._id, label: c.name })),
+              ...TYPES.map((v) => ({ value: v, label: t(`revenue.types.${v}`) })),
             ]}
           />
-        )}
-        <Select
-          placeholder={t("revenue.type")}
-          variant="white"
-          value={filterType}
-          onChange={(v) => {
-            setPage(1);
-            setFilterType(v);
-          }}
-          options={[
-            { value: "", label: t("common.all") },
-            ...TYPES.map((v) => ({ value: v, label: t(`revenue.types.${v}`) })),
-          ]}
-        />
-        <Select
-          placeholder={t("revenue.collectedBy")}
-          variant="white"
-          value={filterCollector}
-          onChange={(v) => {
-            setPage(1);
-            setFilterCollector(v);
-          }}
-          options={[
-            { value: "", label: t("common.all") },
-            ...byCollector.map((c) => ({
-              value: c.id || "unknown",
-              label: c.name || t("revenue.collectorUnknown"),
-            })),
-          ]}
-        />
-      </FilterBar>
-
-      {/* Kim qancha yig'gani — filtr doirasidagi jamlanma. Kartaga bosilsa
-          o'sha hodim bo'yicha filtrlanadi (qayta bosilsa — bekor qilinadi). */}
-      {byCollector.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-          {byCollector.map((c) => {
-            const id = c.id || "unknown";
-            const on = filterCollector === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => {
-                  setPage(1);
-                  setFilterCollector(on ? "" : id);
-                }}
-                className={`flex items-center gap-3 p-3 rounded-2xl bg-white text-left ring-1 cursor-pointer transition-colors duration-150 ${
-                  on
-                    ? "ring-blue-300 bg-blue-50/40"
-                    : "ring-slate-200/70 hover:ring-slate-300 hover:bg-slate-50/60"
-                }`}
-              >
-                <span
-                  className={`flex items-center justify-center w-10 h-10 shrink-0 rounded-xl text-xl ${
-                    on ? "bg-blue-100 text-blue-600" : "bg-slate-50 text-slate-400"
-                  }`}
-                >
-                  <HiUserCircle />
-                </span>
-                <span className="flex flex-col min-w-0 flex-1">
-                  <span className="text-[13px] font-medium text-slate-500 truncate">
-                    {c.name || t("revenue.collectorUnknown")}
-                  </span>
-                  <NumberText className="text-base leading-tight">{money(c.amount)}</NumberText>
-                  <span className="text-[11px] text-slate-400">
-                    {t("revenue.transactionCountShort", { count: c.count })}
-                  </span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
+          <Select
+            placeholder={t("revenue.collectedBy")}
+            variant="slate"
+            value={filterCollector}
+            onChange={(v) => {
+              setPage(1);
+              setFilterCollector(v);
+            }}
+            options={[
+              { value: "", label: t("common.all") },
+              ...byCollector.map((c) => ({
+                value: c.id || "unknown",
+                label: c.name || t("revenue.collectorUnknown"),
+              })),
+            ]}
+          />
+        </FilterBar>
       )}
 
       {error ? (

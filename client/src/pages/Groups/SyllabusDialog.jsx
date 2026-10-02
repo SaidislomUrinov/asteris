@@ -20,6 +20,7 @@ import Select from "../../ui/Select";
  * @param {boolean} props.saving
  * @param {boolean} [props.canImport] - "Boshqa guruhlardan import" tugmasi
  * @param {() => void} [props.onImport]
+ * @param {boolean} [props.showHomework] - `homework.manage` tarif ruxsati
  * @param {(form) => void} props.onSave
  */
 function SyllabusDialog({
@@ -31,6 +32,7 @@ function SyllabusDialog({
   saving = false,
   canImport = false,
   onImport,
+  showHomework = true,
   onSave,
 }) {
   const { t } = useTranslation();
@@ -83,12 +85,21 @@ function SyllabusDialog({
           value={form.description}
           onChange={set("description")}
         />
-        <Input
-          label={t("syllabus.homeworkLabel")}
-          variant="white"
-          value={form.homework}
-          onChange={set("homework")}
-        />
+        {showHomework && (
+          <Input
+            label={t("syllabus.homeworkLabel")}
+            variant="white"
+            value={form.homework}
+            onChange={set("homework")}
+          />
+        )}
+
+        {/* Sana avtomatik, davomatdan aniqlanadi — o'qituvchi buni oldindan
+            bilishi kerak, aks holda "nega o'tgan kunga biriktirilmadi"
+            degan savol tug'iladi (useLessonSchedule.js). */}
+        <p className="text-xs text-slate-400 leading-relaxed pt-1 border-t border-slate-100">
+          {t("syllabus.calendarHint")}
+        </p>
 
         {/* Dasturni noldan yozish o'rniga tayyor guruhdan olish yo'li. */}
         {canImport && (

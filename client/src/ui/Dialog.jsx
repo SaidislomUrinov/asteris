@@ -1,18 +1,31 @@
 import { Fragment, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { HiXMark } from "react-icons/hi2";
-import IconButton from "./IconButton";
 import { dialogClosed, dialogOpened } from "../utils/dialogState";
 
+/**
+ * Dialog — loyihaning yagona modal qobig'i.
+ *
+ * Dizayn: yumshoq (rounded-3xl) oq karta, sarlavha ortida brend rangidagi
+ * mayin radial yorug'lik, chegara-chiziqsiz sarlavha bloki va suzuvchi
+ * yopish tugmasi. Chegaralar o'rniga bo'shliq va rang ierarxiyani beradi.
+ *
+ * @param {string} [props.eyebrow] - Sarlavha tepasidagi mayda brend yorlig'i (ixtiyoriy)
+ * @param {string} [props.description] - Sarlavha ostidagi izoh matni (ixtiyoriy)
+ */
 function Dialog({
   children,
   open = false,
   onClose = () => {},
   title = "Dialog",
+  eyebrow,
+  description,
   className = "",
   actions,
   zIndex = "z-30",
 }) {
+  const { t } = useTranslation();
   // phase: "closed" -> hech narsa render qilinmaydi, "open" -> kirish animatsiyasi,
   // "closing" -> chiqish animatsiyasi (tugagach "closed"ga o'tadi)
   const [phase, setPhase] = useState(open ? "open" : "closed");
@@ -47,29 +60,58 @@ function Dialog({
         className={`fixed inset-0 flex items-center justify-center ${zIndex} p-4`}
       >
         <div
-          className={`bg-white rounded-xl shadow-lg w-full md:w-150 relative ${
+          className={`bg-white rounded-3xl shadow-[0_24px_60px_-12px_rgba(15,23,42,0.25)] w-full md:w-150 relative isolate ${
             closing ? "animate-dialog-out" : "animate-dialog-in"
           } ${className}`}
           onClick={(e) => e.stopPropagation()}
           onAnimationEnd={() => closing && setPhase("closed")}
         >
-          {/* Title & Close button */}
-          <div className="flex border-b border-slate-200 pb-2 justify-between items-center p-4">
-            <h3 className="text-[22px] text-slate-800 font-semibold">
-              {title}
-            </h3>
-            <div className="flex items-center justify-center min-w-max">
-              <IconButton color="black" variant="ghost" onClick={onClose}>
-                <HiXMark className="text-[22px]" />
-              </IconButton>
-            </div>
+          {/* Brend yorug'ligi — sarlavha ortida, o'ng yuqori burchakdan tarqaladi.
+              `-z-10` tufayli kontentga to'sqinlik qilmaydi. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-3xl"
+          >
+            <div className="absolute -top-24 -right-16 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl" />
           </div>
 
-          <div className="flex flex-col w-full p-4 gap-2 max-h-[70vh] overflow-y-auto">
+          {/* Sarlavha & yopish tugmasi */}
+          <div className="flex justify-between items-start gap-4 px-6 pt-6 pb-4">
+            <div className="flex flex-col gap-1.5 min-w-0">
+              {eyebrow ? (
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-600">
+                  <span className="size-1.5 rounded-full bg-blue-500" />
+                  {eyebrow}
+                </span>
+              ) : null}
+              <h3 className="text-[24px] leading-tight text-slate-900 font-semibold tracking-tight">
+                {title}
+              </h3>
+              {description ? (
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  {description}
+                </p>
+              ) : null}
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t("common.close")}
+              className="shrink-0 inline-flex items-center justify-center size-9 rounded-full bg-white/70 text-slate-400 backdrop-blur-sm cursor-pointer hover:bg-slate-100 hover:text-slate-700 active:scale-95 duration-200"
+            >
+              <HiXMark className="text-[20px]" />
+            </button>
+          </div>
+
+          {/* gap-4 — maydonlar endi o'z yorlig'i (va ba'zan izohi) bilan
+              keladi, gap-2 da keyingi maydonning yorlig'i oldingisining
+              tagiga yopishib qolardi. */}
+          <div className="flex flex-col w-full px-6 pb-6 gap-4 max-h-[70vh] overflow-y-auto">
             {children}
           </div>
           {actions ? (
-            <div className="flex items-center h-12.5 bg-zinc-100 rounded-b-xl justify-end w-full px-4 gap-2">
+            <div className="flex items-center border-t border-slate-100 py-3 justify-end w-full px-6 gap-2">
               {actions}
             </div>
           ) : (
