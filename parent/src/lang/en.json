@@ -1,0 +1,394 @@
+{
+  "tab": {
+    "home": "Home",
+    "payments": "Payments",
+    "notifications": "Messages",
+    "settings": "Settings"
+  },
+  "common": {
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "loadMore": "Load more",
+    "sum": "UZS",
+    "total": "Total",
+    "paid": "Paid",
+    "debtShort": "Debt {{v}} UZS",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "unknown": "Unknown error. Please try again.",
+    "network": "No connection to server. Check your internet."
+  },
+  "http": {
+    "404": "Not found",
+    "500": "Server error"
+  },
+  "auth": {
+    "failed": "Session expired. Reopen the app."
+  },
+  "parent": {
+    "notLinked": "Your Telegram is not linked",
+    "invalidInitData": "Invalid Telegram data. Reopen the app.",
+    "entryNotFound": "Group not found",
+    "centerNotLinked": "This center has not enabled the parent app",
+    "invalidLang": "Invalid language",
+    "roleNotAvailable": "This role is not available for your number",
+    "invalidRole": "Invalid role",
+    "roleSaved": "Role saved",
+    "forbiddenForStudent": "This section is not available to students",
+    "authUnavailable": "Sign-in is temporarily unavailable. Try again later",
+    "invalidSettings": "Invalid settings",
+    "settingsUpdated": "Settings saved",
+    "unlinked": "Telegram account unlinked"
+  },
+  "notLinked": {
+    "title": "Press /start in the bot",
+    "text": "To see your child's data, first share your phone number in the Telegram bot.",
+    "openBot": "Open bot"
+  },
+  "home": {
+    "morning": "Good morning",
+    "day": "Good afternoon",
+    "evening": "Good evening",
+    "today": "Today",
+    "noLessonsToday": "No lessons today",
+    "children": "Children",
+    "recent": "Recent messages",
+    "noChildren": "No children found",
+    "noChildrenText": "The center must add your number as the “parent phone” on the student card."
+  },
+  "child": {
+    "self": "self",
+    "groups_one": "{{count}} group",
+    "groups_other": "{{count}} groups",
+    "attendance": "Attendance",
+    "avgGrade": "Avg grade",
+    "totalDebt": "Total debt",
+    "notLinked": "Not linked",
+    "notLinkedText": "This center has not enabled the parent app — data is not shown.",
+    "noActiveGroups": "No active groups",
+    "finished": "Finished",
+    "notFound": "Child not found"
+  },
+  "group": {
+    "tab": {
+      "attendance": "Attendance",
+      "grades": "Grades",
+      "payments": "Payment",
+      "homework": "Homework",
+      "badges": "Badges",
+      "plan": "Plan"
+    },
+    "status": {
+      "active": "Active",
+      "left": "Left",
+      "finished": "Finished"
+    },
+    "room": "Room {{r}}",
+    "notFound": "Group not found",
+    "telegram": "Telegram group"
+  },
+  "days": {
+    "mon": "Mo",
+    "tue": "Tu",
+    "wed": "We",
+    "thu": "Th",
+    "fri": "Fr",
+    "sat": "Sa",
+    "sun": "Su",
+    "full": {
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday",
+      "sun": "Sunday"
+    }
+  },
+  "att": {
+    "present": "Present",
+    "absent": "Absent",
+    "excused": "Excused",
+    "late": "Late",
+    "today": "Today",
+    "notMarked": "Not marked",
+    "lateCount": "Of which late: {{n}}",
+    "absentHint": "No reason given. Contact the center to mark it as excused.",
+    "excusedHint": "Marked as excused.",
+    "presentHint": "Attended the lesson.",
+    "notMarkedHint": "Attendance for this day is not marked yet.",
+    "rate": "Attendance"
+  },
+  "grades": {
+    "avg": "Average",
+    "count": "Grades",
+    "best": "Best",
+    "empty": "No grades this month",
+    "teacherNotes": "Teacher notes",
+    "hidden": "Grades hidden",
+    "hiddenText": "The center has disabled showing grades to parents."
+  },
+  "payments": {
+    "debt": "Debt",
+    "noDebt": "No debt",
+    "noDebtAll": "All payments are made",
+    "pricePerMonth": "{{v}} UZS / month",
+    "nextDue": "Next payment due: {{d}}",
+    "dueShort": "due {{d}}",
+    "history": "Payment history",
+    "empty": "No payments",
+    "receipt": "Receipt",
+    "refunded": "Refunded",
+    "cancelled": "Cancelled",
+    "totalDebt": "Total debt",
+    "debts": "Debts",
+    "debtGroups": "{{n}} group(s)",
+    "type": {
+      "cash": "Cash",
+      "card": "Card",
+      "mixed": "Mixed",
+      "transfer": "Transfer",
+      "previousMonth": "From previous month"
+    }
+  },
+  "notif": {
+    "all": "All",
+    "type": {
+      "attendance": "Attendance",
+      "lessonFinished": "Lesson",
+      "payment": "Payment",
+      "debt": "Debt",
+      "homework": "Homework",
+      "lessonReminder": "Reminder",
+      "badge": "Badges"
+    },
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "empty": "No messages",
+    "emptyText": "Attendance, payment and debt messages will appear here."
+  },
+  "settings": {
+    "notifTitle": "Which messages to receive",
+    "mute": {
+      "attendance": "Came / did not come",
+      "lessonFinished": "Lesson finished (with grade)",
+      "payment": "Payment received",
+      "debt": "Debt reminder",
+      "lessonReminder": "Lesson reminder (1 hour before)",
+      "homework": "New homework",
+      "badge": "New badges"
+    },
+    "notifHint": "Settings apply to all children and centers. Types disabled by the center itself are not sent.",
+    "lang": "Language",
+    "childrenHint": "Don't see a child? The center must add this number as the “parent phone” on the student card.",
+    "unlink": "Unlink bot",
+    "unlinkText": "Your Telegram will be unlinked from the student and messages will stop. To relink, press /start in the bot.",
+    "unlinked": "Bot unlinked"
+  },
+  "months": {
+    "long": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ],
+    "short": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ],
+    "genitive": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ]
+  },
+  "hw": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "updated": "Updated: {{d}}",
+    "empty": "No homework this month",
+    "emptyText": "Homework from your teacher will appear here.",
+    "past": "Past",
+    "updatedShort": "Updated: {{t}}"
+  },
+  "student": {
+    "rank": {
+      "none": "No grades yet",
+      "badge": "#{{position}} of {{total}}"
+    },
+    "home": {
+      "groups": "My groups",
+      "avg": "Average {{v}}",
+      "homework": "Homework",
+      "noHomework": "No homework yet",
+      "noGroups": "No groups found",
+      "noGroupsText": "The center needs to add your phone number to your student card.",
+      "children": "My profile",
+      "noChildren": "Student not found",
+      "hwToday": "Today's homework",
+      "hwTomorrow": "Tomorrow's homework",
+      "hwOn": "Homework for {{d}}",
+      "rank": "rank"
+    },
+    "child": {
+      "notLinkedText": "This center hasn't enabled the app — no data is shown."
+    },
+    "grades": {
+      "hiddenText": "The center has turned off grades in the app."
+    },
+    "notif": {
+      "emptyText": "Grades, homework and lesson reminders will appear here."
+    },
+    "settings": {
+      "roleTitle": "Role",
+      "role": {
+        "parent": "Parent",
+        "student": "Student"
+      },
+      "roleHint": "Your number was found both as a parent and as a student. Choose the view you need.",
+      "mute": {
+        "lessonFinished": "Lesson finished (with your grade)"
+      },
+      "notifHint": "Settings apply to all your groups. Types turned off by the center are not sent.",
+      "childrenHint": "Can't see your group? The center needs to add this number to your student card.",
+      "unlinkText": "Your Telegram will be disconnected and messages will stop. To reconnect, press /start in the bot."
+    }
+  },
+  "rankCard": {
+    "title": "Place in group",
+    "medal": "#{{position}} place medal",
+    "tier1": "Gold medal",
+    "tier2": "Silver medal",
+    "tier3": "Bronze medal",
+    "toMedal_one": "{{count}} step to a medal",
+    "toMedal_other": "{{count}} steps to a medal"
+  },
+  "badge": {
+    "progressTitle": "This month's progress",
+    "medalsTitle": "Monthly ranking medals",
+    "collectionTitle": "Earned badges",
+    "total_one": "{{count}} total",
+    "total_other": "{{count}} total",
+    "empty": "No badges yet",
+    "emptyText": "Earn the first one this month!",
+    "moreMonths_one": "{{count}} more month",
+    "moreMonths_other": "{{count}} more months",
+    "onTrack": "On track",
+    "gradesHidden": "The center hides grades — grade-based badges are not shown.",
+    "hint": {
+      "absent_one": "{{count}} lesson missed this month",
+      "absent_other": "{{count}} lessons missed this month",
+      "lowGrade": "A grade below 8",
+      "notTen": "A grade below 10 this month",
+      "noRank": "Not ranked yet",
+      "noCompare": "Needs ≥4 grades in both months to compare",
+      "delta": "{{from}} → {{to}}",
+      "notPodium": "Not in the top-3 this month yet",
+      "needTwoMonths": "Must be ranked both last month and this month",
+      "positions": "#{{from}} → #{{to}}"
+    },
+    "types": {
+      "perfectAttendance": {
+        "name": "Perfect attendance",
+        "desc": "Not a single lesson missed this month",
+        "rule": "At least 4 lessons in a month, none missed"
+      },
+      "excellent": {
+        "name": "Excellent",
+        "desc": "Every grade this month was 8 or higher",
+        "rule": "At least 4 grades in a month, all 8 or higher"
+      },
+      "perfect": {
+        "name": "Perfect",
+        "desc": "Only 10s this month",
+        "rule": "At least 4 grades in a month, all 10"
+      },
+      "attendanceStreak": {
+        "name": "On fire",
+        "desc": "10 lessons attended in a row",
+        "rule": "Attend 10 lessons in a row"
+      },
+      "gradeStreak": {
+        "name": "Streak of 10s",
+        "desc": "Five 10s in a row",
+        "rule": "Get five 10s in a row"
+      },
+      "champion": {
+        "name": "Group champion",
+        "desc": "#1 in the monthly ranking",
+        "rule": "#1 in the group ranking at month end"
+      },
+      "mostImproved": {
+        "name": "Most improved",
+        "desc": "Biggest average-grade growth in the group",
+        "rule": "Biggest average-grade growth in the group vs last month"
+      },
+      "podiumStreak": {
+        "name": "Podium streak",
+        "desc": "Top-3 in the group 3 months in a row",
+        "rule": "1st–3rd in the monthly ranking 3 months in a row"
+      },
+      "goldCollection": {
+        "name": "Gold collection",
+        "desc": "Collected 3 gold medals",
+        "rule": "1st place in the monthly ranking 3 times in total (one-time)"
+      },
+      "bigJump": {
+        "name": "Big jump",
+        "desc": "Climbed 5+ places in a month",
+        "rule": "Climb at least 5 places in the ranking vs last month"
+      }
+    }
+  },
+  "rank": {
+    "monthLabel": "{{month}} ranking"
+  },
+  "plan": {
+    "lessonNo": "Lesson {{no}}",
+    "todayLesson": "Today's lesson",
+    "today": "Today",
+    "todayHoliday": "Today is a day off",
+    "holiday": "Day off",
+    "shiftHint": "The topic moves to the next lesson day",
+    "noTopic": "No topic assigned",
+    "upcoming": "Upcoming lessons",
+    "past": "Past lessons",
+    "program": "Full program",
+    "moduleProgress": "{{done}}/{{total}} done",
+    "current": "Current",
+    "progress": "Module {{module}}/{{moduleCount}} · lesson {{no}}",
+    "finished": "Program completed",
+    "empty": "No lesson plan yet",
+    "emptyText": "Topics will appear here once the teacher fills in the program."
+  }
+}

@@ -1,0 +1,390 @@
+{
+  "tab": {
+    "home": "Asosiy",
+    "payments": "To'lovlar",
+    "notifications": "Xabarlar",
+    "settings": "Sozlama"
+  },
+  "common": {
+    "retry": "Qayta urinish",
+    "cancel": "Bekor qilish",
+    "loadMore": "Yana yuklash",
+    "sum": "so'm",
+    "total": "Jami",
+    "paid": "To'langan",
+    "debtShort": "Qarz {{v}} so'm",
+    "prevMonth": "Oldingi oy",
+    "nextMonth": "Keyingi oy"
+  },
+  "error": {
+    "title": "Xatolik yuz berdi",
+    "unknown": "Nomaʼlum xatolik. Qayta urinib ko'ring.",
+    "network": "Server bilan aloqa yo'q. Internetni tekshiring."
+  },
+  "http": {
+    "404": "Maʼlumot topilmadi",
+    "500": "Server xatosi"
+  },
+  "auth": {
+    "failed": "Sessiya tugadi. Ilovani qayta oching."
+  },
+  "parent": {
+    "notLinked": "Telegram hisobingiz ulanmagan",
+    "invalidInitData": "Telegram maʼlumotlari noto'g'ri. Ilovani qayta oching.",
+    "entryNotFound": "Guruh topilmadi",
+    "centerNotLinked": "Bu markaz ota-ona ilovasini yoqmagan",
+    "invalidLang": "Til noto'g'ri",
+    "roleNotAvailable": "Bu rol sizning raqamingiz uchun mavjud emas",
+    "invalidRole": "Rol noto'g'ri",
+    "roleSaved": "Rol saqlandi",
+    "forbiddenForStudent": "Bu bo'lim o'quvchi uchun mavjud emas",
+    "authUnavailable": "Kirish vaqtincha ishlamayapti. Keyinroq urinib ko'ring",
+    "invalidSettings": "Sozlamalar noto'g'ri",
+    "settingsUpdated": "Sozlamalar saqlandi",
+    "unlinked": "Telegram hisobi uzildi"
+  },
+  "notLinked": {
+    "title": "Botda /start bosing",
+    "text": "Farzandingiz maʼlumotlarini ko'rish uchun avval Telegram botda telefon raqamingizni ulashing.",
+    "openBot": "Botni ochish"
+  },
+  "home": {
+    "morning": "Xayrli tong",
+    "day": "Xayrli kun",
+    "evening": "Xayrli kech",
+    "today": "Bugun",
+    "noLessonsToday": "Bugun dars yo'q",
+    "children": "Farzandlar",
+    "recent": "So'nggi xabarlar",
+    "noChildren": "Farzand topilmadi",
+    "noChildrenText": "Markaz o'quvchi kartasiga sizning raqamingizni «Ota-ona raqami» sifatida kiritishi kerak."
+  },
+  "child": {
+    "self": "o'zi",
+    "groups_one": "{{count}} guruh",
+    "groups_other": "{{count}} guruh",
+    "attendance": "Davomat",
+    "avgGrade": "O'rtacha baho",
+    "totalDebt": "Jami qarz",
+    "notLinked": "Ulanmagan",
+    "notLinkedText": "Bu markaz ota-ona ilovasini yoqmagan — maʼlumot ko'rsatilmaydi.",
+    "noActiveGroups": "Faol guruh yo'q",
+    "finished": "Tugagan",
+    "notFound": "Farzand topilmadi"
+  },
+  "group": {
+    "tab": {
+      "attendance": "Davomat",
+      "grades": "Baholar",
+      "payments": "To'lov",
+      "homework": "Vazifalar",
+      "badges": "Yutuqlar",
+      "plan": "Reja"
+    },
+    "status": {
+      "active": "Faol",
+      "left": "Chiqib ketgan",
+      "finished": "Yakunlangan"
+    },
+    "room": "{{r}}-xona",
+    "notFound": "Guruh topilmadi",
+    "telegram": "Telegram guruh"
+  },
+  "days": {
+    "mon": "Du",
+    "tue": "Se",
+    "wed": "Ch",
+    "thu": "Pa",
+    "fri": "Ju",
+    "sat": "Sh",
+    "sun": "Ya",
+    "full": {
+      "mon": "Dushanba",
+      "tue": "Seshanba",
+      "wed": "Chorshanba",
+      "thu": "Payshanba",
+      "fri": "Juma",
+      "sat": "Shanba",
+      "sun": "Yakshanba"
+    }
+  },
+  "att": {
+    "present": "Keldi",
+    "absent": "Kelmadi",
+    "excused": "Sababli",
+    "late": "Kechikdi",
+    "today": "Bugun",
+    "notMarked": "Belgilanmagan",
+    "lateCount": "Shundan kechikkan: {{n}}",
+    "absentHint": "Sabab ko'rsatilmagan. Sababli deb belgilash uchun markazga murojaat qiling.",
+    "excusedHint": "Sababli deb belgilangan.",
+    "presentHint": "Darsda qatnashgan.",
+    "notMarkedHint": "Bu kun uchun davomat hali belgilanmagan.",
+    "rate": "Davomat"
+  },
+  "grades": {
+    "avg": "O'rtacha",
+    "count": "Baholar",
+    "best": "Eng yuqori",
+    "empty": "Bu oyda baho yo'q",
+    "teacherNotes": "O'qituvchi izohlari",
+    "hidden": "Baholar yashirilgan",
+    "hiddenText": "Markaz baholarni ota-onaga ko'rsatishni o'chirgan."
+  },
+  "payments": {
+    "debt": "Qarzdorlik",
+    "noDebt": "Qarz yo'q",
+    "noDebtAll": "Barcha to'lovlar amalga oshirilgan",
+    "pricePerMonth": "{{v}} so'm / oy",
+    "nextDue": "Keyingi to'lov muddati: {{d}}",
+    "dueShort": "muddat {{d}}",
+    "history": "To'lovlar tarixi",
+    "empty": "To'lovlar yo'q",
+    "receipt": "Chek",
+    "refunded": "Qaytarilgan",
+    "cancelled": "Bekor qilingan",
+    "totalDebt": "Jami qarzdorlik",
+    "debts": "Qarzlar",
+    "debtGroups": "{{n}} guruh",
+    "type": {
+      "cash": "Naqd",
+      "card": "Karta",
+      "mixed": "Aralash",
+      "transfer": "O'tkazma",
+      "previousMonth": "O'tgan oydan"
+    }
+  },
+  "notif": {
+    "all": "Hammasi",
+    "type": {
+      "attendance": "Davomat",
+      "lessonFinished": "Dars",
+      "payment": "To'lov",
+      "debt": "Qarz",
+      "homework": "Vazifa",
+      "lessonReminder": "Eslatma",
+      "badge": "Yutuq"
+    },
+    "today": "Bugun",
+    "yesterday": "Kecha",
+    "empty": "Xabarlar yo'q",
+    "emptyText": "Davomat, to'lov va qarz xabarlari shu yerda ko'rinadi."
+  },
+  "settings": {
+    "notifTitle": "Qaysi xabarlar kelsin",
+    "mute": {
+      "attendance": "Darsga keldi / kelmadi",
+      "lessonFinished": "Dars tugadi (baho bilan)",
+      "payment": "To'lov qabul qilindi",
+      "debt": "Qarzdorlik eslatmasi",
+      "lessonReminder": "Dars oldidan eslatma (1 soat)",
+      "homework": "Yangi uyga vazifa",
+      "badge": "Yangi yutuq nishonlari"
+    },
+    "notifHint": "Xabarlar barcha farzandlar va markazlar uchun bir xil. Markazning o'zi o'chirgan turlar kelmaydi.",
+    "lang": "Til",
+    "childrenHint": "Farzand ko'rinmayaptimi? Markaz o'quvchi kartasiga shu raqamni «Ota-ona raqami» sifatida kiritishi kerak.",
+    "unlink": "Botdan uzish",
+    "unlinkText": "Telegram hisobingiz o'quvchidan uziladi va xabarlar kelmaydi. Qayta ulash uchun botda /start bosasiz.",
+    "unlinked": "Bot uzildi"
+  },
+  "months": {
+    "long": [
+      "Yanvar",
+      "Fevral",
+      "Mart",
+      "Aprel",
+      "May",
+      "Iyun",
+      "Iyul",
+      "Avgust",
+      "Sentabr",
+      "Oktabr",
+      "Noyabr",
+      "Dekabr"
+    ],
+    "short": [
+      "yan",
+      "fev",
+      "mar",
+      "apr",
+      "may",
+      "iyn",
+      "iyl",
+      "avg",
+      "sen",
+      "okt",
+      "noy",
+      "dek"
+    ],
+    "genitive": [
+      "yanvar",
+      "fevral",
+      "mart",
+      "aprel",
+      "may",
+      "iyun",
+      "iyul",
+      "avgust",
+      "sentabr",
+      "oktabr",
+      "noyabr",
+      "dekabr"
+    ]
+  },
+  "hw": {
+    "today": "Bugun",
+    "tomorrow": "Ertaga",
+    "updated": "Yangilangan: {{d}}",
+    "empty": "Bu oyda vazifa yo'q",
+    "emptyText": "O'qituvchi uyga vazifa yozganda shu yerda ko'rinadi.",
+    "past": "O'tgan",
+    "updatedShort": "Yangilandi: {{t}}"
+  },
+  "student": {
+    "rank": {
+      "none": "Hali baho yo'q",
+      "badge": "{{total}} tadan {{position}}-o'rin"
+    },
+    "home": {
+      "groups": "Guruhlarim",
+      "avg": "O'rtacha {{v}}",
+      "homework": "Uyga vazifa",
+      "noHomework": "Hozircha uyga vazifa yo'q",
+      "noGroups": "Guruh topilmadi",
+      "noGroupsText": "Markaz o'quvchi kartasiga sizning telefon raqamingizni kiritishi kerak.",
+      "children": "Mening profilim",
+      "noChildren": "O'quvchi topilmadi",
+      "hwToday": "Bugungi vazifa",
+      "hwTomorrow": "Ertangi vazifa",
+      "hwOn": "{{d}} vazifasi",
+      "rank": "o'rin"
+    },
+    "child": {
+      "notLinkedText": "Bu markaz ilovani yoqmagan — maʼlumot ko'rsatilmaydi."
+    },
+    "grades": {
+      "hiddenText": "Markaz baholarni ilovada ko'rsatishni o'chirgan."
+    },
+    "notif": {
+      "emptyText": "Baho, uyga vazifa va dars eslatmalari shu yerda ko'rinadi."
+    },
+    "settings": {
+      "roleTitle": "Rol",
+      "role": {
+        "parent": "Ota-ona",
+        "student": "O'quvchi"
+      },
+      "roleHint": "Raqamingiz ham ota-ona, ham o'quvchi sifatida topildi. Kerakli ko'rinishni tanlang.",
+      "mute": {
+        "lessonFinished": "Dars tugadi (bahoingiz bilan)"
+      },
+      "notifHint": "Xabarlar barcha guruhlaringiz uchun bir xil. Markazning o'zi o'chirgan turlar kelmaydi.",
+      "childrenHint": "Guruhingiz ko'rinmayaptimi? Markaz o'quvchi kartasiga shu raqamni kiritishi kerak.",
+      "unlinkText": "Telegram hisobingiz uziladi va xabarlar kelmaydi. Qayta ulash uchun botda /start bosasiz."
+    }
+  },
+  "rankCard": {
+    "title": "Guruhdagi o'rin",
+    "medal": "{{position}}-o'rin medali",
+    "tier1": "Oltin medal",
+    "tier2": "Kumush medal",
+    "tier3": "Bronza medal",
+    "toMedal": "Medalgacha {{count}} pog'ona"
+  },
+  "badge": {
+    "progressTitle": "Shu oy progressi",
+    "medalsTitle": "Oylik reyting medallari",
+    "collectionTitle": "Olingan yutuqlar",
+    "total": "Jami {{count}} ta",
+    "empty": "Hali yutuq yo'q",
+    "emptyText": "Shu oy birinchisini qo'lga kirit!",
+    "moreMonths": "yana {{count}} oy",
+    "onTrack": "Shart bajarilmoqda",
+    "gradesHidden": "Markaz baholarni yashirgan — baho bilan bog'liq yutuqlar ko'rsatilmaydi.",
+    "hint": {
+      "absent": "Shu oy {{count}} ta dars qoldirilgan",
+      "lowGrade": "8 dan past baho bor",
+      "notTen": "Shu oy 10 dan past baho bor",
+      "noRank": "Hali reytingda emas",
+      "noCompare": "Solishtirish uchun ikki oyda ham ≥4 baho kerak",
+      "delta": "{{from}} → {{to}}",
+      "notPodium": "Shu oy hozircha top-3 da emas",
+      "needTwoMonths": "O'tgan oy va shu oy reytingda bo'lish kerak",
+      "positions": "{{from}}-o'rin → {{to}}-o'rin"
+    },
+    "types": {
+      "perfectAttendance": {
+        "name": "Mukammal davomat",
+        "desc": "Bir oy davomida birorta ham dars qoldirilmadi",
+        "rule": "Oyda kamida 4 dars, bittasini ham qoldirmaslik"
+      },
+      "excellent": {
+        "name": "A'lochi",
+        "desc": "Oy davomidagi barcha baholar 8 va undan yuqori",
+        "rule": "Oyda kamida 4 baho, hammasi 8 va undan yuqori"
+      },
+      "perfect": {
+        "name": "Mukammal",
+        "desc": "Oy davomida faqat 10 baholar",
+        "rule": "Oyda kamida 4 baho, hammasi 10"
+      },
+      "attendanceStreak": {
+        "name": "Olovli seriya",
+        "desc": "Ketma-ket 10 ta darsga kelindi",
+        "rule": "Ketma-ket 10 ta darsga kelish"
+      },
+      "gradeStreak": {
+        "name": "10 lar seriyasi",
+        "desc": "Ketma-ket 5 ta 10 baho",
+        "rule": "Ketma-ket 5 ta 10 baho olish"
+      },
+      "champion": {
+        "name": "Guruh chempioni",
+        "desc": "Oylik reytingda 1-o'rin",
+        "rule": "Oy yakunida guruh reytingida 1-o'rin"
+      },
+      "mostImproved": {
+        "name": "Eng ko'p o'sgan",
+        "desc": "O'rtacha baho guruhda eng ko'p o'sdi",
+        "rule": "O'rtacha baho o'tgan oyga nisbatan guruhda eng ko'p o'sishi"
+      },
+      "podiumStreak": {
+        "name": "Podium seriyasi",
+        "desc": "3 oy ketma-ket guruhda top-3 da",
+        "rule": "3 oy ketma-ket oylik reytingda 1–3-o'rin"
+      },
+      "goldCollection": {
+        "name": "Oltin kolleksiya",
+        "desc": "Jami 3 ta oltin medal yig'di",
+        "rule": "Oylik reytingda jami 3 marta 1-o'rin (bir martalik)"
+      },
+      "bigJump": {
+        "name": "Katta sakrash",
+        "desc": "Reytingda bir oyda 5+ pog'ona ko'tarildi",
+        "rule": "O'tgan oyga nisbatan reytingda kamida 5 pog'ona ko'tarilish"
+      }
+    }
+  },
+  "rank": {
+    "monthLabel": "{{month}} reytingi"
+  },
+  "plan": {
+    "lessonNo": "{{no}}-dars",
+    "todayLesson": "Bugungi dars",
+    "today": "Bugun",
+    "todayHoliday": "Bugun dam olish kuni",
+    "holiday": "Dam olish",
+    "shiftHint": "Mavzu keyingi dars kuniga suriladi",
+    "noTopic": "Mavzu biriktirilmagan",
+    "upcoming": "Keyingi darslar",
+    "past": "O'tilgan darslar",
+    "program": "Butun dastur",
+    "moduleProgress": "{{done}}/{{total}} dars o'tilgan",
+    "current": "Joriy",
+    "progress": "Modul {{module}}/{{moduleCount}} · {{no}}-dars",
+    "finished": "Dastur yakunlandi",
+    "empty": "Dars rejasi hali tuzilmagan",
+    "emptyText": "O'qituvchi dasturni kiritgach, mavzular shu yerda ko'rinadi."
+  }
+}
