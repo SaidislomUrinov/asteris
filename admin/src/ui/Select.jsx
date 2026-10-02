@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { HiChevronDown } from "react-icons/hi2";
 
 function Select({
@@ -8,13 +9,14 @@ function Select({
   label = "",
   required = false,
   disabled = false,
-  placeholder = "Select...",
+  placeholder,
   className = "",
   options = [],
   color = "slate",
   variant = "slate",
   icon = null,
 }) {
+  const { t } = useTranslation();
   const colors = {
     emerald: "hover:ring-emerald-500 ring-emerald-500",
     blue: "hover:ring-blue-500 ring-blue-500",
@@ -62,9 +64,12 @@ function Select({
   const triggerRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  useEffect(() => {
+  // Tashqi `value` o'zgarsa — render fazasida sinxronlanadi (effect emas).
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
     setSelected(value);
-  }, [value]);
+  }
 
   const calcPos = () => {
     if (!triggerRef.current) return;
@@ -152,7 +157,7 @@ function Select({
           >
             {selected
               ? options.find((o) => o.value === selected)?.label
-              : placeholder}
+              : placeholder ?? t("common.select")}
           </span>
         </span>
       </div>

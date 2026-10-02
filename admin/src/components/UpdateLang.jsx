@@ -2,10 +2,12 @@ import { useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { HiChevronDown } from "react-icons/hi";
 import uzFlag from "../assets/uz.png";
+import ruFlag from "../assets/ru.png";
 import enFlag from "../assets/en.png";
 
 const langs = [
   { value: "uz", label: "O'zbekcha", flag: uzFlag },
+  { value: "ru", label: "Русский", flag: ruFlag },
   { value: "en", label: "English", flag: enFlag },
 ];
 

@@ -1,7 +1,9 @@
+import { useTranslation } from "react-i18next";
 import Checkbox from "../../ui/Checkbox";
-import { PERMISSION_CATALOG } from "./permissionCatalog";
+import { featureI18nKey, PERMISSION_CATALOG } from "./permissionCatalog";
 
 export default function PermissionMatrix({ value = [], onChange, disabled = false }) {
+  const { t } = useTranslation();
   const has = (perm) => value.includes(perm);
 
   const toggle = (perm) => {
@@ -32,7 +34,7 @@ export default function PermissionMatrix({ value = [], onChange, disabled = fals
               checked={allSelected}
               onChange={() => toggleModule(mod, allSelected)}
               variant="square"
-              label={mod.label}
+              label={t(`tariff.modules.${mod.module}`)}
               className="[&>span]:font-semibold [&>span]:text-slate-800"
             />
 
@@ -63,10 +65,10 @@ export default function PermissionMatrix({ value = [], onChange, disabled = fals
                     </button>
                     <div className="flex flex-col gap-0.5 min-w-0">
                       <span className="text-sm font-medium text-slate-800 select-none">
-                        {item.label}
+                        {t(`${featureI18nKey(item.key)}.label`)}
                       </span>
                       <span className="text-[12px] text-slate-400 leading-snug select-none">
-                        {item.description}
+                        {t(`${featureI18nKey(item.key)}.description`)}
                       </span>
                     </div>
                   </label>

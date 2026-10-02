@@ -5,23 +5,22 @@ import {
   HiCheckCircle,
   HiPaperAirplane,
   HiLockClosed,
-  HiPlus,
-  HiTrash,
 } from "react-icons/hi2";
 import { api } from "../../utils/fetching";
 import i18n from "../../utils/i18n";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
-import IconButton from "../../ui/IconButton";
 import Switch from "../../ui/Switch";
 import Chip from "../../ui/Chip";
 import Section from "./Section";
+import ChatIdList from "./ChatIdList";
 
 const ALERT_KEYS = [
   "serverError",
   "healthDegraded",
   "subscriptionExpiring",
   "newLead",
+  "leadStatus",
 ];
 
 const buildAlerts = (settings) =>
@@ -30,17 +29,16 @@ const buildAlerts = (settings) =>
     {},
   );
 
-const buildChatIds = (settings) =>
-  Array.isArray(settings?.telegram?.alertChatIds)
-    ? settings.telegram.alertChatIds
-    : [];
+const buildChatIds = (settings, key = "alertChatIds") =>
+  Array.isArray(settings?.telegram?.[key]) ? settings.telegram[key] : [];
 
 export default function TelegramTab({ settings, onSave, saving }) {
   const { t } = useTranslation();
   const [enabled, setEnabled] = useState(() => !!settings?.telegram?.enabled);
   const [botToken, setBotToken] = useState("");
+  const [parentWebAppUrl, setParentWebAppUrl] = useState(() => settings?.telegram?.parentWebAppUrl || "");
   const [chatIds, setChatIds] = useState(() => buildChatIds(settings));
-  const [newChatId, setNewChatId] = useState("");
+  const [leadChatIds, setLeadChatIds] = useState(() => buildChatIds(settings, "leadChatIds"));
   const [alerts, setAlerts] = useState(() => buildAlerts(settings));
   const [testing, setTesting] = useState(false);
 
@@ -50,21 +48,15 @@ export default function TelegramTab({ settings, onSave, saving }) {
     setPrevSettings(settings);
     setEnabled(!!settings?.telegram?.enabled);
     setChatIds(buildChatIds(settings));
+    setLeadChatIds(buildChatIds(settings, "leadChatIds"));
     setAlerts(buildAlerts(settings));
     setBotToken("");
-    setNewChatId("");
+    setParentWebAppUrl(settings?.telegram?.parentWebAppUrl || "");
   }
-
-  const addChatId = () => {
-    const value = newChatId.trim();
-    if (!value || chatIds.includes(value)) return;
-    setChatIds((p) => [...p, value]);
-    setNewChatId("");
-  };
 
   const submit = async () => {
     // Token bo'sh bo'lsa yuborilmaydi — server eskisini saqlaydi
-    const telegram = { enabled, alertChatIds: chatIds, alerts };
+    const telegram = { enabled, alertChatIds: chatIds, leadChatIds, alerts, parentWebAppUrl: parentWebAppUrl.trim() };
     if (botToken.trim()) telegram.botToken = botToken.trim();
     const ok = await onSave({ telegram });
     if (ok) setBotToken("");
@@ -131,59 +123,32 @@ export default function TelegramTab({ settings, onSave, saving }) {
           </span>
         </div>
 
-        {/* Alert chat ID lar */}
-        <div className="flex flex-col gap-2 w-full">
-          <span className="pl-2 text-sm text-slate-800">
-            {t("systemSettings.telegram.chatIds")}
-          </span>
-          <span className="pl-2 text-[11px] text-slate-400 -mt-1">
-            {t("systemSettings.telegram.chatIdsHint")}
-          </span>
-
-          <div className="flex items-end gap-2 w-full">
-            <Input
-              placeholder="123456789"
-              value={newChatId}
-              onChange={(e) => setNewChatId(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addChatId();
-                }
-              }}
-            />
-            <Button color="slate" variant="ghost" onClick={addChatId}>
-              <HiPlus className="text-base" />
-              {t("common.add")}
-            </Button>
-          </div>
-
-          {chatIds.length === 0 ? (
-            <div className="flex items-center justify-center w-full h-16 text-slate-400 text-[12px] border border-dashed border-slate-200 rounded-xl">
-              {t("systemSettings.telegram.noChatIds")}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1 w-full">
-              {chatIds.map((id) => (
-                <div
-                  key={id}
-                  className="flex items-center justify-between gap-2 w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl"
-                >
-                  <span className="text-[13px] text-slate-700 font-medium truncate">
-                    {id}
-                  </span>
-                  <IconButton
-                    color="red"
-                    variant="ghost"
-                    onClick={() => setChatIds((p) => p.filter((x) => x !== id))}
-                  >
-                    <HiTrash />
-                  </IconButton>
-                </div>
-              ))}
-            </div>
-          )}
+        {/* Ota-ona WebApp manzili — bot xabarlaridagi "Batafsil ko'rish" tugmasi */}
+        <div className="flex flex-col gap-1 w-full">
+          <Input
+            label={t("systemSettings.telegram.parentWebAppUrl")}
+            placeholder="https://parent.wenet.uz"
+            value={parentWebAppUrl}
+            onChange={(e) => setParentWebAppUrl(e.target.value)}
+          />
+          <span className="pl-2 text-[11px] text-slate-400">{t("systemSettings.telegram.parentWebAppUrlHint")}</span>
         </div>
+
+        {/* Alert chat ID lar */}
+        <ChatIdList
+          label={t("systemSettings.telegram.chatIds")}
+          hint={t("systemSettings.telegram.chatIdsHint")}
+          value={chatIds}
+          onChange={setChatIds}
+        />
+
+        {/* Lead chatlari — yangi lead va status o'zgarishi shu yerga ketadi */}
+        <ChatIdList
+          label={t("systemSettings.telegram.leadChatIds")}
+          hint={t("systemSettings.telegram.leadChatIdsHint")}
+          value={leadChatIds}
+          onChange={setLeadChatIds}
+        />
 
         {/* Alert turlari */}
         <div className="flex flex-col gap-2 w-full pt-2 border-t border-slate-100">

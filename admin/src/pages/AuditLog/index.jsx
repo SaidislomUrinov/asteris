@@ -184,7 +184,7 @@ export default function AuditLog() {
           <span>{log.actor?.name || "—"}</span>
           <span className="text-[11px] text-slate-400">
             {t(`audit.kinds.${log.actor?.kind}`, log.actor?.kind || "")}
-            {log.actor?.role ? ` · ${log.actor.role}` : ""}
+            {log.actor?.role ? ` · ${t(`audit.roles.${log.actor.role}`, log.actor.role)}` : ""}
           </span>
         </div>
       ),
@@ -318,7 +318,7 @@ export default function AuditLog() {
           { value: "", label: t("audit.allActors") },
           ...filters.actors.map((a) => ({
             value: a._id,
-            label: a.role ? `${a.name} — ${a.role}` : a.name,
+            label: a.role ? `${a.name} — ${t(`audit.roles.${a.role}`, a.role)}` : a.name,
           })),
         ]}
       />

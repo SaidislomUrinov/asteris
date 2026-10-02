@@ -43,7 +43,7 @@ export default function ChangesDialog({ log, onClose }) {
               <span className="text-slate-700 text-sm">
                 {log.actor?.name || "—"}
                 {log.actor?.role ? (
-                  <span className="text-slate-400"> · {log.actor.role}</span>
+                  <span className="text-slate-400"> · {t(`audit.roles.${log.actor.role}`, log.actor.role)}</span>
                 ) : null}
               </span>
             </Info>

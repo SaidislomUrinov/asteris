@@ -19,7 +19,9 @@ export default function Logout() {
   const submit = async () => {
     try {
       await api.post("/admin/signout");
-    } catch {}
+    } catch {
+      // serverga yetmasa ham lokal sessiya tozalanadi
+    }
     socket.disconnect();
     localStorage.removeItem("access");
     dp(resetUser());

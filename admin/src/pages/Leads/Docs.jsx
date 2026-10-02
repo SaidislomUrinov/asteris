@@ -19,7 +19,7 @@ import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 import { PLATFORMS } from "./statusMeta";
 
-const DOCS_BASE_URL = "https://server.asteris.uz";
+const DOCS_BASE_URL = "https://api.wenet.uz";
 
 const curlExample = (key) => `curl -X POST ${DOCS_BASE_URL}/api/leads \\
   -H "Content-Type: application/json" \\
@@ -61,36 +61,37 @@ const successExample = `{
 const errorExample = `{ "ok": false, "msg": "lead.apiKeyInvalid" }`;
 
 const errorExamples = [
-  { code: "lead.apiKeyRequired", desc: "x-lead-api-key header'i yuborilmagan" },
-  { code: "lead.apiKeyInvalid", desc: "Kalit noto'g'ri yoki eskirgan" },
-  { code: "lead.fillTheRows", desc: "Majburiy maydonlardan biri bo'sh" },
-  { code: "lead.invalidPlatform", desc: "platform enum qiymatlaridan biri emas" },
+  { code: "lead.apiKeyRequired", descKey: "lead.docsErrApiKeyRequired" },
+  { code: "lead.apiKeyInvalid", descKey: "lead.docsErrApiKeyInvalid" },
+  { code: "lead.fillTheRows", descKey: "lead.docsErrFillTheRows" },
+  { code: "lead.invalidPlatform", descKey: "lead.docsErrInvalidPlatform" },
 ];
 
 const FIELDS = [
-  { name: "name", type: "string", required: true, desc: "Mijoz ismi" },
-  { name: "phone", type: "string", required: true, desc: "Telefon raqami" },
+  { name: "name", type: "string", required: true, descKey: "lead.docsFieldName" },
+  { name: "phone", type: "string", required: true, descKey: "lead.docsFieldPhone" },
   {
     name: "platform",
     type: "enum",
     required: true,
-    desc: `Qaysi kanaldan kelgani: ${PLATFORMS.join(", ")}`,
+    descKey: "lead.docsFieldPlatform",
+    descParams: { list: PLATFORMS.join(", ") },
   },
   {
     name: "platformNote",
     type: "string",
     required: false,
-    desc: "platform: \"other\" bo'lganda qo'shimcha izoh",
+    descKey: "lead.docsFieldPlatformNote",
   },
-  { name: "comment", type: "string", required: false, desc: "Erkin izoh" },
+  { name: "comment", type: "string", required: false, descKey: "lead.docsFieldComment" },
 ];
 
 const SECTIONS = [
-  { id: "overview", label: "Overview" },
-  { id: "authentication", label: "Authentication" },
-  { id: "fields", label: "Request body" },
-  { id: "responses", label: "Responses" },
-  { id: "rate-limit", label: "Rate limiting" },
+  { id: "overview", labelKey: "lead.docsSectionOverview" },
+  { id: "authentication", labelKey: "lead.docsSectionAuth" },
+  { id: "fields", labelKey: "lead.docsSectionFields" },
+  { id: "responses", labelKey: "lead.docsSectionResponses" },
+  { id: "rate-limit", labelKey: "lead.docsSectionRateLimit" },
 ];
 
 // Matn ichida urg'u berish uchun — rangni ota elementdan meros oladi
@@ -110,10 +111,10 @@ const FieldsTable = ({ t }) => (
     <table className="w-full text-sm">
       <thead>
         <tr className="text-left text-slate-500 text-[11px] uppercase bg-slate-50">
-          <th className="py-2 px-3 font-semibold">Field</th>
-          <th className="py-2 px-3 font-semibold">Type</th>
-          <th className="py-2 px-3 font-semibold">Required</th>
-          <th className="py-2 px-3 font-semibold">Izoh</th>
+          <th className="py-2 px-3 font-semibold">{t("lead.docsColField")}</th>
+          <th className="py-2 px-3 font-semibold">{t("lead.docsColType")}</th>
+          <th className="py-2 px-3 font-semibold">{t("lead.docsColRequired")}</th>
+          <th className="py-2 px-3 font-semibold">{t("lead.docsColDescription")}</th>
         </tr>
       </thead>
       <tbody>
@@ -132,7 +133,7 @@ const FieldsTable = ({ t }) => (
                 <Chip value={t("common.no")} color="slate" />
               )}
             </td>
-            <td className="py-2 px-3 text-slate-600">{f.desc}</td>
+            <td className="py-2 px-3 text-slate-600">{t(f.descKey, f.descParams)}</td>
           </tr>
         ))}
       </tbody>
@@ -173,6 +174,7 @@ const Tab = ({ active, onClick, children }) => (
 );
 
 const CodePanel = ({ apiKey }) => {
+  const { t } = useTranslation();
   const [reqTab, setReqTab] = useState("curl");
   const [resTab, setResTab] = useState("success");
   const [copied, setCopied] = useState(false);
@@ -208,11 +210,11 @@ const CodePanel = ({ apiKey }) => {
           >
             {copied ? (
               <>
-                <HiCheck className="text-emerald-400" /> Copied
+                <HiCheck className="text-emerald-400" /> {t("common.copied")}
               </>
             ) : (
               <>
-                <HiClipboard /> Copy
+                <HiClipboard /> {t("common.copy")}
               </>
             )}
           </button>
@@ -313,7 +315,7 @@ export default function LeadsDocs() {
             <HiArrowLeft />
           </IconButton>
           <span className="text-[11px] sm:text-[12px] uppercase tracking-widest text-slate-400 font-semibold">
-            API Reference
+            {t("lead.docsApiReference")}
           </span>
         </div>
         <div className="flex flex-col gap-2">
@@ -325,7 +327,7 @@ export default function LeadsDocs() {
         <div className="flex flex-wrap items-center gap-2 mt-1">
           <Chip value="POST" color="emerald" />
           <code className="text-sm font-mono text-slate-200">/api/leads</code>
-          <Chip value="API kalit majburiy" color="red" />
+          <Chip value={t("lead.docsApiKeyRequiredChip")} color="red" />
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full rounded-xl bg-black/20 border border-white/10 px-3 py-2">
@@ -353,7 +355,7 @@ export default function LeadsDocs() {
             onClick={() => scrollTo(s.id)}
             className="shrink-0 whitespace-nowrap text-[12px] font-semibold text-slate-600 bg-white border border-slate-200 rounded-full px-3 py-1.5 cursor-pointer"
           >
-            {s.label}
+            {t(s.labelKey)}
           </button>
         ))}
       </div>
@@ -367,19 +369,19 @@ export default function LeadsDocs() {
               onClick={() => scrollTo(s.id)}
               className="text-left text-[13px] font-medium text-slate-500 hover:text-slate-900 py-1 transition-colors cursor-pointer"
             >
-              {s.label}
+              {t(s.labelKey)}
             </button>
           ))}
         </aside>
 
         <main className="flex flex-col w-full min-w-0">
-          <Section id="overview" title="Overview">
+          <Section id="overview" title={t("lead.docsSectionOverview")}>
             <p className="text-sm text-slate-600 leading-relaxed">
               <Trans i18nKey="lead.docsIntro" components={{ 1: <Em /> }} />
             </p>
           </Section>
 
-          <Section id="authentication" title="Authentication">
+          <Section id="authentication" title={t("lead.docsSectionAuth")}>
             <div className="flex items-start gap-2 w-full rounded-xl border border-red-200 bg-red-50 p-3">
               <HiLockClosed className="text-red-500 text-lg shrink-0 mt-0.5" />
               <p className="text-sm text-red-800 leading-relaxed">
@@ -470,13 +472,13 @@ export default function LeadsDocs() {
             <FieldsTable t={t} />
           </Section>
 
-          <Section id="responses" title="Responses">
+          <Section id="responses" title={t("lead.docsSectionResponses")}>
             <div className="w-full overflow-x-auto rounded-xl border border-slate-200">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-slate-500 text-[11px] uppercase bg-slate-50">
                     <th className="py-2 px-3 font-semibold">msg</th>
-                    <th className="py-2 px-3 font-semibold">Izoh</th>
+                    <th className="py-2 px-3 font-semibold">{t("lead.docsColDescription")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -485,20 +487,21 @@ export default function LeadsDocs() {
                       <td className="py-2 px-3 font-mono text-red-600 whitespace-nowrap">
                         {e.code}
                       </td>
-                      <td className="py-2 px-3 text-slate-600">{e.desc}</td>
+                      <td className="py-2 px-3 text-slate-600">{t(e.descKey)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <p className="text-sm text-slate-500">
-              HTTP status har doim <code className="font-mono">200</code>, muvaffaqiyat{" "}
-              <code className="font-mono">ok</code> maydoni orqali aniqlanadi. To'liq
-              javob namunalari o'ng paneldagi <b>Success</b> / <b>Error</b> tablarida.
+              <Trans
+                i18nKey="lead.docsResponsesNote"
+                components={{ 1: <code className="font-mono" />, 2: <b /> }}
+              />
             </p>
           </Section>
 
-          <Section id="rate-limit" title="Rate limiting">
+          <Section id="rate-limit" title={t("lead.docsSectionRateLimit")}>
             <p className="text-sm text-slate-600 leading-relaxed">
               <Trans i18nKey="lead.docsRateLimit" components={{ 1: <Em /> }} />
             </p>

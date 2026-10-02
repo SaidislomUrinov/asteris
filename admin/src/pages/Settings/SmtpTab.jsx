@@ -110,7 +110,7 @@ export default function SmtpTab({ settings, onSave, saving }) {
           />
           <Input
             label={t("systemSettings.smtp.user")}
-            placeholder="no-reply@asteris.uz"
+            placeholder="no-reply@wenet.uz"
             value={form.user}
             onChange={(e) => set("user")(e.target.value)}
           />
@@ -134,13 +134,13 @@ export default function SmtpTab({ settings, onSave, saving }) {
 
           <Input
             label={t("systemSettings.smtp.fromName")}
-            placeholder="Asteris"
+            placeholder="WENET"
             value={form.fromName}
             onChange={(e) => set("fromName")(e.target.value)}
           />
           <Input
             label={t("systemSettings.smtp.fromEmail")}
-            placeholder="no-reply@asteris.uz"
+            placeholder="no-reply@wenet.uz"
             value={form.fromEmail}
             onChange={(e) => set("fromEmail")(e.target.value)}
           />

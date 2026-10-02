@@ -14,6 +14,7 @@ const initial = {
   name: "",
   price: "",
   trialDays: "",
+  tagline: "",
   studentLimit: "",
   centerLimit: "",
   teacherLimit: "",
@@ -55,6 +56,10 @@ export default function TariffDialog({ open, onClose, tariff, onSaved, tariffs =
   const [form, setForm] = useState(initial);
   const [unlimited, setUnlimited] = useState(initialUnlimited);
   const [allAllowed, setAllAllowed] = useState(true);
+  // Saytdagi narx sahifasida ko'rsatish. Default o'chiq — tarif avval bu yerda
+  // tayyorlanadi, ataylab yoqilgandagina wenet.uz ga chiqadi.
+  const [isPublic, setIsPublic] = useState(false);
+  const [highlighted, setHighlighted] = useState(false);
   const [permissions, setPermissions] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -68,6 +73,7 @@ export default function TariffDialog({ open, onClose, tariff, onSaved, tariffs =
           name: tariff.name || "",
           price: tariff.price ?? "",
           trialDays: tariff.trialDays ?? "",
+          tagline: tariff.tagline || "",
           studentLimit: tariff.studentLimit === -1 ? "" : (tariff.studentLimit ?? ""),
           centerLimit: tariff.centerLimit === -1 ? "" : (tariff.centerLimit ?? ""),
           teacherLimit: tariff.teacherLimit === -1 ? "" : (tariff.teacherLimit ?? ""),
@@ -83,11 +89,15 @@ export default function TariffDialog({ open, onClose, tariff, onSaved, tariffs =
         const isAll = ALL_PERMISSIONS.every((p) => perms.includes(p));
         setAllAllowed(isAll);
         setPermissions(isAll ? [] : perms);
+        setIsPublic(!!tariff.isPublic);
+        setHighlighted(!!tariff.highlighted);
       } else {
         setForm(initial);
         setUnlimited(initialUnlimited);
         setAllAllowed(true);
         setPermissions([]);
+        setIsPublic(false);
+        setHighlighted(false);
       }
     }, 0);
     return () => clearTimeout(timeout);
@@ -126,6 +136,8 @@ export default function TariffDialog({ open, onClose, tariff, onSaved, tariffs =
         teacherLimit: unlimited.teacherLimit ? -1 : Number(form.teacherLimit),
         receptionLimit: unlimited.receptionLimit ? -1 : Number(form.receptionLimit),
         allowedPermissions: allAllowed ? ALL_PERMISSIONS : permissions,
+        isPublic,
+        highlighted: isPublic && highlighted,
       };
 
       setLoading(true);
@@ -212,6 +224,26 @@ export default function TariffDialog({ open, onClose, tariff, onSaved, tariffs =
           unlimited={unlimited.receptionLimit}
           onToggleUnlimited={toggleUnlimited("receptionLimit")}
         />
+      </div>
+
+      <div className="flex flex-col gap-2 w-full pt-2 border-t border-slate-100 mt-1">
+        <Switch checked={isPublic} onChange={setIsPublic} label={t("tariff.isPublic")} />
+        <p className="text-[12px] text-slate-400">{t("tariff.isPublicHint")}</p>
+        {isPublic && (
+          <>
+            <Input
+              label={t("tariff.tagline")}
+              value={form.tagline}
+              onChange={set("tagline")}
+              placeholder={t("tariff.taglinePlaceholder")}
+            />
+            <Switch
+              checked={highlighted}
+              onChange={setHighlighted}
+              label={t("tariff.highlighted")}
+            />
+          </>
+        )}
       </div>
 
       <div className="flex flex-col gap-2 w-full pt-2 border-t border-slate-100 mt-1">

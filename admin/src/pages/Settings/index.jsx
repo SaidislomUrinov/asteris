@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  HiUserCircle,
   HiEnvelope,
   HiPaperAirplane,
   HiFolderOpen,
@@ -11,12 +12,14 @@ import {
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 import Button from "../../ui/Button";
+import ProfileTab from "./ProfileTab";
 import SmtpTab from "./SmtpTab";
 import TelegramTab from "./TelegramTab";
 import StorageTab from "./StorageTab";
 import BackupTab from "./BackupTab";
 
 const TABS = [
+  { key: "profile", icon: HiUserCircle },
   { key: "smtp", icon: HiEnvelope },
   { key: "telegram", icon: HiPaperAirplane },
   { key: "storage", icon: HiFolderOpen },
@@ -25,7 +28,7 @@ const TABS = [
 
 export default function Settings() {
   const { t } = useTranslation();
-  const [tab, setTab] = useState("smtp");
+  const [tab, setTab] = useState("profile");
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -132,6 +135,7 @@ export default function Settings() {
         </div>
       ) : (
         <>
+          {tab === "profile" && <ProfileTab />}
           {tab === "smtp" && <SmtpTab {...tabProps} />}
           {tab === "telegram" && <TelegramTab {...tabProps} />}
           {tab === "storage" && <StorageTab {...tabProps} />}

@@ -17,7 +17,7 @@ const user = createSlice({
     updateUser: (state, { payload }) => {
       return { ...state, ...payload };
     },
-    resetUser: (state) => {
+    resetUser: () => {
       return initialState;
     },
   },

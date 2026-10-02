@@ -140,7 +140,7 @@ export default function Tariffs() {
                 <p className="text-[22px] font-bold text-slate-900">
                   {formatPrice(tariff.price)}{" "}
                   <span className="text-sm font-normal text-slate-400">
-                    so'm / {t("tariff.perMonth")}
+                    {t("common.som")} / {t("tariff.perMonth")}
                   </span>
                 </p>
 

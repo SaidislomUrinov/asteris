@@ -15,10 +15,18 @@ import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
 import AuditLog from "./pages/AuditLog";
 import Monitoring from "./pages/Monitoring";
+import Logs from "./pages/Logs";
 import Settings from "./pages/Settings";
+import Fonts from "./pages/Fonts";
+import TutorialVideos from "./pages/TutorialVideos";
+import Chat from "./pages/Chat";
+import News from "./pages/News";
+import NewsEditor from "./pages/News/NewsEditor";
+import { hasPermission } from "./utils/permission";
 function App() {
   const dp = useDispatch();
-  const { _id } = useSelector((e) => e?.user);
+  const { _id, permissions } = useSelector((e) => e?.user);
+  const canManageNews = hasPermission(permissions, "news:manage");
   const [load, setLoad] = useState(false);
   useEffect(() => {
     (async () => {
@@ -27,10 +35,12 @@ function App() {
         const { ok, data } = res.data;
         if (ok) dp(updateUser(data));
       } catch {
+        // token yaroqsiz — login sahifasi ko'rsatiladi
       } finally {
         setLoad(true);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!load)
@@ -58,7 +68,14 @@ function App() {
               <Route path="/clients" element={<Clients />} />
               <Route path="/audit-log" element={<AuditLog />} />
               <Route path="/monitoring" element={<Monitoring />} />
+              <Route path="/logs" element={<Logs />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/fonts" element={<Fonts />} />
+              <Route path="/tutorial-videos" element={<TutorialVideos />} />
+              <Route path="/chat" element={<Chat />} />
+              {canManageNews && <Route path="/news" element={<News />} />}
+              {canManageNews && <Route path="/news/new" element={<NewsEditor key="new" />} />}
+              {canManageNews && <Route path="/news/:id" element={<NewsEditor key="edit" />} />}
             </Routes>
           </div>
         </div>

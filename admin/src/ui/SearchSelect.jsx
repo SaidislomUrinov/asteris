@@ -99,16 +99,29 @@ function SearchSelect({
   useEffect(() => {
     if (!open) return;
     clearTimeout(searchTimer.current);
-    if (!query.trim()) { setOptions([]); return; }
-    setLoading(true);
-    searchTimer.current = setTimeout(async () => {
-      try {
-        const res = await onSearch(query.trim());
-        setOptions(res || []);
-      } catch { setOptions([]); }
-      finally { setLoading(false); }
-    }, 300);
+    // Debounce'ning o'zi taymer — setState'lar ham taymer ichida (effect
+    // tanasida sinxron setState yo'q).
+    const q = query.trim();
+    searchTimer.current = setTimeout(
+      async () => {
+        if (!q) {
+          setOptions([]);
+          return;
+        }
+        setLoading(true);
+        try {
+          const res = await onSearch(q);
+          setOptions(res || []);
+        } catch {
+          setOptions([]);
+        } finally {
+          setLoading(false);
+        }
+      },
+      q ? 300 : 0,
+    );
     return () => clearTimeout(searchTimer.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, open]);
 
   // Outside click + scroll reposition

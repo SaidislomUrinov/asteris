@@ -77,6 +77,9 @@ export default function StatusDialog({ lead, onClose, onUpdated, onConfirmed }) 
           />
         </div>
         <p className="text-sm text-slate-500">{lead.phone}</p>
+        {lead.telegram && (
+          <p className="text-sm text-slate-500">Telegram: {lead.telegram}</p>
+        )}
         <p className="text-sm text-slate-500">
           {t(`platform.${lead.platform}`)}
           {lead.platformNote ? ` — ${lead.platformNote}` : ""}

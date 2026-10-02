@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HiChartPie, HiLogout, HiUserGroup } from "react-icons/hi";
 import {
@@ -6,10 +6,18 @@ import {
   HiUsers,
   HiClipboardDocumentList,
   HiChartBar,
+  HiCommandLine,
   HiCog6Tooth,
+  HiLanguage,
+  HiPlayCircle,
+  HiOutlineChatBubbleLeftRight,
+  HiNewspaper,
 } from "react-icons/hi2";
 import { HiBars2, HiXMark } from "react-icons/hi2";
 import { Link, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { hasPermission } from "../utils/permission";
+import SocketStatus from "./SocketStatus";
 
 const NavLink = ({ to, children, startsWith }) => {
   const p = useLocation().pathname;
@@ -46,10 +54,14 @@ export default function Navbar() {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const p = useLocation().pathname;
+  const permissions = useSelector((e) => e.user?.permissions);
 
-  useEffect(() => {
+  // Route almashganda mobil menyu yopiladi — render fazasida sinxronlanadi.
+  const [prevPath, setPrevPath] = useState(p);
+  if (p !== prevPath) {
+    setPrevPath(p);
     setOpen(false);
-  }, [p]);
+  }
 
   return (
     <>
@@ -61,7 +73,7 @@ export default function Navbar() {
         {/* Logo */}
         <div className="flex items-center justify-between relative w-full h-15 px-4 border-b border-slate-700">
           <p className="text-[32px] font-space font-semibold text-white whitespace-nowrap">
-            <span className="text-emerald-500 font-space">A</span>steris
+            <span className="text-emerald-500 font-space">WE</span>NET
           </p>
           <div
             className={`absolute lg:hidden duration-300 ${open ? "right-4" : "-right-14"}`}
@@ -77,6 +89,9 @@ export default function Navbar() {
 
         {/* Links */}
         <div className="flex items-start justify-start w-full flex-col h-[calc(100vh-60px)] gap-1 overflow-y-auto p-3">
+          {/* Realtime ulanish holati — "Asosiy" sarlavhasi tepasida. */}
+          <SocketStatus />
+
           <p className="text-zinc-500 text-[12px] font-semibold uppercase tracking-wider whitespace-nowrap px-3 py-2">
             {t("nav.main")}
           </p>
@@ -101,6 +116,18 @@ export default function Navbar() {
             {t("nav.tariffs")}
           </NavLink>
 
+          <NavLink to="/chat" startsWith>
+            <HiOutlineChatBubbleLeftRight className="text-teal-400 text-[20px]" />
+            {t("nav.chat")}
+          </NavLink>
+
+          {hasPermission(permissions, "news:manage") && (
+            <NavLink to="/news" startsWith>
+              <HiNewspaper className="text-orange-400 text-[20px]" />
+              {t("nav.news")}
+            </NavLink>
+          )}
+
           {/* Platforma darajasidagi bo'limlar — kundalik ish bo'limlaridan
               ajratib turadi (audit, texnik holat, tizim konfiguratsiyasi). */}
           <p className="text-zinc-500 text-[12px] font-semibold uppercase tracking-wider whitespace-nowrap px-3 py-2 mt-2">
@@ -117,9 +144,24 @@ export default function Navbar() {
             {t("nav.monitoring")}
           </NavLink>
 
+          <NavLink to="/logs" startsWith>
+            <HiCommandLine className="text-emerald-400 text-[20px]" />
+            {t("nav.logs")}
+          </NavLink>
+
           <NavLink to="/settings" startsWith>
             <HiCog6Tooth className="text-slate-400 text-[20px]" />
             {t("nav.systemSettings")}
+          </NavLink>
+
+          <NavLink to="/fonts" startsWith>
+            <HiLanguage className="text-pink-400 text-[20px]" />
+            {t("nav.fonts")}
+          </NavLink>
+
+          <NavLink to="/tutorial-videos" startsWith>
+            <HiPlayCircle className="text-rose-400 text-[20px]" />
+            {t("nav.tutorialVideos")}
           </NavLink>
 
           <NavLink to="#logout">

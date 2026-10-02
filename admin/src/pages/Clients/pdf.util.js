@@ -13,9 +13,9 @@ export function downloadClientCredentialsPdf({ name, phone, password, clientId }
   doc.setTextColor(16, 185, 129); // emerald-500
   doc.setFont("helvetica", "bold");
   doc.setFontSize(26);
-  doc.text("A", margin, 55);
+  doc.text("W", margin, 55);
   doc.setTextColor(255, 255, 255);
-  doc.text("steris", margin + doc.getTextWidth("A"), 55);
+  doc.text("enet", margin + doc.getTextWidth("W"), 55);
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");

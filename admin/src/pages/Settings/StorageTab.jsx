@@ -70,7 +70,7 @@ export default function StorageTab({ settings, onSave, saving }) {
         <div className="sm:col-span-2">
           <Input
             label={t("systemSettings.storage.baseUrl")}
-            placeholder="https://cdn.asteris.uz"
+            placeholder="https://cdn.wenet.uz"
             value={form.baseUrl}
             onChange={(e) => set("baseUrl")(e.target.value)}
           />
