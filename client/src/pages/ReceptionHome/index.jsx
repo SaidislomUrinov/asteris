@@ -165,7 +165,9 @@ function ReceptionHome() {
         // to'liq bo'lishi kerak — avval `debtors.length` ishlatilgani uchun
         // kartochka har doim maksimum 5 ko'rsatib turgan edi.
         setDebtorsTotal(debtorsRes.data.meta?.total ?? all.length);
-        setDebtors(all.slice(0, 5));
+        // Server qarzdorlarni `createdAt` bo'yicha qaytaradi — bu yerda eng
+        // katta qarzdorlar kerak (qo'ng'iroq navbati), shuning uchun qarz bo'yicha.
+        setDebtors([...all].sort((a, b) => totalDebtOf(b) - totalDebtOf(a)).slice(0, 5));
       }
       if (activeRes.data.ok) setActiveStudents(activeRes.data.meta?.total ?? 0);
       if (!debtorsRes.data.ok || !activeRes.data.ok) throw new Error(debtorsRes.data.msg || activeRes.data.msg);

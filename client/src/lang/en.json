@@ -1936,6 +1936,8 @@
     "monthLabel": "{{month}} ranking"
   },
   "badge": {
+    "totalBadges": "Total badges",
+    "totalMedals": "Medals",
     "title": "Achievements",
     "earned": "Earned badges",
     "noneEarned": "No badges earned yet",
@@ -2001,6 +2003,19 @@
         "name": "Big jump",
         "desc": "Climbed 5+ places in a month"
       }
+    },
+    "periodNow": "now",
+    "state": {
+      "active": "Active",
+      "finished": "Finished",
+      "left": "Left group",
+      "archived": "Archived"
+    },
+    "sections": {
+      "active": "Active groups",
+      "finished": "Finished groups",
+      "left": "Left groups",
+      "archived": "Archived"
     }
   },
   "telegramPhone": {

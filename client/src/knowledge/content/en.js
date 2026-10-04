@@ -232,7 +232,7 @@ export default {
         type: "ul",
         items: [
           "**Statistics** — revenue, payment status, a calendar of lesson days and overall attendance.",
-          "**General** — the list of students, payment status and attendance. From the row menu you can add a payment, call, transfer to another group, remove from the group or archive.",
+          "**General** — the list of students, payment status and attendance. From the row menu you can add a payment, call, transfer to another group, remove from the group, archive, or open the student's **Achievements** (badges and medals).",
           "**Attendance** — a monthly table: click a cell to mark **Present / Absent / Excused**.",
           "**Grades** — grades from 1 to 10; you can't grade an absent student or a future date.",
           "**Homework** — an assignment for each lesson day; fill it from the syllabus with [[Take from syllabus]].",
@@ -342,6 +342,40 @@ export default {
         text: "Attendance can only be marked for today and yesterday — don't put it off after the lesson, because student fees and salaries depend on attendance.",
       },
     ],
+  },
+
+  "my-plans": {
+    summary: "Your own template lesson plans — build one once, then copy it into any of your groups.",
+    blocks: [
+      {
+        type: "h",
+        text: "Building a plan"
+      },
+      {
+        type: "steps",
+        items: [
+          "Click [[New plan]]: enter a **Plan name** (e.g. Beginner or IELTS) and pick the **Subject** — only subjects assigned to you are listed.",
+          "On the plan page add a [[Module]], then add lessons to each module with [[Add topic]]. Fill in **Homework** if needed.",
+          "Reorder topics with the up/down arrows. There is no Save button — every change is saved immediately."
+        ]
+      },
+      {
+        type: "h",
+        text: "Using it in a group"
+      },
+      {
+        type: "p",
+        text: "On the group's **Plan** tab click [[Import (copy)]], choose a plan under **Teachers' plans** and answer **Which lesson are we on now?**. The group receives a **copy** of the plan — editing the plan later does not change the group's programme."
+      },
+      {
+        type: "tip",
+        text: "[[Duplicate]] helps you quickly build a similar plan (for example, for another level). One subject can have several plans."
+      },
+      {
+        type: "warn",
+        text: "[[Archive plan]] does not affect programmes already imported into groups. The owner can restore an archived plan from the Archive section."
+      }
+    ]
   },
 
   students: {
@@ -502,7 +536,7 @@ export default {
       },
       {
         type: "tip",
-        text: "Percentage-based managers and receptionists get a percentage of all payments, while teachers get it only from their own groups. The Advance and Bonus types appear if your plan includes them.",
+        text: "Percentage-based receptionists get a percentage of all payments in their branch, while teachers and assistant teachers get it only from their own groups. The Advance and Bonus types appear if your plan includes them.",
       },
     ],
   },
@@ -829,7 +863,7 @@ export default {
   },
 
   archive: {
-    summary: "Archived groups, students, staff, rooms and subjects — view and restore them.",
+    summary: "Archived groups, students, staff, rooms, subjects and lesson plans — view and restore them.",
     blocks: [
       {
         type: "p",

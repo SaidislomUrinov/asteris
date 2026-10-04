@@ -22,6 +22,7 @@ const KNOWLEDGE_ROUTES = [
   "/schedule",
   "/calendar",
   "/lesson",
+  "/my-plans",
   "/students",
   "/leads",
   "/qr-attendance",

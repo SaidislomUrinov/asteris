@@ -73,3 +73,20 @@ export function currentMonthTashkent() {
   const get = (type) => parts.find((p) => p.type === type)?.value;
   return `${get("year")}-${get("month")}`;
 }
+
+
+// Yutuqlar kartasi holatlari — server `membershipState` bilan bir xil tartib
+// (API_CONTRACT_student_achievements.md, 2026-10-03).
+export const ACHIEVEMENT_STATES = ["active", "finished", "left", "archived"];
+
+/** Unix SONIYA (server `getNow()`) → "YYYY-MM" (Asia/Tashkent) — `formatBadgeMonth` uchun. */
+export function monthOfTs(ts) {
+  if (!ts) return null;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tashkent",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date(ts * 1000));
+  const get = (type) => parts.find((p) => p.type === type)?.value;
+  return `${get("year")}-${get("month")}`;
+}

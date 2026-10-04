@@ -105,19 +105,35 @@ const evaluateGroup = async (group, month, studentIds = null) => {
 
 // Bitta a'zolik uchun: olingan nishonlar + joriy oy progressi (client
 // StudentDetail va ota-ona WebApp umumiy bloki).
-const entryBadges = async (group, studentId) => {
+// `progress: false` — nofaol a'zolik: joriy oy hisoblanmaydi (null).
+const entryBadges = async (group, studentId, { progress = true } = {}) => {
   const month = currentMonth();
   const [badges, medals, results] = await Promise.all([
     StudentBadge.find({ student: studentId, group: group._id }).select("type month").lean(),
     StudentMedal.find({ student: studentId, group: group._id }).select("month position total").sort({ month: -1 }).lean(),
-    evaluateGroup(group, month, [studentId]),
+    progress ? evaluateGroup(group, month, [studentId]) : null,
   ]);
   return {
     month,
     earned: summarizeEarned(badges),
     medals: medals.map((m) => ({ month: m.month, position: m.position, total: m.total })),
-    progress: results[String(studentId)].progress,
+    progress: progress ? results[String(studentId)]?.progress || null : null,
   };
+};
+
+// O'quvchi yutuqlari kartasining holati (API_CONTRACT_student_achievements.md, 2026-10-03).
+const STATE_ORDER = ["active", "finished", "left", "archived"];
+const membershipState = (group, entry) => {
+  if (group.isDeleted || entry.status === "archived") return "archived";
+  if (group.status === "finished") return "finished";
+  if (entry.status === "left") return "left";
+  return "active";
+};
+const membershipEndedAt = (group, entry, state) => {
+  if (state === "left") return entry.leftAt || null;
+  if (state === "archived") return entry.archivedAt || group.deletedAt || null;
+  if (state === "finished") return group.finishedAt || null;
+  return null;
 };
 
 const isDuplicateError = (error) =>
@@ -284,10 +300,11 @@ module.exports = {
     if (!student) throw new Error("student.notFound");
 
     // Bir guruhda bir necha a'zolik bo'lishi mumkin (chiqib qayta qo'shilgan) —
-    // guruh bo'yicha bittasi: faol bo'lsa o'sha, aks holda oxirgisi.
+    // guruh bo'yicha bittasi: faol bo'lsa o'sha, aks holda oxirgisi. Arxivlangan
+    // a'zolik ham olinadi — yutuqlar doimiy (API_CONTRACT_student_achievements.md, 2026-10-03).
     const entryByGroup = new Map();
     for (const e of student.groups) {
-      if (String(e.client) !== String(clientId) || e.status === "archived") continue;
+      if (String(e.client) !== String(clientId)) continue;
       if (centerScope && String(e.center) !== String(centerScope)) continue;
       const key = String(e.group);
       const cur = entryByGroup.get(key);
@@ -296,13 +313,13 @@ module.exports = {
     }
     if (!entryByGroup.size) throw new Error("student.notFound");
 
+    // Arxivlangan (isDeleted) guruh ham — undagi medal/nishonlar yo'qolmasin.
     const groups = await Group.find({
       _id: { $in: [...entryByGroup.keys()] },
       client: clientId,
-      isDeleted: false,
       ...(teaching ? { [teaching.field]: teaching.staffId } : {}),
     })
-      .select("name subject")
+      .select("name subject status isDeleted deletedAt finishedAt")
       .lean();
     // O'qituvchining bu o'quvchi bilan umumiy guruhi yo'q — o'quvchi "topilmadi".
     if (!groups.length) throw new Error("student.notFound");
@@ -312,22 +329,33 @@ module.exports = {
     const subjectName = Object.fromEntries(subjects.map((s) => [String(s._id), s.name]));
 
     const out = [];
-    let month = currentMonth();
+    const month = currentMonth();
     for (const group of groups) {
       const entry = entryByGroup.get(String(group._id));
-      const data = await entryBadges(group, student._id);
-      month = data.month;
+      const state = membershipState(group, entry);
+      const data = await entryBadges(group, student._id, { progress: state === "active" });
+      // Nofaol guruh, yutuqsiz — ro'yxatni to'ldirmaydi.
+      if (state !== "active" && !data.earned.length && !data.medals.length) continue;
       out.push({
         groupId: String(group._id),
         entryId: String(entry._id),
         groupName: group.name || subjectName[String(group.subject)] || "",
         subjectName: subjectName[String(group.subject)] || "",
         status: entry.status,
+        state,
+        startedAt: entry.joinedAt || null,
+        endedAt: membershipEndedAt(group, entry, state),
         earned: data.earned,
         medals: data.medals,
         progress: data.progress,
       });
     }
+    if (!out.length) throw new Error("student.notFound");
+    out.sort(
+      (a, b) =>
+        STATE_ORDER.indexOf(a.state) - STATE_ORDER.indexOf(b.state) ||
+        (b.endedAt || b.startedAt || 0) - (a.endedAt || a.startedAt || 0),
+    );
     return {
       student: { _id: String(student._id), fullName: student.fullName, photo: student.photo || null },
       scope: teaching ? "teacher" : "full",

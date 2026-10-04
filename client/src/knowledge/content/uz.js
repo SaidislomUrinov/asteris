@@ -233,7 +233,7 @@ export default {
         type: "ul",
         items: [
           "**Statistika** — tushum, to'lov holati, dars kunlari kalendari va umumiy davomat.",
-          "**Umumiy** — o'quvchilar ro'yxati, to'lov holati va davomat. Qator menyusidan to'lov qo'shish, qo'ng'iroq, boshqa guruhga o'tkazish, guruhdan chiqarish yoki arxivlash.",
+          "**Umumiy** — o'quvchilar ro'yxati, to'lov holati va davomat. Qator menyusidan to'lov qo'shish, qo'ng'iroq, boshqa guruhga o'tkazish, guruhdan chiqarish, arxivlash yoki o'quvchining **Yutuqlar**ini (nishon va medallar) ko'rish.",
           "**Davomat** — oylik jadval: katakchani bosib **Keldi / Kelmadi / Sababli** belgilang.",
           "**Baholar** — 1 dan 10 gacha baho; kelmagan o'quvchiga va kelajak sanaga baho qo'yilmaydi.",
           "**Uyga vazifa** — har dars kuni uchun vazifa; [[Dasturdan olish]] bilan kurs dasturidan to'ldiring.",
@@ -343,6 +343,40 @@ export default {
         text: "Davomatni faqat bugun va kecha uchun belgilash mumkin — darsdan keyin kechiktirmang, chunki o'quvchi to'lovi va oylik hisobi davomatga bog'liq.",
       },
     ],
+  },
+
+  "my-plans": {
+    summary: "O'zingizning shablon dars rejalaringiz — bir marta tuzing, so'ng istalgan guruhingizga nusxa qilib oling.",
+    blocks: [
+      {
+        type: "h",
+        text: "Reja tuzish"
+      },
+      {
+        type: "steps",
+        items: [
+          "[[Yangi reja]] tugmasini bosing: **Reja nomi** (masalan, Beginner yoki IELTS) va **Fan**ni tanlang — ro'yxatda faqat sizga biriktirilgan fanlar chiqadi.",
+          "Reja sahifasida [[Modul]] qo'shing, so'ng har modulga [[Mavzu qo'shish]] bilan darslarni kiriting. Kerak bo'lsa **Uy vazifasi**ni ham yozing.",
+          "Mavzularni yuqoriga/pastga surib tartiblang. Saqlash tugmasi yo'q — har o'zgarish darhol saqlanadi."
+        ]
+      },
+      {
+        type: "h",
+        text: "Guruhga olish"
+      },
+      {
+        type: "p",
+        text: "Guruh sahifasidagi **Reja** tabida [[Import (nusxa)]] ni bosing, **O'qituvchilar rejalari** dan rejani tanlang va **Hozir qaysi darsdamiz?** savoliga javob bering. Guruhga rejaning **nusxasi** tushadi — keyin rejani tahrirlasangiz, guruh dasturi o'zgarmaydi."
+      },
+      {
+        type: "tip",
+        text: "[[Nusxa olish]] o'xshash rejani (masalan, boshqa daraja uchun) tez tuzishga yordam beradi. Bitta fan bo'yicha bir nechta reja bo'lishi mumkin."
+      },
+      {
+        type: "warn",
+        text: "[[Rejani arxivlash]] guruhlarga avval import qilingan dasturlarga ta'sir qilmaydi. Arxivlangan rejani boshliq Arxiv bo'limidan qaytara oladi."
+      }
+    ]
   },
 
   students: {
@@ -503,7 +537,7 @@ export default {
       },
       {
         type: "tip",
-        text: "Foizli menejer va resepshin barcha to'lovlardan foiz oladi, o'qituvchi esa faqat o'z guruhlaridan. Avans va Bonus turlari tarifingizda bo'lsa ko'rinadi.",
+        text: "Foizli resepshin o'z filialidagi barcha to'lovlardan foiz oladi, o'qituvchi va yordamchi o'qituvchi esa faqat o'z guruhlaridan. Avans va Bonus turlari tarifingizda bo'lsa ko'rinadi.",
       },
     ],
   },
@@ -830,7 +864,7 @@ export default {
   },
 
   archive: {
-    summary: "Arxivlangan guruhlar, o'quvchilar, hodimlar, xonalar va fanlar — ko'rish va qaytarish.",
+    summary: "Arxivlangan guruhlar, o'quvchilar, hodimlar, xonalar, fanlar va dars rejalari — ko'rish va qaytarish.",
     blocks: [
       {
         type: "p",

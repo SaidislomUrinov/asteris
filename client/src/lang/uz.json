@@ -1936,6 +1936,8 @@
     "monthLabel": "{{month}} reytingi"
   },
   "badge": {
+    "totalBadges": "Jami nishonlar",
+    "totalMedals": "Medallar",
     "title": "Yutuqlar",
     "earned": "Olingan nishonlar",
     "noneEarned": "Hali nishon olinmagan",
@@ -2001,6 +2003,19 @@
         "name": "Katta sakrash",
         "desc": "Reytingda bir oyda 5+ pog'ona ko'tarildi"
       }
+    },
+    "periodNow": "hozir",
+    "state": {
+      "active": "Faol",
+      "finished": "Yakunlangan",
+      "left": "Guruhdan chiqqan",
+      "archived": "Arxivlangan"
+    },
+    "sections": {
+      "active": "Faol guruhlar",
+      "finished": "Yakunlangan guruhlar",
+      "left": "Chiqib ketgan guruhlar",
+      "archived": "Arxivlangan"
     }
   },
   "telegramPhone": {
