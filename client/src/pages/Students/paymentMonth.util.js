@@ -52,3 +52,23 @@ export function moveMonthOptions(entry, payment) {
 
   return [...set].sort().map((month) => ({ month, debt: debtByMonth[month] || 0 }));
 }
+
+// Unix (soniya) sanadan Asia/Tashkent bo'yicha "DD.MM".
+export function formatDayMonth(unix) {
+  if (!unix) return "";
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Tashkent",
+    day: "2-digit",
+    month: "2-digit",
+  }).formatToParts(new Date(unix * 1000));
+  const day = parts.find((p) => p.type === "day")?.value;
+  const month = parts.find((p) => p.type === "month")?.value;
+  return `${day}.${month}`;
+}
+
+// Qarz qatori oralig'i (`from` — to'lov boshlangan kun, `to` — sikl oxiri) — "20.10 – 25.10".
+// Ikkalasi bo'lmasa bo'sh satr.
+export function formatCycleRange(from, to) {
+  if (!from || !to) return "";
+  return `${formatDayMonth(from)} – ${formatDayMonth(to)}`;
+}

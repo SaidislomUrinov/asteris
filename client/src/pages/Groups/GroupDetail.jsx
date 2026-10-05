@@ -655,6 +655,11 @@ function GroupDetail() {
     "group:changed",
     (payload) => {
       if (payload?.groupId !== id) return;
+      // Telegram havolasi payload'da keladi — refetch'siz joyida yangilanadi.
+      if (payload.action === "telegram") {
+        setGroup((prev) => (prev ? { ...prev, telegramLink: payload.telegramLink ?? null } : prev));
+        return;
+      }
       fetchGroup();
     },
     !!id,

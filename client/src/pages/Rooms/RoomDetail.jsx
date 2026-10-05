@@ -155,6 +155,7 @@ function RoomDetail() {
   // Jadvalni surish `group:changed` eventini chiqaradi (group.service.js
   // #reschedule) — boshqa foydalanuvchi surganini refresh'siz ko'ramiz.
   useSocketEvent("group:changed", (payload) => {
+    if (payload?.action === "telegram") return; // xona jadvaliga ta'sir qilmaydi
     if ((data?.groups || []).some((g) => String(g._id) === String(payload?.groupId))) fetchData();
   });
 

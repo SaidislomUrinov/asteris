@@ -102,6 +102,7 @@ function TeacherHome() {
   );
 
   useSocketEvent("group:changed", (payload) => {
+    if (payload?.action === "telegram") return; // bu sahifada havola ko'rsatilmaydi
     const known = (data?.groups || []).some((g) => g._id === payload?.groupId);
     if (mine(payload) || known) fetchDashboard();
   });

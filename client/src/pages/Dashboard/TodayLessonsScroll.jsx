@@ -115,7 +115,8 @@ function TodayLessonsScroll({ center }) {
 
   // Jadval boshqa joydan (/schedule, xona detali) o'zgartirilsa — bugungi
   // darslar polosasi refresh'siz eskirib qolmasin deb qayta yuklanadi.
-  useSocketEvent("group:changed", () => {
+  useSocketEvent("group:changed", (payload) => {
+    if (payload?.action === "telegram") return; // darslar polosasiga ta'sir qilmaydi
     fetchLessons();
   });
 

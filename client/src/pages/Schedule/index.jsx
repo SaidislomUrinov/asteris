@@ -157,7 +157,8 @@ function Schedule() {
   // holat doim server bilan bir xil, shuning uchun qayta yuklash xavfsiz —
   // faqat O'Z saqlashimiz qaytib kelganda (`selfSaveRef`) e'tiborsiz
   // qoldiriladi, aks holda har surishdan keyin jadval sakrab ketardi.
-  useSocketEvent("group:changed", () => {
+  useSocketEvent("group:changed", (payload) => {
+    if (payload?.action === "telegram") return; // jadvalga ta'sir qilmaydi
     if (selfSaveRef.current || pendingSaves.current > 0) return;
     boot({ silent: true });
   });

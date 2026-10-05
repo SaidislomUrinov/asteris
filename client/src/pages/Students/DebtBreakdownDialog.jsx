@@ -6,6 +6,7 @@ import Chip from "../../ui/Chip";
 import useHideFinance from "../../hooks/useHideFinance";
 import { maskMoney } from "../../utils/moneyFormat";
 import { formatMonthName } from "./openingDebts.util";
+import { formatCycleRange } from "./paymentMonth.util";
 
 const formatMonthLabel = (month, monthNames) => formatMonthName(month, monthNames) || "—";
 
@@ -41,6 +42,12 @@ function DebtBreakdownDialog({ open, onClose, breakdown = [], onPayMonth }) {
                     {item.kind === "opening" && !item.month
                       ? t("student.openingMonthUnknown")
                       : formatMonthLabel(item.month, monthNames)}
+                    {/* Sikl oralig'i — bir oyda ikki qator bo'lsa ularni ajratadi */}
+                    {item.kind !== "opening" && formatCycleRange(item.from, item.to) && (
+                      <span className="text-[11px] font-medium text-slate-500 bg-slate-100 rounded-md px-1.5 py-0.5 tabular-nums whitespace-nowrap">
+                        {formatCycleRange(item.from, item.to)}
+                      </span>
+                    )}
                   </span>
                   {item.kind === "opening" && item.note && (
                     <span className="text-xs text-slate-500 truncate">{item.note}</span>

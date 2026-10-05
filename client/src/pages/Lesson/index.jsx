@@ -283,6 +283,13 @@ function Lesson() {
     "group:changed",
     (payload) => {
       if (payload?.groupId !== groupId) return;
+      // Telegram havolasi payload'da keladi — refetch'siz joyida yangilanadi.
+      if (payload.action === "telegram") {
+        setLesson((prev) =>
+          prev?.group ? { ...prev, group: { ...prev.group, telegramLink: payload.telegramLink ?? null } } : prev,
+        );
+        return;
+      }
       fetchLesson();
     },
     !!groupId,

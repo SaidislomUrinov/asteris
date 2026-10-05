@@ -179,7 +179,14 @@ function Groups() {
   // Boshqa joydan (/schedule, xona detali, GroupScheduleDialog) guruh jadvali
   // o'zgartirilsa — ro'yxatdagi kun/vaqt/holat belgilari refresh'siz eskirib
   // qolmasin deb to'liq qayta yuklanadi.
-  useSocketEvent("group:changed", () => {
+  // Telegram havolasi — payload'da qiymatning o'zi bor, joyida yangilanadi.
+  useSocketEvent("group:changed", (payload) => {
+    if (payload?.action === "telegram") {
+      setRows((prev) =>
+        prev.map((r) => (r._id === payload.groupId ? { ...r, telegramLink: payload.telegramLink ?? null } : r)),
+      );
+      return;
+    }
     fetchGroups();
   });
 
