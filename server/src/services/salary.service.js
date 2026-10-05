@@ -3,10 +3,10 @@ const Group = require("../models/Group");
 const Student = require("../models/Student");
 const SalaryTransaction = require("../models/SalaryTransaction");
 const emit = require("../utils/emitter.util");
-const { getNow, currentMonthString, formatMonth } = require("../utils/date.util");
+const { getNow, currentMonthString } = require("../utils/date.util");
 const clientService = require("./client.service");
 const { salaryTypeKeyOf, SALARY_TYPE_TARIFF_FLAG } = require("../utils/staffPermission.util");
-const { monthRolloverAdjustment } = require("../utils/rollover.util");
+const { paymentSalaryDelta, rolloverSalaryDelta } = require("../utils/salaryMonth.util");
 const audit = require("../utils/audit.util");
 const { parseAmount } = require("../utils/amount.util");
 
@@ -53,7 +53,9 @@ const scopedGroupFilter = (staff) => {
 
 // Berilgan oy uchun qamrovdagi guruhlarga tushgan to'lovlar yig'indisi.
 // To'lov qaysi oyga tegishliligi: forMonth ko'rsatilgan bo'lsa o'sha,
-// aks holda to'lov sanasining oyi (Asia/Tashkent).
+// aks holda to'lov sanasining oyi (Asia/Tashkent) — LEKIN yopilgan (o'tgan)
+// oy orqaga o'zgarmaydi: kech to'lov/bekor qilish/oy ko'chirish voqea
+// sodir bo'lgan oyga yoziladi (utils/salaryMonth.util.js).
 const sumMonthPayments = async (groupIds, month) => {
   if (!groupIds.length) return 0;
 
@@ -68,17 +70,12 @@ const sumMonthPayments = async (groupIds, month) => {
   for (const student of students) {
     for (const entry of student.groups) {
       if (!idSet.has(String(entry.group))) continue;
-      for (const p of entry.payments) {
-        if (p.status !== "paid") continue;
-        const payMonth = p.forMonth || formatMonth(p.date);
-        if (payMonth === month) total += p.amount;
-      }
+      for (const p of entry.payments) total += paymentSalaryDelta(p, month);
+      // "3 kun ketma-ket kelmadi → keyingi oyga o'tkazish" (CLAUDE.md Ish haqi):
+      // o'tkazilgan summa shu oydan ayiriladi, keyingi oyga qo'shiladi.
+      for (const r of entry.rollovers || []) total += rolloverSalaryDelta(r, month);
     }
   }
-
-  // "3 kun ketma-ket kelmadi → keyingi oyga o'tkazish" (CLAUDE.md Ish haqi):
-  // o'tkazilgan summa shu oydan ayiriladi, keyingi oyga qo'shiladi.
-  total += monthRolloverAdjustment(students, idSet, month);
 
   return Math.max(0, total);
 };

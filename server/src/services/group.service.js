@@ -298,7 +298,9 @@ const checkRoomConflict = async (clientId, centerId, room, days, startTime, endT
 // Guruh o'zgardi — O'QITUVCHI/YORDAMCHI panellari realtime yangilanishi
 // uchun (guruh biriktirildi, jadval o'zgardi, yakunlandi...). Payload'da
 // biriktirilgan hodimlar bor, frontend o'ziga tegishlisini filtrlaydi.
-const emitGroupChanged = (clientId, group, action = "updated") => {
+// `extra` — o'zgargan maydonning o'zi (masalan "telegram" → `telegramLink`),
+// shunda tinglovchilar butun guruhni qayta yuklamasdan joyida yangilaydi.
+const emitGroupChanged = (clientId, group, action = "updated", extra = {}) => {
   emit(`client:${clientId}`, "group:changed", {
     groupId: String(group._id),
     action,
@@ -306,6 +308,7 @@ const emitGroupChanged = (clientId, group, action = "updated") => {
     teacher: group.teacher ? String(group.teacher) : null,
     assistant: group.assistant ? String(group.assistant) : null,
     center: String(group.center),
+    ...extra,
   });
 };
 
@@ -771,7 +774,7 @@ module.exports = {
 
     group.telegramLink = normalized;
     await group.save();
-    emitGroupChanged(clientId, group, "telegram");
+    emitGroupChanged(clientId, group, "telegram", { telegramLink: group.telegramLink || null });
 
     const countMap = await getStudentsCountMap([group._id]);
     return DTO(group, countMap[String(group._id)] || 0);

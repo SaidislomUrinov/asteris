@@ -226,3 +226,102 @@ describe("computeBilling — to'lovlar", () => {
     assert.equal(r.debt, 0);
   });
 });
+
+describe("computeBilling — a'zolik tugagach hisob to'xtaydi", () => {
+  const P = 300000;
+  const base = (extra) => ({ price: P, priceHistory: [{ price: P, from: 0 }], credits: [], payments: [], ...extra });
+
+  test("guruhdan chiqqan o'quvchiga keyingi oylar yozilmaydi, oxirgi oy prorata", () => {
+    const group = activeGroup(d("2026-05-10"));
+    const r = computeBilling(base({ joinedAt: d("2026-05-10"), status: "left", leftAt: d("2026-07-15") }), group, "anchor");
+    // may + iyun to'liq, 10.07–14.07 = 5 kun × 300000/31
+    assert.equal(r.debt, 600000 + Math.round((300000 / 31) * 5));
+    assert.deepEqual(r.debtBreakdown.map((x) => x.month), ["2026-05", "2026-06", "2026-07"]);
+    assert.equal(r.nextDueDate, null);
+  });
+
+  test("arxivlangan a'zolik qarzi arxivlangan kunda muzlaydi", () => {
+    const group = activeGroup(d("2026-05-10"));
+    const r = computeBilling(
+      base({ joinedAt: d("2026-05-10"), status: "archived", statusBeforeArchive: "active", archivedAt: d("2026-06-10") }),
+      group,
+      "anchor",
+    );
+    assert.equal(r.debt, 300000);
+  });
+});
+
+describe("buildCycles — o'rtada qo'shilganda oy yorlig'i", () => {
+  test("25-sanali guruhga 20-oktabrda qo'shilgan: qisqa sikl ham, to'liq sikl ham 'Oktabr'", () => {
+    const group = activeGroup(d("2026-09-25"));
+    const entry = { price: 300000, joinedAt: d("2026-10-20") };
+    const cycles = buildCycles(entry, group, "anchor", d("2026-11-01"));
+    assert.deepEqual(
+      cycles.map((c) => [c.month, formatDay(c.cycleStart)]),
+      [
+        ["2026-10", "2026-09-25"],
+        ["2026-10", "2026-10-25"],
+      ],
+    );
+  });
+
+  test("forMonth to'lovi bir oydagi ikkala siklni tartib bilan yopadi", () => {
+    const group = finishedGroup(d("2026-09-25"), d("2026-11-01"));
+    const credits = [];
+    for (let t = d("2026-09-25"); t < d("2026-10-20"); t += 86400) credits.push({ date: formatDay(t) });
+    const entry = {
+      price: 300000,
+      priceHistory: [{ price: 300000, from: 0 }],
+      joinedAt: d("2026-10-20"),
+      credits,
+      payments: [{ status: "paid", amount: 350000, forMonth: "2026-10" }],
+    };
+    assert.equal(computeBilling(entry, group, "anchor").debt, 0);
+  });
+});
+
+describe("salaryMonth.util — yopilgan oy orqaga o'zgarmaydi", () => {
+  const { paymentSalaryDelta, rolloverSalaryDelta } = require("../src/utils/salaryMonth.util");
+  const p = (extra) => ({ amount: 100, status: "paid", date: d("2026-10-03"), ...extra });
+
+  test("o'tgan oy uchun kech to'lov — qabul qilingan oyga", () => {
+    assert.equal(paymentSalaryDelta(p({ forMonth: "2026-09" }), "2026-09"), 0);
+    assert.equal(paymentSalaryDelta(p({ forMonth: "2026-09" }), "2026-10"), 100);
+  });
+
+  test("oldindan to'lov — o'sha keyingi oyga", () => {
+    assert.equal(paymentSalaryDelta(p({ forMonth: "2026-11" }), "2026-11"), 100);
+    assert.equal(paymentSalaryDelta(p({ forMonth: "2026-11" }), "2026-10"), 0);
+  });
+
+  test("keyingi oyda bekor qilish — asl oy saqlanadi, bekor qilingan oyda ayiriladi", () => {
+    const x = p({ forMonth: "2026-10", status: "cancelled", cancelledAt: d("2026-11-05") });
+    assert.equal(paymentSalaryDelta(x, "2026-10"), 100);
+    assert.equal(paymentSalaryDelta(x, "2026-11"), -100);
+    const same = p({ forMonth: "2026-10", status: "cancelled", cancelledAt: d("2026-10-20") });
+    assert.equal(paymentSalaryDelta(same, "2026-10"), 0);
+  });
+
+  test("oy ko'chirish yopilgan oyni o'zgartirmaydi", () => {
+    const x = p({
+      forMonth: "2026-12",
+      forMonthHistory: [{ from: "2026-10", to: "2026-12", at: d("2026-11-10") }],
+    });
+    assert.equal(paymentSalaryDelta(x, "2026-10"), 100);
+    assert.equal(paymentSalaryDelta(x, "2026-11"), -100);
+    assert.equal(paymentSalaryDelta(x, "2026-12"), 100);
+  });
+
+  test("rollover: yaratilgan oydan oldinga surilmaydi, bekor qilish teskari yozadi", () => {
+    const r = { amount: 50, fromMonth: "2026-09", toMonth: "2026-10", status: "active", createdAt: d("2026-10-02") };
+    assert.equal(rolloverSalaryDelta(r, "2026-09"), 0); // yopilgan oy tegilmaydi
+    assert.equal(rolloverSalaryDelta(r, "2026-10"), 0); // shu oyda −50 +50
+    const ok = { ...r, fromMonth: "2026-10", toMonth: "2026-11", createdAt: d("2026-10-20") };
+    assert.equal(rolloverSalaryDelta(ok, "2026-10"), -50);
+    assert.equal(rolloverSalaryDelta(ok, "2026-11"), 50);
+    const cancelled = { ...ok, status: "cancelled", cancelledAt: d("2026-12-01") };
+    assert.equal(rolloverSalaryDelta(cancelled, "2026-10"), -50);
+    assert.equal(rolloverSalaryDelta(cancelled, "2026-11"), 50);
+    assert.equal(rolloverSalaryDelta(cancelled, "2026-12"), 0); // +50 −50
+  });
+});

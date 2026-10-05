@@ -253,7 +253,10 @@ const authTelegram = async ({ initData }) => {
   // Shaxsiy chatda userId === chatId — eski hujjatlarda userId bo'lmasa chatId bo'yicha.
   const parent = await Parent.findOne({ $or: [{ "telegram.userId": uid }, { "telegram.chatId": uid }] });
   if (!parent) throw new Error("parent.notLinked");
-  return { access: signAccess(parent), parent: ParentDTO(parent) };
+  // `me()` — aniq rol (effectiveRole) bilan. Avval saqlangan `role` (null
+  // bo'lishi mumkin) qaytarilardi va o'quvchi rolida WebApp birinchi
+  // ochilishda "ota-ona" deb hisoblab, "To'lovlar" tabini ko'rsatib qo'yardi.
+  return { access: signAccess(parent), parent: await me(parent) };
 };
 
 // Ota-onaga tegishli (o'chirilmagan) o'quvchilar — Mongoose hujjatlari
@@ -282,7 +285,9 @@ const resolveEntry = async (parent, entryId) => {
     ...roleMatch(await effectiveRole(parent), parent.phone),
   });
   const entry = student?.groups?.id(entryId);
-  if (!student || !entry || entry.status === "archived") throw new Error("parent.entryNotFound");
+  // Arxivlangan a'zolik ham ochiladi — undagi qarz ota-onaga ko'rinishi shart
+  // (ro'yxatda faqat qarzi bor arxiv a'zoliklar chiqadi, `children()`).
+  if (!student || !entry) throw new Error("parent.entryNotFound");
   const [center, group] = await Promise.all([
     Center.findOne({ _id: entry.center, isDeleted: false }).lean(),
     Group.findById(entry.group).lean(),
@@ -344,7 +349,10 @@ const children = async (parent) => {
   const students = await findStudentsOf(parent, role);
   if (!students.length) return [];
 
-  const entries = students.flatMap((s) => s.groups.filter((g) => g.status !== "archived"));
+  // Arxivlangan a'zoliklar faqat qarzi borligi uchun (ota-ona rolida) olinadi —
+  // pastda qarzsizlari tashlab yuboriladi.
+  const keepEntry = (g) => g.status !== "archived" || !hideMoney;
+  const entries = students.flatMap((s) => s.groups.filter(keepEntry));
   const ids = (key) => [...new Set(entries.map((e) => String(e[key])))];
   const [centers, groups, billingDocs] = await Promise.all([
     Center.find({ _id: { $in: ids("center") }, isDeleted: false }).lean(),
@@ -390,7 +398,7 @@ const children = async (parent) => {
   const result = [];
   for (const student of students) {
     const sid = String(student._id);
-    const own = student.groups.filter((g) => g.status !== "archived");
+    const own = student.groups.filter(keepEntry);
     const ownActiveGroups = new Set(own.filter((g) => g.status === "active").map((g) => String(g.group)));
 
     // Stats — faqat ULANGAN markaz guruhlari bo'yicha (ma'lumot berilmaydigan
@@ -425,8 +433,19 @@ const children = async (parent) => {
       const group = groupMap.get(String(entry.group));
       if (!group) continue;
       const billing = computeBilling(entry, group, cycleMap.get(ck) || "anchor");
-      const status = entry.status === "left" ? "left" : group.status === "finished" ? "finished" : "active";
-      if (status === "active") totalDebt += billing.debt || 0;
+      const status =
+        entry.status === "archived"
+          ? "archived"
+          : entry.status === "left"
+            ? "left"
+            : group.status === "finished"
+              ? "finished"
+              : "active";
+      // Arxivdagi a'zolik faqat to'lanmagan qarzi bo'lsa ko'rsatiladi.
+      if (status === "archived" && !(billing.debt > 0)) continue;
+      // Qarz guruh holatidan qat'i nazar (chiqqan/yakunlangan/arxiv ham) jamiga
+      // kiradi — u to'lanmaguncha ota-onaga ko'rinishi kerak.
+      totalDebt += billing.debt || 0;
 
       const rec = todayMap.get(String(group._id))?.records?.find((r) => String(r.student) === sid) || null;
       const name = groupLabelOf(group, subjectName.get(String(group.subject)));
@@ -468,7 +487,10 @@ const children = async (parent) => {
         avgGrade,
         totalDebt: hideMoney ? null : totalDebt,
       },
-      centers: [...byCenter.values()],
+      // Faqat qarzsiz arxiv a'zoliklari bo'lgan markaz ko'rsatilmaydi.
+      centers: [...byCenter.entries()]
+        .filter(([ck, b]) => b.groups.length || own.some((g) => g.status !== "archived" && String(g.center) === ck))
+        .map(([, b]) => b),
       today: todayList,
     });
   }
@@ -562,7 +584,8 @@ const paymentRow = (p, nameOf) => ({
 const entryPayments = async (parent, entryId) => {
   await assertNotStudent(parent);
   const { student, entry } = await resolveEntry(parent, entryId);
-  const dto = await require("./student.service").getOne(entry.client, student._id);
+  // `includeArchived` — arxivlangan a'zolikning qarzi ham ko'rinadi.
+  const dto = await require("./student.service").DTO(student, entry.client, "", { includeArchived: true });
   const g = dto.groups.find((x) => String(x._id) === String(entry._id));
   if (!g) throw new Error("parent.entryNotFound");
   const nameOf = await collectorNames(entry.payments || []);
@@ -570,7 +593,15 @@ const entryPayments = async (parent, entryId) => {
   return {
     price: g.price,
     debt: g.debt,
-    debtBreakdown: (g.debtBreakdown || []).map((r) => ({ month: r.month, due: r.due, paid: r.paid, debt: r.debt, kind: r.kind })),
+    debtBreakdown: (g.debtBreakdown || []).map((r) => ({
+      month: r.month,
+      due: r.due,
+      paid: r.paid,
+      debt: r.debt,
+      kind: r.kind,
+      from: r.from || null, // bir oyda ikki qator bo'lsa ajratish uchun
+      to: r.to || null,
+    })),
     nextDueDate: g.nextDueDate || null,
     // `collectedBy` DTO'da yo'q — xom subdoc'dan olinadi (moliyaviy maydonlar bir xil).
     payments: (g.payments || [])
@@ -597,7 +628,7 @@ const allPayments = async (parent) => {
     for (const c of child.centers) {
       if (!c.linked) continue;
       for (const g of c.groups) {
-        if (g.status === "active" && g.debt > 0)
+        if (g.debt > 0)
           debts.push({
             student: { _id: child.student._id, fullName: child.student.fullName },
             centerName: c.center.name,

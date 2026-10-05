@@ -137,10 +137,17 @@ const buildCycles = (entry, group, cycleMode, effectiveNow) => {
     // Oldingi sikldan "3 kun ketma-ket kelmadi" bilan o'tkazilgan summa —
     // shu siklda chegirma (utils/rollover.util.js).
     const rolloverDiscount = cycleRolloverDiscount(entry, cycleStart, cycleEnd);
+    // Sikl o'rtasida qo'shilgan o'quvchida yorliq — QO'SHILGAN oy (avval
+    // sikl boshlangan oy edi: 25-sanali guruhga 20-oktabrda qo'shilgan
+    // o'quvchining to'lovi "Sentyabr" bo'lib, o'tgan oy tushumi va o'qituvchi
+    // oyligiga yozilardi). Shu sabab bir oyda ikki sikl bo'lishi mumkin —
+    // allocatePayments buni qo'llaydi, UI esa `from`–`to` oralig'ini ko'rsatadi.
+    const billedFrom = Math.max(cycleStart, joinedAt);
     cycles.push({
-      month: formatMonth(cycleStart),
+      month: formatMonth(billedFrom),
       cycleStart,
       cycleEnd,
+      billedFrom,
       fullDue: Math.max(0, Math.round(dailyRate * fullChargeable) - rolloverDiscount), // shu sikl uchun JAMI to'lanishi kerak summa
       elapsedDue: Math.max(0, Math.round(dailyRate * elapsedChargeable) - rolloverDiscount), // shu paytgacha HAQIQATDA to'lash SHART bo'lgan qism
       isCurrent,
@@ -331,10 +338,16 @@ const allocatePayments = (cycles, payments, openingItems = [], advance = 0) => {
     ...cycles.map((c) => ({ ...c, kind: "cycle", paid: 0 })),
   ];
 
+  // Bir oyda bir nechta sikl bo'lishi mumkin (o'rtada qo'shilgandagi qisqa
+  // sikl + shu oyda boshlangan to'liq sikl) — `forMonth` ularning hammasini
+  // tartib bilan yopadi.
   const cycleByMonth = new Map();
   const openingByMonth = new Map();
   for (const item of items) {
-    if (item.kind === "cycle" && !cycleByMonth.has(item.month)) cycleByMonth.set(item.month, item);
+    if (item.kind === "cycle") {
+      if (!cycleByMonth.has(item.month)) cycleByMonth.set(item.month, []);
+      cycleByMonth.get(item.month).push(item);
+    }
     if (item.kind === "opening" && item.month && !openingByMonth.has(item.month)) {
       openingByMonth.set(item.month, item);
     }
@@ -352,7 +365,7 @@ const allocatePayments = (cycles, payments, openingItems = [], advance = 0) => {
     if (p.status !== "paid") continue;
     let left = p.amount;
     if (p.forMonth) {
-      left = applyTo(cycleByMonth.get(p.forMonth), left);
+      for (const item of cycleByMonth.get(p.forMonth) || []) left = applyTo(item, left);
       left = applyTo(openingByMonth.get(p.forMonth), left);
     }
     pool += left;
@@ -364,6 +377,18 @@ const allocatePayments = (cycles, payments, openingItems = [], advance = 0) => {
   }
 
   return items;
+};
+
+// A'zolik qachon tugagan: guruhdan chiqqan (`leftAt`) yoki arxivlangan
+// (`archivedAt`; chiqqandan keyin arxivlangan bo'lsa — `leftAt`). Faol
+// a'zolikda `null`.
+const membershipEndOf = (entry) => {
+  if (entry?.status === "left") return entry.leftAt || null;
+  if (entry?.status === "archived") {
+    if (entry.statusBeforeArchive === "left") return entry.leftAt || entry.archivedAt || null;
+    return entry.archivedAt || null;
+  }
+  return null;
 };
 
 // Oylik to'lov sikli — CLAUDE.md "Ish haqi"dagi kabi, `entry.price` oylik
@@ -454,7 +479,13 @@ const computeBilling = (entry, group, cycleMode = "anchor") => {
 
   // Yakunlangan guruhda hisoblash "finishedAt" paytida to'xtaydi — kurs
   // tugagach yangi sikl boshlanavermaydi.
-  const effectiveNow = group.status === "finished" && group.finishedAt ? group.finishedAt : getNow();
+  const groupNow = group.status === "finished" && group.finishedAt ? group.finishedAt : getNow();
+  // O'quvchi guruhdan chiqqan/arxivlangan bo'lsa — hisob o'sha paytda
+  // to'xtaydi (avval `leftAt` e'tiborsiz qolib, chiqib ketgan o'quvchiga har
+  // oy yangi qarz yozilardi). Oxirgi sikl faqat o'tgan dars kunlari bo'yicha.
+  const membershipEnd = membershipEndOf(entry);
+  const endedEarly = membershipEnd != null && membershipEnd < groupNow;
+  const effectiveNow = endedEarly ? membershipEnd : groupNow;
 
   // Faollashtirilgan, lekin darslar boshlanishi kelajakdagi sanaga
   // belgilangan bo'lsa — o'sha sana kelmagunicha sikl qarzdorligi yo'q.
@@ -467,8 +498,9 @@ const computeBilling = (entry, group, cycleMode = "anchor") => {
     });
   }
 
+  const builtCycles = buildCycles(entry, group, cycleMode, effectiveNow);
   const allocated = allocatePayments(
-    buildCycles(entry, group, cycleMode, effectiveNow),
+    endedEarly ? builtCycles.map((c) => (c.isCurrent ? { ...c, fullDue: c.elapsedDue } : c)) : builtCycles,
     payments,
     openingItems,
     advance,
@@ -488,6 +520,8 @@ const computeBilling = (entry, group, cycleMode = "anchor") => {
   const cycleRows = cycles.map((c) => ({
     kind: "cycle",
     month: c.month,
+    from: c.billedFrom, // to'lanadigan oraliq — bir oyda ikki qator bo'lsa ajratish uchun
+    to: c.cycleEnd,
     due: c.fullDue,
     paid: c.paid,
     debt: Math.max(0, c.fullDue - c.paid),
@@ -511,7 +545,8 @@ const computeBilling = (entry, group, cycleMode = "anchor") => {
     debtBreakdown, // [{kind, month, due, paid, debt, note?}] — faqat debt > 0 qatorlar, opening → sikllar
     courseStartMonth: formatMonth(group.activatedAt),
     currentCycleMonth: current.month,
-    nextDueDate: current.cycleEnd,
+    // A'zolik tugagan — keyingi to'lov sanasi yo'q.
+    nextDueDate: membershipEnd != null ? null : current.cycleEnd,
   };
 };
 
@@ -823,7 +858,9 @@ const centerBillingTotals = async (clientId, centerId = "", preloaded = null) =>
       (g) =>
         String(g.client) === String(clientId) &&
         (!centerId || String(g.center) === String(centerId)) &&
-        g.status === "active",
+        // Guruhdan chiqqanlarning to'lanmagan qarzi ham umumiy qarzga kiradi
+        // (u undirilishi kerak) — joriy sikl donutiga esa faqat faollar.
+        (g.status === "active" || g.status === "left"),
     ),
   );
   if (!entries.length) return empty;
@@ -846,6 +883,7 @@ const centerBillingTotals = async (clientId, centerId = "", preloaded = null) =>
     const billing = computeBilling(entry, group, cycleMode);
 
     acc.debt += billing.debt;
+    if (entry.status !== "active") return acc;
     acc.currentCyclePaid += billing.paidForCurrentCycle || 0;
     acc.currentCycleDebt += Math.max(
       0,
@@ -1480,7 +1518,8 @@ module.exports = {
       // TO'LIQ qarz bo'yicha: o'tgan sikllar + joriy sikl qoldig'i
       // (`g.debt`). Faqat joriy sikl tekshirilsa, o'tgan oydan qarzi bor
       // o'quvchi "Qarzi yo'q" tarmog'iga tushib qolardi.
-      const hasDebt = (s) => s.groups.some((g) => g.status === "active" && (g.debt || 0) > 0);
+      // Chiqib ketgan, lekin qarzini to'lamagan o'quvchi ham "Qarzdorlar"da.
+      const hasDebt = (s) => s.groups.some((g) => (g.status === "active" || g.status === "left") && (g.debt || 0) > 0);
       const filtered = dtos.filter((s) => (debtStatus === "debtor" ? hasDebt(s) : !hasDebt(s)));
       await attachTelegramStatus(filtered);
 
@@ -1545,7 +1584,8 @@ module.exports = {
       // TO'LIQ qarz bo'yicha: o'tgan sikllar + joriy sikl qoldig'i
       // (`g.debt`). Faqat joriy sikl tekshirilsa, o'tgan oydan qarzi bor
       // o'quvchi "Qarzi yo'q" tarmog'iga tushib qolardi.
-      const hasDebt = (s) => s.groups.some((g) => g.status === "active" && (g.debt || 0) > 0);
+      // Chiqib ketgan, lekin qarzini to'lamagan o'quvchi ham "Qarzdorlar"da.
+      const hasDebt = (s) => s.groups.some((g) => (g.status === "active" || g.status === "left") && (g.debt || 0) > 0);
       dtos = dtos.filter((s) => (debtStatus === "debtor" ? hasDebt(s) : !hasDebt(s)));
     }
 
