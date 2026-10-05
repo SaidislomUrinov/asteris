@@ -84,7 +84,8 @@
     "status": {
       "active": "Active",
       "left": "Left",
-      "finished": "Finished"
+      "finished": "Finished",
+      "archived": "Archived"
     },
     "room": "Room {{r}}",
     "notFound": "Group not found",

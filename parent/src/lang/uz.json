@@ -84,7 +84,8 @@
     "status": {
       "active": "Faol",
       "left": "Chiqib ketgan",
-      "finished": "Yakunlangan"
+      "finished": "Yakunlangan",
+      "archived": "Arxivlangan"
     },
     "room": "{{r}}-xona",
     "notFound": "Guruh topilmadi",

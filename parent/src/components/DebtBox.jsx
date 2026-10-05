@@ -1,6 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { Card, Divider, KV } from "./Card";
-import { fmtDateFull, fmtMonth, money } from "../utils/format";
+import { fmtDate, fmtDateFull, fmtMonth, money } from "../utils/format";
+
+// Sikl oralig'i ("20-oktabr – 25-oktabr") — bir oyda ikki qator bo'lsa ajratadi.
+const rangeOf = (b) => (b.kind === "cycle" && b.from && b.to ? `${fmtDate(b.from)} – ${fmtDate(b.to)}` : "");
 
 // Qarz qutisi: oylar kesimida, jami, keyingi muddat.
 export const DebtBox = ({ debt, breakdown = [], nextDueDate, price }) => {
@@ -20,7 +23,17 @@ export const DebtBox = ({ debt, breakdown = [], nextDueDate, price }) => {
       <div className="text-[11px] font-bold uppercase tracking-wider text-bad">{t("payments.debt")}</div>
       <div className="mt-1">
         {rows.map((b, i) => (
-          <KV key={i} label={fmtMonth(b.month)} value={`${money(b.debt)} ${t("common.sum")}`} valueClassName="text-bad" />
+          <KV
+            key={i}
+            label={
+              <>
+                {fmtMonth(b.month)}
+                {rangeOf(b) && <span className="block text-[11px] text-hint">{rangeOf(b)}</span>}
+              </>
+            }
+            value={`${money(b.debt)} ${t("common.sum")}`}
+            valueClassName="text-bad"
+          />
         ))}
       </div>
       <Divider className="my-1.5" />
