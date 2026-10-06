@@ -97,6 +97,14 @@ const openingDebtSchema = new Schema(
   { _id: true },
 );
 
+const archivedPeriodSchema = new Schema(
+  {
+    from: { type: Number, required: true },
+    to: { type: Number, required: true },
+  },
+  { _id: false },
+);
+
 const groupEntrySchema = new Schema(
   {
     group: { type: Schema.Types.ObjectId, ref: "Group", required: true },
@@ -120,6 +128,11 @@ const groupEntrySchema = new Schema(
     // faqat kaskad bilan arxivlanganlari tiklanadi — qo'lda arxivlangani
     // arxivda qolishi kerak.
     archivedWithGroup: { type: Boolean, default: false },
+    // Arxivda TURGAN davrlar — faol holatda arxivlanib keyin qaytarilgan
+    // a'zolik uchun [from, to). computeBilling (buildCycles) shu oraliqdagi
+    // dars kunlarini hisoblamaydi: aks holda qaytarilgan o'quvchiga arxivda
+    // turgan oylar uchun ham qarz yozilardi.
+    archivedPeriods: { type: [archivedPeriodSchema], default: [] },
     joinedAt: { type: Number, default: getNow },
     leftAt: { type: Number, default: null },
     payments: { type: [paymentSchema], default: [] },

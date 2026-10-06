@@ -325,3 +325,48 @@ describe("salaryMonth.util — yopilgan oy orqaga o'zgarmaydi", () => {
     assert.equal(rolloverSalaryDelta(cancelled, "2026-12"), 0); // +50 −50
   });
 });
+
+describe("arxivdan qaytarilgan a'zolik — arxivda turgan davr hisoblanmaydi", () => {
+  const { restoreEntry } = require("../src/utils/archive.util");
+
+  test("restoreEntry faol a'zolik uchun davrni yozadi, left uchun yozmaydi", () => {
+    const active = { status: "archived", statusBeforeArchive: "active", archivedAt: 100, archivedPeriods: [] };
+    restoreEntry(active, 500);
+    assert.equal(active.status, "active");
+    assert.deepEqual(active.archivedPeriods, [{ from: 100, to: 500 }]);
+
+    const left = { status: "archived", statusBeforeArchive: "left", archivedAt: 100, archivedPeriods: [] };
+    restoreEntry(left, 500);
+    assert.equal(left.status, "left");
+    assert.deepEqual(left.archivedPeriods, []);
+  });
+
+  test("butun sikl arxivda bo'lsa — qarz 0, qisman bo'lsa — prorata", () => {
+    // 2026-01-01 dan har kuni dars, 300 000 / oy. 2026-02-01 → 2026-03-16 arxivda.
+    const group = activeGroup(d("2026-01-01"));
+    const entry = {
+      price: 300000,
+      joinedAt: d("2026-01-01"),
+      archivedPeriods: [{ from: d("2026-02-01"), to: d("2026-03-16") }],
+    };
+    const cycles = buildCycles(entry, group, "anchor", d("2026-04-01"));
+    const due = Object.fromEntries(cycles.map((c) => [c.month, c.fullDue]));
+    assert.equal(due["2026-01"], 300000);
+    assert.equal(due["2026-02"], 0);
+    // Mart: 31 kundan 15 tasi arxivda → 16 kun
+    assert.equal(due["2026-03"], Math.round((300000 / 31) * 16));
+  });
+
+  test("arxiv davri kunidagi kredit ikki marta ayirilmaydi", () => {
+    const group = activeGroup(d("2026-01-01"));
+    const entry = {
+      price: 310000,
+      joinedAt: d("2026-01-01"),
+      credits: [{ date: "2026-01-05" }, { date: "2026-01-20" }],
+      archivedPeriods: [{ from: d("2026-01-15"), to: d("2026-01-25") }],
+    };
+    const [jan] = buildCycles(entry, group, "anchor", d("2026-02-10"));
+    // 31 kun − 10 arxiv − 1 kredit (20-yanvar kredit arxivga tushgani uchun sanalmaydi)
+    assert.equal(jan.fullDue, 10000 * 20);
+  });
+});

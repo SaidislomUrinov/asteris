@@ -38,9 +38,27 @@ const archiveGroupEntries = async (groupId) => {
   return count;
 };
 
+// A'zolikni arxivdan qaytarish — `restoreGroupEntries` va
+// archive.service.js `restoreStudentEntry` ikkalasi shu YAGONA joyga
+// tayanadi. Faol holatda arxivlangan bo'lsa, arxivda turgan davr
+// `archivedPeriods` ga yoziladi — computeBilling shu oraliq uchun qarz
+// hisoblamaydi. Chiqqandan keyin arxivlangan (`left`) a'zolikda hisob
+// baribir `leftAt` da to'xtagan, davr yozilmaydi.
+const restoreEntry = (entry, now = getNow()) => {
+  const restoredStatus = entry.statusBeforeArchive || "active";
+  if (restoredStatus === "active" && entry.archivedAt && entry.archivedAt < now) {
+    entry.archivedPeriods.push({ from: entry.archivedAt, to: now });
+  }
+  entry.status = restoredStatus;
+  entry.statusBeforeArchive = null;
+  entry.archivedAt = null;
+  entry.archivedWithGroup = false;
+};
+
 // Faqat KASKAD bilan arxivlangan a'zoliklar tiklanadi — qo'lda arxivlangani
 // (`archivedWithGroup === false`) guruh qaytarilganda ham arxivda qoladi.
 const restoreGroupEntries = async (groupId) => {
+  const now = getNow();
   const students = await Student.find({
     "groups.group": groupId,
     "groups.status": "archived",
@@ -52,10 +70,7 @@ const restoreGroupEntries = async (groupId) => {
     for (const entry of student.groups) {
       if (String(entry.group) !== String(groupId)) continue;
       if (entry.status !== "archived" || !entry.archivedWithGroup) continue;
-      entry.status = entry.statusBeforeArchive || "active";
-      entry.statusBeforeArchive = null;
-      entry.archivedAt = null;
-      entry.archivedWithGroup = false;
+      restoreEntry(entry, now);
       touched = true;
       count += 1;
     }
@@ -80,4 +95,4 @@ const emitArchiveChanged = (clientId, centerId, type, id, action) => {
   if (centerId) emit(`center:${String(centerId)}`, "archive:changed", payload);
 };
 
-module.exports = { archiveGroupEntries, restoreGroupEntries, emitArchiveChanged };
+module.exports = { archiveGroupEntries, restoreGroupEntries, restoreEntry, emitArchiveChanged };

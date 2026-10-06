@@ -10,7 +10,7 @@ const BillingSetting = require("../models/BillingSetting");
 const studentService = require("./student.service");
 const groupService = require("./group.service");
 const audit = require("../utils/audit.util");
-const { restoreGroupEntries, emitArchiveChanged } = require("../utils/archive.util");
+const { restoreGroupEntries, restoreEntry, emitArchiveChanged } = require("../utils/archive.util");
 const { formatDate } = require("../utils/date.util");
 
 // Arxiv — CROSS-modul O'QISH qatlami (dashboard.service.js bilan bir xil
@@ -455,10 +455,7 @@ module.exports = {
     const group = await Group.findById(entry.group).select("isDeleted maxStudents");
     if (group?.isDeleted) throw new Error("archive.groupStillArchived");
 
-    entry.status = entry.statusBeforeArchive || "active";
-    entry.statusBeforeArchive = null;
-    entry.archivedAt = null;
-    entry.archivedWithGroup = false;
+    restoreEntry(entry);
     await student.save();
 
     // Arxivdan qaytarish ham guruhni limitdan oshirishi mumkin —

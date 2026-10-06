@@ -116,6 +116,17 @@ const buildCycles = (entry, group, cycleMode, effectiveNow) => {
   // yozadi) — shuning uchun bu yerda ikki marta hisoblash yuz bermaydi.
   const joinedAt = entry.joinedAt || 0;
 
+  // Arxivda turgan davrlar (archive.util.js `restoreEntry`) — shu oraliqdagi
+  // dars kunlari to'lanmaydi. Ular kredit kabi ayiriladi; shu kunga tushgan
+  // kredit esa ikki marta ayirilmasligi uchun hisobga olinmaydi.
+  const archivedPeriods = entry.archivedPeriods || [];
+  const inArchivedPeriod = (u) => archivedPeriods.some((p) => u >= p.from && u < p.to);
+  const archivedDaysIn = (from, to) =>
+    archivedPeriods.reduce(
+      (sum, p) => sum + countLessonDays(group.days, Math.max(from, p.from), Math.min(to, p.to)),
+      0,
+    );
+
   const addCycle = (cycleStart, cycleEnd, cyclePrice) => {
     // Sikl o'quvchi qo'shilishidan OLDIN tugagan → o'tkazib yuboriladi.
     // `false` qaytariladi: bu "joriy sikl emas" degani, ya'ni tashqi
@@ -126,14 +137,15 @@ const buildCycles = (entry, group, cycleMode, effectiveNow) => {
     const dailyRate = nominalDays > 0 ? cyclePrice / nominalDays : 0;
     const creditCount = credits.filter((c) => {
       const u = dateStringToUnix(c.date);
-      return u >= cycleStart && u < cycleEnd;
+      return u >= cycleStart && u < cycleEnd && !inArchivedPeriod(u);
     }).length;
     const isCurrent = effectiveNow < cycleEnd;
-    const elapsedDaysNominal = isCurrent
-      ? countLessonDays(group.days, cycleStart, Math.min(effectiveNow, cycleEnd))
-      : nominalDays;
-    const elapsedChargeable = Math.max(0, elapsedDaysNominal - creditCount);
-    const fullChargeable = Math.max(0, nominalDays - creditCount);
+    const elapsedEnd = isCurrent ? Math.min(effectiveNow, cycleEnd) : cycleEnd;
+    const elapsedDaysNominal = isCurrent ? countLessonDays(group.days, cycleStart, elapsedEnd) : nominalDays;
+    const archivedFull = archivedDaysIn(cycleStart, cycleEnd);
+    const archivedElapsed = isCurrent ? archivedDaysIn(cycleStart, elapsedEnd) : archivedFull;
+    const elapsedChargeable = Math.max(0, elapsedDaysNominal - creditCount - archivedElapsed);
+    const fullChargeable = Math.max(0, nominalDays - creditCount - archivedFull);
     // Oldingi sikldan "3 kun ketma-ket kelmadi" bilan o'tkazilgan summa —
     // shu siklda chegirma (utils/rollover.util.js).
     const rolloverDiscount = cycleRolloverDiscount(entry, cycleStart, cycleEnd);
