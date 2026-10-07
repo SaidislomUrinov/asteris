@@ -127,7 +127,10 @@ const buildCycles = (entry, group, cycleMode, effectiveNow) => {
       0,
     );
 
-  const addCycle = (cycleStart, cycleEnd, cyclePrice) => {
+  // `basePrice` — shu siklda amalda bo'lgan OYLIK narx (priceHistory bo'yicha,
+  // prorata emas). Tahrirlash oynasida o'tgan oylar narxini ko'rsatish uchun
+  // (API_CONTRACT_past_cycle_price.md §2); hisob-kitobda `cyclePrice` ishlaydi.
+  const addCycle = (cycleStart, cycleEnd, cyclePrice, basePrice = cyclePrice) => {
     // Sikl o'quvchi qo'shilishidan OLDIN tugagan → o'tkazib yuboriladi.
     // `false` qaytariladi: bu "joriy sikl emas" degani, ya'ni tashqi
     // sikl davom etadi va keyingi sikllarga o'tadi.
@@ -165,6 +168,7 @@ const buildCycles = (entry, group, cycleMode, effectiveNow) => {
       isCurrent,
       dailyRate,
       rolloverDiscount,
+      basePrice,
     });
     return isCurrent;
   };
@@ -175,7 +179,7 @@ const buildCycles = (entry, group, cycleMode, effectiveNow) => {
     const firstCyclePriceBase = priceAt(priceHistory, group.activatedAt, price);
     const firstCyclePrice = Math.round((firstCyclePriceBase * firstCycleDays) / daysInActMonth);
     const firstCycleEnd = addMonths(startOfMonth(group.activatedAt), 1);
-    if (addCycle(group.activatedAt, firstCycleEnd, firstCyclePrice)) return cycles;
+    if (addCycle(group.activatedAt, firstCycleEnd, firstCyclePrice, firstCyclePriceBase)) return cycles;
 
     let cursor = firstCycleEnd;
     for (let i = 0; i < MAX_CYCLES; i++) {
@@ -453,6 +457,7 @@ const computeBilling = (entry, group, cycleMode = "anchor") => {
       currentMonthDue: 0,
       paidForCurrentCycle: 0,
       debtBreakdown: openingRows.filter((r) => r.debt > 0),
+      priceCycles: [],
       ...extra,
     };
   };
@@ -471,6 +476,7 @@ const computeBilling = (entry, group, cycleMode = "anchor") => {
       currentMonthDue: 0,
       paidForCurrentCycle: 0,
       debtBreakdown: [],
+      priceCycles: [],
       currentCyclePrice: 0,
       courseStartMonth: group?.activatedAt ? formatMonth(group.activatedAt) : null,
       currentCycleMonth: null,
@@ -555,6 +561,18 @@ const computeBilling = (entry, group, cycleMode = "anchor") => {
     currentCyclePrice: current.fullDue, // joriy sikl uchun to'lanishi kerak bo'lgan JAMI summa
     paidForCurrentCycle: current.paid, // shundan qanchasi to'langan (oldindan to'lovlarni ham hisobga oladi)
     debtBreakdown, // [{kind, month, due, paid, debt, note?}] — faqat debt > 0 qatorlar, opening → sikllar
+    // Har sikl (o'tgan + joriy) amaldagi oylik narxi — o'tgan oy narxini
+    // tahrirlash uchun (API_CONTRACT_past_cycle_price.md §2).
+    priceCycles: cycles.map((c) => ({
+      cycleStart: c.cycleStart,
+      from: c.billedFrom,
+      to: c.cycleEnd,
+      month: c.month,
+      price: c.basePrice,
+      due: c.fullDue,
+      paid: c.paid,
+      isCurrent: c.isCurrent,
+    })),
     courseStartMonth: formatMonth(group.activatedAt),
     currentCycleMonth: current.month,
     // A'zolik tugagan — keyingi to'lov sanasi yo'q.
@@ -1804,9 +1822,15 @@ module.exports = {
     }, actor);
   },
 
-  updateGroupPrice: async (clientId, id, groupEntryId, price, actor = null) => {
+  // `cycleStart` berilsa — narx FAQAT shu o'tgan (yopilgan) sikl uchun
+  // o'zgaradi (API_CONTRACT_past_cycle_price.md). Berilmasa — avvalgidek
+  // joriy sikldan boshlab.
+  updateGroupPrice: async (clientId, id, groupEntryId, price, actor = null, cycleStart = null) => {
     if (typeof price !== "number" || !Number.isInteger(price) || price < 0 || price > 1e12) {
       throw new Error("student.invalidPrice");
+    }
+    if (cycleStart !== null && cycleStart !== undefined && (typeof cycleStart !== "number" || !Number.isInteger(cycleStart))) {
+      throw new Error("student.invalidCycle");
     }
 
     const student = await Student.findOne({ _id: id, isDeleted: false });
@@ -1831,16 +1855,36 @@ module.exports = {
     // hamon ESKI narxni qaytarardi (cycleStart < from=now), va narxni 0'ga
     // tuzatish qarzdorlikka darhol ta'sir qilmasdi. Bu faqat JORIY siklga
     // orqaga ta'sir qiladi — allaqachon yopilgan o'tgan sikllar o'zgarmaydi.
-    const now = getNow();
-    const effectiveNow =
-      group?.status === "finished" && group.finishedAt ? group.finishedAt : now;
-    const from =
-      group && effectiveNow >= group.activatedAt
-        ? currentCycleStartOf(group, billingSetting?.cycleMode || "anchor", effectiveNow)
-        : now;
-    const oldPrice = entry.price;
-    entry.priceHistory.push({ price, from });
-    entry.price = price;
+    let oldPrice;
+    let auditMeta = { groupId: String(entry.group) };
+    if (cycleStart !== null && cycleStart !== undefined) {
+      // O'tgan sikl: shu sikl boshidan yangi narx, keyingi sikl boshidan esa
+      // o'sha paytgacha amalda bo'lgan narx qaytadi — keyingi oylar va
+      // joriy narx (`entry.price`) o'zgarmaydi. Sikl ro'yxati computeBilling
+      // bilan bir xil manbadan (joriy va kelajak sikllar qabul qilinmaydi).
+      const { priceCycles = [] } = computeBilling(entry, group, billingSetting?.cycleMode || "anchor");
+      const cycle = priceCycles.find((c) => c.cycleStart === cycleStart && !c.isCurrent);
+      if (!cycle) throw new Error("student.invalidCycle");
+      const nextPrice = priceAt(entry.priceHistory, cycle.to, entry.price);
+      oldPrice = cycle.price;
+      entry.priceHistory = [
+        ...entry.priceHistory.filter((h) => h.from < cycle.cycleStart || h.from > cycle.to),
+        { price, from: cycle.cycleStart },
+        { price: nextPrice, from: cycle.to },
+      ].sort((a, b) => a.from - b.from);
+      auditMeta = { ...auditMeta, cycleStart: cycle.cycleStart, month: cycle.month };
+    } else {
+      const now = getNow();
+      const effectiveNow =
+        group?.status === "finished" && group.finishedAt ? group.finishedAt : now;
+      const from =
+        group && effectiveNow >= group.activatedAt
+          ? currentCycleStartOf(group, billingSetting?.cycleMode || "anchor", effectiveNow)
+          : now;
+      oldPrice = entry.price;
+      entry.priceHistory.push({ price, from });
+      entry.price = price;
+    }
     await student.save();
     void audit.log({
       actor,
@@ -1849,7 +1893,7 @@ module.exports = {
       action: "student:priceChanged",
       entity: { type: "student", id: student._id, label: student.fullName },
       changes: [{ field: "price", from: oldPrice, to: price }],
-      meta: { groupId: String(entry.group) },
+      meta: auditMeta,
     });
 
     // Narx o'zgarishi Guruh detail/Students ro'yxatida ochiq turgan boshqa

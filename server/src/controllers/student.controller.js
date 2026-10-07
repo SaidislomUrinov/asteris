@@ -221,6 +221,8 @@ module.exports = {
         req.params.groupEntryId,
         req.body.price,
         buildActor(req),
+        // Ixtiyoriy — o'tgan bitta sikl (API_CONTRACT_past_cycle_price.md).
+        req.body.cycleStart ?? null,
       );
       return res.send({ ok: true, data, msg: "student.updated" });
     } catch (error) {
