@@ -36,6 +36,7 @@ import Input from "../../ui/Input";
 import Select from "../../ui/Select";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import IconButton from "../../ui/IconButton";
+import useMediaQuery from "../../hooks/useMediaQuery";
 import Dialog from "../../ui/Dialog";
 import Chip from "../../ui/Chip";
 import RowNumber from "../../ui/RowNumber";
@@ -131,11 +132,21 @@ const formatBatchTime = (unixSeconds) => {
   return `${d.toLocaleDateString(dateLocale(), { day: "2-digit", month: "2-digit" })} ${time}`;
 };
 
+
+// Telefondagi o'rin belgisi: 1–3 o'rin medal ranglarida, qolganlari neytral.
+const RANK_CHIP = {
+  1: "bg-amber-100 text-amber-800",
+  2: "bg-slate-200 text-slate-700",
+  3: "bg-orange-100 text-orange-800",
+};
+
 function GroupDetail() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
   const can = useCan();
+  // Telefon (< sm) — o'quvchilar ro'yxati kartalar ko'rinishida (avatar biroz kichik).
+  const isPhone = useMediaQuery("(max-width: 639px)");
   const hasFeature = useFeature();
   const [hideFinance] = useHideFinance();
   // O'qituvchi MOLIYAVIY ustunlarni ko'rmaydi (server ham bu maydonlarni
@@ -1229,7 +1240,9 @@ function GroupDetail() {
             {t("student.empty")}
           </div>
         ) : (
-          <div className="flex flex-col w-full overflow-hidden rounded-lg border border-slate-100">
+          // Telefonda (< sm) jadval emas — alohida kartalar ro'yxati: tashqi
+          // ramka yo'q, kartalar orasida bo'sh joy.
+          <div className="flex flex-col w-full overflow-hidden rounded-lg border border-slate-100 max-sm:gap-2.5 max-sm:overflow-visible max-sm:rounded-none max-sm:border-0">
             <div
               // 5 ustunli (moliyaviy) jadval faqat xl'da: planshet/kichik
               // noutbukda birinchi ustunga ~150px qolib, ism kesilar va telefon
@@ -1256,7 +1269,7 @@ function GroupDetail() {
               return (
                 <div
                   key={s._id}
-                  className={`relative grid grid-cols-1 gap-2.5 px-2 py-3 border-t border-slate-100 hover:bg-slate-50 transition-colors ${
+                  className={`relative grid grid-cols-1 gap-2.5 px-2 py-3 border-t border-slate-100 hover:bg-slate-50 transition-colors max-sm:gap-2.5 max-sm:p-3 max-sm:rounded-2xl max-sm:border max-sm:border-slate-200/80 max-sm:bg-white max-sm:hover:bg-white ${
                     isTeacher
                       ? "sm:grid-cols-[1fr_140px_44px] sm:items-center sm:gap-2 sm:px-3 sm:py-2.5"
                       : "xl:grid-cols-[1fr_190px_120px_140px_44px] xl:items-center xl:gap-2 xl:px-3 xl:py-2.5"
@@ -1264,14 +1277,27 @@ function GroupDetail() {
                 >
                   <div className={`flex items-center gap-3 min-w-0 pr-11 ${isTeacher ? "sm:pr-0" : "xl:pr-0"}`}>
                     <RowNumber value={index + 1} />
-                    <Avatar user={{ _id: s._id, name: s.fullName }} size={38} />
+                    <Avatar user={{ _id: s._id, name: s.fullName }} size={isPhone ? 36 : 38} />
                     <div className="flex flex-col min-w-0">
                       <span className="flex items-center gap-1.5 min-w-0">
                         <span className="font-semibold text-slate-800 truncate">{s.fullName}</span>
-                        <RankMedal position={ranks[s._id]} size={21} />
-                        <MiniBadges types={groupBadges.items[s._id]} month={groupBadges.month} />
+                        {/* Telefonda medal va yutuq belgilari yashirin — o'rin pastki qatorda. */}
+                        <span className="contents max-sm:hidden">
+                          <RankMedal position={ranks[s._id]} size={21} />
+                          <MiniBadges types={groupBadges.items[s._id]} month={groupBadges.month} />
+                        </span>
                       </span>
                       <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 min-w-0">
+                        {/* Telefonda o'rin — telefon raqami oldida: ism qisqarmasin. */}
+                        {ranks[s._id] && (
+                          <span
+                            className={`sm:hidden shrink-0 px-1.5 py-0.5 rounded-md text-[11px] font-bold tabular-nums leading-none whitespace-nowrap ${
+                              RANK_CHIP[ranks[s._id]] || "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            {t("rank.medal", { position: ranks[s._id] })}
+                          </span>
+                        )}
                         <span className="text-xs text-slate-400 shrink-0">{s.phone}</span>
                         {/* Mobilda Telegram alohida ustunda (pastda). */}
                         <span className={isTeacher ? "hidden sm:inline-flex" : "hidden xl:inline-flex"}>
@@ -1288,8 +1314,52 @@ function GroupDetail() {
                       ekranda 3 ustun sig'maydi — Telegram pastki qatorga
                       tushadi. O'qituvchida moliya yo'q → 2 ustun. Desktop
                       jadval katakchalari quyida (`hidden …:contents`). */}
+                  {/* ── Telefon (< sm): ustun/ajratgichsiz ma'lumot bloklari.
+                      Bloklar `flex-wrap` bilan o'raladi — 320px da Davomat
+                      Qarzdorlik ostiga tushadi, kengroqda yonma-yon. Qiymatlar
+                      va komponentlar quyidagi planshet bloki bilan bir xil. */}
+                  <div className="sm:hidden grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-2.5">
+                    {!isTeacher && (
+                      <div className="flex flex-col gap-1 min-w-0">
+                        <span className="text-[11px] font-medium text-slate-400">{t("student.debt")}</span>
+                        {entry.groupStatus === "pending" ? (
+                          <span className="text-sm font-semibold text-slate-400">—</span>
+                        ) : hasDebt ? (
+                          <span className="text-[15px] font-bold leading-tight text-red-600 whitespace-nowrap">
+                            {maskMoney(entry.currentCyclePrice - entry.paidForCurrentCycle, hideFinance)}{" "}
+                            <span className="text-xs font-medium text-red-400">{t("student.somSuffix")}</span>
+                          </span>
+                        ) : (
+                          <span className="text-sm font-semibold text-emerald-600">{t("student.noDebt")}</span>
+                        )}
+                      </div>
+                    )}
+
+                    <div onClick={(e) => e.stopPropagation()} className={`flex flex-col gap-1 min-w-0 ${isTeacher ? "col-span-2" : ""}`}>
+                      <span className="text-[11px] font-medium text-slate-400">{t("group.attendanceColumn")}</span>
+                      <AttendanceStatusCell
+                        status={attendanceMarks[s._id]}
+                        isToday={!!todayLesson}
+                        open={attendanceOpenId === s._id}
+                        onOpen={() => setAttendanceOpenId(s._id)}
+                        onMark={(mark) => markAttendance(s._id, mark)}
+                        onExcuse={() => openExcuse(s)}
+                      />
+                    </div>
+
+                    <div className="col-span-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="text-[11px] font-medium text-slate-400">{t("telegram.title")}</span>
+                      <TelegramStatusBadges
+                        className="flex-wrap"
+                        student={s.studentTelegram}
+                        parent={s.parentTelegram}
+                      />
+                    </div>
+                  </div>
+
+                  {/* ── Planshet (sm..xl): ustunli blok — o'zgarishsiz. */}
                   <div
-                    className={`grid gap-y-2 rounded-lg bg-slate-50/70 px-1 py-2 ${
+                    className={`max-sm:hidden grid gap-y-2 rounded-lg bg-slate-50/70 px-1 py-2 ${
                       isTeacher
                         ? "grid-cols-2 sm:hidden"
                         : "grid-cols-[minmax(0,1fr)_112px] min-[390px]:grid-cols-[minmax(0,1fr)_112px_94px] xl:hidden"
@@ -1381,7 +1451,9 @@ function GroupDetail() {
 
                   <div
                     onClick={(e) => e.stopPropagation()}
-                    className={`absolute top-2.5 right-2 ${
+                    // Telefonda — kichikroq, kartaga singib ketgan yumshoq tugma
+                    // (36px; IconButton'ning 44px o'lchami faqat shu yerda toraytiriladi).
+                    className={`absolute top-2.5 right-2 max-sm:top-3 max-sm:right-3 max-sm:[&_button]:min-w-9 max-sm:[&_button]:max-w-9 max-sm:[&_button]:min-h-9 max-sm:[&_button]:max-h-9 max-sm:[&_button]:rounded-lg max-sm:[&_button]:bg-slate-50 max-sm:[&_button]:text-slate-500 ${
                       isTeacher ? "sm:static sm:flex sm:justify-end" : "xl:static xl:flex xl:justify-end"
                     }`}
                   >
@@ -1534,7 +1606,7 @@ function GroupDetail() {
           student={editTargetView.student}
           entries={
             editTargetView.entry.status === "active"
-              ? [{ _id: editTargetView.entry._id, price: editTargetView.entry.price }]
+              ? [{ _id: editTargetView.entry._id, price: editTargetView.entry.price, cycles: editTargetView.entry.priceCycles }]
               : []
           }
           onClose={() => setEditTarget(null)}

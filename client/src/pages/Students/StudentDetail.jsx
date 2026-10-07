@@ -904,7 +904,7 @@ function StudentDetail() {
           key={student._id}
           open={editOpen}
           student={student}
-          entries={activeGroups.map((g) => ({ _id: g._id, label: groupLabel(g.group), price: g.price }))}
+          entries={activeGroups.map((g) => ({ _id: g._id, label: groupLabel(g.group), price: g.price, cycles: g.priceCycles }))}
           onClose={() => setEditOpen(false)}
           onSaved={fetchStudent}
         />

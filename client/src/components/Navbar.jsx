@@ -275,7 +275,8 @@ export default function Navbar() {
             </NavLink>
           )}
 
-          {can("subject:view") && (
+          {/* O'qituvchi/yordamchida Fanlar bo'limi yo'q — ruxsat (API) cheklanmaydi. */}
+          {can("subject:view") && !isTeacher && (
             <NavLink to="/subjects">
               <HiBookOpen className="text-[20px]" />
               {t("nav.subjects")}

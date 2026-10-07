@@ -16,8 +16,8 @@ import GroupCard from "./GroupCard";
 import ExportExcelButton from "../../ui/ExportExcelButton";
 import useCan from "../../hooks/useCan";
 import { useSelector } from "react-redux";
-import { getTashkentNow } from "../../utils/schedule";
-import { GROUP_STATE, STATE_ORDER, buildGroupLive } from "./groupLive";
+import { getTashkentNow, toMinutes } from "../../utils/schedule";
+import { GROUP_STATE, buildGroupLive } from "./groupLive";
 import { api } from "../../utils/fetching";
 import { errorMsg } from "../../utils/alert";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
@@ -94,13 +94,12 @@ function Groups() {
     [rows, nowTick],
   );
 
-  // Jonli dars birinchi, keyin yaqin orada boshlanadiganlar — Array#sort
-  // ES2019+da stabil, shuning uchun qolgan tartib (backend'dan kelgan)
-  // o'zgarmaydi.
-  const sortedRows = [...rows].sort(
-    (a, b) =>
-      (STATE_ORDER[liveMap[a._id]?.state] ?? 9) - (STATE_ORDER[liveMap[b._id]?.state] ?? 9),
-  );
+  // Dars boshlanish soati bo'yicha (erta → kech) — kun tartibini o'qish oson.
+  // Jadvali yo'q (vaqt kiritilmagan) guruhlar oxirida. Array#sort stabil,
+  // shuning uchun bir xil soatdagilar backend tartibida qoladi. Saralash
+  // joriy sahifa ichida (PAGE_SIZE 50 — odatda filialning barcha guruhlari).
+  const startOf = (g) => (g.startTime ? toMinutes(g.startTime) : Infinity);
+  const sortedRows = [...rows].sort((a, b) => startOf(a) - startOf(b));
 
   const groupLabel = (row) =>
     `${row.subjectName || subjectMap[row.subject] || "?"} - ${row.status === "pending" ? row.pendingId : row.activeId}${

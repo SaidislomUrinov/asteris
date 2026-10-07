@@ -200,7 +200,9 @@ function Notifications() {
 
   return (
     <div className="flex flex-col w-full h-full gap-6">
-      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 w-full sm:w-fit overflow-x-auto">
+      {/* `shrink-0` — `overflow-x-auto` element flex ustunda balandlik bo'yicha
+          0 gacha siqila oladi; xabarlar ko'p bo'lsa tablar ezilib qolardi. */}
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 w-full sm:w-fit overflow-x-auto shrink-0">
         {TABS.map((x) => {
           const count = x.key === "news" ? newsUnread : unread;
           const active = (tab === "news" ? "news" : "notifications") === x.key;

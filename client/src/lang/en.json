@@ -897,7 +897,10 @@
     "paymentStatusPaid": "Paid",
     "invalidMonth": "Invalid month",
     "sharedContactLocked": "This student also studies at another center — phone, parent's number and Telegram can't be changed",
-    "sharedContactHint": "This student also studies at another center: they'll be added to the group, contact details stay unchanged."
+    "sharedContactHint": "This student also studies at another center: they'll be added to the group, contact details stay unchanged.",
+    "pastMonthsPrice": "Past months amount",
+    "pastMonthsHint": "Only the selected month changes — later months and the current amount stay the same. Debt is recalculated automatically.",
+    "invalidCycle": "The amount for this month cannot be changed"
   },
   "import": {
     "buttonLabel": "Import from Excel",

@@ -897,7 +897,10 @@
     "paymentStatusPaid": "To'langan",
     "invalidMonth": "Oy noto'g'ri tanlangan",
     "sharedContactLocked": "Bu o'quvchi boshqa markazda ham o'qiydi — telefon, ota-ona raqami va Telegram raqamlarini o'zgartirib bo'lmaydi",
-    "sharedContactHint": "O'quvchi boshqa markazda ham o'qiydi: u guruhga qo'shiladi, kontakt ma'lumotlari o'zgartirilmaydi."
+    "sharedContactHint": "O'quvchi boshqa markazda ham o'qiydi: u guruhga qo'shiladi, kontakt ma'lumotlari o'zgartirilmaydi.",
+    "pastMonthsPrice": "O'tgan oylar summasi",
+    "pastMonthsHint": "Faqat tanlangan oy uchun o'zgaradi — keyingi oylar va joriy summa o'zgarmaydi. Qarzdorlik avtomatik qayta hisoblanadi.",
+    "invalidCycle": "Bu oy uchun summani o'zgartirib bo'lmaydi"
   },
   "import": {
     "buttonLabel": "Excel'dan import",

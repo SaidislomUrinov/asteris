@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HiBanknotes, HiDevicePhoneMobile, HiPhone, HiUser } from "react-icons/hi2";
+import { HiBanknotes, HiChevronDown, HiDevicePhoneMobile, HiInformationCircle, HiPhone, HiUser } from "react-icons/hi2";
 import Dialog from "../../ui/Dialog";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
@@ -12,6 +12,7 @@ import {
 } from "../../utils/telegramPhone";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
+import { maskMoney } from "../../utils/moneyFormat";
 
 const PHONE_PREFIX = "+998";
 
@@ -32,8 +33,15 @@ const phoneSuffix = (raw) => {
 // tugmasi, Students ro'yxati va Guruh Detail'dagi DropMenu orqali ochiladi.
 // Ota komponent har ochilishda `key={student._id}` bilan remount qiladi.
 //
-// `entries` — ixtiyoriy, [{ _id, label, price }] — tahrirlanadigan FAOL
+// `entries` — ixtiyoriy, [{ _id, label, price, cycles? }] — tahrirlanadigan FAOL
 // guruh-yozuvlari. Berilmasa (yoki bo'sh bo'lsa) summa bo'limi ko'rsatilmaydi.
+// `cycles` — entry.priceCycles (API_CONTRACT_past_cycle_price.md): o'tgan
+// oylar summasini FAQAT shu oy uchun o'zgartirish (`{ price, cycleStart }`).
+
+const cycleKey = (entryId, cycleStart) => `${entryId}:${cycleStart}`;
+// O'tgan (yopilgan) sikllar — yangisi tepada.
+const pastCyclesOf = (en) => (en.cycles || []).filter((c) => !c.isCurrent).reverse();
+
 function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
   const { t } = useTranslation();
   const [form, setForm] = useState(() => ({
@@ -45,7 +53,15 @@ function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
   const [prices, setPrices] = useState(() =>
     Object.fromEntries(entries.map((en) => [en._id, String(en.price ?? "")])),
   );
+  const [cyclePrices, setCyclePrices] = useState(() =>
+    Object.fromEntries(
+      entries.flatMap((en) => pastCyclesOf(en).map((c) => [cycleKey(en._id, c.cycleStart), String(c.price)])),
+    ),
+  );
+  const [openPast, setOpenPast] = useState({}); // { [entryId]: true } — "O'tgan oylar" ochiq
   const [disabled, setDisabled] = useState(false);
+  const monthNames = t("common.monthNames", { returnObjects: true });
+  const monthLabel = (ym) => `${monthNames[Number(ym.slice(5, 7)) - 1]} ${ym.slice(0, 4)}`;
 
   const submit = async () => {
     try {
@@ -60,6 +76,18 @@ function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
         if (Number.isNaN(nextNum) || nextNum < 0) throw new Error("student.invalidPrice");
         return nextNum !== (en.price ?? 0);
       });
+
+      const changedCycles = entries.flatMap((en) =>
+        pastCyclesOf(en)
+          .filter((c) => {
+            const next = cyclePrices[cycleKey(en._id, c.cycleStart)];
+            if (next === "" || next == null) return false;
+            const nextNum = Number(next);
+            if (!Number.isInteger(nextNum) || nextNum < 0) throw new Error("student.invalidPrice");
+            return nextNum !== c.price;
+          })
+          .map((c) => ({ entryId: en._id, cycleStart: c.cycleStart, price: Number(cyclePrices[cycleKey(en._id, c.cycleStart)]) })),
+      );
 
       setDisabled(true);
 
@@ -79,6 +107,15 @@ function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
           price: Number(prices[en._id]),
         });
         if (!priceRes.data.ok) throw new Error(priceRes.data.msg);
+      }
+
+      // O'tgan oylar — har biri faqat o'z sikliga ta'sir qiladi.
+      for (const c of changedCycles) {
+        const cycleRes = await api.patch(`/students/${student._id}/groups/${c.entryId}`, {
+          price: c.price,
+          cycleStart: c.cycleStart,
+        });
+        if (!cycleRes.data.ok) throw new Error(cycleRes.data.msg);
       }
 
       successMsg(msg);
@@ -162,19 +199,96 @@ function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
 
         {entries.length > 0 && (
           <div className="flex flex-col gap-3 pt-1 border-t border-slate-100">
-            {entries.map((en) => (
-              <Input
-                key={en._id}
-                type="number"
-                label={en.label ? `${t("student.price")} — ${en.label}` : t("student.price")}
-                placeholder={t("student.price")}
-                icon={<HiBanknotes />}
-                value={prices[en._id] ?? ""}
-                onChange={(e) =>
-                  setPrices((prev) => ({ ...prev, [en._id]: e.target.value }))
-                }
-              />
-            ))}
+            {entries.map((en) => {
+              const past = pastCyclesOf(en);
+              const isOpen = !!openPast[en._id];
+              const changedCount = past.filter(
+                (c) => {
+                  const v = cyclePrices[cycleKey(en._id, c.cycleStart)];
+                  return v !== "" && v != null && Number(v) !== c.price;
+                },
+              ).length;
+              return (
+                <div key={en._id} className="flex flex-col gap-2">
+                  <Input
+                    type="number"
+                    label={en.label ? `${t("student.price")} — ${en.label}` : t("student.price")}
+                    placeholder={t("student.price")}
+                    icon={<HiBanknotes />}
+                    value={prices[en._id] ?? ""}
+                    onChange={(e) =>
+                      setPrices((prev) => ({ ...prev, [en._id]: e.target.value }))
+                    }
+                  />
+
+                  {past.length > 0 && (
+                    <div className="flex flex-col rounded-xl border border-slate-200 bg-slate-50/60">
+                      <button
+                        type="button"
+                        aria-expanded={isOpen}
+                        onClick={() => setOpenPast((prev) => ({ ...prev, [en._id]: !isOpen }))}
+                        className="flex items-center justify-between gap-2 px-3 h-10 text-sm font-medium text-slate-600 cursor-pointer"
+                      >
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span className="truncate">{t("student.pastMonthsPrice")}</span>
+                          {changedCount > 0 && (
+                            <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-blue-500 text-white text-[11px] font-bold">
+                              {changedCount}
+                            </span>
+                          )}
+                        </span>
+                        <HiChevronDown className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {isOpen && (
+                        <div className="flex flex-col gap-2 px-3 pb-3 border-t border-slate-200 pt-2">
+                          <p className="flex items-start gap-1.5 text-xs text-slate-500">
+                            <HiInformationCircle className="shrink-0 mt-0.5 text-sm text-slate-400" />
+                            {t("student.pastMonthsHint")}
+                          </p>
+                          <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto">
+                            {past.map((c) => {
+                              const key = cycleKey(en._id, c.cycleStart);
+                              const raw = cyclePrices[key];
+                              const changed = raw !== "" && raw != null && Number(raw) !== c.price;
+                              return (
+                                <div
+                                  key={key}
+                                  className={`flex items-center gap-2 rounded-lg px-2 py-1.5 border ${
+                                    changed ? "bg-blue-50 border-blue-200" : "bg-white border-slate-200"
+                                  }`}
+                                >
+                                  <div className="flex-1 min-w-0 flex flex-col leading-tight">
+                                    <span className="text-sm font-semibold text-slate-700 capitalize wrap-break-word">
+                                      {monthLabel(c.month)}
+                                    </span>
+                                    {changed && (
+                                      <span className="text-[11px] text-slate-400 line-through truncate">
+                                        {maskMoney(c.price, false)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="w-28 sm:w-40 shrink-0">
+                                    <Input
+                                      type="number"
+                                      placeholder={t("student.price")}
+                                      value={raw ?? ""}
+                                      onChange={(e) =>
+                                        setCyclePrices((prev) => ({ ...prev, [key]: e.target.value }))
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

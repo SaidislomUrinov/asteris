@@ -751,6 +751,7 @@ function Students() {
             _id: g._id,
             label: groupLabelMap[g.group],
             price: g.price,
+            cycles: g.priceCycles,
           }))}
           onClose={() => setEditRow(null)}
           onSaved={fetchStudents}

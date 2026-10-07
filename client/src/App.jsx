@@ -197,7 +197,9 @@ function App() {
               {authType === "owner" && (
                 <Route path="/staff/:id" element={<StaffDetail />} />
               )}
-              {can("subject:view") && (
+              {/* O'qituvchi/yordamchiga Fanlar bo'limi ko'rsatilmaydi — `subject:view`
+                  ruxsati qoladi (guruh/dars sahifalari fan nomini API'dan oladi). */}
+              {can("subject:view") && !isTeacher && (
                 <Route path="/subjects" element={<Subjects />} />
               )}
               {can("room:view") && (
