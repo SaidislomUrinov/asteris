@@ -449,6 +449,7 @@
     "actions": {
       "student:create": "O'quvchi yaratildi",
       "student:update": "O'quvchi tahrirlandi",
+      "student:photo": "O'quvchi rasmi o'zgartirildi",
       "student:delete": "O'quvchi o'chirildi",
       "student:leftGroup": "O'quvchi guruhdan chiqdi",
       "student:transfer": "O'quvchi ko'chirildi",
@@ -567,6 +568,7 @@
     },
     "fields": {
       "fullName": "To'liq ism",
+      "photo": "Rasm",
       "name": "Nomi",
       "phone": "Telefon",
       "parentPhone": "Ota-ona telefoni",

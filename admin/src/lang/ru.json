@@ -449,6 +449,7 @@
     "actions": {
       "student:create": "Ученик создан",
       "student:update": "Ученик изменён",
+      "student:photo": "Фото ученика изменено",
       "student:delete": "Ученик удалён",
       "student:leftGroup": "Ученик покинул группу",
       "student:transfer": "Ученик переведён",
@@ -567,6 +568,7 @@
     },
     "fields": {
       "fullName": "ФИО",
+      "photo": "Фото",
       "name": "Название",
       "phone": "Телефон",
       "parentPhone": "Телефон родителя",

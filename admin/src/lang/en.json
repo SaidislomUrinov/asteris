@@ -449,6 +449,7 @@
     "actions": {
       "student:create": "Student created",
       "student:update": "Student updated",
+      "student:photo": "Student photo changed",
       "student:delete": "Student deleted",
       "student:leftGroup": "Student left group",
       "student:transfer": "Student transferred",
@@ -567,6 +568,7 @@
     },
     "fields": {
       "fullName": "Full name",
+      "photo": "Photo",
       "name": "Name",
       "phone": "Phone",
       "parentPhone": "Parent phone",
