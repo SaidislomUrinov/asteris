@@ -8,6 +8,8 @@ const FOLDERS = {
   CHAT_IMAGES: "chat",
   // Yangiliklar media (rasm + video) — API_CONTRACT_news.md §2
   NEWS: "news",
+  // O'quvchi rasmlari (sharp → 360x360 webp) — API_CONTRACT_student_photo.md §1
+  STUDENTS: "students",
 };
 
 const UPLOAD_DIR = path.join(process.cwd(), "uploads");

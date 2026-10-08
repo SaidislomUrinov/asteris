@@ -34,6 +34,15 @@ router.get(
   requireStudentScope(),
   attendanceController.getQrToken,
 );
+// QR kartani Telegramga yuborish — GET `/qr/:studentId` bilan BIR XIL himoya
+// (API_CONTRACT_qr_card_send_and_worker_chat.md §A.2).
+router.post(
+  "/qr/:studentId/send",
+  requireTariffFeature("attendance.qr"),
+  requireTenantPermission("attendance:view"),
+  requireStudentScope(),
+  attendanceController.sendQrCard,
+);
 router.post(
   "/qr/scan",
   requireTariffFeature("attendance.qr"),

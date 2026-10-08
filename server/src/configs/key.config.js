@@ -81,6 +81,12 @@ module.exports = {
   // Bot suhbat holati (ota-ona oqimi: til → raqam) — chat bo'yicha, 1 soat.
   botState: (chatId) => `bot:state:${chatId}`,
   botAttendanceDebounce: (studentId, groupId, date) => `bot:att:${studentId}:${groupId}:${date}`,
+  // QR kartani Telegramga yuborish — spam himoyasi (SET NX EX 15).
+  // Redis'da `asteris:qrcard:send:{studentId}` (prefiksni ioredis qo'shadi).
+  qrCardSend: (studentId) => `qrcard:send:${studentId}`,
+  // Ota-ona WebApp'dan o'z chatiga QR karta (API_CONTRACT_parent_qr_card.md §1.2)
+  // — `asteris:parent:qrcard:{parentId}:{entryId}`, SET NX EX 15.
+  parentQrCardSend: (parentId, entryId) => `parent:qrcard:${parentId}:${entryId}`,
 
   // Guruhdagi oylik o'rinlar (hash: field = studentId, value = position) —
   // "Dars tugadi" xabaridagi "o'rin 5 → 3" uchun oldingi holat

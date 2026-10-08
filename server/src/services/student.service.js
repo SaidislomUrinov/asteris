@@ -1,3 +1,5 @@
+const path = require("path");
+const sharp = require("sharp");
 const { Types } = require("mongoose");
 const Student = require("../models/Student");
 const Staff = require("../models/Staff");
@@ -38,6 +40,8 @@ const {
   telegramFieldsFromImportRow,
 } = require("../utils/telegramPhone.util");
 const groupHolidayService = require("./groupHoliday.service");
+const fileUtil = require("../utils/file.util");
+const { FOLDERS } = require("../configs/folder.config");
 
 const PAGE_SIZE = 50;
 
@@ -53,6 +57,25 @@ const emitTelegramDiff = (before, after) => {
   const list = phones.filter(Boolean);
   if (list.length) void emitParentTelegramChanged(list);
 };
+// O'quvchi rasmi (API_CONTRACT_student_photo.md §2).
+const PHOTO_SIZE = 360;
+const PHOTO_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"];
+const PHOTO_MIME_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"];
+const STUDENT_PHOTO_PREFIX = `/uploads/${FOLDERS.STUDENTS}/`;
+
+// Rasm amallari uchun o'quvchi: shu client'da arxivlanmagan a'zoligi bo'lishi
+// shart (Owner uchun yagona tekshiruv — middleware Owner'ni o'tkazib yuboradi).
+const findPhotoStudent = async (clientId, id) => {
+  if (!Types.ObjectId.isValid(id)) throw new Error("student.notFound");
+  const student = await Student.findOne({ _id: id, isDeleted: false });
+  if (!student) throw new Error("student.notFound");
+  const hasEntry = student.groups.some(
+    (g) => String(g.client) === String(clientId) && g.status !== "archived",
+  );
+  if (!hasEntry) throw new Error("student.notFound");
+  return student;
+};
+
 // Guruh detali uchun (butun guruh bir so'rovda) — xavfsizlik chegarasi.
 const GROUP_PAGE_SIZE_MAX = 1000;
 
@@ -980,6 +1003,33 @@ const CONTACT_FIELDS = [
 const changesSharedContact = (student, body) =>
   CONTACT_FIELDS.some((f) => body[f] !== undefined && String(body[f] ?? "") !== String(student[f] ?? ""));
 
+// `student:updated` — o'quvchi tegishli BARCHA markaz va clientlarga xabar
+// beriladi (bir o'quvchi bir nechta centerda o'qishi mumkin — CLAUDE.md
+// "15 tagacha markaz"). `client:{clientId}` ham qo'shiladi, chunki Client
+// Owner socket ulanishida centerId yo'q (socket.config.js) — faqat
+// `center:*` xonalariga yuborilsa Owner hech qachon ololmaydi.
+// `update` va rasm amallari uchun umumiy; DTO qaytaradi.
+const emitStudentUpdated = async (student, clientId) => {
+  const dto = await attachTelegramStatus(await DTO(student, clientId));
+
+  const centerIds = [...new Set(student.groups.map((g) => String(g.center)))];
+  const clientIds = [...new Set(student.groups.map((g) => String(g.client)))];
+  const payload = {
+    studentId: String(student._id),
+    fullName: student.fullName,
+    phone: student.phone,
+    parentPhone: student.parentPhone,
+    ...telegramFieldsOf(student),
+    photo: student.photo,
+    parentTelegram: dto.parentTelegram,
+    studentTelegram: dto.studentTelegram,
+  };
+  centerIds.forEach((centerId) => emit(`center:${centerId}`, "student:updated", payload));
+  clientIds.forEach((cId) => emit(`client:${cId}`, "student:updated", payload));
+
+  return dto;
+};
+
 module.exports = {
   DTO,
   centerBillingTotals,
@@ -1702,15 +1752,16 @@ module.exports = {
   },
 
   // PATCH /students/:id — Reception/Owner tomonidan asosiy ma'lumotlarni
-  // tahrirlash (API_CONTRACT.md §1). fullName/phone/parentPhone/photo dan
-  // kamida bittasi kelishi shart, faqat kelgan maydonlar yangilanadi.
+  // tahrirlash (API_CONTRACT.md §1). fullName/phone/parentPhone dan kamida
+  // bittasi kelishi shart, faqat kelgan maydonlar yangilanadi. `photo` bu yerda
+  // QABUL QILINMAYDI — faqat PUT/DELETE /:id/photo orqali (sharp + eski faylni
+  // o'chirish); aks holda ixtiyoriy satr yozilib, eski fayl diskda yetim qolardi.
   update: async (clientId, id, body, actor = null) => {
-    const { fullName, phone, parentPhone, photo } = body || {};
+    const { fullName, phone, parentPhone } = body || {};
     if (
       fullName === undefined &&
       phone === undefined &&
       parentPhone === undefined &&
-      photo === undefined &&
       !hasTelegramFields(body)
     ) {
       throw new Error("student.fillTheRows");
@@ -1755,7 +1806,6 @@ module.exports = {
       if (trimmedParent && !STUDENT_PHONE_RE.test(trimmedParent)) throw new Error("student.invalidPhone");
       student.parentPhone = trimmedParent;
     }
-    if (photo !== undefined) student.photo = photo || "";
     // phone/parentPhone YUQORIDA o'rnatilgan — `*Same` bo'lsa qayta sinxronlanadi.
     applyTelegramFields(student, body, { isNew: false });
 
@@ -1777,29 +1827,90 @@ module.exports = {
       });
     }
 
-    // Bu o'quvchi tegishli BARCHA markaz va clientlarga xabar beriladi — bir
-    // o'quvchi bir nechta centerda o'qishi mumkin (CLAUDE.md "15 tagacha
-    // markaz"). `client:{clientId}` ham qo'shiladi, chunki Client Owner
-    // socket ulanishida centerId yo'q (socket.config.js) — faqat
-    // `center:*` xonalariga yuborilsa Owner hech qachon ololmaydi.
-    const dto = await attachTelegramStatus(await DTO(student, clientId));
+    // Socket + DTO — `emitStudentUpdated` (barcha markaz/client xonalari).
+    return await emitStudentUpdated(student, clientId);
+  },
 
-    const centerIds = [...new Set(student.groups.map((g) => String(g.center)))];
-    const clientIds = [...new Set(student.groups.map((g) => String(g.client)))];
-    const payload = {
-      studentId: String(student._id),
-      fullName: student.fullName,
-      phone: student.phone,
-      parentPhone: student.parentPhone,
-      ...telegramFieldsOf(student),
-      photo: student.photo,
-      parentTelegram: dto.parentTelegram,
-      studentTelegram: dto.studentTelegram,
-    };
-    centerIds.forEach((centerId) => emit(`center:${centerId}`, "student:updated", payload));
-    clientIds.forEach((cId) => emit(`client:${cId}`, "student:updated", payload));
+  // PUT /students/:id/photo (API_CONTRACT_student_photo.md §2–4). Doira
+  // (filial/guruh) `requireStudentPhoto` da tekshirilgan; bu yerda — tenant.
+  // Avval yangi fayl yoziladi, hujjat saqlanadi, SO'NG eski fayl o'chiriladi.
+  setPhoto: async (clientId, id, file, actor = null) => {
+    if (!file || Array.isArray(file) || !Buffer.isBuffer(file.data) || !file.data.length) {
+      throw new Error("student.photoRequired");
+    }
+    const ext = path.extname(file.name || "").toLowerCase();
+    const mime = String(file.mimetype || "").toLowerCase();
+    if (!PHOTO_MIME_TYPES.includes(mime) && !PHOTO_EXTENSIONS.includes(ext)) {
+      throw new Error("student.photoInvalid");
+    }
 
-    return dto;
+    const student = await findPhotoStudent(clientId, id);
+
+    // Haqiqiy tekshiruv — sharp dekodlay olishi (kengaytmaga ishonilmaydi).
+    let buffer;
+    try {
+      buffer = await sharp(file.data, { failOn: "none" })
+        .rotate()
+        .resize(PHOTO_SIZE, PHOTO_SIZE, { fit: "cover", position: "attention" })
+        .webp({ quality: 70, effort: 6 })
+        .toBuffer();
+    } catch {
+      throw new Error("student.photoInvalid");
+    }
+
+    const photo = await fileUtil.saveBuffer(buffer, FOLDERS.STUDENTS, ".webp");
+    // Atomar almashtirish: eski qiymat AYNAN shu yozuvdan olinadi. Avval
+    // `student.photo` o'qilib `save()` qilinardi — bir vaqtdagi bir nechta
+    // yuklashda har biri bir xil "eski"ni ko'rib, yetim fayllar qolardi.
+    let previous;
+    try {
+      previous = await Student.findOneAndUpdate(
+        { _id: student._id },
+        { $set: { photo } },
+        { returnDocument: "before", projection: { photo: 1 } },
+      ).lean();
+    } catch (error) {
+      void fileUtil.remove(photo); // hujjat saqlanmadi — yetim fayl qolmasin
+      throw error;
+    }
+    const oldPhoto = previous?.photo || "";
+    if (oldPhoto.startsWith(STUDENT_PHOTO_PREFIX)) void fileUtil.remove(oldPhoto);
+    student.photo = photo;
+
+    void audit.log({
+      actor,
+      client: clientId,
+      action: "student:photo",
+      entity: { type: "student", id: student._id, label: student.fullName },
+      changes: [{ field: "photo", from: oldPhoto, to: photo }],
+    });
+    await emitStudentUpdated(student, clientId);
+    return { _id: student._id, photo: student.photo };
+  },
+
+  // DELETE /students/:id/photo — rasmni olib tashlash (fayl ham diskdan).
+  removePhoto: async (clientId, id, actor = null) => {
+    const student = await findPhotoStudent(clientId, id);
+    // Atomar — eski qiymat shu yozuvning o'zidan (setPhoto bilan bir xil sabab).
+    const previous = await Student.findOneAndUpdate(
+      { _id: student._id },
+      { $set: { photo: "" } },
+      { returnDocument: "before", projection: { photo: 1 } },
+    ).lean();
+    const oldPhoto = previous?.photo || "";
+    if (oldPhoto) {
+      student.photo = "";
+      if (oldPhoto.startsWith(STUDENT_PHOTO_PREFIX)) void fileUtil.remove(oldPhoto);
+      void audit.log({
+        actor,
+        client: clientId,
+        action: "student:photo",
+        entity: { type: "student", id: student._id, label: student.fullName },
+        changes: [{ field: "photo", from: oldPhoto, to: "" }],
+      });
+      await emitStudentUpdated(student, clientId);
+    }
+    return { _id: student._id, photo: "" };
   },
 
   // O'qituvchi/yordamchi uchun kontakt tahriri (API_CONTRACT_student_contact_telegram.md

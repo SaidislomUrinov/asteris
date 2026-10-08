@@ -553,6 +553,11 @@ const safe = (fn) => async (...args) => {
 };
 
 module.exports = {
+  // Ichki yordamchilar — QR kartani Telegramga yuborish (attendance.service,
+  // API_CONTRACT_qr_card_send_and_worker_chat.md §A.2) shu qoidalarni qayta ishlatadi.
+  findParents,
+  markBlockedIfNeeded,
+
   // To'lov qabul qilindi / bekor qilindi. `payment` — entry.payments subdoc.
   onPayment: safe(async ({ student, entry, payment, cancelled = false }) => {
     await notify("payment", {

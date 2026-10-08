@@ -937,6 +937,60 @@ const entryLessonPlan = async (parent, entryId) => {
   };
 };
 
+// ---- QR karta (API_CONTRACT_parent_qr_card.md §1) ----
+// Umumiy shart: entry ota-onaga tegishli (`resolveEntry`), a'zolik FAOL va
+// o'sha mijoz tarifida `attendance.qr` bor. Aks holda `parent.qrUnavailable`
+// (frontend tugmani yashiradi). Servislar circular require'dan qochish
+// uchun lazy olinadi.
+const qrCardContext = async (parent, entryId) => {
+  const { student, entry, center } = await resolveEntry(parent, entryId);
+  if (entry.status !== "active") throw new Error("parent.qrUnavailable");
+  const features = await require("./client.service").getTariffFeatures(entry.client);
+  if (!features.includes("attendance.qr")) throw new Error("parent.qrUnavailable");
+  return { student, entry, center };
+};
+
+// GET /parent/entries/:entryId/qr-card — owner darajasidagi `getQrToken`
+// (reset YO'Q), filial = shu a'zolik markazi (karta shu markaz nomi bilan).
+const entryQrCard = async (parent, entryId) => {
+  const { student, entry } = await qrCardContext(parent, entryId);
+  const card = await require("./attendance.service").getQrToken(entry.client, student._id, false, entry.center);
+  return {
+    fullName: card.fullName,
+    qrToken: card.qrToken,
+    center: { name: card.center?.name || "", logo: card.center?.logo || null },
+    groups: card.groups,
+  };
+};
+
+// POST /parent/entries/:entryId/qr-card/send — mijozda chizilgan PNG faqat
+// so'rovchining O'Z chatiga. Diskka yozilmaydi (`file.data` Buffer).
+const sendEntryQrCard = async (parent, entryId, file) => {
+  const attendanceService = require("./attendance.service");
+  const { student, center } = await qrCardContext(parent, entryId);
+  const buffer = attendanceService.assertPngCard(file);
+  const chatId = parent.telegram?.chatId;
+  if (!chatId) throw new Error("parent.qrSendFailed");
+
+  const redis = require("../configs/redis.config");
+  const lockKey = require("../configs/key.config").parentQrCardSend(parent._id, entryId);
+  const locked = await redis.set(lockKey, "1", "EX", attendanceService.QR_SEND_LOCK_SEC, "NX");
+  if (!locked) throw new Error("parent.qrSendTooSoon");
+
+  const botNotify = require("../bot/notify");
+  const { t: botT } = require("../bot/i18n");
+  const vars = { name: botNotify.escapeHtml(student.fullName || ""), center: botNotify.escapeHtml(center?.name || "") };
+  const caption = attendanceService.fillCaption(botT(parent.telegram?.lang || "uz", "qrCardCaptionSelf"), vars);
+  const res = await botNotify.sendPhotoToChat(chatId, buffer, `qr-${String(student._id)}.png`, { caption });
+  await require("./parentNotification.service").markBlockedIfNeeded(parent, res);
+  if (!res.ok) {
+    console.error("parent sendEntryQrCard:", res.error);
+    // Ketmadi — qayta urinish 15 soniya kutmasin.
+    await redis.del(lockKey);
+    throw new Error("parent.qrSendFailed");
+  }
+};
+
 module.exports = {
   ROLES,
   roleMatch,
@@ -970,4 +1024,6 @@ module.exports = {
   entryRank,
   entryHomework,
   entryBadges,
+  entryQrCard,
+  sendEntryQrCard,
 };

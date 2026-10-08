@@ -32,6 +32,11 @@ const keyConfig = require("../configs/key.config");
 
 // Baho saralash (Bayes gradeScore) — utils/gradeScore.util.js.
 const { groupStudentsSummary } = require("../utils/gradeScore.util");
+const botNotify = require("../bot/notify");
+const { escapeHtml } = require("../bot/escapeHtml");
+const { t: botT } = require("../bot/i18n");
+const audit = require("../utils/audit.util");
+const { isValidObjectId } = require("mongoose");
 
 // Sozlama yozuvlar kam o'zgaradi, lekin har davomat belgilashda (applyCredit)
 // o'qiladi — cache-aside: avval Redis, topilmasa DB'dan olib Redis'ga
@@ -160,6 +165,38 @@ const uniqueQrToken = async () => {
 // QR kartada guruh/fan nomini deyarli har doim BO'SH qoldirar edi.
 const groupDisplayLabel = (group, subjectName) =>
   group.name || `${subjectName || "?"} - ${group.activeId ?? group.pendingId ?? ""}`;
+
+// O'quvchi + shu tenant (hodim bo'lsa — faqat O'Z FILIALI) a'zoliklari.
+// `getQrToken` va `sendQrCard` uchun umumiy tenant/filial izolyatsiyasi.
+const scopedStudentEntries = async (clientId, studentId, staffCenterId) => {
+  if (!isValidObjectId(studentId)) throw new Error("student.notFound");
+  const student = await Student.findOne({ _id: studentId, isDeleted: false });
+  if (!student) throw new Error("student.notFound");
+  const entries = student.groups.filter(
+    (g) =>
+      String(g.client) === String(clientId) &&
+      (!staffCenterId || String(g.center) === String(staffCenterId)),
+  );
+  if (!entries.length) throw new Error("student.notFound");
+  return { student, entries };
+};
+
+// QR karta PNG (API_CONTRACT_qr_card_send_and_worker_chat.md §A.2):
+// mimetype + boshidagi PNG signature, hajm ≤ 2 MB.
+const QR_CARD_MAX_BYTES = 2 * 1024 * 1024;
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const QR_SEND_LOCK_SEC = 15;
+const assertPngCard = (file) => {
+  const buf = file && !Array.isArray(file) ? file.data : null;
+  if (!Buffer.isBuffer(buf) || !buf.length) throw new Error("attendance.qrInvalidImage");
+  if (file.mimetype !== "image/png") throw new Error("attendance.qrInvalidImage");
+  if (buf.length > QR_CARD_MAX_BYTES || file.truncated) throw new Error("attendance.qrInvalidImage");
+  if (buf.length < PNG_SIGNATURE.length || !buf.subarray(0, PNG_SIGNATURE.length).equals(PNG_SIGNATURE)) {
+    throw new Error("attendance.qrInvalidImage");
+  }
+  return buf;
+};
+const fillCaption = (tpl, vars) => String(tpl).replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? vars[k] : m));
 
 const assertCenterOwnership = async (clientId, centerId) => {
   const center = await Center.findOne({ _id: centerId, client: clientId, isDeleted: false });
@@ -465,17 +502,9 @@ module.exports = {
   // yaratiladi (lazy). `reset: true` bo'lsa yangi token beriladi va eski
   // chop etilgan karta ishlamay qoladi (karta yo'qolganda kerak).
   getQrToken: async (clientId, studentId, reset = false, staffCenterId = null) => {
-    const student = await Student.findOne({ _id: studentId, isDeleted: false });
-    if (!student) throw new Error("student.notFound");
-
     // Tenant isolation — faqat shu client'ning o'quvchisi. Hodim bo'lsa
     // qo'shimcha ravishda faqat O'Z FILIALI o'quvchisi.
-    const entries = student.groups.filter(
-      (g) =>
-        String(g.client) === String(clientId) &&
-        (!staffCenterId || String(g.center) === String(staffCenterId)),
-    );
-    if (!entries.length) throw new Error("student.notFound");
+    const { student, entries } = await scopedStudentEntries(clientId, studentId, staffCenterId);
 
     if (!student.qrToken || reset) {
       student.qrToken = await uniqueQrToken();
@@ -501,6 +530,61 @@ module.exports = {
       center: { name: center?.name || "", logo: center?.logo || "" },
       groups: groups.map((g) => groupDisplayLabel(g, subjectMap[String(g.subject)])).filter(Boolean),
     };
+  },
+
+  // QR kartani (mijozda chizilgan PNG) o'quvchi va ota-onaning Telegramiga
+  // rasm qilib yuboradi (API_CONTRACT_qr_card_send_and_worker_chat.md §A.2).
+  // Fayl diskka yozilmaydi — `file.data` Buffer to'g'ridan-to'g'ri botga.
+  // Filial/teacher doirasi `getQrToken` bilan bir xil (+ requireStudentScope).
+  // Qaytaradi: `{ student, parent }` — har biri "sent" | "failed" | "none".
+  sendQrCard: async (clientId, studentId, file, staffCenterId = null, actor = null) => {
+    const { student, entries } = await scopedStudentEntries(clientId, studentId, staffCenterId);
+    const buffer = assertPngCard(file);
+
+    const recipients = await parentNotification.findParents(student, ["student", "parent"]);
+    const targets = recipients.filter(({ parent }) => parent.telegram?.chatId);
+    if (!targets.length) throw new Error("attendance.qrNoTelegram");
+
+    // Spam himoyasi — 15 soniyada bir marta (ikki marta bosish / ikki qurilma).
+    const lockKey = keyConfig.qrCardSend(student._id);
+    const locked = await redis.set(lockKey, "1", "EX", QR_SEND_LOCK_SEC, "NX");
+    if (!locked) throw new Error("attendance.qrSendTooSoon");
+
+    // Karta qaysi markaznikiligi — `getQrToken` bilan bir xil tanlov.
+    const active = entries.filter((g) => g.status === "active");
+    const centerId = (active[0] || entries[0]).center;
+    const center = await Center.findOne({ _id: centerId, client: clientId }).select("name");
+    const vars = { name: escapeHtml(student.fullName || ""), center: escapeHtml(center?.name || "") };
+    const filename = `qr-${String(student._id)}.png`;
+
+    const result = { student: "none", parent: "none" };
+    for (const { parent, role } of targets) {
+      const lang = parent.telegram?.lang || "uz";
+      const key = role === "student" ? "qrCardCaptionStudent" : "qrCardCaptionParent";
+      const caption = fillCaption(botT(lang, key), vars);
+      const res = await botNotify.sendPhotoToChat(parent.telegram.chatId, buffer, filename, { caption });
+      await parentNotification.markBlockedIfNeeded(parent, res);
+      if (!res.ok) console.error("attendance sendQrCard:", res.error);
+      // Bir rolda bir nechta oluvchi bo'lsa — kamida bittasiga ketgani "sent".
+      if (res.ok) result[role] = "sent";
+      else if (result[role] === "none") result[role] = "failed";
+    }
+
+    void audit.log({
+      actor,
+      client: clientId,
+      center: centerId,
+      action: "attendance:qrCardSend",
+      entity: { type: "student", id: student._id, label: student.fullName },
+      meta: { ...result },
+    });
+
+    if (result.student !== "sent" && result.parent !== "sent") {
+      // Hech kimga ketmadi — qayta urinish 15 soniya kutmasin.
+      await redis.del(lockKey);
+      throw new Error("attendance.qrSendFailed");
+    }
+    return result;
   },
 
   // Guruhning barcha FAOL o'quvchilari uchun QR kartalar (bitta PDF uchun).
@@ -903,4 +987,10 @@ module.exports = {
 
     return [...own, ...extra].sort((a, b) => (a.date < b.date ? 1 : -1));
   },
+
+  // Ota-ona WebApp QR kartasi (API_CONTRACT_parent_qr_card.md §1.2) uchun
+  // umumiy yordamchilar — PNG tekshiruvi va caption to'ldirish bir manbada.
+  assertPngCard,
+  fillCaption,
+  QR_SEND_LOCK_SEC,
 };

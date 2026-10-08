@@ -35,6 +35,21 @@ const sendDocumentToChat = async (chatId, buffer, filename, extra = {}) => {
   }
 };
 
+// Rasm (masalan QR davomat kartasi PNG) — `buffer` xotiradan, diskka yozilmaydi
+// (API_CONTRACT_qr_card_send_and_worker_chat.md §A.1). `sendDocumentToChat`
+// naqshida: xato otilmaydi, `{ ok:false, error }` qaytadi.
+const sendPhotoToChat = async (chatId, buffer, filename, extra = {}) => {
+  if (!chatId) return { ok: false, error: "notify.noChat" };
+  try {
+    const bot = await getApiBot();
+    if (!bot) return { ok: false, error: "notify.botUnavailable" };
+    await bot.api.sendPhoto(chatId, new InputFile(buffer, filename), { parse_mode: "HTML", ...extra });
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error?.message || "notify.failed" };
+  }
+};
+
 // Ota-ona WebApp tugmasi ("Batafsil ko'rish") — `SystemSetting.telegram.
 // parentWebAppUrl` sozlangan bo'lsa inline klaviatura, aks holda `undefined`
 // (Telegram web_app tugmasi faqat https manzil bilan ishlaydi). `path` —
@@ -55,4 +70,4 @@ const parentWebAppMarkup = async (label, path = "") => {
   }
 };
 
-module.exports = { sendToChat, sendDocumentToChat, escapeHtml, parentWebAppMarkup };
+module.exports = { sendToChat, sendDocumentToChat, sendPhotoToChat, escapeHtml, parentWebAppMarkup };

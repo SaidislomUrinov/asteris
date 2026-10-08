@@ -81,6 +81,26 @@ module.exports = {
     }
   },
 
+  // QR karta (API_CONTRACT_parent_qr_card.md §1.1).
+  entryQrCard: async (req, res, next) => {
+    try {
+      const data = await parentService.entryQrCard(req.parent, req.params.entryId);
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // QR kartani o'z Telegram chatiga — multipart `card` (PNG ≤ 2 MB), §1.2.
+  sendEntryQrCard: async (req, res, next) => {
+    try {
+      await parentService.sendEntryQrCard(req.parent, req.params.entryId, req.files?.card);
+      return res.send({ ok: true, msg: "parent.qrCardSent" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   // Uyga vazifalar (§3.6).
   entryLessonPlan: async (req, res, next) => {
     try {

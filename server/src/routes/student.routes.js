@@ -43,23 +43,24 @@ const teacherStudentScope = async (req, res, next) => {
   }
 };
 
-// PATCH /:id/contact (API_CONTRACT_student_contact_telegram.md §2).
-//  - Owner — o'tadi.
-//  - Teacher/Assistant — `all` yoki `student:contact` VA o'quvchining shu
-//    client'dagi AKTIV a'zoligi o'zi biriktirilgan (o'chirilmagan) guruhda.
-//  - Boshqa hodim — `all` | `student:update` | `student:contact`
-//    (`student:update` ⊇ `student:contact`).
-// Staff uchun filial izolyatsiyasi: a'zolik `req.centerScope` filialida bo'lishi shart.
-const CONTACT_PERMISSIONS = ["all", "student:update", "student:contact"];
-const TEACHING_CONTACT_PERMISSIONS = ["all", "student:contact"];
-
-const requireStudentContact = async (req, res, next) => {
+// Hodim uchun "shu o'quvchi menga tegishlimi" tekshiruvi — kontakt va rasm
+// marshrutlari uchun umumiy (nusxa ko'chirilmaydi).
+//  - Owner — o'tadi (xizmat o'zi `client` bo'yicha tekshiradi).
+//  - `permissions` berilsa: Teacher/Assistant — `teaching` ro'yxatidan biri,
+//    boshqa hodim — `other` ro'yxatidan biri. Berilmasa — permission TALAB
+//    QILINMAYDI (rasm, API_CONTRACT_student_photo.md §3).
+//  - Filial izolyatsiyasi: a'zolik `req.centerScope` filialida bo'lishi shart.
+//  - Teacher/Assistant — o'quvchining shu client'dagi AKTIV a'zoligi o'zi
+//    biriktirilgan (o'chirilmagan) guruhda bo'lishi shart.
+const studentScopeGuard = ({ permissions = null } = {}) => async (req, res, next) => {
   if (!req.staff) return next(); // Client Owner
   try {
-    const permissions = req.staff.permissions || [];
     const field = GROUP_SCOPE_FIELD[req.staff.role];
-    const allowed = field ? TEACHING_CONTACT_PERMISSIONS : CONTACT_PERMISSIONS;
-    if (!allowed.some((p) => permissions.includes(p))) throw new Error("auth.forbidden");
+    if (permissions) {
+      const own = req.staff.permissions || [];
+      const allowed = field ? permissions.teaching : permissions.other;
+      if (!allowed.some((p) => own.includes(p))) throw new Error("auth.forbidden");
+    }
 
     const id = req.params.id;
     if (!isValidObjectId(id)) throw new Error("student.notFound");
@@ -76,7 +77,7 @@ const requireStudentContact = async (req, res, next) => {
         g.status !== "archived" &&
         (!scope || String(g.center) === scope),
     );
-    // O'qituvchi rollari uchun "begona o'quvchi" — 403 (contract §2), boshqalarga 404.
+    // O'qituvchi rollari uchun "begona o'quvchi" — 403, boshqalarga 404.
     if (!entries.length) throw new Error(field ? "auth.forbidden" : "student.notFound");
 
     if (field) {
@@ -96,6 +97,21 @@ const requireStudentContact = async (req, res, next) => {
     next(error);
   }
 };
+
+// PATCH /:id/contact (API_CONTRACT_student_contact_telegram.md §2).
+//  - Teacher/Assistant — `all` yoki `student:contact`.
+//  - Boshqa hodim — `all` | `student:update` | `student:contact`
+//    (`student:update` ⊇ `student:contact`).
+const requireStudentContact = studentScopeGuard({
+  permissions: {
+    teaching: ["all", "student:contact"],
+    other: ["all", "student:update", "student:contact"],
+  },
+});
+
+// PUT/DELETE /:id/photo (API_CONTRACT_student_photo.md §3) — har qanday hodim
+// roli, alohida permission kerak emas; doira tekshiruvi kontakt bilan bir xil.
+const requireStudentPhoto = studentScopeGuard();
 
 // `blockTeachingRoles` — authenticator.middleware.js dan (avval shu faylda
 // nusxasi bor edi; endi guruh marshrutlari ham o'shanga tayangani uchun
@@ -207,6 +223,10 @@ router.patch(
   studentController.update,
 );
 router.patch("/:id/contact", requireStudentContact, studentController.updateContact);
+// O'quvchi rasmi — `photo` maydoni, multipart (API_CONTRACT_student_photo.md §3).
+// `/:id/photo` bilan to'qnashadigan boshqa PUT/DELETE marshrut yo'q.
+router.put("/:id/photo", requireStudentPhoto, studentController.setPhoto);
+router.delete("/:id/photo", requireStudentPhoto, studentController.removePhoto);
 router.patch(
   "/:id/groups/:groupEntryId",
   blockTeachingRoles,

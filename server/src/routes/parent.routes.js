@@ -17,6 +17,8 @@ router.get("/entries/:entryId/rank", parentController.entryRank);
 router.get("/entries/:entryId/homework", parentController.entryHomework);
 router.get("/entries/:entryId/lesson-plan", parentController.entryLessonPlan);
 router.get("/entries/:entryId/badges", parentController.entryBadges);
+router.get("/entries/:entryId/qr-card", parentController.entryQrCard);
+router.post("/entries/:entryId/qr-card/send", parentController.sendEntryQrCard);
 router.get("/payments", parentController.payments);
 router.get("/notifications", parentController.notifications);
 router.patch("/notifications/read-all", parentController.readAllNotifications);

@@ -141,6 +141,13 @@ const DICT = {
     receiptOpeningBadge: "Eski qarz",
     receiptOpeningMonthUnknown: "Oyi ko'rsatilmagan",
     receiptFileName: "chek",
+    // QR davomat kartasi (API_CONTRACT_qr_card_send_and_worker_chat.md §A.2).
+    qrCardCaptionStudent:
+      "🪪 <b>{center}</b>\n\nSizning QR davomat kartangiz. Markazga kirishda shu kodni skanerga ko'rsating.",
+    qrCardCaptionParent:
+      "🪪 <b>{center}</b>\n\n<b>{name}</b>ning QR davomat kartasi. Markazga kirishda shu kodni skanerga ko'rsatish kifoya.",
+    qrCardCaptionSelf:
+      "🪪 <b>{center}</b>\n\n<b>{name}</b> — QR davomat kartasi. Markazga kirishda skanerga ko'rsating.",
   },
   ru: {
     pnLessonFinishedTitle: "Урок завершён",
@@ -272,6 +279,12 @@ const DICT = {
     receiptOpeningBadge: "Старый долг",
     receiptOpeningMonthUnknown: "Месяц не указан",
     receiptFileName: "chek",
+    qrCardCaptionStudent:
+      "🪪 <b>{center}</b>\n\nВаша QR-карта посещаемости. При входе в центр покажите этот код сканеру.",
+    qrCardCaptionParent:
+      "🪪 <b>{center}</b>\n\nQR-карта посещаемости: <b>{name}</b>. При входе в центр достаточно показать этот код сканеру.",
+    qrCardCaptionSelf:
+      "🪪 <b>{center}</b>\n\n<b>{name}</b> — QR-карта посещаемости. При входе в центр покажите её сканеру.",
   },
   en: {
     pnLessonFinishedTitle: "Lesson finished",
@@ -403,6 +416,12 @@ const DICT = {
     receiptOpeningBadge: "Old debt",
     receiptOpeningMonthUnknown: "Month not set",
     receiptFileName: "receipt",
+    qrCardCaptionStudent:
+      "🪪 <b>{center}</b>\n\nYour QR attendance card. Show this code to the scanner when entering the center.",
+    qrCardCaptionParent:
+      "🪪 <b>{center}</b>\n\nQR attendance card of <b>{name}</b>. Showing this code to the scanner at the entrance is enough.",
+    qrCardCaptionSelf:
+      "🪪 <b>{center}</b>\n\n<b>{name}</b> — QR attendance card. Show it to the scanner when entering the center.",
   },
 };
 

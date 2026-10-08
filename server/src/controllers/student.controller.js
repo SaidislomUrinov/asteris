@@ -197,6 +197,27 @@ module.exports = {
     }
   },
 
+  // PUT /students/:id/photo — multipart `photo` (API_CONTRACT_student_photo.md §3).
+  // Doira `requireStudentPhoto` da tekshirilgan.
+  setPhoto: async (req, res, next) => {
+    try {
+      const data = await studentService.setPhoto(req.client._id, req.params.id, req.files?.photo, buildActor(req));
+      return res.send({ ok: true, data, msg: "student.photoUpdated" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // DELETE /students/:id/photo
+  removePhoto: async (req, res, next) => {
+    try {
+      const data = await studentService.removePhoto(req.client._id, req.params.id, buildActor(req));
+      return res.send({ ok: true, data, msg: "student.photoRemoved" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   // PATCH /students/:id/contact — ism/raqam/ota-ona raqami
   // (API_CONTRACT_student_contact_telegram.md §2). Ruxsat va guruh doirasi
   // `requireStudentContact` da tekshirilgan.

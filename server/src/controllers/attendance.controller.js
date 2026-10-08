@@ -1,6 +1,7 @@
 const attendanceService = require("../services/attendance.service");
 const { MONTH_RE } = require("../utils/gradeScore.util");
 const { teachingScopeField } = require("../middlewares/authenticator.middleware");
+const { buildActor } = require("../utils/audit.util");
 
 module.exports = {
   getSettings: async (req, res, next) => {
@@ -76,6 +77,22 @@ module.exports = {
         req.staff?.center || null,
       );
       return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // QR kartani Telegramga yuborish — multipart `card` (PNG ≤ 2 MB).
+  sendQrCard: async (req, res, next) => {
+    try {
+      const data = await attendanceService.sendQrCard(
+        req.client._id,
+        req.params.studentId,
+        req.files?.card,
+        req.staff?.center || null,
+        buildActor(req),
+      );
+      return res.send({ ok: true, data, msg: "attendance.qrCardSent" });
     } catch (error) {
       next(error);
     }
