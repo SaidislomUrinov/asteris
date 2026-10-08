@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { HiBookOpen, HiChatBubbleLeftRight, HiPlayCircle, HiQuestionMarkCircle } from "react-icons/hi2";
 import Button from "../../ui/Button";
 
-const TOOLTIP_WIDTH = 384; // px — w-96 (kattaroq, o'qishga qulay)
+const MAX_TOOLTIP_WIDTH = 384; // px — w-96 (kattaroq, o'qishga qulay)
+// Telefonda (390px) 384px sig'maydi — chetlardan 12px qoldiriladi.
+const tooltipWidth = () => Math.min(MAX_TOOLTIP_WIDTH, window.innerWidth - 24);
 const GAP = 16; // nishon va tooltip orasidagi masofa
 
 // Nishon rect'idan tooltipning eng mos joyini hisoblaydi (pastda, joy
@@ -10,7 +13,7 @@ const GAP = 16; // nishon va tooltip orasidagi masofa
 // Navbar kabi ekran bo'yi to'liq balandlikdagi (tor va uzun) nishonlar uchun
 // yuqori/pastda joy umuman qolmaydi — bunda tooltip nishonning YON tomoniga
 // qo'yiladi.
-const computeTooltipPos = (rect) => {
+const computeTooltipPos = (rect, TOOLTIP_WIDTH) => {
   const isTallNarrow = rect.height > window.innerHeight * 0.6;
 
   if (isTallNarrow) {
@@ -83,7 +86,8 @@ function IntroductionOverlay({ step, index, total, isFirst, isLast, onNext, onBa
   if (!rect) return null;
 
   const isCircular = Math.abs(rect.width - rect.height) < 4;
-  const tooltip = computeTooltipPos(rect);
+  const TOOLTIP_WIDTH = tooltipWidth();
+  const tooltip = computeTooltipPos(rect, TOOLTIP_WIDTH);
 
   const targetCenterX = rect.left + rect.width / 2;
   const targetCenterY = rect.top + rect.height / 2;
@@ -125,13 +129,14 @@ function IntroductionOverlay({ step, index, total, isFirst, isLast, onNext, onBa
 
       {/* Tooltip kartochka */}
       <div
-        className="fixed w-96 bg-white rounded-2xl shadow-xl p-6 flex flex-col gap-3 transition-all duration-300"
-        style={{ top: tooltip.top, bottom: tooltip.bottom, left: tooltip.left }}
+        className="fixed bg-white dark:bg-night-900 rounded-2xl shadow-xl dark:shadow-none p-6 flex flex-col gap-3 transition-all duration-300"
+        style={{ top: tooltip.top, bottom: tooltip.bottom, left: tooltip.left, width: TOOLTIP_WIDTH }}
       >
-        <p className="text-lg font-semibold text-slate-800">{t(step.titleKey)}</p>
-        <p className="text-[15px] text-slate-500 leading-relaxed">{t(step.descriptionKey)}</p>
+        <p className="text-lg font-semibold text-slate-800 dark:text-slate-100">{t(step.titleKey)}</p>
+        <p className="text-[15px] text-slate-500 dark:text-slate-400 leading-relaxed">{t(step.descriptionKey)}</p>
+        {step.preview && <HelpMenuPreview active={step.preview} />}
         <div className="flex items-center justify-between mt-2">
-          <span className="text-sm text-slate-400 tabular-nums">
+          <span className="text-sm text-slate-400 dark:text-slate-500 tabular-nums">
             {index + 1}/{total}
           </span>
           <div className="flex items-center gap-2">
@@ -146,6 +151,44 @@ function IntroductionOverlay({ step, index, total, isFirst, isLast, onNext, onBa
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// "?" menyusining kichik namunasi (components/HelpMenu.jsx bilan bir xil
+// bandlar, ikonka va ranglar) — shu bosqichga tegishli band ajratiladi.
+const PREVIEW_ITEMS = [
+  { key: "guide", icon: HiBookOpen, labelKey: "help.guide", iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400" },
+  { key: "video", icon: HiPlayCircle, labelKey: "help.video", iconClass: "bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400" },
+  { key: "chat", icon: HiChatBubbleLeftRight, labelKey: "help.chat", iconClass: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
+];
+
+function HelpMenuPreview({ active }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-night-800 border border-slate-100 dark:border-night-700" aria-hidden="true">
+      <span className="flex items-center gap-1.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <HiQuestionMarkCircle className="text-sm" />
+        {t("help.title")}
+      </span>
+      {PREVIEW_ITEMS.map((item) => {
+        const on = item.key === active;
+        return (
+          <div
+            key={item.key}
+            className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm ${
+              on
+                ? "bg-white dark:bg-night-900 ring-2 ring-violet-500 text-slate-800 dark:text-slate-100 font-semibold"
+                : "text-slate-400 dark:text-slate-500"
+            }`}
+          >
+            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${on ? item.iconClass : "bg-slate-100 dark:bg-night-700"}`}>
+              <item.icon className="text-base" />
+            </span>
+            {t(item.labelKey)}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -75,9 +75,8 @@ export default function useSendQrCard() {
     return [{
       label: sending ? t("student.qrSending") : t("student.qrSendAction"),
       icon: HiPaperAirplane,
-      iconClass: "bg-sky-50 text-sky-600",
+      iconClass: "bg-sky-50 dark:bg-sky-500/15 text-sky-600 dark:text-sky-400",
       disabled: !sendable || Boolean(sendingId),
-      hint: sendable ? undefined : t("student.qrSendNoTelegramHint"),
       onClick: () => send(student),
     }];
   };

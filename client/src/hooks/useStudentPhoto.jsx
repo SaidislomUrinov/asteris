@@ -6,7 +6,7 @@ import Button from "../ui/Button";
 import useClosingValue from "./useClosingValue";
 import { api } from "../utils/fetching";
 import { errorMsg, successMsg } from "../utils/alert";
-import { downscaleImage } from "../utils/studentPhoto";
+import { uploadStudentPhoto } from "../utils/studentPhoto";
 
 /**
  * O'quvchi rasmini yuklash/olib tashlash oqimi bitta joyda
@@ -49,13 +49,8 @@ export default function useStudentPhoto(onUpdated) {
     busyRef.current = true;
     setBusyId(student._id);
     try {
-      const body = new FormData();
-      const prepared = await downscaleImage(file);
-      body.append("photo", prepared, prepared.name || file.name || "photo.jpg");
-      const res = await api.put(`/students/${student._id}/photo`, body);
-      const { ok, msg, data } = res.data;
-      if (!ok) throw new Error(msg);
-      onUpdated?.(student._id, data?.photo || "");
+      const { msg, photo } = await uploadStudentPhoto(student._id, file);
+      onUpdated?.(student._id, photo);
       successMsg(msg);
     } catch (error) {
       errorMsg(error.message);
@@ -99,7 +94,7 @@ export default function useStudentPhoto(onUpdated) {
       {
         label: student.photo ? t("student.photoReplace") : t("student.photoAdd"),
         icon: HiCamera,
-        iconClass: "bg-indigo-50 text-indigo-600",
+        iconClass: "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
         disabled: busy,
         onClick: () => pick(student),
       },
@@ -108,7 +103,7 @@ export default function useStudentPhoto(onUpdated) {
             {
               label: t("student.photoRemove"),
               icon: HiTrash,
-              iconClass: "bg-red-50 text-red-600",
+              iconClass: "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400",
               disabled: busy,
               onClick: () => askRemove(student),
             },

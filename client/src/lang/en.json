@@ -924,7 +924,21 @@
     "photoUpdated": "Photo saved",
     "photoRemoved": "Photo removed",
     "photoRequired": "No photo selected",
-    "photoInvalid": "The file is not an image or can't be read"
+    "photoInvalid": "The file is not an image or can't be read",
+    "photoTake": "Take photo",
+    "photoChoose": "Choose file",
+    "photoRetake": "Retake",
+    "photoHint": "Optional — you can add a photo later",
+    "photoChooseInstead": "Choose a photo from a file",
+    "cameraDenied": "Camera access was denied",
+    "cameraUnavailable": "No camera found or it doesn't work in this browser",
+    "photoSaveFailed": "Student added, but the photo wasn't saved — add it later from the profile",
+    "cameraCapture": "Capture",
+    "cameraSwitch": "Switch camera",
+    "callWho": "Who should we call?",
+    "callStudent": "Student",
+    "callParent": "Parent",
+    "transferMenu": "Move to group"
   },
   "import": {
     "buttonLabel": "Import from Excel",
@@ -1769,15 +1783,15 @@
     "done": "Got it",
     "navbar": {
       "title": "Main menu",
-      "description": "You can navigate to any section from here."
+      "description": "All sections are here. Finance, Schedule and Settings have tabs inside — for example Revenue, Expenses, Salary and Reports live under one «Finance» item."
     },
-    "notifications": {
-      "title": "Notifications",
-      "description": "News and important events appear here."
+    "video": {
+      "title": "Video tutorials",
+      "description": "A video showing how each page works is in this «?» menu. The video for the open page is picked automatically."
     },
-    "help": {
-      "title": "Help",
-      "description": "Use this button to open the current page guide, video tutorial and support chat."
+    "chat": {
+      "title": "Support chat",
+      "description": "If you have a question or a problem, write to us via Support chat in the «?» menu — the reply arrives right here."
     }
   },
   "tariffFeatures": {
@@ -2137,5 +2151,9 @@
     "guide": "Page guide",
     "video": "Video tutorial",
     "chat": "Support chat"
+  },
+  "theme": {
+    "toDark": "Dark mode",
+    "toLight": "Light mode"
   }
 }

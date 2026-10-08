@@ -1,4 +1,4 @@
-import { API } from "./fetching";
+import { API, api } from "./fetching";
 
 // Rasm manzili: to'liq URL (http/blob:/data:) — o'zgarishsiz, aks holda
 // serverdagi nisbiy yo'l (`/uploads/...`) — API originiga ulanadi.
@@ -58,4 +58,23 @@ export async function downscaleImage(file) {
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+/**
+ * Rasmni kichraytirib `PUT /students/:id/photo` (multipart `photo`) ga
+ * yuboradi (docs/API_CONTRACT_student_photo.md §3). Xatoda `Error(msg)`
+ * otadi — chaqiruvchi o'zi qanday xabar ko'rsatishni hal qiladi.
+ *
+ * @param {string} studentId
+ * @param {File|Blob} file
+ * @returns {Promise<{ msg: string, photo: string }>}
+ */
+export async function uploadStudentPhoto(studentId, file) {
+  const body = new FormData();
+  const prepared = await downscaleImage(file);
+  body.append("photo", prepared, prepared.name || file.name || "photo.jpg");
+  const res = await api.put(`/students/${studentId}/photo`, body);
+  const { ok, msg, data } = res.data;
+  if (!ok) throw new Error(msg);
+  return { msg, photo: data?.photo || "" };
 }

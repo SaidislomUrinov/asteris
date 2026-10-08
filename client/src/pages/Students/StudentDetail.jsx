@@ -351,7 +351,7 @@ function StudentDetail() {
 
   if (notFound || error) {
     return (
-      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
         <HiUsers className="text-4xl" />
         <p className="text-sm">{t("student.notFound")}</p>
         <Button variant="outlined" onClick={() => navigate("/students")}>
@@ -379,7 +379,7 @@ function StudentDetail() {
       ? [{
           label: t("attendance.qrCardAction"),
           icon: HiQrCode,
-          iconClass: "bg-slate-50 text-slate-600",
+          iconClass: "bg-slate-50 dark:bg-night-800 text-slate-600 dark:text-slate-300",
           onClick: () => setQrOpen(true),
         }]
       : []),
@@ -387,8 +387,7 @@ function StudentDetail() {
       ? [{
           label: qrSendingId === student._id ? `${t("student.qrSendAction")}...` : t("student.qrSendAction"),
           icon: HiPaperAirplane,
-          iconClass: "bg-slate-50 text-slate-600",
-          hint: qrSendable ? undefined : t("student.qrSendNoTelegramHint"),
+          iconClass: "bg-slate-50 dark:bg-night-800 text-slate-600 dark:text-slate-300",
           disabled: !qrSendable || Boolean(qrSendingId),
           onClick: () => sendQr(student),
         }]
@@ -397,7 +396,7 @@ function StudentDetail() {
       ? [{
           label: t("certificate.issue"),
           icon: HiAcademicCap,
-          iconClass: "bg-violet-50 text-violet-600",
+          iconClass: "bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400",
           onClick: () => setCertificateOpen(true),
         }]
       : []),
@@ -427,7 +426,7 @@ function StudentDetail() {
           subtitle={student.phone}
           accent="blue"
         >
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-3 border-t border-slate-100">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-3 border-t border-slate-100 dark:border-night-700">
             <InfoMeta icon={<HiPhone />}>{student.parentPhone || "—"}</InfoMeta>
             {/* Telegram raqami telefondan farq qilsa — alohida qator
                 (API_CONTRACT_telegram_phone.md §7). */}
@@ -463,11 +462,11 @@ function StudentDetail() {
         />
       </div>
 
-      <p className="font-semibold text-slate-800">{t("nav.groups")}</p>
+      <p className="font-semibold text-slate-800 dark:text-slate-100">{t("nav.groups")}</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {student.groups.length === 0 ? (
-          <div className="col-span-full flex items-center justify-center w-full py-10 text-slate-400 text-sm">
+          <div className="col-span-full flex items-center justify-center w-full py-10 text-slate-400 dark:text-slate-500 text-sm">
             {t("group.empty")}
           </div>
         ) : (
@@ -478,14 +477,14 @@ function StudentDetail() {
             return (
               <div
                 key={entry._id}
-                className={`flex flex-col gap-3 p-4 rounded-xl border bg-white ${
-                  hasDebt ? "border-red-300" : "border-slate-200"
+                className={`flex flex-col gap-3 p-4 rounded-xl border bg-white dark:bg-night-900 ${
+                  hasDebt ? "border-red-300" : "border-slate-200 dark:border-night-700"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-col gap-1 min-w-0">
                     <p
-                      className="font-semibold text-slate-800 hover:text-blue-600 cursor-pointer truncate"
+                      className="font-semibold text-slate-800 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer truncate"
                       onClick={() => navigate(`/groups/${entry.group}`)}
                     >
                       {groupLabel(entry.group)}
@@ -520,7 +519,7 @@ function StudentDetail() {
                           ? [{
                               label: t("student.openingDebtMenu"),
                               icon: HiOutlineClipboardDocumentList,
-                              iconClass: "bg-slate-50 text-slate-600",
+                              iconClass: "bg-slate-50 dark:bg-night-800 text-slate-600 dark:text-slate-300",
                               onClick: () => setOpeningTarget(entry),
                             }]
                           : []),
@@ -528,7 +527,7 @@ function StudentDetail() {
                           ? [{
                               label: t("archive.archive"),
                               icon: HiArchiveBox,
-                              iconClass: "bg-orange-50 text-orange-600",
+                              iconClass: "bg-orange-50 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400",
                               onClick: () => setArchiveTarget(entry),
                             }]
                           : []),
@@ -536,7 +535,7 @@ function StudentDetail() {
                           ? [{
                               label: t("student.leaveGroup"),
                               icon: HiUserMinus,
-                              iconClass: "bg-red-50 text-red-600",
+                              iconClass: "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400",
                               onClick: () => setLeaveTarget(entry),
                             }]
                           : []),
@@ -546,7 +545,7 @@ function StudentDetail() {
                         <span className="relative inline-flex">
                           <DropMenu items={menuItems} />
                           {entry.status === "active" && can("student:update") && entry.openingDebtRemaining > 0 && (
-                            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white pointer-events-none" />
+                            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-night-900 pointer-events-none" />
                           )}
                         </span>
                       );
@@ -554,18 +553,18 @@ function StudentDetail() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 text-sm text-slate-500">
-                  <HiBuildingOffice2 className="text-slate-400 shrink-0" />
+                <div className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+                  <HiBuildingOffice2 className="text-slate-400 dark:text-slate-500 shrink-0" />
                   <span className="truncate">{centerMap[entry.center] || "—"}</span>
-                  <span className="ml-auto shrink-0 text-slate-400">
+                  <span className="ml-auto shrink-0 text-slate-400 dark:text-slate-500">
                     {maskMoney(entry.price, hideFinance)} {t("student.somSuffix")}
                   </span>
                 </div>
 
                 {/* Guruhdan guruhga o'tkazish zanjiri (API_CONTRACT_student_transfer.md) */}
                 {(entry.transferredTo || entry.transferredFrom?.length > 0) && (
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <HiOutlineArrowsRightLeft className="text-slate-400 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                    <HiOutlineArrowsRightLeft className="text-slate-400 dark:text-slate-500 shrink-0" />
                     <span className="truncate">
                       {entry.transferredTo
                         ? t("student.transferredToGroup", { group: groupLabel(entry.transferredTo.group) })
@@ -577,20 +576,20 @@ function StudentDetail() {
                 )}
 
                 {entry.groupStatus === "pending" && !hasDebt ? (
-                  <div className="p-2.5 rounded-lg bg-slate-50 text-sm text-slate-400">
+                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-night-800 text-sm text-slate-400 dark:text-slate-500">
                     {t("student.debt")}: {maskMoney(0, hideFinance)} {t("student.somSuffix")}
                     {entry.paidAmount > 0 ? ` — ${t("student.creditForFuture")}` : ""}
                   </div>
                 ) : (
                   <>
                     {entry.groupStatus !== "pending" && (
-                    <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-slate-50">
-                      <span className="text-xs text-slate-400">{t("student.currentMonthLabel")}</span>
+                    <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-slate-50 dark:bg-night-800">
+                      <span className="text-xs text-slate-400 dark:text-slate-500">{t("student.currentMonthLabel")}</span>
                       <span
                         className={`text-sm font-semibold ${
                           (entry.currentCyclePrice || 0) - (entry.paidForCurrentCycle || 0) > 0
-                            ? "text-red-600"
-                            : "text-slate-800"
+                            ? "text-red-600 dark:text-red-400"
+                            : "text-slate-800 dark:text-slate-100"
                         }`}
                       >
                         {maskMoney(entry.paidForCurrentCycle, hideFinance)} /{" "}
@@ -601,12 +600,12 @@ function StudentDetail() {
 
                     <div
                       className={`flex items-center justify-between gap-2 p-2.5 rounded-lg ${
-                        hasDebt ? "bg-red-50" : "bg-slate-50"
+                        hasDebt ? "bg-red-50 dark:bg-red-500/15" : "bg-slate-50 dark:bg-night-800"
                       }`}
                     >
                       <div className="flex flex-col gap-0.5 min-w-0">
-                        <span className="text-xs text-slate-400">{t("student.totalDebtLabel")}</span>
-                        <span className={`text-sm font-semibold ${hasDebt ? "text-red-600" : "text-slate-800"}`}>
+                        <span className="text-xs text-slate-400 dark:text-slate-500">{t("student.totalDebtLabel")}</span>
+                        <span className={`text-sm font-semibold ${hasDebt ? "text-red-600 dark:text-red-400" : "text-slate-800 dark:text-slate-100"}`}>
                           {hasDebt
                             ? maskMoney(entry.debt, hideFinance) + " " + t("student.somSuffix")
                             : t("student.noDebt")}
@@ -743,18 +742,18 @@ function StudentDetail() {
       >
         {!livePaymentsEntry ||
         (livePaymentsEntry.payments.length === 0 && !livePaymentsEntry.transferredPayments?.length) ? (
-          <p className="text-sm text-slate-400 text-center py-4">{t("student.noPayments")}</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-4">{t("student.noPayments")}</p>
         ) : (
           <div className="flex flex-col gap-1.5 w-full">
             {livePaymentsEntry.payments.map((p) => (
               <div
                 key={p._id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 px-3 py-2 rounded-lg bg-slate-50 text-sm"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-night-800 text-sm"
               >
                 <div className="flex flex-wrap items-center gap-2 min-w-0">
                   <span
                     className={`font-semibold ${
-                      p.status === "paid" ? "text-slate-800" : "text-slate-400 line-through"
+                      p.status === "paid" ? "text-slate-800 dark:text-slate-100" : "text-slate-400 dark:text-slate-500 line-through"
                     }`}
                   >
                     {maskMoney(p.amount, hideFinance)} {t("student.somSuffix")}
@@ -773,7 +772,7 @@ function StudentDetail() {
                   {p.forMonthHistory?.length > 0 &&
                     (p.forMonthHistory[0].from || monthOfUnix(p.date)) !== (p.forMonth || monthOfUnix(p.date)) && (
                     <span
-                      className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-amber-100 text-amber-600 shrink-0"
+                      className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0"
                       title={`${t("student.paymentMovedFrom")}: ${formatMonthName(
                         p.forMonthHistory[0].from || monthOfUnix(p.date),
                         monthNames,
@@ -783,7 +782,7 @@ function StudentDetail() {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center justify-end gap-2 text-slate-400 shrink-0">
+                <div className="flex items-center justify-end gap-2 text-slate-400 dark:text-slate-500 shrink-0">
                   <span className="flex items-center gap-1 text-xs mr-auto sm:mr-0">
                     <HiCalendar /> {formatUnix(p.date)}
                   </span>
@@ -829,26 +828,26 @@ function StudentDetail() {
                 qoldiq esa bu a'zolikka avans/qarz sifatida o'tgan. */}
             {livePaymentsEntry.transferredPayments?.length > 0 && (
               <>
-                <span className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                <span className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   {t("student.transferredPayments")}
                 </span>
                 {livePaymentsEntry.transferredPayments.map((p) => (
                   <div
                     key={p._id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 px-3 py-2 rounded-lg border border-dashed border-slate-200 text-sm"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 px-3 py-2 rounded-lg border border-dashed border-slate-200 dark:border-night-700 text-sm"
                   >
                     <div className="flex flex-wrap items-center gap-2 min-w-0">
                       <span
                         className={`font-semibold ${
-                          p.status === "paid" ? "text-slate-600" : "text-slate-400 line-through"
+                          p.status === "paid" ? "text-slate-600 dark:text-slate-300" : "text-slate-400 dark:text-slate-500 line-through"
                         }`}
                       >
                         {maskMoney(p.amount, hideFinance)} {t("student.somSuffix")}
                       </span>
                       <Chip value={t(`student.paymentType${capitalize(p.type)}`)} color="slate" variant="ghost" />
-                      <span className="text-xs text-slate-400 truncate">{groupLabel(p.fromGroup)}</span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500 truncate">{groupLabel(p.fromGroup)}</span>
                     </div>
-                    <span className="flex items-center gap-1 text-xs text-slate-400 shrink-0">
+                    <span className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 shrink-0">
                       <HiCalendar /> {formatUnix(p.date)}
                     </span>
                   </div>
@@ -867,7 +866,7 @@ function StudentDetail() {
         {attendanceLoading ? (
           <Loading height="15vh" />
         ) : attendanceHistory.length === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-4">{t("student.noAttendance")}</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-4">{t("student.noAttendance")}</p>
         ) : (
           <AttendanceCalendar records={attendanceHistory} />
         )}

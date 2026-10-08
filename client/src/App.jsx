@@ -14,6 +14,7 @@ import SubscriptionExpiredBanner from "./components/SubscriptionExpiredBanner";
 import SubscriptionBlockedModal from "./components/SubscriptionBlockedModal";
 import GlobalQrScanner from "./components/GlobalQrScanner";
 import Introduction from "./components/Introduction/Introduction";
+import { INTRO_VERSION, readIntroVersion } from "./components/Introduction/steps";
 import useNewsSync from "./hooks/useNewsSync";
 import ReceptionHome from "./pages/ReceptionHome";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
@@ -284,7 +285,8 @@ function App() {
       {/* Apparat QR skaner — istalgan sahifada ishlaydi */}
       <GlobalQrScanner />
       {/* Qo'llab-quvvatlash chati — Owner/Staff har doim ko'radi, permission talab qilinmaydi. */}
-      {!introSeen && <Introduction />}
+      {/* Yangi foydalanuvchi YOKI tur dizayn bilan yangilangan (versiya). */}
+      {(!introSeen || readIntroVersion() < INTRO_VERSION) && <Introduction />}
       {/* Yangiliklar: store sinxroni + o'qilmaganlar oynasi (API_CONTRACT_news.md §5).
           Faqat shu autentifikatsiyadan keyingi layout'da — login'da yo'q. */}
       <NewsSync />

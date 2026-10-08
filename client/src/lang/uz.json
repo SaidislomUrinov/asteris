@@ -924,7 +924,21 @@
     "photoUpdated": "Rasm saqlandi",
     "photoRemoved": "Rasm olib tashlandi",
     "photoRequired": "Rasm tanlanmadi",
-    "photoInvalid": "Fayl rasm emas yoki uni o'qib bo'lmadi"
+    "photoInvalid": "Fayl rasm emas yoki uni o'qib bo'lmadi",
+    "photoTake": "Suratga olish",
+    "photoChoose": "Fayldan tanlash",
+    "photoRetake": "Qayta olish",
+    "photoHint": "Ixtiyoriy — rasmni keyin ham qo'shish mumkin",
+    "photoChooseInstead": "Rasmni fayldan tanlang",
+    "cameraDenied": "Kameraga ruxsat berilmadi",
+    "cameraUnavailable": "Kamera topilmadi yoki bu brauzerda ishlamaydi",
+    "photoSaveFailed": "O'quvchi qo'shildi, lekin rasm saqlanmadi — keyin profildan qo'shing",
+    "cameraCapture": "Olish",
+    "cameraSwitch": "Kamerani almashtirish",
+    "callWho": "Kimga qo'ng'iroq qilamiz?",
+    "callStudent": "O'quvchi",
+    "callParent": "Ota-ona",
+    "transferMenu": "Boshqa guruhga"
   },
   "import": {
     "buttonLabel": "Excel'dan import",
@@ -1769,15 +1783,15 @@
     "done": "Tushunarli",
     "navbar": {
       "title": "Asosiy menyu",
-      "description": "Bu yerdan barcha bo'limlarga o'tishingiz mumkin."
+      "description": "Barcha bo'limlar shu yerda. Moliya, Jadval va Sozlamalar ichida tablar bor — masalan Tushumlar, Xarajatlar, Ish haqi va Hisobotlar bitta «Moliya» bandida."
     },
-    "notifications": {
-      "title": "Bildirishnomalar",
-      "description": "Yangiliklar va muhim voqealar shu yerda ko'rinadi."
+    "video": {
+      "title": "Video darsliklar",
+      "description": "Har bir sahifa qanday ishlashini ko'rsatuvchi video darslik shu «?» menyusida. Ochiq sahifaga mos video o'zi tanlanadi."
     },
-    "help": {
-      "title": "Yordam",
-      "description": "Shu tugma orqali joriy sahifa qo'llanmasi, video darslik va yordam chatini ochasiz."
+    "chat": {
+      "title": "Yordam chati",
+      "description": "Savol yoki muammo bo'lsa, «?» menyusidagi Yordam chati orqali bizga yozing — javob shu yerda keladi."
     }
   },
   "tariffFeatures": {
@@ -2137,5 +2151,9 @@
     "guide": "Sahifa qo'llanmasi",
     "video": "Video darslik",
     "chat": "Yordam chati"
+  },
+  "theme": {
+    "toDark": "Tungi rejim",
+    "toLight": "Kunduzgi rejim"
   }
 }

@@ -76,7 +76,8 @@ import {
 import useCan from "../../hooks/useCan";
 import useFeature from "../../hooks/useFeature";
 import useSendQrCard from "../../hooks/useSendQrCard";
-import useStudentPhoto from "../../hooks/useStudentPhoto";
+import StudentPhotoAvatar from "../../ui/StudentPhotoAvatar";
+import CallChooserDialog from "./CallChooserDialog";
 import { BADGE_FEATURE } from "../../utils/badges";
 import useHideFinance from "../../hooks/useHideFinance";
 import useClosingValue from "../../hooks/useClosingValue";
@@ -103,8 +104,8 @@ const STATUS_CHIP_COLOR = { pending: "orange", active: "emerald", finished: "sla
 
 // Mobil "xavfli amallar" menyusidagi ikonka foni — tugma rangiga mos.
 const RISKY_ICON_CLASS = {
-  orange: "bg-orange-50 text-orange-600",
-  red: "bg-red-50 text-red-600",
+  orange: "bg-orange-50 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400",
+  red: "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400",
 };
 
 // Guruh detali butun guruhni bitta so'rovda oladi (server chegarasi 1000).
@@ -204,13 +205,13 @@ function GroupDetail({ groupId, live = false }) {
   const [students, setStudents] = useState([]);
   // O'quvchi rasmi — barcha rollar (o'qituvchi ham, faqat o'z guruhida;
   // cheklovni server qo'yadi). Javob darhol qatorga qo'llanadi.
-  const {
-    menuItems: photoItems,
-    busyId: photoBusyId,
-    element: photoElement,
-  } = useStudentPhoto((studentId, photo) =>
-    setStudents((prev) => prev.map((st) => (st._id === studentId ? { ...st, photo } : st))),
-  );
+  // Rasm almashtirish qator avatarining o'zida (StudentPhotoAvatar) —
+  // javob darhol qatorga qo'llanadi.
+  const applyStudentPhoto = (studentId, photo) =>
+    setStudents((prev) => prev.map((st) => (st._id === studentId ? { ...st, photo } : st)));
+  // "Kimga qo'ng'iroq qilamiz?" — ota-ona raqami bo'lsa (CallChooserDialog).
+  const [callTarget, setCallTarget] = useState(null);
+  const callTargetView = useClosingValue(callTarget);
   const [studentsLoading, setStudentsLoading] = useState(true);
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [enrollKey, setEnrollKey] = useState(0);
@@ -701,7 +702,7 @@ function GroupDetail({ groupId, live = false }) {
 
   if (notFound || error) {
     return (
-      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
         <HiUserGroup className="text-4xl" />
         <p className="text-sm">{t("group.notFound")}</p>
         <Button variant="outlined" onClick={() => navigate("/groups")}>
@@ -984,7 +985,7 @@ function GroupDetail({ groupId, live = false }) {
                 icon: action.icon,
                 iconClass: action.risky
                   ? RISKY_ICON_CLASS[action.color]
-                  : "bg-violet-50 text-violet-600",
+                  : "bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400",
                 onClick: action.onClick,
               }))}
             />
@@ -1069,7 +1070,7 @@ function GroupDetail({ groupId, live = false }) {
       {/* Yagona tab qatori: o'quvchilar ro'yxati, davomat, baholar, vazifa,
           dastur va statistika (avval ikki qavat edi: O'quvchilar|Statistika
           + ichki tablar). */}
-      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 max-w-full overflow-x-auto self-start shrink-0">
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-night-800 max-w-full overflow-x-auto self-start shrink-0">
         {studentTabs.map((tab) => (
           <button
             key={tab.key}
@@ -1077,8 +1078,8 @@ function GroupDetail({ groupId, live = false }) {
             onClick={() => setStudentTab(tab.key)}
             className={`px-3 h-8 shrink-0 whitespace-nowrap rounded-lg text-[13px] font-semibold cursor-pointer transition-colors duration-150 ${
               activeTab === tab.key
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-white dark:bg-night-900 text-slate-900 dark:text-slate-100 shadow-sm dark:shadow-none"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
             }`}
           >
             {tab.label}
@@ -1122,9 +1123,9 @@ function GroupDetail({ groupId, live = false }) {
       )}
 
       {activeTab !== "stats" && (
-      <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 bg-white">
+      <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
         {isSortableTab(activeTab) && (
-        <div className="flex items-center justify-end gap-2 flex-wrap pb-3 border-b border-slate-100">
+        <div className="flex items-center justify-end gap-2 flex-wrap pb-3 border-b border-slate-100 dark:border-night-700">
             <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
               {Object.keys(ranks).length > 0 && <RankPeriodLabel />}
               <Select
@@ -1166,7 +1167,7 @@ function GroupDetail({ groupId, live = false }) {
         {/* Oxirgi import haqida ingichka eslatma — API_CONTRACT_import_undo.md
             §1-band. `canUndo:false` bo'lsa tugma o'rniga sabab ko'rsatiladi. */}
         {activeTab === "general" && importBatch && (
-          <div className="flex items-center gap-2 flex-wrap px-3 py-2 rounded-lg bg-amber-50 border border-amber-100 text-xs text-amber-700">
+          <div className="flex items-center gap-2 flex-wrap px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-500/15 border border-amber-100 dark:border-amber-500/30 text-xs text-amber-700 dark:text-amber-400">
             <HiInformationCircle className="shrink-0 text-amber-500" />
             <span className="flex-1">
               {t("import.lastImportHint", {
@@ -1178,7 +1179,7 @@ function GroupDetail({ groupId, live = false }) {
               <button
                 type="button"
                 onClick={() => setUndoBatchOpen(true)}
-                className="flex items-center gap-1 font-semibold text-amber-800 hover:text-amber-900 cursor-pointer shrink-0"
+                className="flex items-center gap-1 font-semibold text-amber-800 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-400 cursor-pointer shrink-0"
               >
                 <HiArrowUturnLeft className="shrink-0" />
                 {t("import.undoButton")}
@@ -1234,19 +1235,19 @@ function GroupDetail({ groupId, live = false }) {
             <Loading />
           </div>
         ) : activeStudents.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center w-full text-slate-400 text-sm">
+          <div className="flex flex-1 items-center justify-center w-full text-slate-400 dark:text-slate-500 text-sm">
             {t("student.empty")}
           </div>
         ) : (
           // Telefonda (< sm) jadval emas — alohida kartalar ro'yxati: tashqi
           // ramka yo'q, kartalar orasida bo'sh joy.
-          <div className="flex flex-col w-full overflow-hidden rounded-lg border border-slate-100 max-sm:gap-2.5 max-sm:overflow-visible max-sm:rounded-none max-sm:border-0">
+          <div className="flex flex-col w-full overflow-hidden rounded-lg border border-slate-100 dark:border-night-700 max-sm:gap-2.5 max-sm:overflow-visible max-sm:rounded-none max-sm:border-0">
             <div
               // 5 ustunli (moliyaviy) jadval faqat xl'da: planshet/kichik
               // noutbukda birinchi ustunga ~150px qolib, ism kesilar va telefon
               // + Telegram belgilari summa ustiga tushardi. O'qituvchining 3
               // ustunli qatori sm'dan sig'adi.
-              className={`hidden gap-2 px-3 py-2 bg-slate-50 text-[11px] font-semibold uppercase text-slate-400 ${
+              className={`hidden gap-2 px-3 py-2 bg-slate-50 dark:bg-night-800 text-[11px] font-semibold uppercase text-slate-400 dark:text-slate-500 ${
                 isTeacher
                   ? "sm:grid grid-cols-[1fr_140px_44px]"
                   : "xl:grid grid-cols-[1fr_190px_120px_140px_44px]"
@@ -1267,7 +1268,7 @@ function GroupDetail({ groupId, live = false }) {
               return (
                 <div
                   key={s._id}
-                  className={`relative grid grid-cols-1 gap-2.5 px-2 py-3 border-t border-slate-100 hover:bg-slate-50 transition-colors max-sm:gap-2.5 max-sm:p-3 max-sm:rounded-2xl max-sm:border max-sm:border-slate-200/80 max-sm:bg-white max-sm:hover:bg-white ${
+                  className={`relative grid grid-cols-1 gap-2.5 px-2 py-3 border-t border-slate-100 dark:border-night-700 hover:bg-slate-50 dark:hover:bg-night-800 transition-colors max-sm:gap-2.5 max-sm:p-3 max-sm:rounded-2xl max-sm:border max-sm:border-slate-200/80 dark:max-sm:border-night-700/80 max-sm:bg-white dark:max-sm:bg-night-900 max-sm:hover:bg-white dark:max-sm:hover:bg-night-900 ${
                     isTeacher
                       ? "sm:grid-cols-[1fr_140px_44px] sm:items-center sm:gap-2 sm:px-3 sm:py-2.5"
                       : "xl:grid-cols-[1fr_190px_120px_140px_44px] xl:items-center xl:gap-2 xl:px-3 xl:py-2.5"
@@ -1275,14 +1276,29 @@ function GroupDetail({ groupId, live = false }) {
                 >
                   <div className={`flex items-center gap-3 min-w-0 pr-11 ${isTeacher ? "sm:pr-0" : "xl:pr-0"}`}>
                     <RowNumber value={index + 1} />
-                    <Avatar
-                      user={{ _id: s._id, name: s.fullName, avatar: s.photo }}
+                    {/* Avatar — rasm qo'yish/almashtirishning kirish nuqtasi
+                        (oylik davomatdagi kabi); "⋮" menyusida takrorlanmaydi. */}
+                    <StudentPhotoAvatar
+                      student={s}
+                      onUpdated={applyStudentPhoto}
                       size={isPhone ? 36 : 38}
-                      busy={photoBusyId === s._id}
+                      rounded="rounded-full"
                     />
                     <div className="flex flex-col min-w-0">
                       <span className="flex items-center gap-1.5 min-w-0">
-                        <span className="font-semibold text-slate-800 truncate">{s.fullName}</span>
+                        {/* Ism — o'quvchi sahifasiga (o'qituvchida — yutuqlar,
+                            faqat badge tarifida). "Batafsil" menyu bandi o'rnida. */}
+                        {!isTeacher || hasFeature(BADGE_FEATURE) ? (
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/students/${s._id}`)}
+                            className="font-semibold text-slate-800 dark:text-slate-100 truncate text-left cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 hover:underline underline-offset-2 transition-colors"
+                          >
+                            {s.fullName}
+                          </button>
+                        ) : (
+                          <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">{s.fullName}</span>
+                        )}
                         {/* Telefonda medal va yutuq belgilari yashirin — o'rin pastki qatorda. */}
                         <span className="contents max-sm:hidden">
                           <RankMedal position={ranks[s._id]} size={21} />
@@ -1292,7 +1308,7 @@ function GroupDetail({ groupId, live = false }) {
                       <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 min-w-0">
                         {/* Telefonda o'rin — telefon raqami oldida: ism qisqarmasin. */}
                         <RankChip position={ranks[s._id]} />
-                        <span className="text-xs text-slate-400 shrink-0">{s.phone}</span>
+                        <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">{s.phone}</span>
                         {/* Mobilda Telegram alohida ustunda (pastda). */}
                         <span className={isTeacher ? "hidden sm:inline-flex" : "hidden xl:inline-flex"}>
                           <TelegramStatusBadges student={s.studentTelegram} parent={s.parentTelegram} />
@@ -1315,22 +1331,22 @@ function GroupDetail({ groupId, live = false }) {
                   <div className="sm:hidden grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-2.5">
                     {!isTeacher && (
                       <div className="flex flex-col gap-1 min-w-0">
-                        <span className="text-[11px] font-medium text-slate-400">{t("student.debt")}</span>
+                        <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">{t("student.debt")}</span>
                         {entry.groupStatus === "pending" ? (
-                          <span className="text-sm font-semibold text-slate-400">—</span>
+                          <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">—</span>
                         ) : hasDebt ? (
-                          <span className="text-[15px] font-bold leading-tight text-red-600 whitespace-nowrap">
+                          <span className="text-[15px] font-bold leading-tight text-red-600 dark:text-red-400 whitespace-nowrap">
                             {maskMoney(entry.currentCyclePrice - entry.paidForCurrentCycle, hideFinance)}{" "}
                             <span className="text-xs font-medium text-red-400">{t("student.somSuffix")}</span>
                           </span>
                         ) : (
-                          <span className="text-sm font-semibold text-emerald-600">{t("student.noDebt")}</span>
+                          <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{t("student.noDebt")}</span>
                         )}
                       </div>
                     )}
 
                     <div onClick={(e) => e.stopPropagation()} className={`flex flex-col gap-1 min-w-0 ${isTeacher ? "col-span-2" : ""}`}>
-                      <span className="text-[11px] font-medium text-slate-400">{t("group.attendanceColumn")}</span>
+                      <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">{t("group.attendanceColumn")}</span>
                       <AttendanceStatusCell
                         status={attendanceMarks[s._id]}
                         isToday={!!todayLesson}
@@ -1342,7 +1358,7 @@ function GroupDetail({ groupId, live = false }) {
                     </div>
 
                     <div className="col-span-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="text-[11px] font-medium text-slate-400">{t("telegram.title")}</span>
+                      <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">{t("telegram.title")}</span>
                       <TelegramStatusBadges
                         className="flex-wrap"
                         student={s.studentTelegram}
@@ -1353,7 +1369,7 @@ function GroupDetail({ groupId, live = false }) {
 
                   {/* ── Planshet (sm..xl): ustunli blok — o'zgarishsiz. */}
                   <div
-                    className={`max-sm:hidden grid gap-y-2 rounded-lg bg-slate-50/70 px-1 py-2 ${
+                    className={`max-sm:hidden grid gap-y-2 rounded-lg bg-slate-50/70 dark:bg-night-800/70 px-1 py-2 ${
                       isTeacher
                         ? "grid-cols-2 sm:hidden"
                         : "grid-cols-[minmax(0,1fr)_112px] min-[390px]:grid-cols-[minmax(0,1fr)_112px_94px] xl:hidden"
@@ -1361,11 +1377,11 @@ function GroupDetail({ groupId, live = false }) {
                   >
                     {!isTeacher && (
                       <div className="flex flex-col gap-1 min-w-0 px-1.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 truncate">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 truncate">
                           {t("student.debt")}
                         </span>
                         {entry.groupStatus === "pending" ? (
-                          <span className="text-sm font-semibold text-slate-400">—</span>
+                          <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">—</span>
                         ) : hasDebt ? (
                           <span className="flex flex-col min-w-0 leading-tight">
                             <span className="text-sm font-bold text-red-500 truncate">
@@ -1374,16 +1390,16 @@ function GroupDetail({ groupId, live = false }) {
                             <span className="text-[11px] font-medium text-red-400">{t("student.somSuffix")}</span>
                           </span>
                         ) : (
-                          <span className="text-sm font-semibold text-emerald-600 truncate">{t("student.noDebt")}</span>
+                          <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 truncate">{t("student.noDebt")}</span>
                         )}
                       </div>
                     )}
 
                     <div
                       onClick={(e) => e.stopPropagation()}
-                      className={`flex flex-col gap-1 min-w-0 px-1.5 ${isTeacher ? "" : "border-l border-slate-200/70"}`}
+                      className={`flex flex-col gap-1 min-w-0 px-1.5 ${isTeacher ? "" : "border-l border-slate-200/70 dark:border-night-700/70"}`}
                     >
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 truncate">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 truncate">
                         {t("group.attendanceColumn")}
                       </span>
                       <AttendanceStatusCell
@@ -1399,11 +1415,11 @@ function GroupDetail({ groupId, live = false }) {
                     <div
                       className={`flex flex-col gap-1 min-w-0 px-1.5 ${
                         isTeacher
-                          ? "border-l border-slate-200/70"
-                          : "col-span-2 pt-2 border-t border-slate-200/70 min-[390px]:col-span-1 min-[390px]:pt-0 min-[390px]:border-t-0 min-[390px]:border-l"
+                          ? "border-l border-slate-200/70 dark:border-night-700/70"
+                          : "col-span-2 pt-2 border-t border-slate-200/70 dark:border-night-700/70 min-[390px]:col-span-1 min-[390px]:pt-0 min-[390px]:border-t-0 min-[390px]:border-l"
                       }`}
                     >
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 truncate">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 truncate">
                         {t("telegram.title")}
                       </span>
                       <TelegramStatusBadges
@@ -1417,9 +1433,9 @@ function GroupDetail({ groupId, live = false }) {
                   {/* ── Desktop jadval katakchalari (xl+ / o'qituvchida sm+) ── */}
                   <div className={isTeacher ? "hidden sm:contents" : "hidden xl:contents"}>
                     {!isTeacher && (
-                      <div className="text-sm font-semibold text-slate-800">
+                      <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                         {entry.groupStatus === "pending" ? (
-                          <span className="text-slate-400">
+                          <span className="text-slate-400 dark:text-slate-500">
                             {maskMoney(0, hideFinance)} / {maskMoney(0, hideFinance)} {t("student.somSuffix")}
                           </span>
                         ) : (
@@ -1458,7 +1474,7 @@ function GroupDetail({ groupId, live = false }) {
                               {
                                 label: t("student.addPayment"),
                                 icon: HiBanknotes,
-                                iconClass: "bg-emerald-50 text-emerald-600",
+                                iconClass: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
                                 onClick: () => setPayTarget({ student: s, entry }),
                               },
                             ]
@@ -1466,35 +1482,13 @@ function GroupDetail({ groupId, live = false }) {
                         {
                           label: t("student.callAction"),
                           icon: HiPhone,
-                          iconClass: "bg-blue-50 text-blue-600",
+                          iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
+                          // Ota-ona raqami bo'lsa — kimga ekani so'raladi.
                           onClick: () => {
-                            window.location.href = `tel:${s.phone}`;
+                            if (s.parentPhone && s.parentPhone !== s.phone) setCallTarget(s);
+                            else window.location.href = `tel:${s.phone}`;
                           },
                         },
-                        // O'quvchi kartochkasida to'lov tarixi va qarzdorlik
-                        // bor — o'qituvchi/yordamchiga ochilmaydi (backendda
-                        // ham 403, docs/teacher-scope-updates.md §3).
-                        ...(!isTeacher
-                          ? [
-                              {
-                                label: t("common.detail"),
-                                icon: HiEye,
-                                iconClass: "bg-slate-50 text-slate-600",
-                                onClick: () => navigate(`/students/${s._id}`),
-                              },
-                            ]
-                          : []),
-                        // O'qituvchiga — faqat yutuqlar sahifasi (o'z guruhlari).
-                        ...(isTeacher && hasFeature(BADGE_FEATURE)
-                          ? [
-                              {
-                                label: t("badge.action"),
-                                icon: HiTrophy,
-                                iconClass: "bg-amber-50 text-amber-600",
-                                onClick: () => navigate(`/students/${s._id}`),
-                              },
-                            ]
-                          : []),
                         // Tahrirlash — Students ro'yxatidagi bilan bir xil
                         // dialog, profilga kirmasdan (`student:update`).
                         ...(can("student:update")
@@ -1502,7 +1496,7 @@ function GroupDetail({ groupId, live = false }) {
                               {
                                 label: t("common.edit"),
                                 icon: HiPencilSquare,
-                                iconClass: "bg-blue-50 text-blue-600",
+                                iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
                                 onClick: () => setEditTarget({ student: s, entry }),
                               },
                             ]
@@ -1515,14 +1509,13 @@ function GroupDetail({ groupId, live = false }) {
                               {
                                 label: t("common.edit"),
                                 icon: HiPencilSquare,
-                                iconClass: "bg-blue-50 text-blue-600",
+                                iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
                                 onClick: () => setContactTarget(s),
                               },
                             ]
                           : []),
                         // QR kartani o'quvchi/ota-onaning Telegramiga yuborish.
                         ...qrSendItems(s),
-                        ...photoItems(s),
                         // Boshqa guruhga o'tkazish va guruhdan chiqarish —
                         // Resepshin/Boshliq ishi (`student:update`).
                         // O'qituvchi/yordamchida bu ruxsat yo'q, backend ham
@@ -1532,9 +1525,9 @@ function GroupDetail({ groupId, live = false }) {
                         hasFeature("student.transfer")
                           ? [
                               {
-                                label: t("student.transferAction"),
+                                label: t("student.transferMenu"),
                                 icon: HiArrowsRightLeft,
-                                iconClass: "bg-violet-50 text-violet-600",
+                                iconClass: "bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400",
                                 onClick: () => {
                                   setTransferTarget({ student: s, entry });
                                   setTransferKey((k) => k + 1);
@@ -1547,7 +1540,7 @@ function GroupDetail({ groupId, live = false }) {
                               {
                                 label: t("student.leaveGroup"),
                                 icon: HiUserMinus,
-                                iconClass: "bg-red-50 text-red-600",
+                                iconClass: "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400",
                                 onClick: () => setLeaveTarget({ student: s, entry }),
                               },
                             ]
@@ -1559,7 +1552,7 @@ function GroupDetail({ groupId, live = false }) {
                               {
                                 label: t("archive.archive"),
                                 icon: HiArchiveBox,
-                                iconClass: "bg-amber-50 text-amber-600",
+                                iconClass: "bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400",
                                 onClick: () => setArchiveStudent({ student: s, entry }),
                               },
                             ]
@@ -1611,7 +1604,7 @@ function GroupDetail({ groupId, live = false }) {
         />
       )}
 
-      {photoElement}
+      <CallChooserDialog open={Boolean(callTarget)} student={callTargetView} onClose={() => setCallTarget(null)} />
 
       {contactTargetView && (
         <StudentContactDialog
@@ -1720,18 +1713,18 @@ function GroupDetail({ groupId, live = false }) {
         }
       >
         <div className="flex flex-col gap-3 w-full">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-300">
             <span>
-              <span className="text-slate-400">{t("student.fullName")}:</span>{" "}
-              <span className="font-semibold text-slate-800">{excuseTarget?.student?.fullName}</span>
+              <span className="text-slate-400 dark:text-slate-500">{t("student.fullName")}:</span>{" "}
+              <span className="font-semibold text-slate-800 dark:text-slate-100">{excuseTarget?.student?.fullName}</span>
             </span>
             <span>
-              <span className="text-slate-400">{t("student.receiptGroupLabel")}:</span>{" "}
-              <span className="font-semibold text-slate-800">{groupLabel}</span>
+              <span className="text-slate-400 dark:text-slate-500">{t("student.receiptGroupLabel")}:</span>{" "}
+              <span className="font-semibold text-slate-800 dark:text-slate-100">{groupLabel}</span>
             </span>
             <span>
-              <span className="text-slate-400">{t("center.date")}:</span>{" "}
-              <span className="font-semibold text-slate-800">{new Date().toLocaleDateString(dateLocale())}</span>
+              <span className="text-slate-400 dark:text-slate-500">{t("center.date")}:</span>{" "}
+              <span className="font-semibold text-slate-800 dark:text-slate-100">{new Date().toLocaleDateString(dateLocale())}</span>
             </span>
           </div>
           <Input
