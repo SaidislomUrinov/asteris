@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import UpdateLang from "./UpdateLang";
 import NotificationBell from "./NotificationBell";
-import KnowledgeBaseButton from "./knowledge/KnowledgeBaseButton";
+import HelpMenu from "./HelpMenu";
 import { resolveSectionTitleKey } from "../utils/navSections";
 
 export default function Top() {
@@ -34,7 +34,7 @@ export default function Top() {
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <KnowledgeBaseButton titleKey={resolvedKey} />
+        <HelpMenu titleKey={resolvedKey} />
         <NotificationBell />
         <UpdateLang dark />
       </div>

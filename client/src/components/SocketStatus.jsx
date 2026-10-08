@@ -25,7 +25,7 @@ const TONES = {
 };
 
 // Socket ulanishi va uning vizual holati — ilgari Top.jsx da edi, endi
-// Navbar'da "Asosiy" sarlavhasi tepasida turadi. Ulanishning o'zi ham shu
+// Navbar'da "Asosiy" sarlavhasi tepasida, FAQAT ulanish yo'q paytda. Ulanishning o'zi ham shu
 // yerda boshqariladi: komponent butun sessiya davomida mount holatida
 // qoladigan yagona joyda (sidebar) yashaydi.
 export default function SocketStatus() {
@@ -86,6 +86,17 @@ export default function SocketStatus() {
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [_id]);
+
+  // Ulanish joyida bo'lsa hech narsa ko'rsatilmaydi — badge faqat muammo
+  // (uzilish/qayta ulanish) paytida chiqadi. Sahifa ochilishidagi qisqa
+  // ulanish vaqti miltillamasligi uchun 2s kutiladi.
+  const [showProblem, setShowProblem] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setShowProblem(status !== "online"), status === "online" ? 0 : 2000);
+    return () => clearTimeout(id);
+  }, [status]);
+
+  if (status === "online" || !showProblem) return null;
 
   const tone = TONES[status];
   const Icon = status === "offline" ? HiSignalSlash : HiSignal;

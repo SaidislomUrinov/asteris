@@ -17,9 +17,9 @@ export const INTRO_STEPS = [
     descriptionKey: "introduction.notifications.description",
   },
   {
-    id: "video-lessons",
-    target: () => '[data-intro="video-lessons"]',
-    titleKey: "introduction.videoLessons.title",
-    descriptionKey: "introduction.videoLessons.description",
+    id: "help",
+    target: () => '[data-intro="help"]',
+    titleKey: "introduction.help.title",
+    descriptionKey: "introduction.help.description",
   },
 ];

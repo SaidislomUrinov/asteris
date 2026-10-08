@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
-import { API } from "../../utils/fetching";
+import { API, api } from "../../utils/fetching";
 
 // O'quvchining QR davomat kartasi — plastik karta o'lchamida (ISO/IEC 7810
 // ID-1: 85.6 × 54 mm). Karta jsPDF matn funksiyalari bilan EMAS, canvas'da
@@ -238,6 +238,42 @@ const triggerDownload = (href, filename) => {
   a.click();
   a.remove();
 };
+
+// GET /attendance/qr/:studentId javobini karta obyektiga aylantiradi —
+// dialog, Telegramga yuborish va boshqa joylar bir xil shaklni ishlatadi.
+// `reset` — eski tokenni bekor qilib yangisini olish.
+export async function fetchQrCard(studentId, { reset = false } = {}) {
+  const res = await api.get(`/attendance/qr/${studentId}${reset ? "?reset=true" : ""}`);
+  const { ok, data, msg } = res.data;
+  if (!ok) throw new Error(msg);
+  return {
+    fullName: data.fullName,
+    qrToken: data.qrToken,
+    centerName: data.center?.name,
+    centerLogo: data.center?.logo,
+    groups: data.groups,
+  };
+}
+
+// Kartani PNG Blob sifatida qaytaradi — serverga (Telegramga yuborish)
+// multipart orqali yuklash uchun (docs/API_CONTRACT_qr_card_send_and_worker_chat.md A.1).
+export async function renderQrCardBlob(card, t) {
+  const canvas = await renderQrCard(card, t);
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("attendance.qrInvalidImage"))), "image/png");
+  });
+}
+
+// Tayyor PNG'ni serverga yuboradi; server o'quvchi va ota-onaning Telegram
+// chatiga rasm qilib jo'natadi. Javob: { student, parent } — "sent"|"failed"|"none".
+export async function sendQrCardPng(studentId, blob, fileName = "qr-card.png") {
+  const form = new FormData();
+  form.append("card", blob, fileName);
+  const res = await api.post(`/attendance/qr/${studentId}/send`, form);
+  const { ok, data, msg } = res.data;
+  if (!ok) throw new Error(msg);
+  return data || {};
+}
 
 export async function downloadQrCardPng(card, t) {
   const canvas = await renderQrCard(card, t);

@@ -7,15 +7,14 @@ import { useSocketEvent } from "./hooks/useSocketEvent";
 import Loading from "./ui/Loading";
 import Auth from "./pages/Auth";
 import Navbar from "./components/Navbar";
+import { FinanceLayout, ScheduleLayout, SettingsLayout } from "./components/TabsLayout";
 import Top from "./components/Top";
 import Logout from "./components/Logout";
 import SubscriptionExpiredBanner from "./components/SubscriptionExpiredBanner";
 import SubscriptionBlockedModal from "./components/SubscriptionBlockedModal";
 import GlobalQrScanner from "./components/GlobalQrScanner";
-import FloatingVideoLessonsButton from "./components/FloatingVideoLessonsButton";
-import ChatWidget from "./components/ChatWidget";
 import Introduction from "./components/Introduction/Introduction";
-import NewsPopup from "./components/news/NewsPopup";
+import useNewsSync from "./hooks/useNewsSync";
 import ReceptionHome from "./pages/ReceptionHome";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
@@ -185,9 +184,37 @@ function App() {
                   )
                 }
               />
-              {authType === "owner" && (
-                <Route path="/centers" element={<Centers />} />
-              )}
+              {/* Sozlamalar — kam ochiladigan ro'yxat sahifalari bitta tab
+                  qatori ostida (SettingsLayout). URL'lar o'zgarmagan. */}
+              <Route element={<SettingsLayout />}>
+                {authType === "owner" && <Route path="/centers" element={<Centers />} />}
+                {can("room:view") && <Route path="/rooms" element={<Rooms />} />}
+                {/* O'qituvchi/yordamchiga Fanlar bo'limi ko'rsatilmaydi — `subject:view`
+                    ruxsati qoladi (guruh/dars sahifalari fan nomini API'dan oladi). */}
+                {can("subject:view") && !isTeacher && <Route path="/subjects" element={<Subjects />} />}
+                {/* Arxiv — API_CONTRACT_archive.md. O'qituvchi/yordamchi uchun
+                    butunlay yopiq (backendda ham `blockTeachingRoles`). */}
+                {can("archive:view") && !isTeacher && <Route path="/archive" element={<Archive />} />}
+                {/* Audit jurnali — FAQAT Client Owner (`audit:view` hodimga berilmaydi). */}
+                {authType === "owner" && <Route path="/audit-log" element={<AuditLog />} />}
+              </Route>
+              {authType === "owner" && <Route path="/subscription" element={<Subscription />} />}
+              {/* Moliya — tushum/xarajat/oylik/hisobot (+ hodimning o'z hisobi)
+                  bitta tab qatori ostida. */}
+              <Route element={<FinanceLayout />}>
+                {authType === "staff" && <Route path="/finance" element={<Finance />} />}
+                {authType === "owner" && <Route path="/revenue" element={<Revenue />} />}
+                {can("expense:view") && <Route path="/expenses" element={<Expenses />} />}
+                {can("salary:view") && <Route path="/salary" element={<Salary />} />}
+                {/* Hisobotlar — moliyaviy (`finance.report`) va/yoki davomat
+                    (`attendance.report`) hisoboti tarifda bo'lsa ochiladi. */}
+                {can("report:view") && (hasFeature("finance.report") || hasFeature("attendance.report")) && (
+                  <Route path="/reports" element={<Reports />} />
+                )}
+                {can("report:view") && hasFeature("teacher.performance") && (
+                  <Route path="/reports/teacher-performance" element={<TeacherPerformance />} />
+                )}
+              </Route>
               {authType === "owner" && (
                 <Route path="/centers/:id" element={<CenterDetail />} />
               )}
@@ -197,23 +224,17 @@ function App() {
               {authType === "owner" && (
                 <Route path="/staff/:id" element={<StaffDetail />} />
               )}
-              {/* O'qituvchi/yordamchiga Fanlar bo'limi ko'rsatilmaydi — `subject:view`
-                  ruxsati qoladi (guruh/dars sahifalari fan nomini API'dan oladi). */}
-              {can("subject:view") && !isTeacher && (
-                <Route path="/subjects" element={<Subjects />} />
-              )}
-              {can("room:view") && (
-                <Route path="/rooms" element={<Rooms />} />
-              )}
               {can("room:view") && (
                 <Route path="/rooms/:id" element={<RoomDetail />} />
               )}
               {can("group:view") && (
                 <Route path="/groups" element={<Groups />} />
               )}
-              {can("group:update") && !isTeacher && (
-                <Route path="/schedule" element={<Schedule />} />
-              )}
+              {/* Jadval — haftalik jadval + oylik kalendar bitta tab qatori ostida. */}
+              <Route element={<ScheduleLayout />}>
+                {can("group:update") && !isTeacher && <Route path="/schedule" element={<Schedule />} />}
+                {can("calendar:view") && <Route path="/calendar" element={<Calendar />} />}
+              </Route>
               {isTeacher && <Route path="/lesson" element={<Lesson />} />}
               {/* Dars rejalarim — o'qituvchining shablon rejalari
                   (API_CONTRACT_teaching_plans.md §6). */}
@@ -240,28 +261,7 @@ function App() {
               {can("attendance:create") && hasFeature("attendance.qr") && (
                 <Route path="/qr-attendance" element={<QrAttendance />} />
               )}
-              {can("salary:view") && <Route path="/salary" element={<Salary />} />}
-              {can("expense:view") && (
-                <Route path="/expenses" element={<Expenses />} />
-              )}
-              {/* Hisobotlar — moliyaviy (`finance.report`) va/yoki davomat
-                  (`attendance.report`) hisoboti tarifda bo'lsa ochiladi. */}
-              {can("report:view") && (hasFeature("finance.report") || hasFeature("attendance.report")) && (
-                <Route path="/reports" element={<Reports />} />
-              )}
-              {/* Audit jurnali — FAQAT Client Owner (`audit:view` hodimga berilmaydi). */}
-              {authType === "owner" && <Route path="/audit-log" element={<AuditLog />} />}
-              {can("report:view") && hasFeature("teacher.performance") && (
-                <Route path="/reports/teacher-performance" element={<TeacherPerformance />} />
-              )}
-              {authType === "owner" && (
-                <Route path="/revenue" element={<Revenue />} />
-              )}
-              {authType === "owner" && (
-                <Route path="/subscription" element={<Subscription />} />
-              )}
               {authType === "staff" && <Route path="/profile" element={<StaffProfile />} />}
-              {authType === "staff" && <Route path="/finance" element={<Finance />} />}
               {authType === "owner" && <Route path="/profile" element={<OwnerProfile />} />}
               <Route path="/notifications" element={<Notifications />} />
               {can("certificate:view") && hasFeature("certificate.manage") && (
@@ -273,14 +273,6 @@ function App() {
               {can("certificate:update") && hasFeature("certificate.manage") && (
                 <Route path="/certificates/template/:id" element={<TemplateEditor />} />
               )}
-              {can("calendar:view") && (
-                <Route path="/calendar" element={<Calendar />} />
-              )}
-              {/* Arxiv — API_CONTRACT_archive.md. O'qituvchi/yordamchi uchun
-                  butunlay yopiq (backendda ham `blockTeachingRoles`). */}
-              {can("archive:view") && !isTeacher && (
-                <Route path="/archive" element={<Archive />} />
-              )}
               {/* Ruxsat yo'q yoki mavjud bo'lmagan sahifa — bo'sh oyna emas. */}
               <Route path="*" element={<NotFound />} />
             </Routes>
@@ -291,15 +283,21 @@ function App() {
       <SubscriptionBlockedModal />
       {/* Apparat QR skaner — istalgan sahifada ishlaydi */}
       <GlobalQrScanner />
-      <FloatingVideoLessonsButton />
       {/* Qo'llab-quvvatlash chati — Owner/Staff har doim ko'radi, permission talab qilinmaydi. */}
-      <ChatWidget />
       {!introSeen && <Introduction />}
       {/* Yangiliklar: store sinxroni + o'qilmaganlar oynasi (API_CONTRACT_news.md §5).
           Faqat shu autentifikatsiyadan keyingi layout'da — login'da yo'q. */}
-      <NewsPopup />
+      <NewsSync />
     </div>
   );
 }
 
 export default App;
+
+// Yangiliklar store sinxroni (socket + boshlang'ich yuklash). Avval
+// NewsPopup ichida edi; popup olib tashlandi — yangiliklar endi o'zi
+// ochilmaydi, qo'ng'iroqcha soni va Bildirishnomalar > Yangiliklar tabida.
+function NewsSync() {
+  useNewsSync();
+  return null;
+}

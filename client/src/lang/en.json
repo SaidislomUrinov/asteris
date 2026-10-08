@@ -108,6 +108,7 @@
       "staff:unblocked": "Staff member unblocked",
       "student:create": "Student added to group",
       "student:update": "Student updated",
+      "student:photo": "Student photo changed",
       "student:priceChanged": "Student price changed",
       "student:leftGroup": "Student left the group",
       "grade:removed": "Grade removed",
@@ -116,6 +117,7 @@
     },
     "fields": {
       "name": "Name",
+      "photo": "Photo",
       "slogan": "Slogan",
       "parentNotifications": "Parent notifications",
       "openingDebts": "Opening debts",
@@ -150,6 +152,9 @@
     }
   },
   "nav": {
+    "myFinance": "My account",
+    "scheduleWeek": "Weekly schedule",
+    "settings": "Settings",
     "reports": "Reports",
     "auditLog": "Audit log",
     "main": "Main",
@@ -870,6 +875,7 @@
     "openingMonthInvalid": "Invalid month",
     "openingTooMany": "You can add at most 36 months",
     "openingDebtAction": "Edit opening debt",
+    "openingDebtMenu": "Opening debt",
     "openingDebtsSaved": "Debt details saved",
     "openingBadge": "Old debt",
     "openingMonthUnknown": "Month not specified",
@@ -900,7 +906,25 @@
     "sharedContactHint": "This student also studies at another center: they'll be added to the group, contact details stay unchanged.",
     "pastMonthsPrice": "Past months amount",
     "pastMonthsHint": "Only the selected month changes — later months and the current amount stay the same. Debt is recalculated automatically.",
-    "invalidCycle": "The amount for this month cannot be changed"
+    "invalidCycle": "The amount for this month cannot be changed",
+    "qrSendAction": "Send QR card",
+    "qrSendShort": "Send to Telegram",
+    "qrSending": "Sending...",
+    "qrSendNoTelegramHint": "No one is connected to Telegram",
+    "qrSentBoth": "QR card sent to the student and parent",
+    "qrSentStudent": "QR card sent to the student",
+    "qrSentParent": "QR card sent to the parent",
+    "qrSendFailedStudent": "Could not send to the student",
+    "qrSendFailedParent": "Could not send to the parent",
+    "photoAdd": "Add photo",
+    "photoReplace": "Replace photo",
+    "photoRemove": "Remove photo",
+    "photoRemoveConfirm": "Remove {{name}}'s photo?",
+    "photoEdit": "Change photo",
+    "photoUpdated": "Photo saved",
+    "photoRemoved": "Photo removed",
+    "photoRequired": "No photo selected",
+    "photoInvalid": "The file is not an image or can't be read"
   },
   "import": {
     "buttonLabel": "Import from Excel",
@@ -1430,7 +1454,12 @@
     "qrGroupCards": "QR cards",
     "qrGroupEmpty": "No active students in this group",
     "qrGroupDownloaded": "QR cards PDF downloaded",
-    "conflict": "Attendance was changed at the same time. Please try again"
+    "conflict": "Attendance was changed at the same time. Please try again",
+    "qrCardSent": "QR card sent to Telegram",
+    "qrNoTelegram": "Neither the student nor the parent is connected to Telegram",
+    "qrSendTooSoon": "The QR card was just sent, please try again shortly",
+    "qrInvalidImage": "Invalid QR card image",
+    "qrSendFailed": "Could not send the QR card to Telegram"
   },
   "billing": {
     "settingsUpdated": "Payment setting updated",
@@ -1746,9 +1775,9 @@
       "title": "Notifications",
       "description": "News and important events appear here."
     },
-    "videoLessons": {
-      "title": "Video lessons",
-      "description": "This button lets you watch a video lesson for any page, and you can drag it anywhere on the screen."
+    "help": {
+      "title": "Help",
+      "description": "Use this button to open the current page guide, video tutorial and support chat."
     }
   },
   "tariffFeatures": {
@@ -2102,5 +2131,11 @@
     "title": "This page isn't available to you",
     "desc": "The page doesn't exist or you don't have access to it. Contact your manager if you need it.",
     "back": "Back to home"
+  },
+  "help": {
+    "title": "Help",
+    "guide": "Page guide",
+    "video": "Video tutorial",
+    "chat": "Support chat"
   }
 }

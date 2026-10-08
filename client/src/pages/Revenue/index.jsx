@@ -179,7 +179,7 @@ function Revenue() {
   return (
     <div className="flex flex-col w-full h-full gap-4">
       {/* Jamlanma — filtr doirasidagi natija bir qarashda ko'rinadi */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
         <SummaryCard
           icon={<HiBanknotes />}
           tone="emerald"
@@ -199,7 +199,6 @@ function Revenue() {
           label={t("revenue.average")}
           value={money(meta.total ? Math.round(totalAmount / meta.total) : 0)}
           suffix={t("student.somSuffix")}
-          className="max-lg:col-span-2"
         />
       </div>
 

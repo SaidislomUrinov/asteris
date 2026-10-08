@@ -16,7 +16,6 @@ import LazyImage from "../../ui/LazyImage";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { api, API } from "../../utils/fetching";
 import i18n from "../../utils/i18n";
-import { useBlockingModal } from "../../utils/blockingModal";
 
 // Tarif pasayganda ortiqcha filiallardan qaysilari ishlashda davom etishini
 // SO'RAYDIGAN modal. CLAUDE.md talabi: MAJBURIY va YOPILMAYDI —
@@ -35,8 +34,6 @@ function DowngradeDialog({ overflow, onResolved }) {
   // Kirish animatsiyasi: opacity 0→1 + translateY(12px)→0 (CLAUDE.md —
   // motion faqat modal/Auth uchun). Birinchi kadrdan keyin yoqiladi.
   const [shown, setShown] = useState(false);
-  // Yangiliklar popup'i shu modal ochiq turganda kutadi (utils/blockingModal.js).
-  useBlockingModal(!!overflow?.needsAction);
 
   const centers = overflow?.centers || [];
   const limit = overflow?.limit ?? 0;

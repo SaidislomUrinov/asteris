@@ -331,7 +331,7 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
                   }`}
                 >
                   <RowNumber value={index + 1} />
-                  <Avatar user={{ _id: s._id, name: s.fullName }} size={38} />
+                  <Avatar user={{ _id: s._id, name: s.fullName, avatar: s.photo }} size={38} />
                   <span className="flex flex-1 items-center gap-1.5 min-w-0">
                     <span className="min-w-0 text-[13px] font-semibold text-slate-800 truncate leading-tight">
                       {s.fullName}
@@ -425,7 +425,7 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
                     <td className="sticky left-0 z-10 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-white border-b border-r border-slate-100 group-hover/row:bg-slate-50 transition-colors">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <RowNumber value={index + 1} />
-                        <Avatar user={{ _id: s._id, name: s.fullName }} size={32} />
+                        <Avatar user={{ _id: s._id, name: s.fullName, avatar: s.photo }} size={32} />
                         <span className="text-[13px] font-semibold text-slate-800 truncate leading-tight">
                           {s.fullName}
                         </span>

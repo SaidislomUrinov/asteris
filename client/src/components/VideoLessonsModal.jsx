@@ -5,7 +5,7 @@ import useTutorialVideo from "../hooks/useTutorialVideo";
 import { extractYouTubeId } from "../utils/youtube";
 
 /**
- * Video darslik modali — `FloatingVideoLessonsButton` tomonidan ochiladi
+ * Video darslik modali — Top panel Yordam menyusi (`HelpMenu`) ochadi
  * (docs/API_CONTRACT_floating_video_lessons.md § 3.1). Avval
  * `TutorialVideoButton.jsx` ichida yashiringan Dialog+iframe/bo'sh-holat
  * logikasi shu yerga ko'chirildi, mustaqil komponent sifatida.

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
 import { HiCheck, HiChevronLeft, HiChevronRight, HiExclamationCircle, HiQuestionMarkCircle, HiXMark } from "react-icons/hi2";
-import Avatar from "../../ui/Avatar";
+import StudentPhotoAvatar from "../../ui/StudentPhotoAvatar";
 import RowNumber from "../../ui/RowNumber";
 import RankMedal from "../../ui/RankMedal";
 import Button from "../../ui/Button";
@@ -89,7 +89,9 @@ function StudentName({ student, onOpen, className }) {
  * `onOpenStudent(student)` — ixtiyoriy: ism bosilganda (o'qituvchiga o'quvchi
  * yutuqlari sahifasi, API_CONTRACT_student_achievements.md).
  */
-function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "", onOpenStudent }) {
+// `onPhotoUpdated(studentId, photo)` — avatar orqali rasm o'zgarganda (barcha
+// rollar; o'qituvchida "Umumiy" tab yo'q, rasm qo'yish shu yerdan).
+function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "", onOpenStudent, onPhotoUpdated }) {
   const { t } = useTranslation();
   const [month, setMonth] = useState(currentMonth);
   const [data, setData] = useState(null);
@@ -446,7 +448,7 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                   {/* Tor mobil kartada (o'ngda keng status tugmasi) medal ism
                       yonida emas, avatar burchagida — ism to'liq sig'sin. */}
                   <span className="relative shrink-0">
-                    <Avatar user={{ _id: s._id, name: s.fullName }} size={38} />
+                    <StudentPhotoAvatar student={s} onUpdated={onPhotoUpdated} size={38} rounded="rounded-full" />
                     <span className="absolute -right-1.5 -bottom-2 flex">
                       <RankMedal position={ranks[s._id]} size={17} />
                     </span>
@@ -569,7 +571,7 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                     <td className="sticky left-0 z-10 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-white border-b border-r border-slate-100 group-hover/row:bg-slate-50 transition-colors">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <RowNumber value={index + 1} />
-                        <Avatar user={{ _id: s._id, name: s.fullName }} size={32} />
+                        <StudentPhotoAvatar student={s} onUpdated={onPhotoUpdated} size={32} rounded="rounded-full" />
                         <div className="flex flex-col min-w-0">
                           <span className="flex items-center gap-1.5 min-w-0">
                             <StudentName

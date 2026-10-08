@@ -71,14 +71,7 @@ function Finance() {
   const monthLabel = `${monthNames[monthOf(month)]} ${yearOf(month)}`;
 
   return (
-    <div className="flex flex-col w-full h-full gap-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="font-space font-bold text-xl text-slate-900">{t("finance.title")}</h1>
-          <p className="text-sm text-slate-400">{t("finance.subtitle")}</p>
-        </div>
-      </div>
-
+    <div className="flex flex-col w-full h-full gap-4">
       <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 w-fit overflow-x-auto max-w-full">
         {TABS.map((tb) => {
           const Icon = tb.icon;

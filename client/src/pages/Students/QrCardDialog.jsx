@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HiArrowDownTray, HiArrowPath, HiDocumentText, HiPhoto } from "react-icons/hi2";
+import { HiArrowDownTray, HiArrowPath, HiDocumentText, HiPaperAirplane, HiPhoto } from "react-icons/hi2";
 import Button from "../../ui/Button";
 import Dialog from "../../ui/Dialog";
-import { api } from "../../utils/fetching";
+import useSendQrCard, { isQrSendable } from "../../hooks/useSendQrCard";
 import { errorMsg, successMsg } from "../../utils/alert";
-import { downloadQrCardPdf, downloadQrCardPng, renderQrCard } from "./qrCard.util";
+import { downloadQrCardPdf, downloadQrCardPng, fetchQrCard, renderQrCard } from "./qrCard.util";
 
 // O'quvchining doimiy QR kartasi. Token backendda lazy generatsiya qilinadi
 // (`GET /attendance/qr/:id`), karta esa `qrCard.util.js` da canvas'da
@@ -22,21 +22,14 @@ function QrCardDialog({ open, onClose, student }) {
   const [preview, setPreview] = useState("");
 
   const studentId = student?._id;
+  const { canSend, send, sendingId } = useSendQrCard();
+  const sendable = isQrSendable(student);
 
   const load = async (reset = false) => {
     if (!studentId) return;
     reset ? setResetting(true) : setLoading(true);
     try {
-      const res = await api.get(`/attendance/qr/${studentId}${reset ? "?reset=true" : ""}`);
-      const { ok, data, msg } = res.data;
-      if (!ok) throw new Error(msg);
-      const next = {
-        fullName: data.fullName,
-        qrToken: data.qrToken,
-        centerName: data.center?.name,
-        centerLogo: data.center?.logo,
-        groups: data.groups,
-      };
+      const next = await fetchQrCard(studentId, { reset });
       const canvas = await renderQrCard(next, t);
       setCard(next);
       setPreview(canvas.toDataURL("image/png"));
@@ -83,6 +76,21 @@ function QrCardDialog({ open, onClose, student }) {
       className="md:w-[34rem]"
       actions={
         <div className="flex flex-wrap items-center justify-end gap-2 w-full">
+          {canSend && (
+            // Disabled tugma hover'ni olmaydi — izoh (title) o'ramda.
+            <span className="mr-auto" title={sendable ? undefined : t("student.qrSendNoTelegramHint")}>
+              <Button
+                variant="outlined"
+                color="slate"
+                onClick={() => send(student, card)}
+                loading={sendingId === studentId}
+                disabled={!card || !sendable || Boolean(sendingId)}
+              >
+                <HiPaperAirplane className="text-base" />
+                {t("student.qrSendShort")}
+              </Button>
+            </span>
+          )}
           <Button
             variant="outlined"
             color="slate"

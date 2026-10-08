@@ -2,21 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HiChatBubbleLeftRight, HiLifebuoy, HiPaperAirplane, HiPhoto, HiXMark } from "react-icons/hi2";
 import { toast } from "sonner";
-import useChat from "../hooks/useChat";
 import { API } from "../utils/fetching";
 import Avatar from "../ui/Avatar";
-import Badge from "../ui/Badge";
 import IconButton from "../ui/IconButton";
 import Loading from "../ui/Loading";
 
-// Qo'llab-quvvatlash chati — o'ng-past floating tugma.
-//
-// Joylashuv: o'ng-past burchakda qat'iy (right:16px, bottom:16px) —
-// suriladigan `FloatingVideoLessonsButton` shu zonaga kirmasligi o'sha
-// komponentda alohida chegara (CHAT_WIDGET_*) bilan ta'minlangan.
-function ChatWidget() {
+// Qo'llab-quvvatlash chati — panel. Ochish tugmasi yo'q: Top'dagi Yordam
+// menyusi (`HelpMenu`) ochadi va `useChat` holatini (o'qilmaganlar soni
+// "?" belgisida ko'rinishi uchun) o'zida saqlab shu yerga uzatadi.
+// Desktopda header ostida o'ng tomonda, mobilda to'liq ekran.
+function ChatWidget({ open, onClose, chat }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const fileRef = useRef(null);
   const listRef = useRef(null);
@@ -31,7 +27,7 @@ function ChatWidget() {
     sendText,
     sendImage,
     markRead,
-  } = useChat(true);
+  } = chat;
 
   // Chat ochilganda o'qilgan deb belgilanadi.
   useEffect(() => {
@@ -77,8 +73,10 @@ function ChatWidget() {
     if (el.scrollTop < 40) loadMore();
   };
 
+  if (!open) return null;
+
   return (
-    <div className="fixed z-[25] isolate flex flex-col items-end gap-3 right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-4">
+    <div className="fixed z-[25] isolate right-4 top-17">
       {open && (
         <div className="fixed inset-0 z-40 bg-white flex flex-col sm:static sm:inset-auto sm:z-auto sm:w-[min(92vw,380px)] sm:h-[min(72vh,540px)] sm:rounded-2xl sm:shadow-[0_24px_60px_-12px_rgba(15,23,42,0.25)] sm:border sm:border-slate-100 overflow-hidden">
           {/* Sarlavha — mobilda to'liq ekran, shuning uchun notch/status-bar
@@ -96,7 +94,7 @@ function ChatWidget() {
             </div>
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={onClose}
               aria-label={t("common.close")}
               className="shrink-0 inline-flex items-center justify-center size-8 rounded-full bg-slate-50 text-slate-400 cursor-pointer hover:bg-slate-100 hover:text-slate-700 active:scale-95 duration-200"
             >
@@ -170,23 +168,6 @@ function ChatWidget() {
         </div>
       )}
 
-      {/* Mobilda panel to'liq ekranga chiqqach dumaloq tugma yashiriladi —
-          header'dagi yopish tugmasi yetarli, ikkitasi bir-birining ustiga
-          chiqmasin. sm+ da (kichik popover) ikkalasi ham kerak. */}
-      <Badge
-        value={!open && unreadCount > 0 ? unreadCount : undefined}
-        color="red"
-        className={open ? "hidden sm:inline-flex" : undefined}
-      >
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          title={t("chat.title")}
-          className="w-14 h-14 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-[0_8px_24px_-6px_rgba(59,130,246,0.55)] flex items-center justify-center cursor-pointer active:scale-95 duration-200"
-        >
-          {open ? <HiXMark size={22} /> : <HiChatBubbleLeftRight size={21} />}
-        </button>
-      </Badge>
     </div>
   );
 }

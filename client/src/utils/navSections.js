@@ -9,32 +9,34 @@
 //
 // Tartib muhim emas — moslik prefiks bo'yicha aniq topiladi (`/groups` va
 // `/schedule` alohida yo'llar, biri ikkinchisining ichida emas).
+// Sozlamalar tablari (Filiallar, Xonalar, Fanlar, Arxiv, Audit) —
+// sarlavha "Sozlamalar", qaysi tab ochiqligini tab qatori bildiradi.
 export const NAV_SECTIONS = [
   { path: "/dashboard", titleKey: "nav.dashboard" },
-  { path: "/centers", titleKey: "nav.centers" },
+  { path: "/centers", titleKey: "nav.settings" },
   { path: "/staff", titleKey: "nav.staff" },
-  { path: "/subjects", titleKey: "nav.subjects" },
-  { path: "/rooms", titleKey: "nav.rooms" },
+  { path: "/subjects", titleKey: "nav.settings" },
+  { path: "/rooms", titleKey: "nav.settings" },
   { path: "/groups", titleKey: "nav.groups" },
   { path: "/schedule", titleKey: "nav.schedule" },
-  { path: "/calendar", titleKey: "nav.calendar" },
+  { path: "/calendar", titleKey: "nav.schedule" },
   { path: "/lesson", titleKey: "nav.lesson" },
   { path: "/my-plans", titleKey: "nav.myPlans" },
   { path: "/students", titleKey: "nav.students" },
   { path: "/leads", titleKey: "nav.leads" },
   { path: "/qr-attendance", titleKey: "nav.qrAttendance" },
-  { path: "/salary", titleKey: "nav.salary" },
-  { path: "/expenses", titleKey: "nav.expenses" },
-  { path: "/revenue", titleKey: "nav.revenue" },
+  { path: "/salary", titleKey: "nav.financeSection" },
+  { path: "/expenses", titleKey: "nav.financeSection" },
+  { path: "/revenue", titleKey: "nav.financeSection" },
   { path: "/subscription", titleKey: "nav.subscription" },
   { path: "/notifications", titleKey: "nav.notifications" },
   { path: "/profile", titleKey: "nav.profile" },
-  { path: "/finance", titleKey: "nav.finance" },
-  { path: "/reports/teacher-performance", titleKey: "nav.teacherPerformance" },
+  { path: "/finance", titleKey: "nav.financeSection" },
+  { path: "/reports/teacher-performance", titleKey: "nav.financeSection" },
   { path: "/certificates", titleKey: "nav.certificates" },
-  { path: "/archive", titleKey: "nav.archive" },
-  { path: "/audit-log", titleKey: "nav.auditLog" },
-  { path: "/reports", titleKey: "nav.reports" },
+  { path: "/archive", titleKey: "nav.settings" },
+  { path: "/audit-log", titleKey: "nav.settings" },
+  { path: "/reports", titleKey: "nav.financeSection" },
 ];
 
 // Bo'lim aktivmi — o'zi yoki uning ichki (detail) sahifasi ochiqmi.

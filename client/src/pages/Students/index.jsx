@@ -11,6 +11,7 @@ import {
   HiUsers,
   HiXMark,
 } from "react-icons/hi2";
+import Avatar from "../../ui/Avatar";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
 import Chip from "../../ui/Chip";
@@ -33,6 +34,7 @@ import { api } from "../../utils/fetching";
 import { errorMsg } from "../../utils/alert";
 import useFeature from "../../hooks/useFeature";
 import useCan from "../../hooks/useCan";
+import useSendQrCard from "../../hooks/useSendQrCard";
 import useHideFinance from "../../hooks/useHideFinance";
 import useClosingValue from "../../hooks/useClosingValue";
 import { maskMoney } from "../../utils/moneyFormat";
@@ -44,6 +46,7 @@ function Students() {
   const navigate = useNavigate();
   const hasFeature = useFeature();
   const can = useCan();
+  const { menuItems: qrSendItems } = useSendQrCard();
   const [hideFinance] = useHideFinance();
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
@@ -123,6 +126,8 @@ function Students() {
           : {
               ...r,
               fullName: patch.fullName ?? r.fullName,
+              // Rasm o'chirilganda "" keladi — `??` bilan emas, `in` bilan.
+              photo: "photo" in patch ? patch.photo : r.photo,
               phone: patch.phone ?? r.phone,
               parentPhone: patch.parentPhone ?? r.parentPhone,
               telegramSame: patch.telegramSame ?? r.telegramSame,
@@ -265,13 +270,16 @@ function Students() {
       <div className="flex flex-col gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-white">
         <div className="flex items-start justify-between gap-2">
           <div
-            className="flex-1 min-w-0"
+            className="flex flex-1 min-w-0 items-center gap-3 cursor-pointer"
             onClick={() => navigate(`/students/${row._id}`)}
           >
-            <p className="font-semibold text-slate-800 hover:text-blue-600 transition-colors cursor-pointer">
-              {row.fullName}
-            </p>
-            <p className="text-xs text-slate-400 mt-0.5">{row.phone}</p>
+            <Avatar user={{ _id: row._id, name: row.fullName, avatar: row.photo }} size={40} />
+            <div className="min-w-0">
+              <p className="font-semibold text-slate-800 hover:text-blue-600 transition-colors truncate">
+                {row.fullName}
+              </p>
+              <p className="text-xs text-slate-400 mt-0.5">{row.phone}</p>
+            </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <IconButton
@@ -309,6 +317,7 @@ function Students() {
                         },
                       ]
                     : []),
+                ...qrSendItems(row),
               ]}
             />
           </div>
@@ -348,9 +357,10 @@ function Students() {
       header: t("student.fullName"),
       render: (row) => (
         <span
-          className="font-semibold text-slate-800 hover:text-blue-600 cursor-pointer transition-colors"
+          className="inline-flex items-center gap-2.5 font-semibold text-slate-800 hover:text-blue-600 cursor-pointer transition-colors"
           onClick={() => navigate(`/students/${row._id}`)}
         >
+          <Avatar user={{ _id: row._id, name: row.fullName, avatar: row.photo }} size={32} />
           {row.fullName}
         </span>
       ),
@@ -443,6 +453,7 @@ function Students() {
                       },
                     ]
                   : []),
+              ...qrSendItems(row),
             ]}
           />
         </div>

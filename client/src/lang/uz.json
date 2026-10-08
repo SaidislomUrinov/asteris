@@ -108,6 +108,7 @@
       "staff:unblocked": "Hodim blokdan chiqarildi",
       "student:create": "O'quvchi guruhga qo'shildi",
       "student:update": "O'quvchi ma'lumotlari o'zgartirildi",
+      "student:photo": "O'quvchi rasmi o'zgartirildi",
       "student:priceChanged": "O'quvchi narxi o'zgartirildi",
       "student:leftGroup": "O'quvchi guruhdan chiqdi",
       "grade:removed": "Baho o'chirildi",
@@ -116,6 +117,7 @@
     },
     "fields": {
       "name": "Nomi",
+      "photo": "Rasm",
       "slogan": "Shior",
       "parentNotifications": "Ota-ona bildirishnomalari",
       "openingDebts": "Boshlang'ich qarzdorlik",
@@ -150,6 +152,9 @@
     }
   },
   "nav": {
+    "myFinance": "Mening hisobim",
+    "scheduleWeek": "Haftalik jadval",
+    "settings": "Sozlamalar",
     "reports": "Hisobotlar",
     "auditLog": "Audit jurnali",
     "main": "Asosiy",
@@ -870,6 +875,7 @@
     "openingMonthInvalid": "Oy noto'g'ri kiritilgan",
     "openingTooMany": "Ko'pi bilan 36 ta oy qo'shish mumkin",
     "openingDebtAction": "Boshlang'ich qarzni tahrirlash",
+    "openingDebtMenu": "Boshlang'ich qarz",
     "openingDebtsSaved": "Qarz ma'lumotlari saqlandi",
     "openingBadge": "Eski qarz",
     "openingMonthUnknown": "Oyi ko'rsatilmagan",
@@ -900,7 +906,25 @@
     "sharedContactHint": "O'quvchi boshqa markazda ham o'qiydi: u guruhga qo'shiladi, kontakt ma'lumotlari o'zgartirilmaydi.",
     "pastMonthsPrice": "O'tgan oylar summasi",
     "pastMonthsHint": "Faqat tanlangan oy uchun o'zgaradi — keyingi oylar va joriy summa o'zgarmaydi. Qarzdorlik avtomatik qayta hisoblanadi.",
-    "invalidCycle": "Bu oy uchun summani o'zgartirib bo'lmaydi"
+    "invalidCycle": "Bu oy uchun summani o'zgartirib bo'lmaydi",
+    "qrSendAction": "QR kartani yuborish",
+    "qrSendShort": "Telegramga yuborish",
+    "qrSending": "Yuborilmoqda...",
+    "qrSendNoTelegramHint": "Telegramga hech kim ulanmagan",
+    "qrSentBoth": "QR karta o'quvchi va ota-onaga yuborildi",
+    "qrSentStudent": "QR karta o'quvchiga yuborildi",
+    "qrSentParent": "QR karta ota-onaga yuborildi",
+    "qrSendFailedStudent": "O'quvchiga yuborib bo'lmadi",
+    "qrSendFailedParent": "Ota-onaga yuborib bo'lmadi",
+    "photoAdd": "Rasm qo'yish",
+    "photoReplace": "Rasmni almashtirish",
+    "photoRemove": "Rasmni olib tashlash",
+    "photoRemoveConfirm": "{{name}} rasmini olib tashlaysizmi?",
+    "photoEdit": "Rasmni o'zgartirish",
+    "photoUpdated": "Rasm saqlandi",
+    "photoRemoved": "Rasm olib tashlandi",
+    "photoRequired": "Rasm tanlanmadi",
+    "photoInvalid": "Fayl rasm emas yoki uni o'qib bo'lmadi"
   },
   "import": {
     "buttonLabel": "Excel'dan import",
@@ -1430,7 +1454,12 @@
     "qrGroupCards": "QR kartalar",
     "qrGroupEmpty": "Guruhda faol o‘quvchi yo‘q",
     "qrGroupDownloaded": "QR kartalar PDF yuklab olindi",
-    "conflict": "Davomat bir vaqtda o'zgartirildi. Iltimos, qayta urinib ko'ring"
+    "conflict": "Davomat bir vaqtda o'zgartirildi. Iltimos, qayta urinib ko'ring",
+    "qrCardSent": "QR karta Telegramga yuborildi",
+    "qrNoTelegram": "O'quvchi ham, ota-ona ham Telegram'ga ulanmagan",
+    "qrSendTooSoon": "QR karta hozirgina yuborildi, birozdan so'ng qayta urinib ko'ring",
+    "qrInvalidImage": "QR karta rasmi noto'g'ri",
+    "qrSendFailed": "QR kartani Telegramga yuborib bo'lmadi"
   },
   "billing": {
     "settingsUpdated": "To'lov sozlamasi yangilandi",
@@ -1746,9 +1775,9 @@
       "title": "Bildirishnomalar",
       "description": "Yangiliklar va muhim voqealar shu yerda ko'rinadi."
     },
-    "videoLessons": {
-      "title": "Video darsliklar",
-      "description": "Bu tugma orqali istalgan sahifa uchun video darslikni ko'rishingiz mumkin, uni istalgan joyga surib qo'yishingiz ham mumkin."
+    "help": {
+      "title": "Yordam",
+      "description": "Shu tugma orqali joriy sahifa qo'llanmasi, video darslik va yordam chatini ochasiz."
     }
   },
   "tariffFeatures": {
@@ -2102,5 +2131,11 @@
     "title": "Bu sahifa siz uchun ochiq emas",
     "desc": "Sahifa mavjud emas yoki unga kirish uchun ruxsatingiz yo'q. Kerak bo'lsa, rahbaringizga murojaat qiling.",
     "back": "Bosh sahifaga"
+  },
+  "help": {
+    "title": "Yordam",
+    "guide": "Sahifa qo'llanmasi",
+    "video": "Video darslik",
+    "chat": "Yordam chati"
   }
 }

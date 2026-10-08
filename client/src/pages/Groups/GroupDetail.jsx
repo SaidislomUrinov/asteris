@@ -75,6 +75,8 @@ import {
 } from "./useStudentsSort";
 import useCan from "../../hooks/useCan";
 import useFeature from "../../hooks/useFeature";
+import useSendQrCard from "../../hooks/useSendQrCard";
+import useStudentPhoto from "../../hooks/useStudentPhoto";
 import { BADGE_FEATURE } from "../../utils/badges";
 import useHideFinance from "../../hooks/useHideFinance";
 import useClosingValue from "../../hooks/useClosingValue";
@@ -134,14 +136,19 @@ const formatBatchTime = (unixSeconds) => {
 };
 
 
-function GroupDetail() {
+// `groupId` — `/lesson` sahifasi joriy darsdagi guruhni shu prop bilan beradi
+// (URL'dagi `:id` o'rniga). `live` — o'sha holat: statusda "Davom etmoqda",
+// ortga tugmasi yo'q (docs/API_CONTRACT_lesson_merge.md).
+function GroupDetail({ groupId, live = false }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id: paramId } = useParams();
+  const id = groupId || paramId;
   const can = useCan();
   // Telefon (< sm) — o'quvchilar ro'yxati kartalar ko'rinishida (avatar biroz kichik).
   const isPhone = useMediaQuery("(max-width: 639px)");
   const hasFeature = useFeature();
+  const { menuItems: qrSendItems } = useSendQrCard();
   const [hideFinance] = useHideFinance();
   // O'qituvchi MOLIYAVIY ustunlarni ko'rmaydi (server ham bu maydonlarni
   // yubormaydi — utils/teacherView.util.js), UI shunga moslashadi.
@@ -195,6 +202,15 @@ function GroupDetail() {
   const [archivingStudent, setArchivingStudent] = useState(false);
 
   const [students, setStudents] = useState([]);
+  // O'quvchi rasmi — barcha rollar (o'qituvchi ham, faqat o'z guruhida;
+  // cheklovni server qo'yadi). Javob darhol qatorga qo'llanadi.
+  const {
+    menuItems: photoItems,
+    busyId: photoBusyId,
+    element: photoElement,
+  } = useStudentPhoto((studentId, photo) =>
+    setStudents((prev) => prev.map((st) => (st._id === studentId ? { ...st, photo } : st))),
+  );
   const [studentsLoading, setStudentsLoading] = useState(true);
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [enrollKey, setEnrollKey] = useState(0);
@@ -231,10 +247,6 @@ function GroupDetail() {
   // O'qituvchi/yordamchida "Umumiy" tab yo'q — ular uchun boshlang'ich
   // ko'rinish darhol "Davomat" bo'ladi.
   const [studentTab, setStudentTab] = useState(isTeacher ? "monthly" : "general");
-  // Sahifa darajasidagi ikkita bo'lim: "Statistika" (grafiklar/kalendar) va
-  // "O'quvchilar" (ro'yxat + ichki tablar). Default — O'quvchilar, chunki
-  // kundalik ish aynan shu yerda bo'ladi.
-  const [section, setSection] = useState("students");
   const [excuseTarget, setExcuseTarget] = useState(null);
   // O'quvchilar ro'yxatini A-Z/Baholar/Davomat bo'yicha saralash —
   // docs/API_CONTRACT_group_students_sort.md. "Umumiy", "Davomat" va
@@ -880,6 +892,12 @@ function GroupDetail() {
         ]
       : []),
   ];
+  // Asosiy amallar ekranda, qolganlari "⋮" menyuda (xavfli amallar oxirida).
+  const primaryActions = topActions.filter((a) => a.key === "edit" || a.key === "activate");
+  const menuActions = [
+    ...topActions.filter((a) => !primaryActions.includes(a) && !a.risky),
+    ...topActions.filter((a) => a.risky),
+  ];
 
   // Tab ro'yxati ruxsat/tarifga bog'liq va socket orqali o'zgarishi mumkin
   // (masalan tarif tugab `lesson.planning` o'chsa). Tanlangan tab ro'yxatdan
@@ -891,8 +909,10 @@ function GroupDetail() {
     // qoladi (DropMenu ichida `!isTeacher` bilan yopiq). Lekin
     // O'qituvchi/Yordamchiga `student:create` ruxsati berilgan
     // bo'lsa, ular ham shu tab orqali o'quvchi qo'sha olishi kerak.
-    ...(!isTeacher || can("student:create")
-      ? [{ key: "general", label: t("group.tabGeneral") }]
+    // `student:contact` — ro'yxat kontaktni tahrirlash uchun ham ochiladi
+    // (avval faqat /lesson'da edi, API_CONTRACT_student_contact_telegram.md §5).
+    ...(!isTeacher || can("student:create") || can("student:contact")
+      ? [{ key: "general", label: t("group.tabStudentsSection") }]
       : []),
     { key: "monthly", label: t("group.tabMonthly") },
     ...(can("attendance:view") && hasFeature("student.rate")
@@ -904,6 +924,9 @@ function GroupDetail() {
     ...(can("lesson:view") && hasFeature("lesson.planning")
       ? [{ key: "plan", label: t("syllabus.tab") }]
       : []),
+    // Statistika (grafiklar/kalendar) — avval alohida yuqori bo'lim edi,
+    // endi shu yagona tab qatorining oxirgisi.
+    { key: "stats", label: t("group.tabStatistics") },
   ];
   const activeTab = studentTabs.some((tab) => tab.key === studentTab)
     ? studentTab
@@ -912,66 +935,60 @@ function GroupDetail() {
   return (
     <div className="flex flex-col w-full h-full gap-4">
       <div className="flex items-center justify-between gap-3">
-        <IconButton variant="ghost" color="black" onClick={() => navigate(-1)}>
-          <HiArrowLeft />
-        </IconButton>
+        {live ? (
+          <span />
+        ) : (
+          <IconButton variant="ghost" color="black" onClick={() => navigate(-1)}>
+            <HiArrowLeft />
+          </IconButton>
+        )}
 
-        {/* Mobilda matnli tugmalar sig'maydi (guruh statusiga qarab 3tagacha
-            bo'lishi mumkin) — shuning uchun kichik ekranda faqat ikonka,
-            sm dan boshlab matnli tugma ko'rsatiladi. Ro'yxat bitta joyda
-            e'lon qilinadi, ikkala variant ham shundan chiziladi. */}
-        {/* Ko'rsatish/yashirish KONTEYNER div'da, tugmaning o'zida emas —
-            Button/IconButton ning base class'idagi `inline-flex` bevosita
-            berilgan `hidden` ni bosib ketadi (ikkalasi ham display
-            utility, CSS tartibi hal qiladi). */}
-        {/* Qaytarib bo'lmaydigan amallar (Yakunlash/Arxivlash) mobilda yalang'och
-            ikonka bo'lib turmaydi — touch'da `title` tooltip ko'rinmaydi, xato
-            bosish oson. Ular matnli DropMenu ichiga yig'iladi. */}
-        <div className="flex items-center gap-2 sm:hidden">
-          {topActions
-            .filter((action) => !action.risky)
-            .map((action) => (
-              <IconButton
-                key={action.key}
-                color={action.color}
-                variant={action.variant}
-                title={action.label}
-                onClick={action.onClick}
-              >
-                <action.icon />
-              </IconButton>
-            ))}
+        {/* Ekranda faqat asosiy amal (Tahrirlash / Faollashtirish) + tezkor
+            yuklab olish ikonkalari; qolganlari (Sertifikat, Yakunlash,
+            Arxivlash) bitta "⋮" menyuda, xavfli amallar eng pastda.
+            Ko'rsatish/yashirish KONTEYNER div'da — Button/IconButton ning
+            `inline-flex` bazasi `hidden` ni bosib ketadi. QR/Excel o'z
+            yuklash holati bilan ishlaydi, shuning uchun menyuga olinmadi. */}
+        <div className="flex items-center gap-2">
+          {primaryActions.map((action) => (
+            <div key={action.key} className="contents">
+              <div className="sm:hidden">
+                <IconButton
+                  color={action.color}
+                  variant={action.variant}
+                  title={action.label}
+                  onClick={action.onClick}
+                >
+                  <action.icon />
+                </IconButton>
+              </div>
+              <div className="hidden sm:block">
+                <Button
+                  color={action.color}
+                  variant={action.variant}
+                  className="gap-1.5"
+                  onClick={action.onClick}
+                >
+                  <action.icon className="text-base" />
+                  {action.label}
+                </Button>
+              </div>
+            </div>
+          ))}
           <GroupQrCardsButton groupId={id} variant="icon" />
           {!isTeacher && <ExportExcelButton endpoint={`/groups/${id}/export`} variant="icon" />}
-          {topActions.some((action) => action.risky) && (
+          {menuActions.length > 0 && (
             <DropMenu
-              items={topActions
-                .filter((action) => action.risky)
-                .map((action) => ({
-                  label: action.label,
-                  icon: action.icon,
-                  iconClass: RISKY_ICON_CLASS[action.color],
-                  onClick: action.onClick,
-                }))}
+              items={menuActions.map((action) => ({
+                label: action.label,
+                icon: action.icon,
+                iconClass: action.risky
+                  ? RISKY_ICON_CLASS[action.color]
+                  : "bg-violet-50 text-violet-600",
+                onClick: action.onClick,
+              }))}
             />
           )}
-        </div>
-
-        <div className="hidden sm:flex items-center gap-2">
-          {topActions.map((action) => (
-            <Button
-              key={action.key}
-              color={action.color}
-              variant={action.variant}
-              className="gap-1.5"
-              onClick={action.onClick}
-            >
-              <action.icon className="text-base" />
-              {action.label}
-            </Button>
-          ))}
-          <GroupQrCardsButton groupId={id} />
-          {!isTeacher && <ExportExcelButton endpoint={`/groups/${id}/export`} />}
         </div>
       </div>
 
@@ -979,11 +996,15 @@ function GroupDetail() {
         group={group}
         label={groupLabel}
         status={
-          <Chip
-            value={t(`group.status${group.status[0].toUpperCase()}${group.status.slice(1)}`)}
-            color={STATUS_CHIP_COLOR[group.status] || "blue"}
-            variant="filled"
-          />
+          live ? (
+            <Chip value={t("dashboard.lessonStatus.ongoing")} color="blue" variant="filled" />
+          ) : (
+            <Chip
+              value={t(`group.status${group.status[0].toUpperCase()}${group.status.slice(1)}`)}
+              color={STATUS_CHIP_COLOR[group.status] || "blue"}
+              variant="filled"
+            />
+          )
         }
         details={
           <>
@@ -1045,30 +1066,27 @@ function GroupDetail() {
         }
       />
 
-      {/* Sahifa bo'limlari — website'dagi PanelShowcase tablari bilan bir xil
-          uslub (to'liq yumaloq, faol tab to'q fonli). */}
-      <div className="flex flex-wrap items-center gap-2">
-        {[
-          { key: "students", label: t("group.tabStudentsSection"), Icon: HiUsers },
-          { key: "stats", label: t("group.tabStatistics"), Icon: HiChartBarSquare },
-        ].map((item) => (
+      {/* Yagona tab qatori: o'quvchilar ro'yxati, davomat, baholar, vazifa,
+          dastur va statistika (avval ikki qavat edi: O'quvchilar|Statistika
+          + ichki tablar). */}
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 max-w-full overflow-x-auto self-start shrink-0">
+        {studentTabs.map((tab) => (
           <button
-            key={item.key}
+            key={tab.key}
             type="button"
-            onClick={() => setSection(item.key)}
-            className={`flex items-center gap-2 px-4 h-11 rounded-xl text-sm font-semibold transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
-              section === item.key
-                ? "bg-slate-900 text-white"
-                : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 hover:text-slate-700"
+            onClick={() => setStudentTab(tab.key)}
+            className={`px-3 h-8 shrink-0 whitespace-nowrap rounded-lg text-[13px] font-semibold cursor-pointer transition-colors duration-150 ${
+              activeTab === tab.key
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
             }`}
           >
-            <item.Icon className="text-base shrink-0" />
-            {item.label}
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {section === "stats" && (
+      {activeTab === "stats" && (
         <>
       {/* Moliya bitta qatorda (tushum grafigi + joriy sikl donuti), o'qish
           esa keyingisida (kalendar + davomat) — ma'no bo'yicha guruhlangan.
@@ -1103,27 +1121,10 @@ function GroupDetail() {
         </>
       )}
 
-      {section === "students" && (
+      {activeTab !== "stats" && (
       <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 bg-white">
-        <div className="flex items-center justify-between gap-2 flex-wrap pb-3 border-b border-slate-100">
-          {/* Ikkita ko'rinish: oddiy ro'yxat va oylik davomat matritsasi */}
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 max-w-full overflow-x-auto">
-            {studentTabs.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setStudentTab(tab.key)}
-                className={`px-3 h-8 shrink-0 whitespace-nowrap rounded-lg text-[13px] font-semibold cursor-pointer transition-colors duration-150 ${
-                  activeTab === tab.key
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          {isSortableTab(activeTab) && (
+        {isSortableTab(activeTab) && (
+        <div className="flex items-center justify-end gap-2 flex-wrap pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
               {Object.keys(ranks).length > 0 && <RankPeriodLabel />}
               <Select
@@ -1159,8 +1160,8 @@ function GroupDetail() {
                 </>
               )}
             </div>
-          )}
         </div>
+        )}
 
         {/* Oxirgi import haqida ingichka eslatma — API_CONTRACT_import_undo.md
             §1-band. `canUndo:false` bo'lsa tugma o'rniga sabab ko'rsatiladi. */}
@@ -1224,6 +1225,9 @@ function GroupDetail() {
             canMark={can("attendance:create") && group.status === "active"}
             minDate={isTeacher ? yesterdayString() : ""}
             onOpenStudent={isTeacher && hasFeature(BADGE_FEATURE) ? (s) => navigate(`/students/${s._id}`) : undefined}
+            onPhotoUpdated={(studentId, photo) =>
+              setStudents((prev) => prev.map((st) => (st._id === studentId ? { ...st, photo } : st)))
+            }
           />
         ) : studentsLoading ? (
           <div className="flex flex-1 items-center justify-center">
@@ -1271,7 +1275,11 @@ function GroupDetail() {
                 >
                   <div className={`flex items-center gap-3 min-w-0 pr-11 ${isTeacher ? "sm:pr-0" : "xl:pr-0"}`}>
                     <RowNumber value={index + 1} />
-                    <Avatar user={{ _id: s._id, name: s.fullName }} size={isPhone ? 36 : 38} />
+                    <Avatar
+                      user={{ _id: s._id, name: s.fullName, avatar: s.photo }}
+                      size={isPhone ? 36 : 38}
+                      busy={photoBusyId === s._id}
+                    />
                     <div className="flex flex-col min-w-0">
                       <span className="flex items-center gap-1.5 min-w-0">
                         <span className="font-semibold text-slate-800 truncate">{s.fullName}</span>
@@ -1512,6 +1520,9 @@ function GroupDetail() {
                               },
                             ]
                           : []),
+                        // QR kartani o'quvchi/ota-onaning Telegramiga yuborish.
+                        ...qrSendItems(s),
+                        ...photoItems(s),
                         // Boshqa guruhga o'tkazish va guruhdan chiqarish —
                         // Resepshin/Boshliq ishi (`student:update`).
                         // O'qituvchi/yordamchida bu ruxsat yo'q, backend ham
@@ -1599,6 +1610,8 @@ function GroupDetail() {
           onSaved={fetchStudents}
         />
       )}
+
+      {photoElement}
 
       {contactTargetView && (
         <StudentContactDialog

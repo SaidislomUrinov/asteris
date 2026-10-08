@@ -16,7 +16,7 @@ import { audienceMatches } from "../components/news/newsUtils";
 
 /**
  * Yangiliklar store'ini server bilan sinxron ushlaydi (API_CONTRACT_news.md §4).
- * BIR MARTA — autentifikatsiyadan keyingi layout'da (NewsPopup ichida) —
+ * BIR MARTA — autentifikatsiyadan keyingi layout'da (App.jsx `NewsSync`) —
  * chaqiriladi; qo'ng'iroq, tab va popup hammasi `state.news`dan o'qiydi.
  */
 export default function useNewsSync() {

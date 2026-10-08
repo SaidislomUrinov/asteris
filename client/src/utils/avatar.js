@@ -35,8 +35,10 @@ export function getAvatarColor(id = "") {
  * @returns {string}
  */
 export function getInitials(name = "", lastName = "") {
-  const a = (name || "").trim()[0] || "";
-  const b = (lastName || "").trim()[0] || "";
+  const words = (name || "").trim().split(/\s+/);
+  const a = words[0]?.[0] || "";
+  // `fullName` bitta satr bo'lib kelsa ("Iroda Nurmatova") — 2-so'zdan olinadi.
+  const b = (lastName || "").trim()[0] || words[1]?.[0] || "";
   const initials = `${a}${b}`.toUpperCase();
   return initials || "?";
 }

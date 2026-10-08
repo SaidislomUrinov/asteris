@@ -12,7 +12,7 @@ import { errorMsg } from "../utils/alert";
  * - `items`  — id → yangilik. O'qilgan yangilik navbatdan chiqadi, lekin shu
  *   yerda qoladi — popup "Oldingi" bilan o'qilgan slaydga qaytishi mumkin.
  *
- * Socket obunalari `hooks/useNewsSync.js` da (NewsPopup ichida bir marta).
+ * Socket obunalari `hooks/useNewsSync.js` da (App.jsx `NewsSync` ichida bir marta).
  */
 const initialState = {
   unread: 0,

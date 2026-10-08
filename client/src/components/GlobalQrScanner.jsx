@@ -9,6 +9,7 @@ import useFeature from "../hooks/useFeature";
 import useQrScanner from "../hooks/useQrScanner";
 import { api } from "../utils/fetching";
 import { errorMsg } from "../utils/alert";
+import { scanSound } from "../utils/scanSound";
 
 // Bir xil kartani ketma-ket ikki marta o'tkazsa takroriy so'rov ketmasligi
 // uchun (QrAttendance sahifasidagi bilan bir xil qoida).
@@ -53,11 +54,15 @@ function GlobalQrScanner() {
         if (!ok) throw new Error(msg);
 
         if (data.needsGroup) {
+          scanSound.attention();
           setGroupChoice({ token, ...data });
           return;
         }
 
         const name = data.student?.fullName || "";
+        if (data.duplicate) scanSound.duplicate();
+        else if (data.late) scanSound.late();
+        else scanSound.success();
         if (data.duplicate) {
           toast.warning(name, { description: t("attendance.alreadyMarked") });
         } else {
@@ -66,6 +71,7 @@ function GlobalQrScanner() {
           });
         }
       } catch (error) {
+        scanSound.error();
         errorMsg(error.message);
       } finally {
         busyRef.current = false;

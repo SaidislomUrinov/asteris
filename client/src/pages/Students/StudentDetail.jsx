@@ -15,7 +15,6 @@ import {
   HiPaperAirplane,
   HiPhone,
   HiQrCode,
-  HiUser,
   HiUserGroup,
   HiArchiveBox,
   HiOutlineArrowPath,
@@ -28,6 +27,7 @@ import Button from "../../ui/Button";
 import GradeSummary from "./GradeSummary";
 import StudentBadges from "./StudentBadges";
 import IconButton from "../../ui/IconButton";
+import DropMenu from "../../ui/DropMenu";
 import Dialog from "../../ui/Dialog";
 import Chip from "../../ui/Chip";
 import Loading from "../../ui/Loading";
@@ -42,10 +42,12 @@ import QrCardDialog from "./QrCardDialog";
 import IssueCertificateDialog from "../Certificates/IssueCertificateDialog";
 import ExportExcelButton from "../../ui/ExportExcelButton";
 import InfoCard, { InfoMeta } from "../../ui/InfoCard";
+import StudentPhotoAvatar from "../../ui/StudentPhotoAvatar";
 import MetricCard from "../../ui/MetricCard";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import useFeature from "../../hooks/useFeature";
 import useCan from "../../hooks/useCan";
+import useSendQrCard, { isQrSendable } from "../../hooks/useSendQrCard";
 import useHideFinance from "../../hooks/useHideFinance";
 import useClosingValue from "../../hooks/useClosingValue";
 import { api } from "../../utils/fetching";
@@ -84,6 +86,7 @@ function StudentDetail() {
   };
 
   const hasFeature = useFeature();
+  const { canSend: canSendQr, send: sendQr, sendingId: qrSendingId } = useSendQrCard();
   const [qrOpen, setQrOpen] = useState(false);
   const [certificateOpen, setCertificateOpen] = useState(false);
   const [payTarget, setPayTarget] = useState(null);
@@ -284,6 +287,13 @@ function StudentDetail() {
     );
   });
 
+  // Rasm yuklandi/olib tashlandi — javobdagi `photo` darhol qo'llanadi
+  // (socket `student:updated` ham keladi, natija bir xil).
+  const applyPhoto = useCallback((studentId, photo) => {
+    if (studentId !== id) return;
+    setStudent((prev) => (prev ? { ...prev, photo } : prev));
+  }, [id]);
+
   const confirmLeave = async () => {
     if (!leaveTarget) return;
     try {
@@ -362,37 +372,57 @@ function StudentDetail() {
     ? student.groups.find((g) => g._id === paymentsTarget._id) || paymentsTarget
     : null;
 
+  // Tepadagi ikkilamchi amallar — bitta "⋮" menyuda (Tahrirlash va Excel ekranda).
+  const qrSendable = canSendQr && isQrSendable(student);
+  const topMenuItems = [
+    ...(hasFeature("attendance.qr")
+      ? [{
+          label: t("attendance.qrCardAction"),
+          icon: HiQrCode,
+          iconClass: "bg-slate-50 text-slate-600",
+          onClick: () => setQrOpen(true),
+        }]
+      : []),
+    ...(canSendQr
+      ? [{
+          label: qrSendingId === student._id ? `${t("student.qrSendAction")}...` : t("student.qrSendAction"),
+          icon: HiPaperAirplane,
+          iconClass: "bg-slate-50 text-slate-600",
+          hint: qrSendable ? undefined : t("student.qrSendNoTelegramHint"),
+          disabled: !qrSendable || Boolean(qrSendingId),
+          onClick: () => sendQr(student),
+        }]
+      : []),
+    ...(can("certificate:create") && hasFeature("certificate.manage")
+      ? [{
+          label: t("certificate.issue"),
+          icon: HiAcademicCap,
+          iconClass: "bg-violet-50 text-violet-600",
+          onClick: () => setCertificateOpen(true),
+        }]
+      : []),
+  ];
+
   return (
     <div className="flex flex-col w-full h-full gap-4">
       <div className="flex items-center justify-between gap-3">
         <IconButton variant="ghost" color="black" onClick={() => navigate(-1)}>
           <HiArrowLeft />
         </IconButton>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {can("student:update") && (
             <IconButton variant="ghost" color="black" title={t("student.edit")} onClick={() => setEditOpen(true)}>
               <HiPencilSquare />
             </IconButton>
           )}
-          {hasFeature("attendance.qr") && (
-            <Button variant="outlined" color="slate" onClick={() => setQrOpen(true)}>
-              <HiQrCode className="text-base" />
-              {t("attendance.qrCardAction")}
-            </Button>
-          )}
-          {can("certificate:create") && hasFeature("certificate.manage") && (
-            <Button variant="outlined" color="violet" onClick={() => setCertificateOpen(true)}>
-              <HiAcademicCap className="text-base" />
-              {t("certificate.issue")}
-            </Button>
-          )}
-          <ExportExcelButton endpoint={`/students/${id}/export`} />
+          <ExportExcelButton endpoint={`/students/${id}/export`} variant="icon" />
+          {topMenuItems.length > 0 && <DropMenu items={topMenuItems} />}
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <InfoCard
-          icon={<HiUser />}
+          media={<StudentPhotoAvatar student={student} onUpdated={applyPhoto} />}
           title={student.fullName}
           subtitle={student.phone}
           accent="blue"
@@ -467,21 +497,6 @@ function StudentDetail() {
                     />
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    {entry.status === "active" && can("student:update") && (
-                      <span className="relative inline-flex">
-                        <IconButton
-                          variant="ghost"
-                          color="black"
-                          title={t("student.openingDebtAction")}
-                          onClick={() => setOpeningTarget(entry)}
-                        >
-                          <HiOutlineClipboardDocumentList />
-                        </IconButton>
-                        {entry.openingDebtRemaining > 0 && (
-                          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white pointer-events-none" />
-                        )}
-                      </span>
-                    )}
                     {entry.status === "active" && (
                       <IconButton
                         variant="ghost"
@@ -495,33 +510,47 @@ function StudentDetail() {
                         <HiBanknotes />
                       </IconButton>
                     )}
-                    {/* Arxivlash — "o'chirish" o'rniga. Guruhdan chiqarilgan
-                        (left) a'zolikni ham arxivlash mumkin, shuning uchun
-                        `status === "active"` shartidan TASHQARIDA turadi
-                        (API_CONTRACT_archive.md §1). */}
-                    {can("student:delete") && (
-                      <IconButton
-                        variant="ghost"
-                        color="orange"
-                        title={t("archive.archive")}
-                        onClick={() => setArchiveTarget(entry)}
-                      >
-                        <HiArchiveBox />
-                      </IconButton>
-                    )}
-                    {/* Guruhdan chiqarish — `student:update` ruxsati
-                        bo'lganlarda (Resepshin/Boshliq). O'qituvchi bu
-                        sahifani umuman ocha olmaydi (backend 403). */}
-                    {entry.status === "active" && can("student:update") && (
-                      <IconButton
-                        variant="ghost"
-                        color="red"
-                        title={t("student.leaveGroup")}
-                        onClick={() => setLeaveTarget(entry)}
-                      >
-                        <HiUserMinus />
-                      </IconButton>
-                    )}
+                    {/* Kam ishlatiladigan amallar "⋮" menyuda. Arxivlash `status`
+                        shartidan TASHQARIDA (left a'zolikni ham arxivlash mumkin,
+                        API_CONTRACT_archive.md §1); guruhdan chiqarish `student:update`
+                        talab qiladi (O'qituvchi bu sahifani ocha olmaydi). */}
+                    {(() => {
+                      const menuItems = [
+                        ...(entry.status === "active" && can("student:update")
+                          ? [{
+                              label: t("student.openingDebtMenu"),
+                              icon: HiOutlineClipboardDocumentList,
+                              iconClass: "bg-slate-50 text-slate-600",
+                              onClick: () => setOpeningTarget(entry),
+                            }]
+                          : []),
+                        ...(can("student:delete")
+                          ? [{
+                              label: t("archive.archive"),
+                              icon: HiArchiveBox,
+                              iconClass: "bg-orange-50 text-orange-600",
+                              onClick: () => setArchiveTarget(entry),
+                            }]
+                          : []),
+                        ...(entry.status === "active" && can("student:update")
+                          ? [{
+                              label: t("student.leaveGroup"),
+                              icon: HiUserMinus,
+                              iconClass: "bg-red-50 text-red-600",
+                              onClick: () => setLeaveTarget(entry),
+                            }]
+                          : []),
+                      ];
+                      if (!menuItems.length) return null;
+                      return (
+                        <span className="relative inline-flex">
+                          <DropMenu items={menuItems} />
+                          {entry.status === "active" && can("student:update") && entry.openingDebtRemaining > 0 && (
+                            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white pointer-events-none" />
+                          )}
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
 

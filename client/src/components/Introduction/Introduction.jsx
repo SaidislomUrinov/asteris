@@ -4,7 +4,6 @@ import { api } from "../../utils/fetching";
 import { updateUser } from "../../contexts/user";
 import IntroductionOverlay from "./IntroductionOverlay";
 import { INTRO_STEPS } from "./steps";
-import { useBlockingModal } from "../../utils/blockingModal";
 
 // Login rolga qarab boshqa auth zanjiri (server/CLAUDE.md), App.jsx dagi
 // `VERIFY_ENDPOINT` xaritasiga o'xshash tanlov.
@@ -28,8 +27,6 @@ function Introduction() {
   // bo'sh ekran ko'rsatardi ("Keyingi" tugmasi ham chiqmay, tur qotib
   // qolardi).
   const [steps, setSteps] = useState(INTRO_STEPS);
-  // Tur davomida yangiliklar popup'i kutadi (utils/blockingModal.js).
-  useBlockingModal(true);
 
   // DOM/layout tayyor bo'lishi uchun ~500ms kutib birinchi step boshlanadi.
   useEffect(() => {

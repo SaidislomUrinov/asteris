@@ -16,6 +16,7 @@ import Dialog from "../../ui/Dialog";
 import useQrScanner from "../../hooks/useQrScanner";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
+import { scanSound } from "../../utils/scanSound";
 
 // Bir xil QR kamera oldida turganda sekundiga o'nlab marta o'qiladi — shu
 // muddat ichida takroriy skan e'tiborga olinmaydi (server so'rovlari
@@ -111,6 +112,7 @@ function QrAttendance() {
         if (!ok) throw new Error(msg);
 
         if (data.needsGroup) {
+          scanSound.attention();
           setGroupChoice({ token, via, ...data });
           return;
         }
@@ -118,9 +120,13 @@ function QrAttendance() {
         const item = { ...data, via, at: Date.now() };
         setResult(item);
         setHistory((prev) => [item, ...prev].slice(0, 20));
+        if (data.duplicate) scanSound.duplicate();
+        else if (data.late) scanSound.late();
+        else scanSound.success();
         if (data.duplicate) successMsg("attendance.alreadyMarked");
         else successMsg(data.late ? "attendance.markedLate" : "attendance.marked");
       } catch (error) {
+        scanSound.error();
         errorMsg(error.message);
         const failed = { failed: true, message: error.message, via, at: Date.now() };
         setResult(failed);

@@ -5,7 +5,7 @@ import IconButton from "./IconButton";
 
 const MENU_WIDTH = 224; // w-56
 
-function DropdownMenu({ items = [], onOpenChange, trigger }) {
+function DropdownMenu({ items = [], onOpenChange, trigger, align = "end" }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const menuRef = useRef(null);
@@ -38,7 +38,8 @@ function DropdownMenu({ items = [], onOpenChange, trigger }) {
     onOpenChange?.(!open);
     if (!open && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      const menuHeight = items.length * 40 + 20;
+      const menuHeight =
+        items.length * 40 + items.filter((i) => i.hint).length * 28 + 20;
       const spaceBelow = window.innerHeight - rect.bottom;
       const top =
         spaceBelow < menuHeight && rect.top > menuHeight
@@ -47,7 +48,12 @@ function DropdownMenu({ items = [], onOpenChange, trigger }) {
       // Menu doim trigger'ning CHAP tomonida ochiladi (o'ng qirrasi trigger'ning
       // o'ng qirrasiga tekislanadi) — o'ng chetdagi "Amallar" ustunida ekrandan
       // tashqariga chiqib ketmasligi uchun.
-      const left = Math.max(8, rect.right - MENU_WIDTH);
+      // `align="start"` — chap qirralar tekislanadi (sahifa chap chetidagi
+      // trigger uchun, masalan o'quvchi avatari — aks holda menyu sidebar ustiga chiqadi).
+      const left =
+        align === "start"
+          ? Math.max(8, Math.min(rect.left, window.innerWidth - MENU_WIDTH - 8))
+          : Math.max(8, rect.right - MENU_WIDTH);
       setPos({ top, left });
     }
     setOpen((p) => !p);
@@ -74,24 +80,42 @@ function DropdownMenu({ items = [], onOpenChange, trigger }) {
             style={{ top: pos.top, left: pos.left, zIndex: 9999 }}
             className="fixed w-56 flex flex-col gap-0.5 bg-white rounded-xl border border-slate-200 shadow-[0_12px_28px_-8px_rgba(15,23,42,0.18)] p-1.5"
           >
-            {items.map((item, index) => (
-              <button
-                disabled={item.disabled}
-                key={index}
-                onClick={() => {
-                  item.onClick?.();
-                  setOpen(false);
-                }}
-                className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] font-medium text-slate-700 text-left transition-colors enabled:cursor-pointer enabled:hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <span
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${item.iconClass}`}
-                >
-                  <item.icon className="text-base" />
-                </span>
-                <span className="truncate">{item.label}</span>
-              </button>
-            ))}
+            {items.map((item, index) => {
+              // `disabled` band xira va bosilmaydi; `hint` — nega yopiqligi
+              // (label ostida kichik matn + `title` tooltip). `title` alohida
+              // berilsa o'sha ishlatiladi. Eski {label, icon, onClick} shakli
+              // o'zgarishsiz ishlaydi.
+              const tip = item.title || item.hint || undefined;
+              return (
+                <div key={index} title={tip}>
+                  <button
+                    type="button"
+                    disabled={item.disabled}
+                    aria-disabled={item.disabled || undefined}
+                    onClick={() => {
+                      if (item.disabled) return;
+                      item.onClick?.();
+                      setOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] font-medium text-slate-700 text-left transition-colors enabled:cursor-pointer enabled:hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${item.iconClass}`}
+                    >
+                      <item.icon className="text-base" />
+                    </span>
+                    <span className="flex flex-col min-w-0">
+                      <span className="truncate leading-snug">{item.label}</span>
+                      {item.hint && (
+                        <span className="text-[11px] font-normal leading-snug text-slate-500 whitespace-normal">
+                          {item.hint}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                </div>
+              );
+            })}
           </div>,
           document.body,
         )}

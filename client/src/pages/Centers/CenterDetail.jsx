@@ -396,7 +396,7 @@ function CenterDetail() {
                         <tr key={i} className="border-t border-slate-100 first:border-t-0">
                           <td className="px-4 py-2.5">
                             <div className="flex items-center gap-2.5">
-                              <Avatar user={{ _id: p.student._id, name: p.student.fullName }} size={30} />
+                              <Avatar user={{ _id: p.student._id, name: p.student.fullName, avatar: p.student.photo }} size={30} />
                               <span className="font-semibold text-slate-800">{p.student.fullName}</span>
                             </div>
                           </td>

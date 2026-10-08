@@ -10,9 +10,11 @@ import { accentOf } from "../utils/accent";
  * @param {React.ReactNode} [props.subtitle]
  * @param {React.ReactNode} [props.badge] - o'ng yuqoridagi holat belgisi
  * @param {keyof import("../utils/accent").ACCENT} [props.accent="blue"]
+ * @param {React.ReactNode} [props.media] - ikonka qutisi o'rniga (masalan tahrirlanadigan
+ *   avatar, 44px) — berilsa `icon` e'tiborsiz qoldiriladi
  * @param {React.ReactNode} [props.children]
  */
-function InfoCard({ icon, title, subtitle, badge, accent = "blue", children, className = "" }) {
+function InfoCard({ icon, media, title, subtitle, badge, accent = "blue", children, className = "" }) {
   const a = accentOf(accent);
 
   return (
@@ -22,11 +24,13 @@ function InfoCard({ icon, title, subtitle, badge, accent = "blue", children, cla
       <span className={`absolute inset-y-0 left-0 w-1 ${a.edge}`} />
 
       <div className="flex items-start gap-3">
-        <div
-          className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center text-xl ${a.icon}`}
-        >
-          {icon}
-        </div>
+        {media || (
+          <div
+            className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center text-xl ${a.icon}`}
+          >
+            {icon}
+          </div>
+        )}
         <div className="flex flex-col gap-0.5 min-w-0 flex-1">
           <p className="font-space font-bold text-lg leading-snug text-slate-900 line-clamp-2 break-words">{title}</p>
           {subtitle && <p className="text-xs text-slate-400 truncate">{subtitle}</p>}

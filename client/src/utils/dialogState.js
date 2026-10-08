@@ -6,7 +6,7 @@
 //
 // Alohida faylda turadi, chunki `Dialog.jsx` dan komponentdan boshqa narsa
 // eksport qilinsa Vite "Fast refresh only works when a file only exports
-// components" xatosini beradi (`utils/tabBar.js` bilan bir xil sabab).
+// components" xatosini beradi (`hooks/useNavItems.js` dagi `pickTabBarItems` bilan bir xil sabab).
 let openCount = 0;
 
 export const dialogOpened = () => {
