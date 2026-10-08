@@ -37,6 +37,7 @@ const { escapeHtml } = require("../bot/escapeHtml");
 const { t: botT } = require("../bot/i18n");
 const audit = require("../utils/audit.util");
 const { isValidObjectId } = require("mongoose");
+const { photoFor } = require("../utils/studentPhoto.util");
 
 // Sozlama yozuvlar kam o'zgaradi, lekin har davomat belgilashda (applyCredit)
 // o'qiladi — cache-aside: avval Redis, topilmasa DB'dan olib Redis'ga
@@ -695,7 +696,7 @@ module.exports = {
       if (!target) {
         return {
           needsGroup: true,
-          student: { _id: String(student._id), fullName: student.fullName, photo: student.photo },
+          student: { _id: String(student._id), fullName: student.fullName, photo: photoFor(student, clientId) },
           groups: candidates.map((g) => ({
             _id: String(g._id),
             subject: g.subject?.name || "",
@@ -723,7 +724,7 @@ module.exports = {
     if (already) {
       return {
         duplicate: true,
-        student: { _id: String(student._id), fullName: student.fullName, photo: student.photo },
+        student: { _id: String(student._id), fullName: student.fullName, photo: photoFor(student, clientId) },
         groupId: String(target._id),
         subject: target.subject?.name || "",
         status: already.status,
@@ -742,7 +743,7 @@ module.exports = {
     if (!locked) {
       return {
         duplicate: true,
-        student: { _id: String(student._id), fullName: student.fullName, photo: student.photo },
+        student: { _id: String(student._id), fullName: student.fullName, photo: photoFor(student, clientId) },
         groupId: String(target._id),
         subject: target.subject?.name || "",
         status: "present",
@@ -762,7 +763,7 @@ module.exports = {
     });
 
     return {
-      student: { _id: String(student._id), fullName: student.fullName, photo: student.photo },
+      student: { _id: String(student._id), fullName: student.fullName, photo: photoFor(student, clientId) },
       groupId: String(target._id),
       subject: target.subject?.name || "",
       status: "present",

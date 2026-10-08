@@ -12,6 +12,7 @@ const StudentMedal = require("../models/StudentMedal");
 const clientService = require("./client.service");
 const emit = require("../utils/emitter.util");
 const { MONTH_RE, groupStudentsSummary, positionsInSummary } = require("../utils/gradeScore.util");
+const { photoFor } = require("../utils/studentPhoto.util");
 const {
   BADGE_TYPES,
   BADGE_FEATURE,
@@ -296,7 +297,7 @@ module.exports = {
   // `student` — faqat ism va rasm (telefon/ota-ona/pul hech qachon).
   getStudent: async (clientId, studentId, centerScope = null, { teaching = null } = {}) => {
     if (!isValidObjectId(studentId)) throw new Error("student.notFound");
-    const student = await Student.findOne({ _id: studentId, isDeleted: false }).select("fullName photo groups");
+    const student = await Student.findOne({ _id: studentId, isDeleted: false }).select("fullName photos groups");
     if (!student) throw new Error("student.notFound");
 
     // Bir guruhda bir necha a'zolik bo'lishi mumkin (chiqib qayta qo'shilgan) —
@@ -357,7 +358,7 @@ module.exports = {
         (b.endedAt || b.startedAt || 0) - (a.endedAt || a.startedAt || 0),
     );
     return {
-      student: { _id: String(student._id), fullName: student.fullName, photo: student.photo || null },
+      student: { _id: String(student._id), fullName: student.fullName, photo: photoFor(student, clientId) || null },
       scope: teaching ? "teacher" : "full",
       month,
       groups: out,

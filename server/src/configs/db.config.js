@@ -4,6 +4,7 @@ const Admin = require("../models/Admin");
 const { getHash } = require("../utils/hash.util");
 const migrateGradeScale = require("../scripts/migrate-grade-scale");
 const migrateChatParticipants = require("../scripts/migrate-chat-participants");
+const migrateStudentPhotos = require("../scripts/migrate-student-photos");
 
 const seedOwnerAdmin = async () => {
   try {
@@ -46,6 +47,11 @@ const connectDB = async () => {
       await migrateChatParticipants();
     } catch (err) {
       console.error("Chat suhbatlari migratsiya xatosi:", err.message);
+    }
+    try {
+      await migrateStudentPhotos();
+    } catch (err) {
+      console.error("O'quvchi rasmlari migratsiya xatosi:", err.message);
     }
   } catch (err) {
     console.error("MongoDB connection error:", err.message);

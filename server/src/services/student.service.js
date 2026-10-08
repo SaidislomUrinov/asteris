@@ -41,6 +41,7 @@ const {
 } = require("../utils/telegramPhone.util");
 const groupHolidayService = require("./groupHoliday.service");
 const fileUtil = require("../utils/file.util");
+const { photoFor, latestPhoto } = require("../utils/studentPhoto.util");
 const { FOLDERS } = require("../configs/folder.config");
 
 const PAGE_SIZE = 50;
@@ -74,6 +75,55 @@ const findPhotoStudent = async (clientId, id) => {
   );
   if (!hasEntry) throw new Error("student.notFound");
   return student;
+};
+
+// Rasm fayli ref-count bo'yicha o'chiriladi (API_CONTRACT_student_photo_per_client.md):
+// element o'zgargandan/olib tashlangandan KEYIN chaqiriladi — hech bir
+// hujjat/element bu `path`ni ishlatmasa fayl diskdan o'chadi. Parallel
+// holatda ikki jarayon o'chirishga ursa ham `fileUtil.remove` ENOENT'ni
+// jim o'tkazadi. Xato asosiy amalni buzmaydi.
+const releasePhotoFile = async (oldPath) => {
+  try {
+    if (!oldPath || !oldPath.startsWith(STUDENT_PHOTO_PREFIX)) return false;
+    const inUse = await Student.exists({ "photos.path": oldPath });
+    if (inUse) return false;
+    return await fileUtil.remove(oldPath);
+  } catch (error) {
+    console.error("Student photo release error:", error.message);
+    return false;
+  }
+};
+
+// Shu client elementini atomar almashtiradi/yaratadi (bitta pipeline-update):
+// boshqa client elementlariga tegilmaydi, shu client'niki (bo'lsa) olib
+// tashlanib yangisi qo'shiladi — dublikat element hech qachon paydo bo'lmaydi.
+// Qaytaradi: yangilashdan OLDINGI shu client rasmi ("" — yo'q edi), hujjat
+// topilmasa `null`.
+const upsertClientPhoto = async (studentId, clientId, photoPath) => {
+  const client = new Types.ObjectId(String(clientId));
+  const previous = await Student.findOneAndUpdate(
+    { _id: studentId },
+    [
+      {
+        $set: {
+          photos: {
+            $concatArrays: [
+              {
+                $filter: {
+                  input: { $ifNull: ["$photos", []] },
+                  cond: { $ne: ["$$this.client", client] },
+                },
+              },
+              [{ client, path: photoPath, updatedAt: getNow() }],
+            ],
+          },
+        },
+      },
+    ],
+    { returnDocument: "before", projection: { photos: 1 }, updatePipeline: true },
+  ).lean();
+  if (!previous) return null;
+  return photoFor(previous, client);
 };
 
 // Guruh detali uchun (butun guruh bir so'rovda) — xavfsizlik chegarasi.
@@ -758,7 +808,7 @@ const DTO = async (student, clientId, centerId = "", { includeArchived = false }
     _id: student._id,
     phone: student.phone,
     fullName: student.fullName,
-    photo: student.photo,
+    photo: photoFor(student, clientId),
     parentPhone: student.parentPhone,
     ...telegramFieldsOf(student),
     groups: groups.map((g) => {
@@ -1009,23 +1059,34 @@ const changesSharedContact = (student, body) =>
 // Owner socket ulanishida centerId yo'q (socket.config.js) — faqat
 // `center:*` xonalariga yuborilsa Owner hech qachon ololmaydi.
 // `update` va rasm amallari uchun umumiy; DTO qaytaradi.
-const emitStudentUpdated = async (student, clientId) => {
+// Rasm client darajasida (API_CONTRACT_student_photo_per_client.md) — payload
+// HAR client uchun o'z `photo`si bilan quriladi va faqat o'sha client'ning
+// `client:{id}` + uning `center:{id}` xonalariga ketadi. `onlyClient` — rasm
+// o'zgarishi: faqat `clientId` xonalariga (boshqa tenant'ga hech narsa ketmaydi).
+const emitStudentUpdated = async (student, clientId, { onlyClient = false } = {}) => {
   const dto = await attachTelegramStatus(await DTO(student, clientId));
 
-  const centerIds = [...new Set(student.groups.map((g) => String(g.center)))];
-  const clientIds = [...new Set(student.groups.map((g) => String(g.client)))];
-  const payload = {
+  const centersByClient = new Map();
+  for (const g of student.groups || []) {
+    const cId = String(g.client);
+    if (onlyClient && cId !== String(clientId)) continue;
+    if (!centersByClient.has(cId)) centersByClient.set(cId, new Set());
+    centersByClient.get(cId).add(String(g.center));
+  }
+  const base = {
     studentId: String(student._id),
     fullName: student.fullName,
     phone: student.phone,
     parentPhone: student.parentPhone,
     ...telegramFieldsOf(student),
-    photo: student.photo,
     parentTelegram: dto.parentTelegram,
     studentTelegram: dto.studentTelegram,
   };
-  centerIds.forEach((centerId) => emit(`center:${centerId}`, "student:updated", payload));
-  clientIds.forEach((cId) => emit(`client:${cId}`, "student:updated", payload));
+  for (const [cId, centerIds] of centersByClient) {
+    const payload = { ...base, photo: photoFor(student, cId) };
+    centerIds.forEach((centerId) => emit(`center:${centerId}`, "student:updated", payload));
+    emit(`client:${cId}`, "student:updated", payload);
+  }
 
   return dto;
 };
@@ -1060,7 +1121,7 @@ module.exports = {
     if (!trimmed) return [];
 
     const students = await Student.find({ phone: trimmed, isDeleted: false }).select(
-      "fullName phone parentPhone photo telegramSame telegramPhone parentTelegramSame parentTelegramPhone groups.client",
+      "fullName phone parentPhone photos telegramSame telegramPhone parentTelegramSame parentTelegramPhone groups.client",
     );
 
     return students.map((student) => {
@@ -1071,9 +1132,11 @@ module.exports = {
             fullName: student.fullName,
             parentPhone: student.parentPhone,
             ...telegramFieldsOf(student),
-            photo: student.photo,
+            photo: photoFor(student, clientId),
           }
-        : { _id: student._id, fullName: student.fullName, photo: student.photo, shared: true };
+        : // Boshqa client o'quvchisi — tanlashda yuz ko'rinsin: eng so'nggi
+          // rasm (qo'shilganda aynan shu rasm shu client'ga nusxalanadi).
+          { _id: student._id, fullName: student.fullName, photo: latestPhoto(student), shared: true };
     });
   },
 
@@ -1199,6 +1262,23 @@ module.exports = {
 
     await student.save();
 
+    // Boshqa client'ning o'quvchisi qo'shildi va shu client'da rasm elementi
+    // yo'q — eng so'nggi rasm nusxasi (API_CONTRACT_student_photo_per_client.md).
+    // Atomar va ref-count bilan xavfsiz: `photos.path` sharti — nusxa faqat
+    // fayl hali shu hujjatda ishlatilayotgan bo'lsa yoziladi (aks holda
+    // parallel o'chirish faylni allaqachon o'chirgan bo'lishi mumkin).
+    if (existingStudentId && !photoFor(student, clientId)) {
+      const source = latestPhoto(student);
+      if (source) {
+        const copy = { client: new Types.ObjectId(String(clientId)), path: source, updatedAt: getNow() };
+        const res = await Student.updateOne(
+          { _id: student._id, "photos.client": { $ne: copy.client }, "photos.path": source },
+          { $push: { photos: copy } },
+        );
+        if (res.modifiedCount) student.photos.push(copy);
+      }
+    }
+
     // `maxStudents` — MO'LJAL (yuqoridagi izoh). Guruhdagi faol o'quvchilar
     // soni belgilangan limitdan oshib ketsa, limit jimgina YANGI songa
     // ko'tariladi: 10 talik guruhga 11-o'quvchi qo'shilsa max 11 bo'ladi,
@@ -1236,7 +1316,7 @@ module.exports = {
         phone: student.phone,
         parentPhone: student.parentPhone,
         ...telegramFieldsOf(student),
-        photo: student.photo,
+        photo: photoFor(student, clientId),
       },
       entry: {
         ...groupEntryDTO(entry, group, billingSetting.cycleMode),
@@ -1859,23 +1939,28 @@ module.exports = {
     }
 
     const photo = await fileUtil.saveBuffer(buffer, FOLDERS.STUDENTS, ".webp");
-    // Atomar almashtirish: eski qiymat AYNAN shu yozuvdan olinadi. Avval
-    // `student.photo` o'qilib `save()` qilinardi — bir vaqtdagi bir nechta
-    // yuklashda har biri bir xil "eski"ni ko'rib, yetim fayllar qolardi.
-    let previous;
+    // Faqat SHU client elementi (API_CONTRACT_student_photo_per_client.md) —
+    // atomar almashtirish, eski qiymat aynan shu yozuvdan olinadi (parallel
+    // yuklashlarda yetim fayl qolmaydi). Boshqa client rasmi o'zgarmaydi.
+    let oldPhoto;
     try {
-      previous = await Student.findOneAndUpdate(
-        { _id: student._id },
-        { $set: { photo } },
-        { returnDocument: "before", projection: { photo: 1 } },
-      ).lean();
+      oldPhoto = await upsertClientPhoto(student._id, clientId, photo);
     } catch (error) {
       void fileUtil.remove(photo); // hujjat saqlanmadi — yetim fayl qolmasin
       throw error;
     }
-    const oldPhoto = previous?.photo || "";
-    if (oldPhoto.startsWith(STUDENT_PHOTO_PREFIX)) void fileUtil.remove(oldPhoto);
-    student.photo = photo;
+    if (oldPhoto === null) {
+      void fileUtil.remove(photo);
+      throw new Error("student.notFound");
+    }
+    // Ref-count: eski fayl boshqa client/hujjatda ishlatilmasa o'chadi.
+    if (oldPhoto && oldPhoto !== photo) await releasePhotoFile(oldPhoto);
+
+    const client = new Types.ObjectId(String(clientId));
+    student.photos = [
+      ...(student.photos || []).filter((p) => String(p.client) !== String(clientId)),
+      { client, path: photo, updatedAt: getNow() },
+    ];
 
     void audit.log({
       actor,
@@ -1884,23 +1969,25 @@ module.exports = {
       entity: { type: "student", id: student._id, label: student.fullName },
       changes: [{ field: "photo", from: oldPhoto, to: photo }],
     });
-    await emitStudentUpdated(student, clientId);
-    return { _id: student._id, photo: student.photo };
+    await emitStudentUpdated(student, clientId, { onlyClient: true });
+    return { _id: student._id, photo };
   },
 
-  // DELETE /students/:id/photo — rasmni olib tashlash (fayl ham diskdan).
+  // DELETE /students/:id/photo — faqat shu client rasmi olib tashlanadi;
+  // fayl ref-count bo'yicha (boshqa client ishlatayotgan bo'lsa qoladi).
   removePhoto: async (clientId, id, actor = null) => {
     const student = await findPhotoStudent(clientId, id);
+    const client = new Types.ObjectId(String(clientId));
     // Atomar — eski qiymat shu yozuvning o'zidan (setPhoto bilan bir xil sabab).
     const previous = await Student.findOneAndUpdate(
-      { _id: student._id },
-      { $set: { photo: "" } },
-      { returnDocument: "before", projection: { photo: 1 } },
+      { _id: student._id, "photos.client": client },
+      { $pull: { photos: { client } } },
+      { returnDocument: "before", projection: { photos: { $elemMatch: { client } } } },
     ).lean();
-    const oldPhoto = previous?.photo || "";
-    if (oldPhoto) {
-      student.photo = "";
-      if (oldPhoto.startsWith(STUDENT_PHOTO_PREFIX)) void fileUtil.remove(oldPhoto);
+    const oldPhoto = previous ? photoFor(previous, client) : "";
+    if (previous) {
+      student.photos = (student.photos || []).filter((p) => String(p.client) !== String(clientId));
+      if (oldPhoto) await releasePhotoFile(oldPhoto);
       void audit.log({
         actor,
         client: clientId,
@@ -1908,7 +1995,7 @@ module.exports = {
         entity: { type: "student", id: student._id, label: student.fullName },
         changes: [{ field: "photo", from: oldPhoto, to: "" }],
       });
-      await emitStudentUpdated(student, clientId);
+      await emitStudentUpdated(student, clientId, { onlyClient: true });
     }
     return { _id: student._id, photo: "" };
   },
@@ -2243,7 +2330,7 @@ module.exports = {
         phone: student.phone,
         parentPhone: student.parentPhone,
         ...telegramFieldsOf(student),
-        photo: student.photo,
+        photo: photoFor(student, clientId),
       },
       entry: { ...groupEntryDTO(newEntry, group, newSetting.cycleMode), client: newEntry.client },
     };

@@ -219,9 +219,23 @@ const schema = new Schema({
     required: true,
     trim: true,
   },
-  photo: {
-    type: String,
-    default: "",
+  // O'quvchi rasmi o'quv markaz (Client) darajasida
+  // (API_CONTRACT_student_photo_per_client.md): har client uchun ko'pi bilan
+  // bitta element. Bir xil `path` bir nechta element/hujjatda bo'lishi mumkin
+  // (qo'shishda nusxa) — fayl ref-count bo'yicha o'chiriladi. Eski `photo`
+  // maydoni scripts/migrate-student-photos.js orqali ko'chirilgan.
+  photos: {
+    type: [
+      new Schema(
+        {
+          client: { type: Schema.Types.ObjectId, ref: "Client", required: true },
+          path: { type: String, default: "" },
+          updatedAt: { type: Number, default: 0 },
+        },
+        { _id: false },
+      ),
+    ],
+    default: [],
   },
   // Ota-ona raqami — Telegram botda `request_contact` raqami bilan AYNAN
   // taqqoslanadi, shuning uchun yozishda normalizatsiya (`+998XXXXXXXXX`)
@@ -316,6 +330,8 @@ schema.virtual("lastUpdate").get(function () {
 schema.index({ "groups.client": 1, "groups.center": 1 });
 schema.index({ "groups.group": 1, "groups.status": 1 });
 schema.index({ isDeleted: 1 });
+// Rasm fayli ref-count so'rovi (`Student.exists({ "photos.path": p })`).
+schema.index({ "photos.path": 1 });
 // Ota-ona botda raqam bo'yicha farzandlarini topadi (bo'sh satr ko'p — partial).
 schema.index({ parentPhone: 1 }, { partialFilterExpression: { parentPhone: { $gt: "" } } });
 // Telegram mosligi (bot, bildirishnomalar, badge) — shu ikki maydon bo'yicha.

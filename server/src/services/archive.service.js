@@ -12,6 +12,7 @@ const groupService = require("./group.service");
 const audit = require("../utils/audit.util");
 const { restoreGroupEntries, restoreEntry, emitArchiveChanged } = require("../utils/archive.util");
 const { formatDate } = require("../utils/date.util");
+const { photoFor } = require("../utils/studentPhoto.util");
 
 // Arxiv — CROSS-modul O'QISH qatlami (dashboard.service.js bilan bir xil
 // falsafada): bu yerda o'z modeli yo'q, u Group/Student/Staff/Room/Subject
@@ -128,7 +129,7 @@ const studentEntryRows = async (clientId, { search = "", center = "" }) => {
         entryId: entry._id,
         fullName: student.fullName,
         phone: student.phone,
-        photo: student.photo || "",
+        photo: photoFor(student, clientId),
         groupId: entry.group,
         groupLabel: group ? groupLabel(group, subjectName) : "—",
         groupArchived: !!group?.isDeleted,
