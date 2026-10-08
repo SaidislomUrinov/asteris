@@ -1,6 +1,7 @@
 import { HiArrowPath } from "react-icons/hi2";
 import { getAvatarColor, getInitials } from "../utils/avatar";
 import { photoSrc } from "../utils/studentPhoto";
+import useHoverPreview from "../hooks/useHoverPreview";
 
 /**
  * Avatar component
@@ -10,9 +11,15 @@ import { photoSrc } from "../utils/studentPhoto";
  * @param {number} [props.size=40] - Avatar o'lchami (px)
  * @param {boolean} [props.busy] - rasm yuklanmoqda — ustida spinner (o'lcham o'zgarmaydi)
  * @param {string} [props.className]
+ * @param {boolean} [props.preview=true] - desktop hover'da rasmni 150×150 ko'rsatish (faqat rasm bo'lsa)
  */
-function Avatar({ user = {}, size = 40, busy = false, className = "" }) {
+function Avatar({ user = {}, size = 40, busy = false, className = "", preview = true }) {
   const { _id, name, lastName, avatar } = user || {};
+  // Avatar o'zi preview'dan katta bo'lsa — kattalashtirishning ma'nosi yo'q.
+  const { handlers, element } = useHoverPreview(avatar ? photoSrc(avatar) : null, {
+    enabled: preview && !busy && size < 150,
+    alt: name || "avatar",
+  });
 
   const bg = getAvatarColor(_id || name);
   const initials = getInitials(name, lastName);
@@ -23,6 +30,7 @@ function Avatar({ user = {}, size = 40, busy = false, className = "" }) {
       alt={name || "avatar"}
       style={{ width: size, height: size }}
       className={`rounded-full object-cover shrink-0 ${className}`}
+      {...handlers}
     />
   ) : (
     <div
@@ -33,7 +41,14 @@ function Avatar({ user = {}, size = 40, busy = false, className = "" }) {
     </div>
   );
 
-  if (!busy) return face;
+  // Doim Fragment — preview ochilib-yopilganda <img> qayta mount bo'lmasin.
+  if (!busy)
+    return (
+      <>
+        {face}
+        {element}
+      </>
+    );
 
   return (
     <span className="relative inline-flex shrink-0" style={{ width: size, height: size }}>

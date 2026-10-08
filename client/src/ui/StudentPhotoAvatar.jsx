@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HiArrowPath, HiCamera } from "react-icons/hi2";
 import DropMenu from "./DropMenu";
 import useStudentPhoto from "../hooks/useStudentPhoto";
+import useHoverPreview from "../hooks/useHoverPreview";
 import { getAvatarColor, getInitials } from "../utils/avatar";
 import { photoSrc } from "../utils/studentPhoto";
 
@@ -18,12 +20,19 @@ import { photoSrc } from "../utils/studentPhoto";
  * @param {(studentId: string, photo: string) => void} props.onUpdated
  * @param {number} [props.size=44]
  * @param {string} [props.rounded="rounded-xl"] - shakl (ro'yxatlarda "rounded-full")
+ * @param {boolean} [props.preview=true] - desktop hover'da rasmni 150×150 ko'rsatish
  */
-function StudentPhotoAvatar({ student, onUpdated, size = 44, rounded = "rounded-xl" }) {
+function StudentPhotoAvatar({ student, onUpdated, size = 44, rounded = "rounded-xl", preview = true }) {
   const { t } = useTranslation();
   const { pick, busyId, menuItems, element } = useStudentPhoto(onUpdated);
   const busy = busyId === student?._id;
   const src = photoSrc(student?.photo);
+  // Rasm menyusi ochiq bo'lsa hover preview ko'rinmaydi (bosishga xalaqit bermasin).
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { handlers, close, element: previewEl } = useHoverPreview(src, {
+    enabled: preview && !busy && !menuOpen,
+    alt: student?.fullName || "avatar",
+  });
 
   const face = (
     <span
@@ -37,6 +46,8 @@ function StudentPhotoAvatar({ student, onUpdated, size = 44, rounded = "rounded-
         busy ? "pointer-events-none" : "cursor-pointer active:scale-95 duration-200"
       }`}
       onClick={src ? undefined : () => pick(student)}
+      {...handlers}
+      onMouseDown={close}
       onKeyDown={(e) => {
         // Klaviatura — sichqoncha bosishi bilan bir xil yo'l (menyu yoki tanlash).
         if (e.key === "Enter" || e.key === " ") {
@@ -79,8 +90,9 @@ function StudentPhotoAvatar({ student, onUpdated, size = 44, rounded = "rounded-
 
   return (
     <>
-      {src ? <DropMenu items={menuItems(student)} trigger={face} align="start" /> : face}
+      {src ? <DropMenu items={menuItems(student)} trigger={face} align="start" onOpenChange={setMenuOpen} /> : face}
       {element}
+      {previewEl}
     </>
   );
 }

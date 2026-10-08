@@ -29,9 +29,13 @@ function DropdownMenu({ items = [], onOpenChange, trigger, align = "end" }) {
 
   useEffect(() => {
     if (!open) return;
-    const handleScroll = () => setOpen(false);
+    const handleScroll = () => {
+      setOpen(false);
+      onOpenChange?.(false);
+    };
     window.addEventListener("scroll", handleScroll, true);
     return () => window.removeEventListener("scroll", handleScroll, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const handleOpen = () => {
@@ -96,6 +100,7 @@ function DropdownMenu({ items = [], onOpenChange, trigger, align = "end" }) {
                       if (item.disabled) return;
                       item.onClick?.();
                       setOpen(false);
+                      onOpenChange?.(false);
                     }}
                     className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] font-medium text-slate-700 dark:text-slate-300 text-left transition-colors enabled:cursor-pointer enabled:hover:bg-slate-50 dark:enabled:hover:bg-night-800 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
