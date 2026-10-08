@@ -28,28 +28,28 @@ function LessonDayDialog({ open, onClose, date, lesson = null }) {
           // qo'shing" kabi ko'rsatma BERILMAYDI — kunni bosgan odam mavzuni
           // ko'rmoqchi, tahrir taklifi emas (foydalanuvchi talabi).
           <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-            <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-50 text-2xl text-slate-300">
+            <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-50 dark:bg-night-800 text-2xl text-slate-300 dark:text-slate-600">
               <HiClipboardDocumentList />
             </span>
-            <p className="text-sm font-medium text-slate-500">{t("syllabus.unassigned")}</p>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("syllabus.unassigned")}</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-1 p-3 rounded-xl border border-slate-200 bg-white">
+          <div className="flex flex-col gap-1 p-3 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-[11px] text-slate-500 tabular-nums">
+              <span className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-night-800 text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
                 {t("syllabus.lessonNo", { no: lesson.no })}
               </span>
               {lesson.moduleTitle && (
-                <span className="text-[11px] text-slate-400 truncate">{lesson.moduleTitle}</span>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate">{lesson.moduleTitle}</span>
               )}
             </div>
-            <span className="text-sm font-semibold text-slate-800">{lesson.title}</span>
+            <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{lesson.title}</span>
             {lesson.description && (
-              <p className="text-xs text-slate-500 whitespace-pre-line">{lesson.description}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 whitespace-pre-line">{lesson.description}</p>
             )}
             {lesson.homework && (
-              <p className="text-xs text-blue-600">
-                <span className="text-slate-400">{t("syllabus.homeworkLabel")}: </span>
+              <p className="text-xs text-blue-600 dark:text-blue-400">
+                <span className="text-slate-400 dark:text-slate-500">{t("syllabus.homeworkLabel")}: </span>
                 {lesson.homework}
               </p>
             )}

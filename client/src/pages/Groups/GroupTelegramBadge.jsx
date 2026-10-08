@@ -38,13 +38,13 @@ function GroupTelegramBadge({ link, canEdit = false, onEdit }) {
         } ${
           connected
             ? "bg-[#229ED9]/10 text-[#229ED9] hover:bg-[#229ED9]/20"
-            : "bg-slate-50 text-slate-300 ring-1 ring-inset ring-slate-200/80 hover:text-slate-400"
+            : "bg-slate-50 text-slate-300 ring-1 ring-inset ring-slate-200/80 hover:text-slate-400 dark:bg-night-800 dark:text-slate-600 dark:ring-night-700 dark:hover:text-slate-500"
         }`}
       >
         <FaTelegram aria-hidden="true" />
         <span
-          className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-white ${
-            connected ? "bg-emerald-500" : "bg-slate-300"
+          className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-night-900 ${
+            connected ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
           }`}
         />
       </button>
@@ -61,7 +61,7 @@ function GroupTelegramBadge({ link, canEdit = false, onEdit }) {
           {connected ? t("group.telegramConnected") : t("group.telegramNotConnected")}
         </span>
         {canEdit && (
-          <span className="block mt-0.5 text-[11px] text-slate-400">
+          <span className="block mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
             {connected ? t("group.telegramClickToEdit") : t("group.telegramClickToConnect")}
           </span>
         )}

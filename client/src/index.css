@@ -2,10 +2,24 @@
 
 @import "tailwindcss";
 
+/* Tungi rejim — `<html class="dark">` (hooks/useTheme.js, index.html'dagi
+   dastlabki skript). Faqat `dark:` variantlari qo'shiladi, kunduzgi klasslar
+   o'zgarmaydi — kunduzgi ko'rinish aynan avvalgidek qoladi. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 * {
   font-family: "SN Pro", sans-serif;
 }
 @theme {
+  /* Tungi rejim yuzalari — sidebar/top'ning to'q ko'k brend rangidan
+     (#06122c / #0b2050) olingan, kulrang slate emas: kontent shell bilan
+     bitta oila bo'lib ko'rinadi. Matn uchun Tailwind slate-100…500. */
+  --color-night-950: #070f22; /* sahifa foni */
+  --color-night-900: #0d1830; /* karta yuzasi (bg-white o'rni) */
+  --color-night-800: #14223f; /* ichki/ikkinchi darajali yuza (bg-slate-50/100 o'rni) */
+  --color-night-700: #1e2e52; /* chegara (border-slate-100/200 o'rni) */
+  --color-night-600: #2b3d66; /* kuchliroq chegara, hover */
+
   --font-jet: "JetBrains Mono", monospace;
   --font-space: "Space Grotesk", cursive;
 
@@ -159,7 +173,13 @@
 }
 
 body {
-  @apply bg-[#f5f8fd];
+  @apply bg-[#f5f8fd] dark:bg-night-950;
+}
+
+/* Brauzerning o'z elementlari (scrollbar, autofill, date picker) ham
+   tungi rejimga moslashsin. */
+.dark {
+  color-scheme: dark;
 }
 
 /* react-day-picker (Sana oralig'i maydoni) — loyihaning ranglari va

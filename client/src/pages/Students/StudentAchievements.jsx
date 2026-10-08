@@ -29,10 +29,10 @@ function StudentAchievements() {
 
   if (student === null) {
     return (
-      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 px-4 text-center text-slate-400">
+      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 px-4 text-center text-slate-400 dark:text-slate-500">
         <HiUsers className="text-4xl" />
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold text-slate-600">{t("student.notFound")}</p>
+          <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">{t("student.notFound")}</p>
           <p className="text-sm">{t("badge.notTeacherStudent")}</p>
         </div>
         <Button variant="outlined" onClick={() => navigate(-1)}>
@@ -50,18 +50,18 @@ function StudentAchievements() {
         </IconButton>
         {student === undefined ? (
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-slate-100 animate-pulse" />
+            <div className="w-11 h-11 rounded-full bg-slate-100 dark:bg-night-800 animate-pulse" />
             <div className="flex flex-col gap-1.5">
-              <div className="h-4 w-40 rounded bg-slate-100 animate-pulse" />
-              <div className="h-3 w-56 max-w-[50vw] rounded bg-slate-100 animate-pulse" />
+              <div className="h-4 w-40 rounded bg-slate-100 dark:bg-night-800 animate-pulse" />
+              <div className="h-3 w-56 max-w-[50vw] rounded bg-slate-100 dark:bg-night-800 animate-pulse" />
             </div>
           </div>
         ) : (
           <div className="flex items-center gap-3 min-w-0">
             <Avatar user={{ _id: student._id, name: student.fullName, avatar: student.photo }} size={44} />
             <div className="flex flex-col gap-0.5 min-w-0">
-              <h1 className="text-lg font-semibold text-slate-800 leading-tight break-words">{student.fullName}</h1>
-              <p className="flex items-start gap-1.5 text-xs text-slate-400 leading-snug">
+              <h1 className="text-lg font-semibold text-slate-800 dark:text-slate-100 leading-tight break-words">{student.fullName}</h1>
+              <p className="flex items-start gap-1.5 text-xs text-slate-400 dark:text-slate-500 leading-snug">
                 <HiTrophy className="shrink-0 mt-px text-amber-500" />
                 {t("badge.teacherScope")}
               </p>

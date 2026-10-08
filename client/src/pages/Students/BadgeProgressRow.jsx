@@ -96,10 +96,10 @@ function BadgeProgressRow({ type, progress }) {
       <BadgeIcon type={type} size={28} earned={!!d.done} animated={false} />
       <div className="flex flex-col gap-1 min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2 min-w-0">
-          <span className="text-xs font-semibold text-slate-700 truncate">{t(badgeNameKey(type))}</span>
+          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">{t(badgeNameKey(type))}</span>
           <span
             className={`text-[11px] font-semibold shrink-0 tabular-nums ${
-              d.done ? "text-emerald-600" : d.broken ? "text-red-500" : "text-slate-400"
+              d.done ? "text-emerald-600 dark:text-emerald-400" : d.broken ? "text-red-500" : "text-slate-400 dark:text-slate-500"
             }`}
           >
             {/* Oy yakunlanmagan — seriyadan boshqa shartlar hali buzilishi mumkin */}

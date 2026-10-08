@@ -267,7 +267,7 @@ function Students() {
     const actives = activeGroupsOf(row);
     const centerIds = [...new Set(actives.map((g) => g.center))];
     return (
-      <div className="flex flex-col gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-white">
+      <div className="flex flex-col gap-2.5 p-3.5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
         <div className="flex items-start justify-between gap-2">
           <div
             className="flex flex-1 min-w-0 items-center gap-3 cursor-pointer"
@@ -275,10 +275,10 @@ function Students() {
           >
             <Avatar user={{ _id: row._id, name: row.fullName, avatar: row.photo }} size={40} />
             <div className="min-w-0">
-              <p className="font-semibold text-slate-800 hover:text-blue-600 transition-colors truncate">
+              <p className="font-semibold text-slate-800 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate">
                 {row.fullName}
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">{row.phone}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{row.phone}</p>
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
@@ -295,7 +295,7 @@ function Students() {
                 {
                   label: t("common.detail"),
                   icon: HiEye,
-                  iconClass: "bg-slate-50 text-slate-600",
+                  iconClass: "bg-slate-50 dark:bg-night-800 text-slate-600 dark:text-slate-300",
                   onClick: () => navigate(`/students/${row._id}`),
                 },
                 ...(can("student:update")
@@ -303,7 +303,7 @@ function Students() {
                       {
                         label: t("common.edit"),
                         icon: HiPencilSquare,
-                        iconClass: "bg-blue-50 text-blue-600",
+                        iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
                         onClick: () => setEditRow(row),
                       },
                     ]
@@ -312,7 +312,7 @@ function Students() {
                         {
                           label: t("common.edit"),
                           icon: HiPencilSquare,
-                          iconClass: "bg-blue-50 text-blue-600",
+                          iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
                           onClick: () => setContactRow(row),
                         },
                       ]
@@ -331,20 +331,20 @@ function Students() {
               <Chip key={g._id} value={groupLabelMap[g.group] || "?"} color="slate" variant="ghost" />
             ))
           ) : (
-            <span className="text-slate-400 text-sm">—</span>
+            <span className="text-slate-400 dark:text-slate-500 text-sm">—</span>
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 text-sm">
-          <span className="text-slate-500 truncate">
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-night-700 text-sm">
+          <span className="text-slate-500 dark:text-slate-400 truncate">
             {centerIds.map((id) => centerMap[id] || "—").join(", ") || "—"}
           </span>
           {debt > 0 ? (
-            <span className="font-semibold text-red-600 shrink-0">
+            <span className="font-semibold text-red-600 dark:text-red-400 shrink-0">
               {maskMoney(debt, hideFinance)} {t("student.somSuffix")}
             </span>
           ) : (
-            <span className="text-emerald-600 shrink-0">{t("student.noDebt")}</span>
+            <span className="text-emerald-600 dark:text-emerald-400 shrink-0">{t("student.noDebt")}</span>
           )}
         </div>
       </div>
@@ -357,7 +357,7 @@ function Students() {
       header: t("student.fullName"),
       render: (row) => (
         <span
-          className="inline-flex items-center gap-2.5 font-semibold text-slate-800 hover:text-blue-600 cursor-pointer transition-colors"
+          className="inline-flex items-center gap-2.5 font-semibold text-slate-800 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
           onClick={() => navigate(`/students/${row._id}`)}
         >
           <Avatar user={{ _id: row._id, name: row.fullName, avatar: row.photo }} size={32} />
@@ -385,7 +385,7 @@ function Students() {
               <Chip key={g._id} value={groupLabelMap[g.group] || "?"} color="slate" variant="ghost" />
             ))
           ) : (
-            <span className="text-slate-400">—</span>
+            <span className="text-slate-400 dark:text-slate-500">—</span>
           )}
         </div>
       ),
@@ -404,11 +404,11 @@ function Students() {
       render: (row) => {
         const debt = totalDebtOf(row);
         return debt > 0 ? (
-          <span className="font-semibold text-red-600">
+          <span className="font-semibold text-red-600 dark:text-red-400">
             {maskMoney(debt, hideFinance)} {t("student.somSuffix")}
           </span>
         ) : (
-          <span className="text-emerald-600">{t("student.noDebt")}</span>
+          <span className="text-emerald-600 dark:text-emerald-400">{t("student.noDebt")}</span>
         );
       },
     },
@@ -431,7 +431,7 @@ function Students() {
               {
                 label: t("common.detail"),
                 icon: HiEye,
-                iconClass: "bg-slate-50 text-slate-600",
+                iconClass: "bg-slate-50 dark:bg-night-800 text-slate-600 dark:text-slate-300",
                 onClick: () => navigate(`/students/${row._id}`),
               },
               ...(can("student:update")
@@ -439,7 +439,7 @@ function Students() {
                     {
                       label: t("common.edit"),
                       icon: HiPencilSquare,
-                      iconClass: "bg-blue-50 text-blue-600",
+                      iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
                       onClick: () => setEditRow(row),
                     },
                   ]
@@ -448,7 +448,7 @@ function Students() {
                       {
                         label: t("common.edit"),
                         icon: HiPencilSquare,
-                        iconClass: "bg-blue-50 text-blue-600",
+                        iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
                         onClick: () => setContactRow(row),
                       },
                     ]
@@ -464,7 +464,7 @@ function Students() {
   return (
     <div className="flex flex-col w-full h-full gap-4">
       {isDesktop ? (
-        <div className={`flex flex-col gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02] duration-150 ${isSearching ? "opacity-50 pointer-events-none" : ""}`}>
+        <div className={`flex flex-col gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-sm dark:shadow-none shadow-slate-900/[0.02] duration-150 ${isSearching ? "opacity-50 pointer-events-none" : ""}`}>
           {/* Filtr qatori konvensiyasi: maydonlar flex-1 (tor ekranda yangi
               qatorga o'tadi), amallar bitta guruhda ml-auto bilan o'ngda. */}
           <div className="flex flex-wrap items-center gap-2.5 [&>*]:flex-1 [&>*]:min-w-[180px]">
@@ -649,7 +649,7 @@ function Students() {
       )}
 
       {error ? (
-        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
           <HiUsers className="text-4xl" />
           <p className="text-sm">{t("student.loadError")}</p>
           <Button variant="outlined" onClick={fetchStudents}>
@@ -704,17 +704,17 @@ function Students() {
                 key={entry._id}
                 type="button"
                 onClick={() => pickEntry(entry)}
-                className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-left transition-colors"
+                className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border border-slate-200 dark:border-night-700 hover:bg-slate-50 dark:hover:bg-night-800 text-left transition-colors"
               >
-                <span className="font-medium text-slate-700">
+                <span className="font-medium text-slate-700 dark:text-slate-300">
                   {groupLabelMap[entry.group] || "?"}
                 </span>
                 {(entry.debt || 0) > 0 ? (
-                  <span className="text-sm font-semibold text-red-600">
+                  <span className="text-sm font-semibold text-red-600 dark:text-red-400">
                     {(entry.debt || 0).toLocaleString("uz-UZ")} {t("student.somSuffix")}
                   </span>
                 ) : (
-                  <span className="text-sm text-emerald-600">{t("student.noDebt")}</span>
+                  <span className="text-sm text-emerald-600 dark:text-emerald-400">{t("student.noDebt")}</span>
                 )}
               </button>
             ))}

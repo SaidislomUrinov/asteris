@@ -16,7 +16,7 @@ export function SortHeader({ label, sortKey, sort, onToggle }) {
       type="button"
       onClick={() => onToggle(sortKey)}
       className={`inline-flex items-center gap-1 cursor-pointer uppercase font-semibold duration-150 ${
-        active ? "text-slate-700" : "text-slate-500 hover:text-slate-700"
+        active ? "text-slate-700 dark:text-slate-300" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
       }`}
     >
       {label}
@@ -41,10 +41,10 @@ export function RateBar({ value = 0 }) {
 
   return (
     <div className="flex items-center gap-2 min-w-28">
-      <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+      <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-night-800 overflow-hidden">
         <div className={`h-full rounded-full ${tone}`} style={{ width: `${v}%` }} />
       </div>
-      <span className="text-xs text-slate-500 shrink-0">{v}%</span>
+      <span className="text-xs text-slate-500 dark:text-slate-400 shrink-0">{v}%</span>
     </div>
   );
 }
@@ -52,7 +52,7 @@ export function RateBar({ value = 0 }) {
 export function ReportError({ onRetry }) {
   const { t } = useTranslation();
   return (
-    <div className="flex flex-col items-center justify-center w-full flex-1 min-h-60 gap-3 text-slate-400">
+    <div className="flex flex-col items-center justify-center w-full flex-1 min-h-60 gap-3 text-slate-400 dark:text-slate-500">
       <HiChartBar className="text-4xl" />
       <p className="text-sm">{t("report.loadError")}</p>
       <Button variant="outlined" onClick={onRetry}>

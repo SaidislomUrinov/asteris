@@ -45,7 +45,7 @@ function ReceiptPromptDialog({ open, onClose, receipt }) {
     >
       <div className="flex flex-col items-center gap-2 py-2 text-center">
         <HiCheckCircle className="text-4xl text-emerald-500" />
-        <p className="text-slate-600">{t("student.receiptPrompt")}</p>
+        <p className="text-slate-600 dark:text-slate-300">{t("student.receiptPrompt")}</p>
       </div>
     </Dialog>
   );

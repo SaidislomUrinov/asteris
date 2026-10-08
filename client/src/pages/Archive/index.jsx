@@ -231,7 +231,7 @@ function Archive() {
   const archivedAtColumn = {
     key: "archivedDate",
     header: t("archive.archivedAt"),
-    render: (row) => <span className="text-slate-500">{row.archivedDate || "—"}</span>,
+    render: (row) => <span className="text-slate-500 dark:text-slate-400">{row.archivedDate || "—"}</span>,
   };
 
   const centerColumn = {
@@ -247,8 +247,8 @@ function Archive() {
         header: t("archive.group"),
         render: (row) => (
           <div className="flex flex-col">
-            <span className="font-semibold text-slate-800">{row.label}</span>
-            <span className="text-xs text-slate-400">{row.subjectName}</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-100">{row.label}</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">{row.subjectName}</span>
           </div>
         ),
       },
@@ -264,9 +264,9 @@ function Archive() {
         header: t("student.debt"),
         render: (row) =>
           row.debt > 0 ? (
-            <span className="font-semibold text-red-600">{money(row.debt)}</span>
+            <span className="font-semibold text-red-600 dark:text-red-400">{money(row.debt)}</span>
           ) : (
-            <span className="text-slate-400">—</span>
+            <span className="text-slate-400 dark:text-slate-500">—</span>
           ),
       },
       centerColumn,
@@ -279,8 +279,8 @@ function Archive() {
         header: t("archive.student"),
         render: (row) => (
           <div className="flex flex-col">
-            <span className="font-semibold text-slate-800">{row.fullName}</span>
-            <span className="text-xs text-slate-400">{row.phone}</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-100">{row.fullName}</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">{row.phone}</span>
           </div>
         ),
       },
@@ -304,9 +304,9 @@ function Archive() {
         header: t("student.debt"),
         render: (row) =>
           row.debt > 0 ? (
-            <span className="font-semibold text-red-600">{money(row.debt)}</span>
+            <span className="font-semibold text-red-600 dark:text-red-400">{money(row.debt)}</span>
           ) : (
-            <span className="text-slate-400">—</span>
+            <span className="text-slate-400 dark:text-slate-500">—</span>
           ),
       },
       centerColumn,
@@ -323,8 +323,8 @@ function Archive() {
         header: t("staff.name"),
         render: (row) => (
           <div className="flex flex-col">
-            <span className="font-semibold text-slate-800">{row.name}</span>
-            <span className="text-xs text-slate-400">{row.login}</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-100">{row.name}</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">{row.login}</span>
           </div>
         ),
       },
@@ -337,7 +337,7 @@ function Archive() {
       {
         key: "name",
         header: t("room.name"),
-        render: (row) => <span className="font-semibold text-slate-800">{row.name}</span>,
+        render: (row) => <span className="font-semibold text-slate-800 dark:text-slate-100">{row.name}</span>,
       },
       { key: "capacity", header: t("room.capacity"), render: (row) => row.capacity ?? "—" },
       centerColumn,
@@ -348,7 +348,7 @@ function Archive() {
       {
         key: "name",
         header: t("subject.name"),
-        render: (row) => <span className="font-semibold text-slate-800">{row.name}</span>,
+        render: (row) => <span className="font-semibold text-slate-800 dark:text-slate-100">{row.name}</span>,
       },
       {
         key: "price",
@@ -365,8 +365,8 @@ function Archive() {
         header: t("archive.plan"),
         render: (row) => (
           <div className="flex flex-col">
-            <span className="font-semibold text-slate-800">{row.title}</span>
-            <span className="text-xs text-slate-400">
+            <span className="font-semibold text-slate-800 dark:text-slate-100">{row.title}</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">
               {row.subjectName} · {t("syllabus.importMeta", { modules: row.moduleCount, lessons: row.lessonCount })}
             </span>
           </div>
@@ -390,7 +390,7 @@ function Archive() {
         accent="orange"
       />
 
-      <div className="flex flex-col sm:flex-row gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]">
+      <div className="flex flex-col sm:flex-row gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-sm dark:shadow-none shadow-slate-900/[0.02]">
         <div className={`flex-1 min-w-0 ${showCenterFilter ? "sm:w-[60%]" : ""}`}>
           <Input
             placeholder={t("common.search")}
@@ -423,7 +423,7 @@ function Archive() {
         )}
       </div>
 
-      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 w-full sm:w-fit overflow-x-auto">
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-night-800 w-full sm:w-fit overflow-x-auto">
         {TABS.map((x) => (
           <button
             key={x.key}
@@ -435,20 +435,20 @@ function Archive() {
             }}
             className={`px-3 h-8 shrink-0 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors duration-150 ${
               tab === x.key
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-white dark:bg-night-900 text-slate-900 dark:text-slate-100 shadow-sm dark:shadow-none"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
             }`}
           >
             {t(x.labelKey)}
             {counts[x.key] > 0 && (
-              <span className="ml-1.5 text-[11px] text-slate-400">{counts[x.key]}</span>
+              <span className="ml-1.5 text-[11px] text-slate-400 dark:text-slate-500">{counts[x.key]}</span>
             )}
           </button>
         ))}
       </div>
 
       {error ? (
-        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
           <HiArchiveBox className="text-4xl" />
           <p className="text-sm">{t("archive.loadError")}</p>
           <Button variant="outlined" onClick={fetchRows}>

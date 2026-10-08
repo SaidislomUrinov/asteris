@@ -5,6 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WENET</title>
+    <!-- Tungi rejim — React yuklanishidan OLDIN qo'llanadi, aks holda sahifa
+         bir lahza oq bo'lib "miltillaydi" (hooks/useTheme.js bilan bir kalit). -->
+    <script>
+      try {
+        if (localStorage.getItem("wenet:theme") === "dark") document.documentElement.classList.add("dark");
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

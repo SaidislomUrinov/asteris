@@ -20,10 +20,10 @@ function SubscriptionActivatedModal({ open, onClose, tariffName }) {
           className="w-40 h-40 object-contain rounded-xl"
         />
 
-        <h3 className="text-lg font-bold text-slate-900">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
           {t("subscription.activatedTitle")}
         </h3>
-        <p className="text-sm text-slate-500 max-w-xs">
+        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs">
           {tariffName
             ? t("subscription.activatedBodyWithTariff", { tariff: tariffName })
             : t("subscription.activatedBody")}

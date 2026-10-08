@@ -25,8 +25,8 @@ function PaymentDonut({ paid = 0, debt = 0 }) {
   return (
     <ChartCard>
       <div className="shrink-0">
-        <p className="font-semibold text-slate-800">{t("group.paymentStatusTitle")}</p>
-        <p className="text-xs text-slate-400">{t("group.paymentStatusDesc")}</p>
+        <p className="font-semibold text-slate-800 dark:text-slate-100">{t("group.paymentStatusTitle")}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500">{t("group.paymentStatusDesc")}</p>
       </div>
 
       <div className="relative w-full flex-1 min-h-32 max-h-56">
@@ -55,27 +55,27 @@ function PaymentDonut({ paid = 0, debt = 0 }) {
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-3xl font-space font-bold text-slate-800">{percent}%</span>
-          <span className="text-xs text-slate-400">{t("group.paidPercentLabel")}</span>
+          <span className="text-3xl font-space font-bold text-slate-800 dark:text-slate-100">{percent}%</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">{t("group.paidPercentLabel")}</span>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 pt-2 border-t border-slate-100 shrink-0">
+      <div className="flex flex-col gap-2 pt-2 border-t border-slate-100 dark:border-night-700 shrink-0">
         <div className="flex items-center justify-between gap-2 text-sm">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PAID_COLOR }} />
-            <span className="text-slate-600">{t("group.paidLabel")}</span>
+            <span className="text-slate-600 dark:text-slate-300">{t("group.paidLabel")}</span>
           </div>
-          <span className="font-semibold text-slate-800">
+          <span className="font-semibold text-slate-800 dark:text-slate-100">
             {paid.toLocaleString("uz-UZ")} {t("student.somSuffix")}
           </span>
         </div>
         <div className="flex items-center justify-between gap-2 text-sm">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: DEBT_COLOR }} />
-            <span className="text-slate-600">{t("group.debtLabel")}</span>
+            <span className="text-slate-600 dark:text-slate-300">{t("group.debtLabel")}</span>
           </div>
-          <span className="font-semibold text-red-600">
+          <span className="font-semibold text-red-600 dark:text-red-400">
             {debt.toLocaleString("uz-UZ")} {t("student.somSuffix")}
           </span>
         </div>

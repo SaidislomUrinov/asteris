@@ -30,7 +30,7 @@ const ROLE_INFO = {
   owner: {
     icon: HiBriefcase,
     gradient: "from-blue-500 to-blue-950",
-    tabActiveText: "text-blue-600",
+    tabActiveText: "text-blue-600 dark:text-blue-400",
     titleKey: "auth.ownerInfoTitle",
     descKey: "auth.ownerInfoDesc",
   },
@@ -136,7 +136,7 @@ function Auth() {
         <p className="text-2xl font-space font-semibold z-10">WENET</p>
 
         <div key={authType} className="flex flex-col gap-5 z-10 max-w-md">
-          <div className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center text-2xl animate-rise-in [animation-delay:0ms]">
+          <div className="w-14 h-14 rounded-2xl bg-white/15 dark:bg-night-900/15 flex items-center justify-center text-2xl animate-rise-in [animation-delay:0ms]">
             <InfoIcon />
           </div>
           <p className="text-3xl font-space font-semibold leading-tight animate-rise-in [animation-delay:80ms]">
@@ -157,21 +157,21 @@ function Auth() {
         <p className="lg:hidden text-[40px] font-space font-semibold animate-rise-in [animation-delay:0ms]">
           <span className="font-space text-blue-500">WE</span>NET
         </p>
-        <div className="flex flex-col w-full sm:w-110 bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="flex flex-col w-full sm:w-110 bg-white dark:bg-night-900 border border-slate-200 dark:border-night-700 rounded-xl overflow-hidden">
           {/* Header */}
-          <div className="relative z-20 flex flex-col gap-1 p-5 border-b border-slate-100 animate-rise-in [animation-delay:0ms]">
+          <div className="relative z-20 flex flex-col gap-1 p-5 border-b border-slate-100 dark:border-night-700 animate-rise-in [animation-delay:0ms]">
             <div className="flex items-center justify-between w-full">
               <p className="font-semibold font-space text-[22px]">
                 {t("auth.title")}
               </p>
               <UpdateLang />
             </div>
-            <p className="text-zinc-500 text-sm">{t("auth.desc")}</p>
+            <p className="text-zinc-500 dark:text-slate-400 text-sm">{t("auth.desc")}</p>
           </div>
 
           {/* Body */}
           <div className="flex flex-col gap-3 p-5">
-            <div className="flex items-center justify-center w-full gap-2 bg-slate-100 rounded-xl p-1 animate-rise-in [animation-delay:80ms]">
+            <div className="flex items-center justify-center w-full gap-2 bg-slate-100 dark:bg-night-800 rounded-xl p-1 animate-rise-in [animation-delay:80ms]">
               {ROLES.map((r) => (
                 <button
                   key={r.value}
@@ -186,8 +186,8 @@ function Auth() {
                   }}
                   className={`flex-1 py-2 rounded-lg text-sm font-semibold duration-150 cursor-pointer ${
                     authType === r.value
-                      ? "bg-white shadow-sm"
-                      : "text-slate-400 hover:text-slate-600"
+                      ? "bg-white dark:bg-night-900 shadow-sm dark:shadow-none"
+                      : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
                   }`}
                 >
                   <span
@@ -264,7 +264,7 @@ function Auth() {
           </div>
 
           {/* Footer */}
-          <div className="p-5 border-t border-slate-100 animate-rise-in [animation-delay:280ms]">
+          <div className="p-5 border-t border-slate-100 dark:border-night-700 animate-rise-in [animation-delay:280ms]">
             <Button fullWith loading={disabled} onClick={submit}>
               {t("common.confirm")}
             </Button>

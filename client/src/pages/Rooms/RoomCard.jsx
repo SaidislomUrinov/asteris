@@ -16,33 +16,33 @@ import { formatRemaining } from "../../utils/schedule";
 const STATE_STYLE = {
   [ROOM_STATE.ACTIVE]: {
     edge: "bg-blue-500",
-    badge: "bg-blue-50 text-blue-700 ring-blue-100",
+    badge: "bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 ring-blue-100 dark:ring-blue-500/30",
     dot: "bg-blue-500",
-    icon: "bg-blue-50 text-blue-600",
+    icon: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
     bar: "bg-blue-500",
     labelKey: "room.stateActive",
   },
   [ROOM_STATE.UPCOMING]: {
     edge: "bg-amber-500",
-    badge: "bg-amber-50 text-amber-700 ring-amber-100",
+    badge: "bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 ring-amber-100 dark:ring-amber-500/30",
     dot: "bg-amber-500",
-    icon: "bg-amber-50 text-amber-600",
+    icon: "bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400",
     bar: "bg-amber-500",
     labelKey: "room.stateUpcoming",
   },
   [ROOM_STATE.AVAILABLE]: {
     edge: "bg-emerald-400",
-    badge: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    badge: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-500/30",
     dot: "bg-emerald-500",
-    icon: "bg-slate-100 text-slate-400",
+    icon: "bg-slate-100 dark:bg-night-800 text-slate-400 dark:text-slate-500",
     bar: "bg-emerald-500",
     labelKey: "room.stateAvailable",
   },
   [ROOM_STATE.MAINTENANCE]: {
     edge: "bg-red-400",
-    badge: "bg-red-50 text-red-700 ring-red-100",
+    badge: "bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-400 ring-red-100 dark:ring-red-500/30",
     dot: "bg-red-500",
-    icon: "bg-red-50 text-red-500",
+    icon: "bg-red-50 dark:bg-red-500/15 text-red-500",
     bar: "bg-red-500",
     labelKey: "room.stateMaintenance",
   },
@@ -51,11 +51,11 @@ const STATE_STYLE = {
 function Stat({ icon, value, label }) {
   return (
     <div className="flex flex-col gap-0.5 min-w-0">
-      <span className="flex items-center gap-1 text-slate-900 font-semibold text-[15px] leading-none">
-        <span className="text-slate-300 text-sm shrink-0">{icon}</span>
+      <span className="flex items-center gap-1 text-slate-900 dark:text-slate-100 font-semibold text-[15px] leading-none">
+        <span className="text-slate-300 dark:text-slate-600 text-sm shrink-0">{icon}</span>
         {value}
       </span>
-      <span className="text-[11px] text-slate-400 truncate">{label}</span>
+      <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate">{label}</span>
     </div>
   );
 }
@@ -80,7 +80,7 @@ function RoomCard({ room, centerName, groupsCount, studentsCount, live, onClick 
   return (
     <div
       onClick={onClick}
-      className={`group relative flex flex-col h-full w-full overflow-hidden rounded-2xl bg-white border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-6px_rgba(15,23,42,0.12)] hover:border-slate-300 ${
+      className={`group relative flex flex-col h-full w-full overflow-hidden rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-6px_rgba(15,23,42,0.12)] dark:hover:shadow-none hover:border-slate-300 dark:hover:border-night-600 ${
         isMaintenance ? "opacity-75" : ""
       }`}
     >
@@ -96,8 +96,8 @@ function RoomCard({ room, centerName, groupsCount, studentsCount, live, onClick 
             {isMaintenance ? <HiWrenchScrewdriver /> : <HiHome />}
           </div>
           <div className="flex flex-col gap-1 min-w-0 flex-1">
-            <h3 className="text-lg font-bold leading-tight text-slate-900 truncate">{room.name}</h3>
-            <span className="flex items-center gap-1.5 text-xs text-slate-400 truncate">
+            <h3 className="text-lg font-bold leading-tight text-slate-900 dark:text-slate-100 truncate">{room.name}</h3>
+            <span className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 truncate">
               <HiBuildingOffice2 className="shrink-0" />
               {centerName || "—"}
             </span>
@@ -113,20 +113,20 @@ function RoomCard({ room, centerName, groupsCount, studentsCount, live, onClick 
 
         {/* Jonli qism — kartaning eng muhim bloki */}
         {current ? (
-          <div className="flex flex-col gap-2 p-3 rounded-xl bg-slate-50/80 border border-slate-100">
+          <div className="flex flex-col gap-2 p-3 rounded-xl bg-slate-50/80 dark:bg-night-800/80 border border-slate-100 dark:border-night-700">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-semibold text-slate-900 truncate">{current.label}</span>
-              <span className="shrink-0 text-xs font-jet tabular-nums text-blue-600 font-semibold">
+              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{current.label}</span>
+              <span className="shrink-0 text-xs font-jet tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
                 {formatRemaining(t, current.remainingMin)}
               </span>
             </div>
-            <div className="h-1.5 w-full rounded-full bg-slate-200/80 overflow-hidden">
+            <div className="h-1.5 w-full rounded-full bg-slate-200/80 dark:bg-night-700/80 overflow-hidden">
               <div
                 className={`h-full rounded-full ${s.bar} transition-[width] duration-500`}
                 style={{ width: `${current.progress}%` }}
               />
             </div>
-            <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
+            <div className="flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
               <span className="truncate">{current.teacher || t("group.noTeacher")}</span>
               <span className="shrink-0 font-jet tabular-nums">
                 {current.group.startTime}–{current.group.endTime}
@@ -134,24 +134,24 @@ function RoomCard({ room, centerName, groupsCount, studentsCount, live, onClick 
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50/60 border border-slate-100 text-xs">
-            <HiOutlineClock className="shrink-0 text-slate-300 text-base" />
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50/60 dark:bg-night-800/60 border border-slate-100 dark:border-night-700 text-xs">
+            <HiOutlineClock className="shrink-0 text-slate-300 dark:text-slate-600 text-base" />
             {next ? (
-              <span className="flex items-center gap-1.5 min-w-0 text-slate-500">
+              <span className="flex items-center gap-1.5 min-w-0 text-slate-500 dark:text-slate-400">
                 <span className="truncate">{next.label}</span>
-                <span className="shrink-0 font-jet tabular-nums text-slate-700 font-semibold">
+                <span className="shrink-0 font-jet tabular-nums text-slate-700 dark:text-slate-300 font-semibold">
                   {next.day ? `${t(`group.dayShort.${next.day}`)} ` : ""}
                   {next.group.startTime}
                 </span>
               </span>
             ) : (
-              <span className="text-slate-400">{t("room.noUpcoming")}</span>
+              <span className="text-slate-400 dark:text-slate-500">{t("room.noUpcoming")}</span>
             )}
           </div>
         )}
 
         {/* Statik ko'rsatkichlar — pastda, ikkilamchi darajada */}
-        <div className="grid grid-cols-3 gap-2 mt-auto pt-3 border-t border-slate-100">
+        <div className="grid grid-cols-3 gap-2 mt-auto pt-3 border-t border-slate-100 dark:border-night-700">
           <Stat icon={<HiUserGroup />} value={groupsCount} label={t("room.groupsCount")} />
           <Stat icon={<HiUsers />} value={studentsCount} label={t("room.studentsCount")} />
           <Stat

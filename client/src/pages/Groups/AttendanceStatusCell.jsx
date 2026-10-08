@@ -17,9 +17,9 @@ import {
  */
 
 const STATUS_STYLE = {
-  present: { Icon: HiCheckCircle, cls: "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20" },
+  present: { Icon: HiCheckCircle, cls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20" },
   absent: { Icon: HiXCircle, cls: "bg-red-500/10 text-red-500 hover:bg-red-500/20" },
-  excused: { Icon: HiDocumentText, cls: "bg-amber-500/10 text-amber-600 hover:bg-amber-500/20" },
+  excused: { Icon: HiDocumentText, cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20" },
 };
 
 const LABEL_KEY = {
@@ -59,7 +59,7 @@ export default function AttendanceStatusCell({
   const { t } = useTranslation();
 
   if (!isToday)
-    return <span className="text-xs text-slate-300">{t("group.attendanceNotToday")}</span>;
+    return <span className="text-xs text-slate-300 dark:text-slate-600">{t("group.attendanceNotToday")}</span>;
 
   if (open)
     return (
@@ -88,7 +88,7 @@ export default function AttendanceStatusCell({
       type="button"
       onClick={onOpen}
       className={`${PILL_BASE} ${
-        style ? style.cls : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+        style ? style.cls : "bg-slate-100 dark:bg-night-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-night-700"
       }`}
     >
       {style ? <style.Icon className="text-base shrink-0" /> : <HiPlusCircle className="text-base shrink-0" />}

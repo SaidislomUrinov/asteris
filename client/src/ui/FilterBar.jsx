@@ -83,7 +83,7 @@ function FilterBar({
 
   return (
     <div
-      className={`flex flex-col gap-3 p-4 rounded-xl border border-slate-200 bg-white ${className}`}
+      className={`flex flex-col gap-3 p-4 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 ${className}`}
     >
       <div className="flex flex-col sm:flex-row gap-3 w-full">
         {(search || (hasFilters && !isDesktop)) && (

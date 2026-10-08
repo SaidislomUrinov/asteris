@@ -96,17 +96,17 @@ function DowngradeDialog({ overflow, onResolved }) {
   return createPortal(
     <div className="fixed inset-0 w-full h-full bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div
-        className={`flex flex-col w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-xl transition-all duration-300 ease-out ${
+        className={`flex flex-col w-full max-w-2xl max-h-[90vh] bg-white dark:bg-night-900 rounded-2xl shadow-xl dark:shadow-none transition-all duration-300 ease-out ${
           shown ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
         }`}
       >
-        <div className="flex items-start gap-3 p-5 border-b border-slate-200">
-          <span className="flex items-center justify-center w-11 h-11 shrink-0 rounded-xl bg-amber-50 text-amber-500 text-2xl">
+        <div className="flex items-start gap-3 p-5 border-b border-slate-200 dark:border-night-700">
+          <span className="flex items-center justify-center w-11 h-11 shrink-0 rounded-xl bg-amber-50 dark:bg-amber-500/15 text-amber-500 text-2xl">
             <HiExclamationTriangle />
           </span>
           <div className="flex flex-col gap-0.5 min-w-0">
-            <h3 className="text-lg font-semibold text-slate-800">{t("downgrade.title")}</h3>
-            <p className="text-sm text-slate-500">
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">{t("downgrade.title")}</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {t("downgrade.description", { limit, activeCount })}
             </p>
           </div>
@@ -114,10 +114,10 @@ function DowngradeDialog({ overflow, onResolved }) {
 
         <div className="flex flex-col gap-3 p-5 flex-1 min-h-0 overflow-y-auto">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-medium text-slate-600">{t("downgrade.pickCenters")}</p>
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{t("downgrade.pickCenters")}</p>
             <span
               className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
-                ready ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
+                ready ? "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-slate-100 dark:bg-night-800 text-slate-500 dark:text-slate-400"
               }`}
             >
               {t("downgrade.selectedCount", { count: keep.length, limit })}
@@ -136,36 +136,36 @@ function DowngradeDialog({ overflow, onResolved }) {
                   onClick={() => toggle(c._id)}
                   className={`relative flex items-start gap-3 p-4 rounded-xl border text-left cursor-pointer duration-200 ${
                     on
-                      ? "border-blue-500 ring-2 ring-blue-100 bg-blue-50/40"
+                      ? "border-blue-500 ring-2 ring-blue-100 dark:ring-blue-500/30 bg-blue-50/40 dark:bg-blue-500/15"
                       : full
-                        ? "border-slate-200 opacity-60 hover:opacity-100"
-                        : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                        ? "border-slate-200 dark:border-night-700 opacity-60 hover:opacity-100"
+                        : "border-slate-200 dark:border-night-700 hover:border-slate-300 dark:hover:border-night-600 hover:bg-slate-50 dark:hover:bg-night-800"
                   }`}
                 >
                   {c.logo ? (
                     <LazyImage
                       src={c.logo.startsWith("http") ? c.logo : `${API}${c.logo}`}
-                      className="w-12 h-12 rounded-xl object-cover shrink-0 bg-slate-100"
+                      className="w-12 h-12 rounded-xl object-cover shrink-0 bg-slate-100 dark:bg-night-800"
                     />
                   ) : (
-                    <span className="flex items-center justify-center w-12 h-12 shrink-0 rounded-xl bg-slate-100 text-slate-400 text-xl">
+                    <span className="flex items-center justify-center w-12 h-12 shrink-0 rounded-xl bg-slate-100 dark:bg-night-800 text-slate-400 dark:text-slate-500 text-xl">
                       <HiBuildingOffice2 />
                     </span>
                   )}
 
                   <span className="flex flex-col gap-1 min-w-0 flex-1">
-                    <span className="font-semibold text-slate-800 truncate">{c.name}</span>
-                    <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                    <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">{c.name}</span>
+                    <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
                       <span className="inline-flex items-center gap-1">
-                        <HiUsers className="text-sm text-slate-400" />
+                        <HiUsers className="text-sm text-slate-400 dark:text-slate-500" />
                         {t("downgrade.students", { count: c.students ?? 0 })}
                       </span>
                       <span className="inline-flex items-center gap-1">
-                        <HiUserGroup className="text-sm text-slate-400" />
+                        <HiUserGroup className="text-sm text-slate-400 dark:text-slate-500" />
                         {t("downgrade.groups", { count: c.groups ?? 0 })}
                       </span>
                       <span className="inline-flex items-center gap-1">
-                        <HiUsers className="text-sm text-slate-400" />
+                        <HiUsers className="text-sm text-slate-400 dark:text-slate-500" />
                         {t("downgrade.staff", { count: c.staff ?? 0 })}
                       </span>
                     </span>
@@ -180,16 +180,16 @@ function DowngradeDialog({ overflow, onResolved }) {
           </div>
 
           {blockedCount > 0 && (
-            <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-50 border border-amber-200">
+            <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30">
               <HiExclamationTriangle className="text-lg text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-amber-800">
+              <p className="text-sm text-amber-800 dark:text-amber-400">
                 {t("downgrade.warning", { count: blockedCount })}
               </p>
             </div>
           )}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 p-4 border-t border-slate-200 bg-slate-50 rounded-b-2xl">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 p-4 border-t border-slate-200 dark:border-night-700 bg-slate-50 dark:bg-night-800 rounded-b-2xl">
           {/* Modal yopilmaydi — ostidagi sahifa almashadi. To'lov qilinsa
               `subscription:changed` keladi va modal o'zi yo'qoladi. */}
           <Button variant="text" color="blue" onClick={() => navigate("/subscription")}>

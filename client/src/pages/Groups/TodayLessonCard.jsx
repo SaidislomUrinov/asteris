@@ -31,28 +31,28 @@ function TodayLessonCard({ todayLesson, nextLesson }) {
       accent={isToday ? "amber" : "cyan"}
     >
       {!entry ? (
-        <p className="text-sm text-slate-400">{t("group.noLessonDay")}</p>
+        <p className="text-sm text-slate-400 dark:text-slate-500">{t("group.noLessonDay")}</p>
       ) : lesson ? (
         <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-[11px] text-slate-500 tabular-nums">
+            <span className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-night-800 text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
               {t("syllabus.lessonNo", { no: lesson.no })}
             </span>
             {lesson.moduleTitle && (
-              <span className="text-[11px] text-slate-400 truncate">{lesson.moduleTitle}</span>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate">{lesson.moduleTitle}</span>
             )}
           </div>
-          <p className="text-sm font-semibold text-slate-800 line-clamp-1">{lesson.title}</p>
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 line-clamp-1">{lesson.title}</p>
           {lesson.homework && (
-            <p className="text-xs text-blue-600 line-clamp-1">
-              <span className="text-slate-400">{t("syllabus.homeworkLabel")}: </span>
+            <p className="text-xs text-blue-600 dark:text-blue-400 line-clamp-1">
+              <span className="text-slate-400 dark:text-slate-500">{t("syllabus.homeworkLabel")}: </span>
               {lesson.homework}
             </p>
           )}
         </div>
       ) : (
         // Dars kuni bor, ammo kurs dasturidan mavzu tushmagan.
-        <p className="text-sm font-medium text-slate-500">{t("syllabus.unassigned")}</p>
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("syllabus.unassigned")}</p>
       )}
     </HeaderCard>
   );

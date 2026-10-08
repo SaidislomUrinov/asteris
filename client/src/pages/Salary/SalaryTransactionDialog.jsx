@@ -111,36 +111,36 @@ function SalaryTransactionDialog({ open, staff, month, onClose, onSaved }) {
     >
       <div onKeyDown={(k) => k.key === "Enter" && submit()} className="flex flex-col gap-4 w-full">
         {statsLoading || !stats ? (
-          <div className="flex items-center justify-center w-full h-20 text-slate-400 text-sm">
+          <div className="flex items-center justify-center w-full h-20 text-slate-400 dark:text-slate-500 text-sm">
             {t("common.loading")}
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
-              <span className="text-xs text-slate-400">{t("salary.base")}</span>
+            <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+              <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.base")}</span>
               <NumberText>{money(stats.base)}</NumberText>
             </div>
-            <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
-              <span className="text-xs text-slate-400">{t("salary.final")}</span>
-              <NumberText className={stats.final < 0 ? "text-red-600" : "text-emerald-600"}>
+            <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+              <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.final")}</span>
+              <NumberText className={stats.final < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}>
                 {money(stats.final)}
               </NumberText>
             </div>
-            <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
-              <span className="text-xs text-slate-400">{t("salary.advance")}</span>
+            <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+              <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.advance")}</span>
               <NumberText>{money(stats.advance)}</NumberText>
             </div>
-            <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
-              <span className="text-xs text-slate-400">{t("salary.withdrawal")}</span>
+            <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+              <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.withdrawal")}</span>
               <NumberText>{money(stats.withdrawal)}</NumberText>
             </div>
-            <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
-              <span className="text-xs text-slate-400">{t("salary.bonus")}</span>
-              <NumberText className="text-emerald-600">{money(stats.bonus)}</NumberText>
+            <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+              <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.bonus")}</span>
+              <NumberText className="text-emerald-600 dark:text-emerald-400">{money(stats.bonus)}</NumberText>
             </div>
-            <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
-              <span className="text-xs text-slate-400">{t("salary.penalty")}</span>
-              <NumberText className="text-red-600">
+            <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+              <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.penalty")}</span>
+              <NumberText className="text-red-600 dark:text-red-400">
                 {stats.penalty ? `-${money(stats.penalty)}` : money(0)}
               </NumberText>
             </div>

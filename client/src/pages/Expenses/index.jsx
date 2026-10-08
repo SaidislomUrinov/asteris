@@ -152,8 +152,8 @@ function Expenses() {
       header: t("expense.title"),
       render: (row) => (
         <div className="flex flex-col">
-          <span className="font-semibold text-slate-800">{row.title}</span>
-          {row.note && <span className="text-xs text-slate-400">{row.note}</span>}
+          <span className="font-semibold text-slate-800 dark:text-slate-100">{row.title}</span>
+          {row.note && <span className="text-xs text-slate-400 dark:text-slate-500">{row.note}</span>}
         </div>
       ),
     },
@@ -173,7 +173,7 @@ function Expenses() {
       key: "amount",
       header: t("expense.amount"),
       render: (row) => (
-        <NumberText className={row.status === "cancelled" ? "line-through text-slate-400" : ""}>
+        <NumberText className={row.status === "cancelled" ? "line-through text-slate-400 dark:text-slate-500" : ""}>
           {money(row.amount)}
         </NumberText>
       ),
@@ -181,7 +181,7 @@ function Expenses() {
     {
       key: "date",
       header: t("expense.date"),
-      render: (row) => <span className="text-slate-500 text-xs">{row.date}</span>,
+      render: (row) => <span className="text-slate-500 dark:text-slate-400 text-xs">{row.date}</span>,
     },
     {
       key: "status",
@@ -207,13 +207,13 @@ function Expenses() {
                 {
                   label: t("common.edit"),
                   icon: HiPencil,
-                  iconClass: "bg-blue-50 text-blue-600",
+                  iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
                   onClick: () => openEdit(row),
                 },
                 {
                   label: t("expense.cancel"),
                   icon: HiTrash,
-                  iconClass: "bg-red-50 text-red-600",
+                  iconClass: "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400",
                   onClick: () => setCancelTarget(row),
                 },
               ]}
@@ -227,19 +227,19 @@ function Expenses() {
   const monthLabel = `${monthNames[monthOf(filterMonth)]} ${yearOf(filterMonth)}`;
 
   const totalCard = (
-    <div className="flex items-center justify-between gap-2 h-10 px-3 rounded-xl border border-emerald-200 bg-emerald-50">
-      <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-700">
+    <div className="flex items-center justify-between gap-2 h-10 px-3 rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/15">
+      <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-400">
         <HiBanknotes className="text-emerald-500" />
         {t("expense.total")}
       </span>
-      <NumberText className="text-emerald-700">{money(totalAmount)}</NumberText>
+      <NumberText className="text-emerald-700 dark:text-emerald-400">{money(totalAmount)}</NumberText>
     </div>
   );
 
   return (
     <div className="flex flex-col w-full h-full gap-4">
       {isDesktop ? (
-        <div className={`flex flex-col gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]`}>
+        <div className={`flex flex-col gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-sm dark:shadow-none shadow-slate-900/[0.02]`}>
           {/* Filtr qatori konvensiyasi: maydonlar flex-1 (tor ekranda yangi
               qatorga o'tadi), amallar bitta guruhda ml-auto bilan o'ngda. */}
           <div className="flex flex-wrap items-center gap-2.5 [&>*]:flex-1 [&>*]:min-w-[200px]">
@@ -305,7 +305,7 @@ function Expenses() {
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <div className="flex items-center justify-center h-11 px-2 rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <div className="flex items-center justify-center h-11 px-2 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
               <MonthNav
                 month={filterMonth}
                 label={monthLabel}
@@ -350,7 +350,7 @@ function Expenses() {
           }
           extras={
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <div className="flex items-center justify-center h-11 px-2 rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <div className="flex items-center justify-center h-11 px-2 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
                 <MonthNav
                   month={filterMonth}
                   label={monthLabel}
@@ -397,7 +397,7 @@ function Expenses() {
       )}
 
       {error ? (
-        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
           <HiBanknotes className="text-4xl" />
           <p className="text-sm">{t("expense.loadError")}</p>
           <Button variant="outlined" onClick={fetchExpenses}>

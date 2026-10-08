@@ -227,7 +227,7 @@ function Calendar() {
 
   if (!centerId && !loading) {
     return (
-      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
         <HiCalendarDays className="text-4xl" />
         <p className="text-sm">{t("calendar.noCenters")}</p>
       </div>
@@ -263,7 +263,7 @@ function Calendar() {
     loading && !Object.keys(days).length ? (
       <Loading height="36vh" />
     ) : error ? (
-      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 py-10">
+      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500 py-10">
         <HiCalendarDays className="text-4xl" />
         <p className="text-sm">{t("calendar.loadError")}</p>
         <Button variant="outlined" onClick={fetchMonth}>
@@ -274,12 +274,12 @@ function Calendar() {
 
   return (
     <div className="flex flex-col w-full h-full gap-3 max-w-[1400px] mx-auto">
-      <div className="flex flex-wrap items-center gap-2.5 p-2.5 lg:p-3 rounded-2xl border border-slate-200/80 bg-white">
+      <div className="flex flex-wrap items-center gap-2.5 p-2.5 lg:p-3 rounded-2xl border border-slate-200/80 dark:border-night-700/80 bg-white dark:bg-night-900">
         <div className="hidden lg:flex items-center gap-2.5 flex-1 min-w-[160px]">
-          <span className="flex items-center justify-center w-9 h-9 shrink-0 rounded-xl bg-blue-50 text-blue-500 text-lg">
+          <span className="flex items-center justify-center w-9 h-9 shrink-0 rounded-xl bg-blue-50 dark:bg-blue-500/15 text-blue-500 text-lg">
             <HiCalendarDays />
           </span>
-          <span className="text-base font-space font-bold text-slate-900 truncate">
+          <span className="text-base font-space font-bold text-slate-900 dark:text-slate-100 truncate">
             {centers.length > 1 ? t("calendar.title") : centers[0]?.name || t("calendar.title")}
           </span>
         </div>
@@ -295,21 +295,21 @@ function Calendar() {
           />
         )}
 
-        <div className="flex items-center gap-0.5 p-1 rounded-xl border border-slate-200 bg-slate-50 max-lg:ml-auto">
+        <div className="flex items-center gap-0.5 p-1 rounded-xl border border-slate-200 dark:border-night-700 bg-slate-50 dark:bg-night-800 max-lg:ml-auto">
           <button
             type="button"
             onClick={() => changeMonth(-1)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 bg-white shadow-sm hover:text-slate-800 cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 bg-white dark:bg-night-900 shadow-sm dark:shadow-none hover:text-slate-800 dark:hover:text-slate-100 cursor-pointer"
           >
             <HiChevronLeft />
           </button>
-          <span className="text-sm font-bold text-slate-700 min-w-28 lg:min-w-32 text-center select-none">
+          <span className="text-sm font-bold text-slate-700 dark:text-slate-300 min-w-28 lg:min-w-32 text-center select-none">
             {monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}
           </span>
           <button
             type="button"
             onClick={() => changeMonth(1)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 bg-white shadow-sm hover:text-slate-800 cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 bg-white dark:bg-night-900 shadow-sm dark:shadow-none hover:text-slate-800 dark:hover:text-slate-100 cursor-pointer"
           >
             <HiChevronRight />
           </button>
@@ -318,7 +318,7 @@ function Calendar() {
 
       {isDesktop ? (
         <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-3 items-start">
-          <div className="flex flex-col gap-3 p-3 rounded-2xl border border-slate-200/80 bg-white">
+          <div className="flex flex-col gap-3 p-3 rounded-2xl border border-slate-200/80 dark:border-night-700/80 bg-white dark:bg-night-900">
             {body || (
               <>
                 <MonthGrid
@@ -331,24 +331,24 @@ function Calendar() {
                   maxLessons={maxLessons}
                   onDayClick={onDayClick}
                 />
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2.5 border-t border-slate-100 text-[11.5px] text-slate-500">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2.5 border-t border-slate-100 dark:border-night-700 text-[11.5px] text-slate-500 dark:text-slate-400">
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-blue-500" />
                     {t("calendar.lessonCountLegend")}
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-slate-300" />
+                    <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-night-600" />
                     {t("calendar.holidayBadge")}
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full border-2 border-blue-500" />
                     {t("group.todayLegend")}
                   </span>
-                  {canManage && !hasSelection && <span className="ml-auto text-slate-400">{t("calendar.selectHint")}</span>}
+                  {canManage && !hasSelection && <span className="ml-auto text-slate-400 dark:text-slate-500">{t("calendar.selectHint")}</span>}
                 </div>
                 {canManage && hasSelection && (
-                  <div className="flex flex-wrap items-center gap-3 p-2.5 rounded-xl border border-blue-200 bg-blue-50/60">
-                    <p className="text-sm font-semibold text-blue-700 flex-1 min-w-[140px]">
+                  <div className="flex flex-wrap items-center gap-3 p-2.5 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-blue-50/60 dark:bg-blue-500/15">
+                    <p className="text-sm font-semibold text-blue-700 dark:text-blue-400 flex-1 min-w-[140px]">
                       {t("calendar.selectedCount", { count: selected.length })}
                     </p>
                     {selectionActions}
@@ -391,8 +391,8 @@ function Calendar() {
           {canManage && hasSelection && (
             <>
               <div className="h-32 shrink-0" />
-              <div className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-2 flex flex-col gap-2.5 p-3 rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-900/15">
-                <p className="text-sm font-semibold text-slate-800">
+              <div className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-2 flex flex-col gap-2.5 p-3 rounded-2xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-lg dark:shadow-none shadow-slate-900/15">
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                   {t("calendar.selectedCount", { count: selected.length })}
                 </p>
                 <div className="grid grid-cols-2 gap-2 [&>button]:w-full">{selectionActions}</div>

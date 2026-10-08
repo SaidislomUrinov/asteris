@@ -21,10 +21,10 @@ function ExpenseCategoryDonut({ data = [] }) {
   const chartData = sorted.length ? sorted : [{ category: "other", total: 1 }];
 
   return (
-    <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 bg-white h-full min-h-0">
+    <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 h-full min-h-0">
       <div className="shrink-0">
-        <p className="font-semibold text-slate-800">{t("center.expenseByCategoryTitle")}</p>
-        <p className="text-xs text-slate-400">{t("center.expenseByCategoryDesc")}</p>
+        <p className="font-semibold text-slate-800 dark:text-slate-100">{t("center.expenseByCategoryTitle")}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500">{t("center.expenseByCategoryDesc")}</p>
       </div>
 
       <div className="relative w-full flex-1 min-h-32 max-h-56">
@@ -53,16 +53,16 @@ function ExpenseCategoryDonut({ data = [] }) {
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-10 text-center">
-          <span className="text-[0.8rem] font-space font-bold text-slate-800 leading-tight tabular-nums">
+          <span className="text-[0.8rem] font-space font-bold text-slate-800 dark:text-slate-100 leading-tight tabular-nums">
             {total.toLocaleString("uz-UZ")}
           </span>
-          <span className="text-[0.65rem] text-slate-400">{t("student.somSuffix")}</span>
+          <span className="text-[0.65rem] text-slate-400 dark:text-slate-500">{t("student.somSuffix")}</span>
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100 shrink-0 max-h-32 overflow-y-auto">
+      <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100 dark:border-night-700 shrink-0 max-h-32 overflow-y-auto">
         {sorted.length === 0 ? (
-          <p className="text-xs text-slate-400 text-center py-1">{t("expense.empty")}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-1">{t("expense.empty")}</p>
         ) : (
           sorted.map((d) => (
             <div key={d.category} className="flex items-center justify-between gap-2 text-sm">
@@ -71,9 +71,9 @@ function ExpenseCategoryDonut({ data = [] }) {
                   className="w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: CATEGORY_COLORS[d.category] || CATEGORY_COLORS.other }}
                 />
-                <span className="text-slate-600 truncate">{t(`expense.categories.${d.category}`)}</span>
+                <span className="text-slate-600 dark:text-slate-300 truncate">{t(`expense.categories.${d.category}`)}</span>
               </div>
-              <span className="font-semibold text-slate-800 shrink-0">
+              <span className="font-semibold text-slate-800 dark:text-slate-100 shrink-0">
                 {d.total.toLocaleString("uz-UZ")}
               </span>
             </div>

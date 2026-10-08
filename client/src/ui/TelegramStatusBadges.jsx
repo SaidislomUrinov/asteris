@@ -35,7 +35,7 @@ function TelegramStatusBadges({ student = "none", parent = "none", className = "
             className={`inline-flex items-center gap-1 shrink-0 whitespace-nowrap rounded-full px-1.5 py-0.5 text-[11px] font-medium leading-none ring-1 ring-inset ${
               linked
                 ? "bg-[#229ED9]/10 text-[#229ED9] ring-[#229ED9]/20"
-                : "bg-slate-50 text-slate-400 ring-slate-200"
+                : "bg-slate-50 dark:bg-night-800 text-slate-400 dark:text-slate-500 ring-slate-200 dark:ring-night-700"
             }`}
           >
             <FaTelegram className={`text-xs ${linked ? "" : "opacity-60"}`} aria-hidden="true" />

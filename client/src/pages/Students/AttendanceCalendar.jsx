@@ -62,17 +62,17 @@ function AttendanceCalendar({ records = [] }) {
         <button
           type="button"
           onClick={() => changeMonth(-1)}
-          className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-night-800 transition-colors cursor-pointer"
         >
           <HiChevronLeft />
         </button>
-        <span className="text-sm font-semibold text-slate-700">
+        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
           {monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}
         </span>
         <button
           type="button"
           onClick={() => changeMonth(1)}
-          className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-night-800 transition-colors cursor-pointer"
         >
           <HiChevronRight />
         </button>
@@ -83,7 +83,7 @@ function AttendanceCalendar({ records = [] }) {
           <span
             key={d}
             className={`text-[11px] font-bold uppercase py-1 ${
-              d === "sun" ? "text-red-400" : "text-slate-400"
+              d === "sun" ? "text-red-400" : "text-slate-400 dark:text-slate-500"
             }`}
           >
             {t(`group.dayShort.${d}`)}
@@ -99,7 +99,7 @@ function AttendanceCalendar({ records = [] }) {
               <div
                 className={`flex items-center justify-center aspect-square rounded-lg text-sm font-medium transition-colors ${
                   cell.key === todayKey ? "ring-2 ring-violet-500 ring-inset" : ""
-                } ${record ? STATUS_STYLE[record.status] : "text-slate-500"}`}
+                } ${record ? STATUS_STYLE[record.status] : "text-slate-500 dark:text-slate-400"}`}
               >
                 {cell.day}
               </div>
@@ -108,7 +108,7 @@ function AttendanceCalendar({ records = [] }) {
                 <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 hidden group-hover:flex flex-col items-center whitespace-nowrap">
                   <div className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-white text-xs shadow-lg flex flex-col items-center gap-0.5">
                     <span className="font-semibold">{t(`group.attendance${record.status[0].toUpperCase()}${record.status.slice(1)}`)}</span>
-                    {record.reason && <span className="text-slate-300">{record.reason}</span>}
+                    {record.reason && <span className="text-slate-300 dark:text-slate-600">{record.reason}</span>}
                   </div>
                   <div className="w-2 h-2 -mt-1 rotate-45 bg-slate-800" />
                 </div>
@@ -118,7 +118,7 @@ function AttendanceCalendar({ records = [] }) {
         })}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 text-xs text-slate-500">
+      <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 dark:border-night-700 text-xs text-slate-500 dark:text-slate-400">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
           <span>{t("group.attendancePresent")}</span>

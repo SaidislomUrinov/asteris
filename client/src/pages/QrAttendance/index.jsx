@@ -29,31 +29,31 @@ const RESCAN_COOLDOWN = 3000;
 const TONE = {
   present: {
     icon: HiCheckCircle,
-    banner: "bg-emerald-50 ring-emerald-200/70 text-emerald-700",
+    banner: "bg-emerald-50 dark:bg-emerald-500/15 ring-emerald-200/70 dark:ring-emerald-500/30 text-emerald-700 dark:text-emerald-400",
     dot: "bg-emerald-500",
-    text: "text-emerald-600",
-    chip: "bg-emerald-50 text-emerald-600",
+    text: "text-emerald-600 dark:text-emerald-400",
+    chip: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
   },
   late: {
     icon: HiClock,
-    banner: "bg-orange-50 ring-orange-200/70 text-orange-700",
+    banner: "bg-orange-50 dark:bg-orange-500/15 ring-orange-200/70 dark:ring-orange-500/30 text-orange-700 dark:text-orange-400",
     dot: "bg-orange-500",
-    text: "text-orange-600",
-    chip: "bg-orange-50 text-orange-600",
+    text: "text-orange-600 dark:text-orange-400",
+    chip: "bg-orange-50 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400",
   },
   duplicate: {
     icon: HiExclamationTriangle,
-    banner: "bg-amber-50 ring-amber-200/70 text-amber-700",
+    banner: "bg-amber-50 dark:bg-amber-500/15 ring-amber-200/70 dark:ring-amber-500/30 text-amber-700 dark:text-amber-400",
     dot: "bg-amber-500",
-    text: "text-amber-600",
-    chip: "bg-amber-50 text-amber-600",
+    text: "text-amber-600 dark:text-amber-400",
+    chip: "bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400",
   },
   failed: {
     icon: HiXCircle,
-    banner: "bg-red-50 ring-red-200/70 text-red-700",
+    banner: "bg-red-50 dark:bg-red-500/15 ring-red-200/70 dark:ring-red-500/30 text-red-700 dark:text-red-400",
     dot: "bg-red-500",
-    text: "text-red-600",
-    chip: "bg-red-50 text-red-600",
+    text: "text-red-600 dark:text-red-400",
+    chip: "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400",
   },
 };
 
@@ -271,7 +271,7 @@ function QrAttendance() {
               </h1>
               {/* Mobil ekranda uzun matn kesilmasin — o'raladi, kattasida esa
                   sarlavha bandi bir qatorda qoladi. */}
-              <p className="text-sm text-slate-400 lg:truncate">{t("attendance.qrSubtitle")}</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500 lg:truncate">{t("attendance.qrSubtitle")}</p>
             </div>
           </div>
 
@@ -291,14 +291,14 @@ function QrAttendance() {
 
       {/* ── Bugungi jamlanma — ixcham qator ─────────────────────────────── */}
       <div className="order-3 lg:order-2 grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-        <StatCard label={t("attendance.statTotal")} value={stats.total} tone="text-slate-900" />
+        <StatCard label={t("attendance.statTotal")} value={stats.total} tone="text-slate-900 dark:text-slate-100" />
         <StatCard
           label={t("attendance.presentShort")}
           value={stats.present}
-          tone="text-emerald-600"
+          tone="text-emerald-600 dark:text-emerald-400"
         />
-        <StatCard label={t("attendance.lateShort")} value={stats.late} tone="text-orange-600" />
-        <StatCard label={t("attendance.scanErrorShort")} value={stats.failed} tone="text-red-600" />
+        <StatCard label={t("attendance.lateShort")} value={stats.late} tone="text-orange-600 dark:text-orange-400" />
+        <StatCard label={t("attendance.scanErrorShort")} value={stats.failed} tone="text-red-600 dark:text-red-400" />
       </div>
 
       {/* ── Asosiy maydon: skaner (~62%) + jonli tasma (~38%) ───────────── */}
@@ -308,7 +308,7 @@ function QrAttendance() {
               o'qish uchun katta oyna shart emas, ortiqcha joy operatorni
               chalg'itadi. Tugma va natija banneri ham shu kenglikda
               tekislanadi. */}
-          <div className="flex flex-col items-center p-3 sm:p-4 rounded-2xl bg-white ring-1 ring-slate-200/70 shadow-[0_1px_3px_rgba(15,23,42,0.05)]">
+          <div className="flex flex-col items-center p-3 sm:p-4 rounded-2xl bg-white dark:bg-night-900 ring-1 ring-slate-200/70 dark:ring-night-700/70 shadow-[0_1px_3px_rgba(15,23,42,0.05)] dark:shadow-none">
             <div className="relative w-full max-w-2xl aspect-square sm:aspect-[4/3] rounded-2xl overflow-hidden bg-slate-950">
               <video ref={videoRef} playsInline muted className="w-full h-full object-cover" />
               <canvas ref={canvasRef} className="hidden" />
@@ -320,13 +320,13 @@ function QrAttendance() {
                     className={`w-20 h-20 rounded-3xl flex items-center justify-center text-4xl ring-1 ${
                       cameraError
                         ? "bg-red-500/10 text-red-400 ring-red-400/20"
-                        : "bg-white/5 text-slate-400 ring-white/10"
+                        : "bg-white/5 dark:bg-night-900/5 text-slate-400 dark:text-slate-500 ring-white/10 dark:ring-night-900/10"
                     }`}
                   >
                     {cameraError ? <HiVideoCameraSlash /> : <HiQrCode />}
                   </div>
                   <p
-                    className={`text-sm max-w-xs ${cameraError ? "text-red-300" : "text-slate-400"}`}
+                    className={`text-sm max-w-xs ${cameraError ? "text-red-300" : "text-slate-400 dark:text-slate-500"}`}
                   >
                     {cameraError || t("attendance.cameraIdle")}
                   </p>
@@ -354,11 +354,11 @@ function QrAttendance() {
                     <span className="absolute left-2 right-2 h-0.5 rounded-full bg-blue-400 shadow-[0_0_12px_2px_rgba(96,165,250,0.8)] animate-scan-line" />
                   </div>
 
-                  <span className="absolute bottom-3 left-3 flex items-center gap-2 px-3 h-8 rounded-full bg-slate-950/70 backdrop-blur text-[11px] font-semibold text-slate-200 ring-1 ring-white/10">
+                  <span className="absolute bottom-3 left-3 flex items-center gap-2 px-3 h-8 rounded-full bg-slate-950/70 backdrop-blur text-[11px] font-semibold text-slate-200 ring-1 ring-white/10 dark:ring-night-900/10">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
                     {t("attendance.waitingQr")}
                   </span>
-                  <span className="absolute bottom-3 right-3 hidden sm:block text-[11px] text-slate-400">
+                  <span className="absolute bottom-3 right-3 hidden sm:block text-[11px] text-slate-400 dark:text-slate-500">
                     {t("attendance.scanReadyHint")}
                   </span>
                 </>
@@ -367,13 +367,13 @@ function QrAttendance() {
               {/* Natija kartasi — kamera ustida, katta va aniq */}
               {showOverlay && (
                 <div className="absolute inset-0 flex items-center justify-center p-5 bg-slate-950/55 backdrop-blur-[2px] pointer-events-none">
-                  <div className="flex flex-col items-center gap-2 w-full max-w-xs px-5 py-5 rounded-2xl bg-white text-center shadow-[0_8px_24px_-6px_rgba(15,23,42,0.35)]">
+                  <div className="flex flex-col items-center gap-2 w-full max-w-xs px-5 py-5 rounded-2xl bg-white dark:bg-night-900 text-center shadow-[0_8px_24px_-6px_rgba(15,23,42,0.35)] dark:shadow-none">
                     <span
                       className={`w-14 h-14 rounded-full flex items-center justify-center text-3xl ${resultTone.chip}`}
                     >
                       <ResultIcon />
                     </span>
-                    <p className="font-space font-bold text-lg text-slate-900 leading-tight line-clamp-2">
+                    <p className="font-space font-bold text-lg text-slate-900 dark:text-slate-100 leading-tight line-clamp-2">
                       {result.failed ? t("attendance.scanFailed") : result.student?.fullName}
                     </p>
                     <p className={`text-sm font-medium ${resultTone.text}`}>
@@ -386,7 +386,7 @@ function QrAttendance() {
                             : t("attendance.marked")}
                     </p>
                     {!result.failed && result.subject && (
-                      <p className="text-xs text-slate-500 truncate max-w-full">{result.subject}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-full">{result.subject}</p>
                     )}
                   </div>
                 </div>
@@ -408,7 +408,7 @@ function QrAttendance() {
                 <button
                   type="button"
                   onClick={stop}
-                  className="flex items-center justify-center gap-2 w-full h-12 rounded-xl border border-slate-200 bg-white text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-800 cursor-pointer transition-colors duration-150"
+                  className="flex items-center justify-center gap-2 w-full h-12 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 text-slate-600 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-night-800 hover:text-slate-800 dark:hover:text-slate-100 cursor-pointer transition-colors duration-150"
                 >
                   <HiVideoCameraSlash className="text-lg" />
                   {t("attendance.stopScan")}
@@ -432,7 +432,7 @@ function QrAttendance() {
                 className={`flex items-center gap-3 w-full max-w-2xl mt-3 p-3 rounded-2xl ring-1 ${resultTone.banner}`}
               >
                 {result.failed ? (
-                  <div className="w-11 h-11 shrink-0 rounded-full bg-white/60 flex items-center justify-center text-2xl">
+                  <div className="w-11 h-11 shrink-0 rounded-full bg-white/60 dark:bg-night-900/60 flex items-center justify-center text-2xl">
                     <ResultIcon />
                   </div>
                 ) : (
@@ -466,38 +466,38 @@ function QrAttendance() {
 
           {/* Apparat skaner doim tinglanadi — kamera yoqilmagan bo'lsa ham.
               Bu yerda faqat holat ko'rsatiladi, hech narsa bosish shart emas. */}
-          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white ring-1 ring-slate-200/70">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white dark:bg-night-900 ring-1 ring-slate-200/70 dark:ring-night-700/70">
             <div
               className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center ${
-                scannerSeen ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-400"
+                scannerSeen ? "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-slate-50 dark:bg-night-800 text-slate-400 dark:text-slate-500"
               }`}
             >
               <HiCommandLine className="text-lg" />
             </div>
             <div className="flex flex-col min-w-0 flex-1">
-              <span className="text-sm font-semibold text-slate-800 truncate">
+              <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
                 {scannerSeen ? t("attendance.scannerActive") : t("attendance.scannerReady")}
               </span>
-              <span className="text-xs text-slate-500 line-clamp-2">
+              <span className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
                 {t("attendance.scannerHint")}
               </span>
             </div>
             <span
               className={`w-2 h-2 shrink-0 rounded-full ${
-                scannerSeen ? "bg-emerald-500" : "bg-slate-300"
+                scannerSeen ? "bg-emerald-500" : "bg-slate-300 dark:bg-night-600"
               }`}
             />
           </div>
         </div>
 
         {/* ── Jonli tasma ─────────────────────────────────────────────── */}
-        <div className="flex flex-col rounded-2xl bg-white ring-1 ring-slate-200/70 shadow-[0_1px_3px_rgba(15,23,42,0.05)] overflow-hidden">
-          <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-100">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+        <div className="flex flex-col rounded-2xl bg-white dark:bg-night-900 ring-1 ring-slate-200/70 dark:ring-night-700/70 shadow-[0_1px_3px_rgba(15,23,42,0.05)] dark:shadow-none overflow-hidden">
+          <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-100 dark:border-night-700">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               {t("attendance.scanHistory")}
             </p>
             {history.length > 0 && (
-              <span className="flex items-center justify-center min-w-6 h-6 px-2 rounded-lg bg-slate-100 text-[11px] font-semibold text-slate-500 tabular-nums">
+              <span className="flex items-center justify-center min-w-6 h-6 px-2 rounded-lg bg-slate-100 dark:bg-night-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400 tabular-nums">
                 {history.length}
               </span>
             )}
@@ -505,13 +505,13 @@ function QrAttendance() {
 
           {history.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-20 px-6 text-center">
-              <div className="w-16 h-16 rounded-3xl bg-slate-50 flex items-center justify-center text-3xl text-slate-300">
+              <div className="w-16 h-16 rounded-3xl bg-slate-50 dark:bg-night-800 flex items-center justify-center text-3xl text-slate-300 dark:text-slate-600">
                 <HiQrCode />
               </div>
-              <p className="text-sm font-medium text-slate-600">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
                 {t("attendance.scanHistoryEmpty")}
               </p>
-              <p className="text-xs text-slate-400 max-w-56">{t("attendance.scanHistoryHint")}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 max-w-56">{t("attendance.scanHistoryHint")}</p>
             </div>
           ) : (
             <div className="flex flex-col gap-0.5 p-2 max-h-[32rem] overflow-y-auto">
@@ -521,10 +521,10 @@ function QrAttendance() {
                 return (
                   <div
                     key={`${item.student?._id}-${item.at}-${i}`}
-                    className="flex items-center gap-3 px-2.5 py-2.5 rounded-xl hover:bg-slate-50 transition-colors duration-150"
+                    className="flex items-center gap-3 px-2.5 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-night-800 transition-colors duration-150"
                   >
                     {item.failed ? (
-                      <span className="w-[38px] h-[38px] shrink-0 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-xl">
+                      <span className="w-[38px] h-[38px] shrink-0 rounded-full bg-red-50 dark:bg-red-500/15 text-red-500 flex items-center justify-center text-xl">
                         <Icon />
                       </span>
                     ) : (
@@ -538,18 +538,18 @@ function QrAttendance() {
                       />
                     )}
                     <div className="flex flex-col min-w-0 flex-1">
-                      <span className="font-semibold text-slate-800 truncate leading-snug">
+                      <span className="font-semibold text-slate-800 dark:text-slate-100 truncate leading-snug">
                         {item.failed ? t(item.message || "attendance.scanFailed") : item.student?.fullName}
                       </span>
-                      <span className="flex items-center gap-1.5 text-xs text-slate-400 truncate leading-snug">
+                      <span className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 truncate leading-snug">
                         {item.subject && (
                           <>
                             <span className="truncate">{item.subject}</span>
-                            <span className="w-1 h-1 shrink-0 rounded-full bg-slate-300" />
+                            <span className="w-1 h-1 shrink-0 rounded-full bg-slate-300 dark:bg-night-600" />
                           </>
                         )}
                         {clockOf(item.at)}
-                        <span className="w-1 h-1 shrink-0 rounded-full bg-slate-300" />
+                        <span className="w-1 h-1 shrink-0 rounded-full bg-slate-300 dark:bg-night-600" />
                         {/* Qaysi usulda o'qilgani — skanerni sozlashda foydali */}
                         {item.via === "scanner"
                           ? t("attendance.viaScanner")
@@ -583,7 +583,7 @@ function QrAttendance() {
         className="md:w-100"
         zIndex="z-40"
       >
-        <p className="text-sm text-slate-600 mb-2">
+        <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
           {t("attendance.chooseGroupHint", { name: groupChoice?.student?.fullName })}
         </p>
         <div className="flex flex-col gap-2">
@@ -591,13 +591,13 @@ function QrAttendance() {
             <button
               key={g._id}
               onClick={() => chooseGroup(g._id)}
-              className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 cursor-pointer duration-200"
+              className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-night-700 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:bg-blue-500/15 cursor-pointer duration-200"
             >
-              <span className="text-sm font-medium text-slate-800">
+              <span className="text-sm font-medium text-slate-800 dark:text-slate-100">
                 {g.subject} - {g.activeId}
               </span>
-              <span className="flex items-center gap-1 text-xs text-slate-500">
-                <HiClock className="text-slate-300" />
+              <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                <HiClock className="text-slate-300 dark:text-slate-600" />
                 {g.startTime} - {g.endTime}
               </span>
             </button>
@@ -615,7 +615,7 @@ function StatusPill({ on, icon, label }) {
       className={`flex items-center gap-2 h-9 px-3 rounded-full text-xs font-semibold ring-1 backdrop-blur-sm ${
         on
           ? "bg-emerald-500/15 text-emerald-300 ring-emerald-400/20"
-          : "bg-white/5 text-slate-300 ring-white/10"
+          : "bg-white/5 dark:bg-night-900/5 text-slate-300 dark:text-slate-600 ring-white/10 dark:ring-night-900/10"
       }`}
     >
       {icon || (
@@ -631,8 +631,8 @@ function StatusPill({ on, icon, label }) {
 // Ixcham statistika — yorliq chapda, raqam o'ngda (balandligi past).
 function StatCard({ label, value, tone }) {
   return (
-    <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl bg-white ring-1 ring-slate-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 truncate">
+    <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl bg-white dark:bg-night-900 ring-1 ring-slate-200/70 dark:ring-night-700/70 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
         {label}
       </span>
       <span className={`text-2xl font-space font-semibold tabular-nums leading-none ${tone}`}>

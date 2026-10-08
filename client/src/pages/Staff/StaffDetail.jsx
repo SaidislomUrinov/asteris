@@ -280,7 +280,7 @@ function StaffDetail() {
 
   if (notFound || error) {
     return (
-      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
         <HiUser className="text-4xl" />
         <p className="text-sm">{t("staff.notFound")}</p>
         <Button variant="outlined" onClick={() => navigate("/staff")}>
@@ -345,7 +345,7 @@ function StaffDetail() {
             <Chip value={t(`role.${staff.role}`)} color="slate" variant="ghost" />
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-3 border-t border-slate-100">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-3 border-t border-slate-100 dark:border-night-700">
             <InfoMeta icon={<HiBuildingOffice2 />}>{centerName}</InfoMeta>
           </div>
         </InfoCard>
@@ -376,10 +376,10 @@ function StaffDetail() {
         </MetricCard>
       </div>
 
-      <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 bg-white">
+      <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2">
-            <p className="font-semibold text-slate-800">{t("salary.title")}</p>
+            <p className="font-semibold text-slate-800 dark:text-slate-100">{t("salary.title")}</p>
             {salaryTypeChip}
           </div>
           {canManageSalary && (
@@ -402,50 +402,50 @@ function StaffDetail() {
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
-                <span className="text-xs text-slate-400">{t("salary.base")}</span>
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+                <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.base")}</span>
                 <NumberText>{money(salary.base)}</NumberText>
               </div>
-              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
-                <span className="text-xs text-slate-400">{t("salary.advance")}</span>
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+                <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.advance")}</span>
                 <NumberText>{money(salary.advance)}</NumberText>
               </div>
-              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
-                <span className="text-xs text-slate-400">{t("salary.withdrawal")}</span>
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+                <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.withdrawal")}</span>
                 <NumberText>{money(salary.withdrawal)}</NumberText>
               </div>
-              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
-                <span className="text-xs text-slate-400">{t("salary.bonus")}</span>
-                <NumberText className="text-emerald-600">{money(salary.bonus)}</NumberText>
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+                <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.bonus")}</span>
+                <NumberText className="text-emerald-600 dark:text-emerald-400">{money(salary.bonus)}</NumberText>
               </div>
-              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
-                <span className="text-xs text-slate-400">{t("salary.penalty")}</span>
-                <NumberText className="text-red-600">
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+                <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.penalty")}</span>
+                <NumberText className="text-red-600 dark:text-red-400">
                   {salary.penalty ? `-${money(salary.penalty)}` : money(0)}
                 </NumberText>
               </div>
-              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 col-span-2 sm:col-span-1">
-                <span className="text-xs text-slate-400">{t("salary.final")}</span>
-                <NumberText className={salary.final < 0 ? "text-red-600" : "text-emerald-600"}>
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800 col-span-2 sm:col-span-1">
+                <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.final")}</span>
+                <NumberText className={salary.final < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}>
                   {money(salary.final)}
                 </NumberText>
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <p className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
-                <HiClipboardDocumentList className="text-slate-400" />
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <HiClipboardDocumentList className="text-slate-400 dark:text-slate-500" />
                 {t("salary.transactions")}
               </p>
               {salary.transactions.length === 0 ? (
-                <p className="text-sm text-slate-400">{t("salary.noTransactions")}</p>
+                <p className="text-sm text-slate-400 dark:text-slate-500">{t("salary.noTransactions")}</p>
               ) : (
                 salary.transactions.map((tx) => {
                   const cancelled = tx.status === "cancelled";
                   return (
                     <div
                       key={tx._id}
-                      className={`relative flex items-center justify-between gap-2 p-2.5 rounded-lg border border-slate-100 ${
+                      className={`relative flex items-center justify-between gap-2 p-2.5 rounded-lg border border-slate-100 dark:border-night-700 ${
                         cancelled ? "opacity-50" : ""
                       }`}
                     >
@@ -458,11 +458,11 @@ function StaffDetail() {
                           <NumberText>
                             {tx.type === "penalty" ? `-${money(tx.amount)}` : money(tx.amount)}
                           </NumberText>
-                          {tx.note && <span className="text-xs text-slate-400">{tx.note}</span>}
+                          {tx.note && <span className="text-xs text-slate-400 dark:text-slate-500">{tx.note}</span>}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs text-slate-400 whitespace-nowrap">{tx.date}</span>
+                        <span className="text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap">{tx.date}</span>
                         {canManageSalary && tx.status === "active" && tx.type !== "advance" && (
                           <Button variant="text" color="red" onClick={() => setCancelTarget(tx)}>
                             <HiTrash className="text-base" />
@@ -479,8 +479,8 @@ function StaffDetail() {
       </div>
 
       {showPerformance && (
-        <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 bg-white">
-          <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+        <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
+          <p className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
             <HiChartBar className="text-fuchsia-500" />
             {t("report.teacherPerformanceTitle")}
           </p>
@@ -488,25 +488,25 @@ function StaffDetail() {
           {performanceLoading ? (
             <Loading height="12vh" />
           ) : !performance ? (
-            <div className="flex items-center justify-center w-full py-6 text-slate-400 text-sm">
+            <div className="flex items-center justify-center w-full py-6 text-slate-400 dark:text-slate-500 text-sm">
               {t("report.empty")}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
-                <span className="text-xs text-slate-400">{t("report.lessonsHeld")}</span>
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+                <span className="text-xs text-slate-400 dark:text-slate-500">{t("report.lessonsHeld")}</span>
                 <NumberText>{performance.lessonsHeld}</NumberText>
               </div>
-              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
-                <span className="text-xs text-slate-400">{t("report.attendanceRate")}</span>
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+                <span className="text-xs text-slate-400 dark:text-slate-500">{t("report.attendanceRate")}</span>
                 <RateBar value={performance.attendanceRate} />
               </div>
-              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
-                <span className="text-xs text-slate-400">{t("report.revenueGenerated")}</span>
-                <NumberText className="text-emerald-600">{money(performance.revenueGenerated)}</NumberText>
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+                <span className="text-xs text-slate-400 dark:text-slate-500">{t("report.revenueGenerated")}</span>
+                <NumberText className="text-emerald-600 dark:text-emerald-400">{money(performance.revenueGenerated)}</NumberText>
               </div>
-              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50">
-                <span className="text-xs text-slate-400">{t("report.students")}</span>
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+                <span className="text-xs text-slate-400 dark:text-slate-500">{t("report.students")}</span>
                 <NumberText>{performance.students}</NumberText>
               </div>
             </div>
@@ -514,18 +514,18 @@ function StaffDetail() {
         </div>
       )}
 
-      <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 bg-white">
-        <p className="font-semibold text-slate-800">{t("nav.groups")}</p>
+      <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
+        <p className="font-semibold text-slate-800 dark:text-slate-100">{t("nav.groups")}</p>
 
         {groupsLoading ? (
           <Loading height="15vh" />
         ) : groups.length === 0 ? (
-          <div className="flex items-center justify-center w-full py-8 text-slate-400 text-sm">
+          <div className="flex items-center justify-center w-full py-8 text-slate-400 dark:text-slate-500 text-sm">
             {t("group.empty")}
           </div>
         ) : (
-          <div className="flex flex-col w-full overflow-hidden rounded-lg border border-slate-100">
-            <div className="hidden sm:grid grid-cols-[1fr_140px_110px_100px_44px] gap-2 px-3 py-2 bg-slate-50 text-[11px] font-semibold uppercase text-slate-400">
+          <div className="flex flex-col w-full overflow-hidden rounded-lg border border-slate-100 dark:border-night-700">
+            <div className="hidden sm:grid grid-cols-[1fr_140px_110px_100px_44px] gap-2 px-3 py-2 bg-slate-50 dark:bg-night-800 text-[11px] font-semibold uppercase text-slate-400 dark:text-slate-500">
               <span>{t("group.subject")}</span>
               <span>{t("room.title")}</span>
               <span>{t("group.status")}</span>
@@ -537,12 +537,12 @@ function StaffDetail() {
               <div
                 key={g._id}
                 onClick={() => navigate(`/groups/${g._id}`)}
-                className="grid grid-cols-1 sm:grid-cols-[1fr_140px_110px_100px_44px] items-center gap-2 px-3 py-2.5 border-t border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
+                className="grid grid-cols-1 sm:grid-cols-[1fr_140px_110px_100px_44px] items-center gap-2 px-3 py-2.5 border-t border-slate-100 dark:border-night-700 hover:bg-slate-50 dark:hover:bg-night-800 transition-colors cursor-pointer"
               >
-                <span className="font-semibold text-slate-800 truncate">
+                <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">
                   {subjectMap[g.subject] || "?"} - {g.status === "pending" ? g.pendingId : g.activeId}
                 </span>
-                <span className="text-sm text-slate-500">{roomMap[g.room] || "—"}</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">{roomMap[g.room] || "—"}</span>
                 <span>
                   <Chip
                     value={t(`group.status${g.status[0].toUpperCase()}${g.status.slice(1)}`)}
@@ -550,9 +550,9 @@ function StaffDetail() {
                     variant="ghost"
                   />
                 </span>
-                <span className="text-sm text-slate-500">{g.studentsCount || 0}</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">{g.studentsCount || 0}</span>
                 <span className="flex items-center justify-end">
-                  <HiEye className="text-slate-300" />
+                  <HiEye className="text-slate-300 dark:text-slate-600" />
                 </span>
               </div>
             ))}

@@ -79,8 +79,8 @@ function MonthInput({ value, onChange, max, variant = "slate", className = "" })
   }, [open]);
 
   const variants = {
-    slate: "bg-white border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
-    white: "bg-white border-slate-200",
+    slate: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none",
+    white: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700",
   };
 
   const maxYear = max ? Number(max.slice(0, 4)) : null;
@@ -100,10 +100,10 @@ function MonthInput({ value, onChange, max, variant = "slate", className = "" })
         }}
         className={`relative w-full h-11 rounded-xl flex items-center gap-2 px-3.5 border select-none cursor-pointer duration-200 ${
           variants[variant]
-        } ${open ? "ring-3 ring-blue-500/15 border-blue-500" : "hover:border-slate-300"}`}
+        } ${open ? "ring-3 ring-blue-500/15 border-blue-500" : "hover:border-slate-300 dark:hover:border-night-600"}`}
       >
-        <HiCalendarDays className="shrink-0 text-slate-400" />
-        <span className="truncate text-[13px] text-slate-900 capitalize">{label}</span>
+        <HiCalendarDays className="shrink-0 text-slate-400 dark:text-slate-500" />
+        <span className="truncate text-[13px] text-slate-900 dark:text-slate-100 capitalize">{label}</span>
       </div>
 
       {open &&
@@ -118,22 +118,22 @@ function MonthInput({ value, onChange, max, variant = "slate", className = "" })
               width: POPOVER_WIDTH,
               zIndex: 9999,
             }}
-            className="flex flex-col gap-2 p-2 rounded-2xl bg-white border border-slate-200 shadow-xl"
+            className="flex flex-col gap-2 p-2 rounded-2xl bg-white dark:bg-night-900 border border-slate-200 dark:border-night-700 shadow-xl"
           >
             <div className="flex items-center justify-between gap-1">
               <button
                 type="button"
                 onClick={() => setViewYear((y) => y - 1)}
-                className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-700 cursor-pointer transition-colors"
+                className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-night-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer transition-colors"
               >
                 <HiChevronLeft />
               </button>
-              <span className="text-[13px] font-semibold text-slate-800 tabular-nums">{viewYear}</span>
+              <span className="text-[13px] font-semibold text-slate-800 dark:text-slate-100 tabular-nums">{viewYear}</span>
               <button
                 type="button"
                 disabled={maxYear !== null && viewYear >= maxYear}
                 onClick={() => setViewYear((y) => y + 1)}
-                className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 enabled:hover:bg-slate-50 enabled:hover:text-slate-700 enabled:cursor-pointer disabled:opacity-30 transition-colors"
+                className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 enabled:hover:bg-slate-50 dark:enabled:hover:bg-night-800 enabled:hover:text-slate-700 dark:enabled:hover:text-slate-300 enabled:cursor-pointer disabled:opacity-30 transition-colors"
               >
                 <HiChevronRight />
               </button>
@@ -153,8 +153,8 @@ function MonthInput({ value, onChange, max, variant = "slate", className = "" })
                     }}
                     className={`h-9 rounded-lg text-[13px] capitalize transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
                       active
-                        ? "bg-blue-50 text-blue-700 font-semibold"
-                        : "text-slate-600 enabled:hover:bg-slate-50 enabled:cursor-pointer"
+                        ? "bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 font-semibold"
+                        : "text-slate-600 dark:text-slate-300 enabled:hover:bg-slate-50 dark:enabled:hover:bg-night-800 enabled:cursor-pointer"
                     }`}
                   >
                     {name.slice(0, 3)}

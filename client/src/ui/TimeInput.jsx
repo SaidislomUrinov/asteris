@@ -34,8 +34,8 @@ function TimeInput({
   };
 
   const variants = {
-    slate: "bg-white border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
-    white: "bg-white border-slate-200",
+    slate: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none",
+    white: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700",
   };
 
   const digitsFromValue = (v) => (v || "").replace(/\D/g, "").slice(0, 4);
@@ -78,14 +78,14 @@ function TimeInput({
   return (
     <label className="flex flex-col gap-1 w-full">
       {label && (
-        <span className="text-xs font-medium text-slate-600">
+        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
           {label}
           {required && <span className="text-rose-500">*</span>}
         </span>
       )}
 
       <div className="relative flex items-center w-full">
-        {icon && <span className="absolute right-3.5 text-slate-400 text-[15px]">{icon}</span>}
+        {icon && <span className="absolute right-3.5 text-slate-400 dark:text-slate-500 text-[15px]">{icon}</span>}
 
         <input
           type="text"
@@ -93,7 +93,7 @@ function TimeInput({
           maxLength={5}
           className={`${className} duration-200 w-full h-11 outline-none rounded-xl pl-3.5 ${
             icon ? "pr-9" : "pr-3.5"
-          } focus:ring-3 hover:border-slate-300 border ${variants[variant]} ${colors[color]} disabled:bg-slate-50 disabled:shadow-none disabled:text-slate-400 disabled:cursor-not-allowed text-[13px] text-slate-900 placeholder:text-slate-400`}
+          } focus:ring-3 hover:border-slate-300 dark:hover:border-night-600 border ${variants[variant]} ${colors[color]} disabled:bg-slate-50 dark:disabled:bg-night-800 disabled:shadow-none disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed text-[13px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500`}
           value={format(digits)}
           onChange={handleChange}
           onBlur={handleBlur}

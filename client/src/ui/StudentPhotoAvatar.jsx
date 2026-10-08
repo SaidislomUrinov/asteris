@@ -49,7 +49,7 @@ function StudentPhotoAvatar({ student, onUpdated, size = 44, rounded = "rounded-
         <img
           src={src}
           alt={student?.fullName || "avatar"}
-          className={`w-full h-full ${rounded} object-cover bg-slate-100`}
+          className={`w-full h-full ${rounded} object-cover bg-slate-100 dark:bg-night-800`}
         />
       ) : (
         <span
@@ -68,7 +68,7 @@ function StudentPhotoAvatar({ student, onUpdated, size = 44, rounded = "rounded-
 
       {/* Ro'yxatdagi kichik avatarda (≤40px) belgi ham kichik — bosh harfni yopmasin. */}
       <span
-        className={`absolute flex items-center justify-center rounded-full bg-white text-slate-600 ring-1 ring-slate-200 shadow-sm ${
+        className={`absolute flex items-center justify-center rounded-full bg-white dark:bg-night-900 text-slate-600 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-night-700 shadow-sm dark:shadow-none ${
           size <= 40 ? "-bottom-0.5 -right-0.5 size-3.5" : "-bottom-1 -right-1 size-5"
         }`}
       >

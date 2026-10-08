@@ -23,15 +23,15 @@ function LeadDonut({ stats }) {
   const conversion = total ? Math.round(((byStatus.enrolled || 0) / total) * 100) : 0;
 
   return (
-    <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 bg-white h-full min-h-0">
+    <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 h-full min-h-0">
       <div className="flex items-start justify-between gap-2 shrink-0">
         <div className="min-w-0">
-          <p className="font-semibold text-slate-800">{t("lead.dashTitle")}</p>
-          <p className="text-xs text-slate-400">{t("lead.dashDesc", { count: total })}</p>
+          <p className="font-semibold text-slate-800 dark:text-slate-100">{t("lead.dashTitle")}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{t("lead.dashDesc", { count: total })}</p>
         </div>
         <Link
           to="/leads"
-          className="flex items-center gap-1 shrink-0 text-xs font-semibold text-blue-600 hover:text-blue-700"
+          className="flex items-center gap-1 shrink-0 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-400"
         >
           {t("nav.leads")}
           <HiArrowRight />
@@ -60,21 +60,21 @@ function LeadDonut({ stats }) {
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-10 text-center">
-          <span className="text-xl font-space font-bold text-slate-800 leading-tight tabular-nums">
+          <span className="text-xl font-space font-bold text-slate-800 dark:text-slate-100 leading-tight tabular-nums">
             {conversion}%
           </span>
-          <span className="text-[0.65rem] text-slate-400">{t("lead.dashConversion")}</span>
+          <span className="text-[0.65rem] text-slate-400 dark:text-slate-500">{t("lead.dashConversion")}</span>
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100 shrink-0">
+      <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100 dark:border-night-700 shrink-0">
         {rows.map((r) => (
           <div key={r.key} className="flex items-center justify-between gap-2 text-sm min-w-0">
             <div className="flex items-center gap-2 min-w-0">
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS[r.key] }} />
-              <span className="text-slate-600 truncate">{t(`lead.status.${r.key}`)}</span>
+              <span className="text-slate-600 dark:text-slate-300 truncate">{t(`lead.status.${r.key}`)}</span>
             </div>
-            <span className="font-semibold text-slate-800 shrink-0 tabular-nums">{r.count}</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-100 shrink-0 tabular-nums">{r.count}</span>
           </div>
         ))}
       </div>

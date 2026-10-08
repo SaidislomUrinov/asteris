@@ -19,7 +19,7 @@ function InfoCard({ icon, media, title, subtitle, badge, accent = "blue", childr
 
   return (
     <div
-      className={`relative overflow-hidden flex flex-col gap-3 p-5 pl-6 rounded-2xl bg-white border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${className}`}
+      className={`relative overflow-hidden flex flex-col gap-3 p-5 pl-6 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none ${className}`}
     >
       <span className={`absolute inset-y-0 left-0 w-1 ${a.edge}`} />
 
@@ -32,8 +32,8 @@ function InfoCard({ icon, media, title, subtitle, badge, accent = "blue", childr
           </div>
         )}
         <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-          <p className="font-space font-bold text-lg leading-snug text-slate-900 line-clamp-2 break-words">{title}</p>
-          {subtitle && <p className="text-xs text-slate-400 truncate">{subtitle}</p>}
+          <p className="font-space font-bold text-lg leading-snug text-slate-900 dark:text-slate-100 line-clamp-2 break-words">{title}</p>
+          {subtitle && <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{subtitle}</p>}
         </div>
         {badge && <div className="shrink-0">{badge}</div>}
       </div>
@@ -52,8 +52,8 @@ export default InfoCard;
  */
 export function InfoMeta({ icon, children }) {
   return (
-    <span className="flex items-center gap-1.5 min-w-0 text-sm text-slate-600">
-      <span className="text-slate-300 shrink-0">{icon}</span>
+    <span className="flex items-center gap-1.5 min-w-0 text-sm text-slate-600 dark:text-slate-300">
+      <span className="text-slate-300 dark:text-slate-600 shrink-0">{icon}</span>
       <span className="truncate">{children}</span>
     </span>
   );

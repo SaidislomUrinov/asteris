@@ -28,24 +28,24 @@ function ByTeacherTab({ query, tick }) {
             user={{ _id: row.staff?._id, name: row.staff?.fullName, avatar: row.staff?.photo }}
             size={32}
           />
-          <span className="font-semibold text-slate-800">{row.staff?.fullName || "—"}</span>
+          <span className="font-semibold text-slate-800 dark:text-slate-100">{row.staff?.fullName || "—"}</span>
         </div>
       ),
     },
     {
       key: "groups",
       header: <SortHeader label={t("report.groups")} sortKey="groups" sort={sort} onToggle={toggle} />,
-      render: (row) => <span className="text-slate-600">{row.groups ?? 0}</span>,
+      render: (row) => <span className="text-slate-600 dark:text-slate-300">{row.groups ?? 0}</span>,
     },
     {
       key: "students",
       header: <SortHeader label={t("report.students")} sortKey="students" sort={sort} onToggle={toggle} />,
-      render: (row) => <span className="text-slate-600">{row.students ?? 0}</span>,
+      render: (row) => <span className="text-slate-600 dark:text-slate-300">{row.students ?? 0}</span>,
     },
     {
       key: "lessonsHeld",
       header: <SortHeader label={t("report.lessonsHeld")} sortKey="lessonsHeld" sort={sort} onToggle={toggle} />,
-      render: (row) => <span className="text-slate-600">{row.lessonsHeld ?? 0}</span>,
+      render: (row) => <span className="text-slate-600 dark:text-slate-300">{row.lessonsHeld ?? 0}</span>,
     },
     {
       key: "attendanceRate",
@@ -69,12 +69,12 @@ function ByTeacherTab({ query, tick }) {
           onToggle={toggle}
         />
       ),
-      render: (row) => <NumberText className="text-emerald-600">{money(row.revenueGenerated)}</NumberText>,
+      render: (row) => <NumberText className="text-emerald-600 dark:text-emerald-400">{money(row.revenueGenerated)}</NumberText>,
     },
     {
       key: "salaryEarned",
       header: <SortHeader label={t("report.salaryEarned")} sortKey="salaryEarned" sort={sort} onToggle={toggle} />,
-      render: (row) => <NumberText className="text-orange-600">{money(row.salaryEarned)}</NumberText>,
+      render: (row) => <NumberText className="text-orange-600 dark:text-orange-400">{money(row.salaryEarned)}</NumberText>,
     },
   ];
 

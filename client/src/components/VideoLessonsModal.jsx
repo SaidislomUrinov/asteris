@@ -35,7 +35,7 @@ function VideoLessonsModal({ open, onClose, sectionKey, label }) {
           />
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center w-full py-10 gap-2 text-slate-400">
+        <div className="flex flex-col items-center justify-center w-full py-10 gap-2 text-slate-400 dark:text-slate-500">
           <HiVideoCamera className="text-4xl" />
           <span className="text-sm">{t("common.videoLessonsComingSoon")}</span>
         </div>

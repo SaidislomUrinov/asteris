@@ -120,10 +120,10 @@ function Revenue() {
       render: (row) => (
         <button
           onClick={() => navigate(`/students/${row.studentId}`)}
-          className="flex flex-col items-start cursor-pointer text-left hover:text-blue-600 duration-200"
+          className="flex flex-col items-start cursor-pointer text-left hover:text-blue-600 dark:hover:text-blue-400 duration-200"
         >
-          <span className="font-semibold text-slate-800">{row.studentName}</span>
-          <span className="text-xs text-slate-400">{row.phone}</span>
+          <span className="font-semibold text-slate-800 dark:text-slate-100">{row.studentName}</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">{row.phone}</span>
         </button>
       ),
     },
@@ -136,7 +136,7 @@ function Revenue() {
       key: "amount",
       header: t("revenue.amount"),
       render: (row) => (
-        <NumberText className={row.status !== "paid" ? "line-through text-slate-400" : ""}>
+        <NumberText className={row.status !== "paid" ? "line-through text-slate-400 dark:text-slate-500" : ""}>
           {money(row.amount)}
         </NumberText>
       ),
@@ -149,7 +149,7 @@ function Revenue() {
     {
       key: "forMonth",
       header: t("revenue.forMonth"),
-      render: (row) => <span className="text-slate-500 text-xs">{row.forMonth || "—"}</span>,
+      render: (row) => <span className="text-slate-500 dark:text-slate-400 text-xs">{row.forMonth || "—"}</span>,
     },
     {
       key: "collectedBy",
@@ -157,17 +157,17 @@ function Revenue() {
       render: (row) =>
         row.collectedBy ? (
           <div className="flex flex-col">
-            <span className="text-slate-800">{row.collectedBy.name}</span>
-            <span className="text-xs text-slate-400">{t(`revenue.roles.${row.collectedBy.role}`)}</span>
+            <span className="text-slate-800 dark:text-slate-100">{row.collectedBy.name}</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">{t(`revenue.roles.${row.collectedBy.role}`)}</span>
           </div>
         ) : (
-          <span className="text-slate-400 text-xs">{t("revenue.collectorUnknown")}</span>
+          <span className="text-slate-400 dark:text-slate-500 text-xs">{t("revenue.collectorUnknown")}</span>
         ),
     },
     {
       key: "date",
       header: t("revenue.date"),
-      render: (row) => <span className="text-slate-500 text-xs">{formatUnix(row.date)}</span>,
+      render: (row) => <span className="text-slate-500 dark:text-slate-400 text-xs">{formatUnix(row.date)}</span>,
     },
     {
       key: "status",
@@ -203,7 +203,7 @@ function Revenue() {
       </div>
 
       {isDesktop ? (
-        <div className={`flex flex-col gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]`}>
+        <div className={`flex flex-col gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-sm dark:shadow-none shadow-slate-900/[0.02]`}>
           {/* Filtr qatori konvensiyasi: maydonlar flex-1 (tor ekranda yangi
               qatorga o'tadi), amallar bitta guruhda ml-auto bilan o'ngda. */}
           <div className="flex flex-wrap items-center gap-2.5 [&>*]:flex-1 [&>*]:min-w-[200px]">
@@ -365,7 +365,7 @@ function Revenue() {
       )}
 
       {error ? (
-        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
           <HiBanknotes className="text-4xl" />
           <p className="text-sm">{t("revenue.loadError")}</p>
           <Button variant="outlined" onClick={fetchRevenue}>
@@ -392,13 +392,13 @@ function Revenue() {
 // Yuqoridagi ixcham jamlanma kartasi — ikon, yorliq va katta raqam.
 function SummaryCard({ icon, label, value, suffix, tone = "slate", className = "" }) {
   const tones = {
-    emerald: "bg-emerald-50 text-emerald-600",
-    blue: "bg-blue-50 text-blue-600",
-    slate: "bg-slate-50 text-slate-400",
+    emerald: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+    blue: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
+    slate: "bg-slate-50 dark:bg-night-800 text-slate-400 dark:text-slate-500",
   };
   return (
     <div
-      className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl bg-white ring-1 ring-slate-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${className}`}
+      className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl bg-white dark:bg-night-900 ring-1 ring-slate-200/70 dark:ring-night-700/70 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none ${className}`}
     >
       <span
         className={`flex items-center justify-center w-10 h-10 shrink-0 rounded-xl text-xl ${tones[tone]}`}
@@ -406,12 +406,12 @@ function SummaryCard({ icon, label, value, suffix, tone = "slate", className = "
         {icon}
       </span>
       <div className="flex flex-col min-w-0">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 truncate">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
           {label}
         </span>
         <span className="flex items-baseline gap-1 min-w-0">
           <NumberText className="text-lg leading-tight">{value}</NumberText>
-          {suffix && <span className="text-[11px] text-slate-400 shrink-0">{suffix}</span>}
+          {suffix && <span className="text-[11px] text-slate-400 dark:text-slate-500 shrink-0">{suffix}</span>}
         </span>
       </div>
     </div>

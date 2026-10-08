@@ -97,14 +97,14 @@ function SyllabusDialog({
         {/* Sana avtomatik, davomatdan aniqlanadi — o'qituvchi buni oldindan
             bilishi kerak, aks holda "nega o'tgan kunga biriktirilmadi"
             degan savol tug'iladi (useLessonSchedule.js). */}
-        <p className="text-xs text-slate-400 leading-relaxed pt-1 border-t border-slate-100">
+        <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed pt-1 border-t border-slate-100 dark:border-night-700">
           {t("syllabus.calendarHint")}
         </p>
 
         {/* Dasturni noldan yozish o'rniga tayyor guruhdan olish yo'li. */}
         {canImport && (
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
-            <p className="text-xs text-slate-400">{t("syllabus.importHint")}</p>
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-night-700">
+            <p className="text-xs text-slate-400 dark:text-slate-500">{t("syllabus.importHint")}</p>
             <Button variant="text" color="black" className="gap-1.5 shrink-0" onClick={onImport}>
               <HiArrowDownTray className="text-base" />
               {t("syllabus.importShort")}

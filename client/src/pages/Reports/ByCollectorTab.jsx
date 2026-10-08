@@ -31,7 +31,7 @@ function ByCollectorTab({ query, tick }) {
         <div className="flex items-center gap-2.5">
           <Avatar user={{ _id: row.collector?.id, name: row.collector?.fullName }} size={32} />
           <div className="flex flex-col">
-            <span className="font-semibold text-slate-800">
+            <span className="font-semibold text-slate-800 dark:text-slate-100">
               {row.collector?.fullName || t("revenue.collectorUnknown")}
             </span>
             {row.collector?.kind && (
@@ -50,12 +50,12 @@ function ByCollectorTab({ query, tick }) {
       header: (
         <SortHeader label={t("report.paymentsCount")} sortKey="paymentsCount" sort={sort} onToggle={toggle} />
       ),
-      render: (row) => <span className="text-slate-600">{row.paymentsCount ?? 0}</span>,
+      render: (row) => <span className="text-slate-600 dark:text-slate-300">{row.paymentsCount ?? 0}</span>,
     },
     {
       key: "collected",
       header: <SortHeader label={t("report.collected")} sortKey="collected" sort={sort} onToggle={toggle} />,
-      render: (row) => <NumberText className="text-emerald-600">{money(row.collected)}</NumberText>,
+      render: (row) => <NumberText className="text-emerald-600 dark:text-emerald-400">{money(row.collected)}</NumberText>,
     },
     {
       key: "cash",
@@ -71,7 +71,7 @@ function ByCollectorTab({ query, tick }) {
       key: "refunded",
       header: <SortHeader label={t("report.refunded")} sortKey="refunded" sort={sort} onToggle={toggle} />,
       render: (row) => (
-        <NumberText className={row.refunded ? "text-red-500" : "text-slate-400"}>
+        <NumberText className={row.refunded ? "text-red-500" : "text-slate-400 dark:text-slate-500"}>
           {money(row.refunded)}
         </NumberText>
       ),

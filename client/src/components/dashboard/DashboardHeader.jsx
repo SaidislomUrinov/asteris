@@ -4,16 +4,16 @@
 // `toggle` — sarlavha yonidagi tugma (HideFinanceToggle), `children` — o'ngdagi filtrlar.
 function DashboardHeader({ icon, leading, title, subtitle, toggle, children }) {
   return (
-    <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl border border-slate-200/80 dark:border-night-700/80 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
       <div className="flex items-center gap-2.5 flex-1 min-w-[200px]">
         {leading || (
-          <span className="flex items-center justify-center w-9 h-9 shrink-0 rounded-xl bg-amber-50 text-amber-500 text-lg">
+          <span className="flex items-center justify-center w-9 h-9 shrink-0 rounded-xl bg-amber-50 dark:bg-amber-500/15 text-amber-500 text-lg">
             {icon}
           </span>
         )}
         <div className="flex flex-col min-w-0">
-          <span className="text-lg font-space font-bold leading-tight text-slate-900 line-clamp-2 break-words">{title}</span>
-          {subtitle && <span className="text-sm leading-snug text-slate-500 line-clamp-2">{subtitle}</span>}
+          <span className="text-lg font-space font-bold leading-tight text-slate-900 dark:text-slate-100 line-clamp-2 break-words">{title}</span>
+          {subtitle && <span className="text-sm leading-snug text-slate-500 dark:text-slate-400 line-clamp-2">{subtitle}</span>}
         </div>
         {toggle}
       </div>

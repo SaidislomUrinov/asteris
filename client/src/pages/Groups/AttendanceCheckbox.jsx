@@ -9,9 +9,9 @@ import { HiCheck, HiExclamationCircle, HiQuestionMarkCircle, HiXMark } from "rea
 // ikonka + ichki `ring`. Matritsa shu tufayli "svetofor devori" bo'lib
 // ko'rinmaydi, lekin holat baribir bir qarashda o'qiladi.
 const TONE = {
-  present: { icon: HiCheck, cls: "bg-emerald-500/12 text-emerald-600 ring-emerald-500/30" },
+  present: { icon: HiCheck, cls: "bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 ring-emerald-500/30" },
   absent: { icon: HiXMark, cls: "bg-red-500/12 text-red-500 ring-red-500/30" },
-  excused: { icon: HiExclamationCircle, cls: "bg-amber-500/15 text-amber-600 ring-amber-500/30" },
+  excused: { icon: HiExclamationCircle, cls: "bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-amber-500/30" },
 };
 
 /**
@@ -35,9 +35,9 @@ function AttendanceCheckbox({ status, holiday, future, disabled, title, onClick,
       ? tone.cls
       : future
         ? // Hali o'tmagan kun — deyarli ko'rinmas, faqat "joy band" belgisi.
-          "bg-slate-50 text-transparent ring-slate-200/70"
+          "bg-slate-50 dark:bg-night-800 text-transparent ring-slate-200/70 dark:ring-night-700/70"
         : // Belgilanmagan o'tgan kun — bosiladigan bo'sh katak.
-          "bg-slate-100 text-transparent ring-slate-200";
+          "bg-slate-100 dark:bg-night-800 text-transparent ring-slate-200 dark:ring-night-700";
 
   return (
     <button

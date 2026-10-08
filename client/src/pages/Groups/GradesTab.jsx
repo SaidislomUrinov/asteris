@@ -25,10 +25,10 @@ const VALUE_ROWS = [
 // to'ldirish emas, yumshoq `color/12` fon + to'q raqam + ichki `ring`.
 const TONE_BY_BAND = [
   "bg-red-500/12 text-red-500 ring-red-500/30",
-  "bg-orange-500/15 text-orange-600 ring-orange-500/30",
-  "bg-amber-400/20 text-amber-700 ring-amber-400/40",
-  "bg-blue-500/12 text-blue-600 ring-blue-500/30",
-  "bg-emerald-500/12 text-emerald-600 ring-emerald-500/30",
+  "bg-orange-500/15 text-orange-600 dark:text-orange-400 ring-orange-500/30",
+  "bg-amber-400/20 text-amber-700 dark:text-amber-400 ring-amber-400/40",
+  "bg-blue-500/12 text-blue-600 dark:text-blue-400 ring-blue-500/30",
+  "bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 ring-emerald-500/30",
 ];
 const toneOf = (v) => TONE_BY_BAND[Math.min(4, Math.max(0, Math.ceil(v / 2) - 1))];
 
@@ -242,18 +242,18 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
           <button
             type="button"
             onClick={() => setMonth((m) => shiftMonth(m, -1))}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-night-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer transition-colors"
           >
             <HiChevronLeft />
           </button>
-          <span className="min-w-32 text-center text-sm font-semibold text-slate-800 capitalize">
+          <span className="min-w-32 text-center text-sm font-semibold text-slate-800 dark:text-slate-100 capitalize">
             {label}
           </span>
           <button
             type="button"
             disabled={isCurrent}
             onClick={() => setMonth((m) => shiftMonth(m, 1))}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 enabled:hover:bg-slate-100 enabled:hover:text-slate-700 enabled:cursor-pointer disabled:opacity-30 transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 enabled:hover:bg-slate-100 dark:enabled:hover:bg-night-800 enabled:hover:text-slate-700 dark:enabled:hover:text-slate-300 enabled:cursor-pointer disabled:opacity-30 transition-colors"
           >
             <HiChevronRight />
           </button>
@@ -263,11 +263,11 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
       {loading ? (
         <MatrixSkeleton rows={students?.length || 6} rowHeight={49} />
       ) : !hasDays ? (
-        <div className="flex flex-1 items-center justify-center text-sm text-slate-400">
+        <div className="flex flex-1 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
           {t("group.monthlyEmpty")}
         </div>
       ) : rows.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center text-sm text-slate-400">
+        <div className="flex flex-1 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
           {t("group.monthlyNoStudents")}
         </div>
       ) : (
@@ -289,10 +289,10 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
                     active
                       ? "bg-blue-500 border-blue-500 text-white"
                       : d.holiday
-                        ? "bg-violet-50 border-violet-200 text-violet-500"
+                        ? "bg-violet-50 dark:bg-violet-500/15 border-violet-200 dark:border-violet-500/30 text-violet-500"
                         : isToday
-                          ? "bg-blue-50 border-blue-200 text-blue-700"
-                          : "bg-white border-slate-200 text-slate-600"
+                          ? "bg-blue-50 dark:bg-blue-500/15 border-blue-200 dark:border-blue-500/30 text-blue-700 dark:text-blue-400"
+                          : "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 text-slate-600 dark:text-slate-300"
                   }`}
                 >
                   <span className={`text-[10px] font-semibold uppercase leading-tight ${active ? "text-white/80" : ""}`}>
@@ -307,7 +307,7 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
           </div>
 
           <div className="flex items-center justify-between gap-2 px-0.5">
-            <span className="text-sm font-semibold text-slate-800">
+            <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
               {t("group.studentsCount", { count: rows.length })}
             </span>
           </div>
@@ -326,14 +326,14 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
               return (
                 <div
                   key={s._id}
-                  className={`flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200/70 ${
+                  className={`flex items-center gap-3 p-3 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/70 dark:border-night-700/70 ${
                     absent ? "opacity-50" : ""
                   }`}
                 >
                   <RowNumber value={index + 1} />
                   <Avatar user={{ _id: s._id, name: s.fullName, avatar: s.photo }} size={38} />
                   <span className="flex flex-1 items-center gap-1.5 min-w-0">
-                    <span className="min-w-0 text-[13px] font-semibold text-slate-800 truncate leading-tight">
+                    <span className="min-w-0 text-[13px] font-semibold text-slate-800 dark:text-slate-100 truncate leading-tight">
                       {s.fullName}
                     </span>
                     <RankMedal position={ranks[s._id]} size={19} />
@@ -359,7 +359,7 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
                       });
                     }}
                     className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-2xl ring-1 ring-inset text-base font-bold tabular-nums transition-all duration-150 ${
-                      rec ? toneOf(rec.value) : "bg-slate-100 ring-slate-200 text-slate-300"
+                      rec ? toneOf(rec.value) : "bg-slate-100 dark:bg-night-800 ring-slate-200 dark:ring-night-700 text-slate-300 dark:text-slate-600"
                     } ${carried ? "outline-1 outline-dashed outline-offset-1 outline-slate-400" : ""} ${
                       !editable && !deletable
                         ? "cursor-default opacity-70"
@@ -376,38 +376,38 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
 
         {/* Desktop/tablet (>=768px) — mavjud matritsa ko'rinishi. `isolate`
             — sticky ustunlar mobil tab bar (z-2) ustidan chiqmasin. */}
-        <div ref={scrollRef} className="hidden md:block w-full isolate overflow-x-auto rounded-xl border border-slate-200">
+        <div ref={scrollRef} className="hidden md:block w-full isolate overflow-x-auto rounded-xl border border-slate-200 dark:border-night-700">
           <table className="w-max min-w-full border-separate border-spacing-0">
             <thead>
               <tr>
-                <th className="sticky left-0 z-20 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-slate-50 border-b border-r border-slate-200 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                <th className="sticky left-0 z-20 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-slate-50 dark:bg-night-800 border-b border-r border-slate-200 dark:border-night-700 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   {t("student.fullName")}
                 </th>
                 {days.map((d) => (
                   <th
                     key={d.date}
                     title={d.transferred ? `${d.date} · ${t("group.transferredDay")}` : d.date}
-                    className={`w-11 min-w-11 px-1 py-1.5 border-b border-slate-200 text-center ${
-                      d.holiday ? "bg-violet-50" : d.transferred ? "bg-slate-100/70" : d.date === today ? "bg-blue-50/70" : "bg-slate-50"
+                    className={`w-11 min-w-11 px-1 py-1.5 border-b border-slate-200 dark:border-night-700 text-center ${
+                      d.holiday ? "bg-violet-50 dark:bg-violet-500/15" : d.transferred ? "bg-slate-100/70 dark:bg-night-800/70" : d.date === today ? "bg-blue-50/70 dark:bg-blue-500/15" : "bg-slate-50 dark:bg-night-800"
                     }`}
                   >
                     <span
                       className={`block text-[10px] font-semibold uppercase leading-tight ${
-                        d.holiday ? "text-violet-500" : d.date === today ? "text-blue-500" : "text-slate-400"
+                        d.holiday ? "text-violet-500" : d.date === today ? "text-blue-500" : "text-slate-400 dark:text-slate-500"
                       }`}
                     >
                       {t(`group.dayShort.${d.day}`)}
                     </span>
                     <span
                       className={`block text-[13px] font-semibold tabular-nums leading-tight ${
-                        d.holiday ? "text-violet-600" : d.date === today ? "text-blue-700" : "text-slate-700"
+                        d.holiday ? "text-violet-600 dark:text-violet-400" : d.date === today ? "text-blue-700 dark:text-blue-400" : "text-slate-700 dark:text-slate-300"
                       }`}
                     >
                       {Number(d.date.slice(8, 10))}
                     </span>
                   </th>
                 ))}
-                <th className="hidden sm:table-cell sticky right-0 z-20 w-20 min-w-20 px-2 py-2 bg-slate-50 border-b border-l border-slate-200 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                <th className="hidden sm:table-cell sticky right-0 z-20 w-20 min-w-20 px-2 py-2 bg-slate-50 dark:bg-night-800 border-b border-l border-slate-200 dark:border-night-700 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   {t("grade.average")}
                 </th>
               </tr>
@@ -422,11 +422,11 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
                     key={s._id}
                     className={`group/row ${isAbsentDay(s._id, today) ? "opacity-50" : ""}`}
                   >
-                    <td className="sticky left-0 z-10 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-white border-b border-r border-slate-100 group-hover/row:bg-slate-50 transition-colors">
+                    <td className="sticky left-0 z-10 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-white dark:bg-night-900 border-b border-r border-slate-100 dark:border-night-700 group-hover/row:bg-slate-50 dark:row:bg-night-800 transition-colors">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <RowNumber value={index + 1} />
                         <Avatar user={{ _id: s._id, name: s.fullName, avatar: s.photo }} size={32} />
-                        <span className="text-[13px] font-semibold text-slate-800 truncate leading-tight">
+                        <span className="text-[13px] font-semibold text-slate-800 dark:text-slate-100 truncate leading-tight">
                           {s.fullName}
                         </span>
                         <RankMedal position={ranks[s._id]} size={19} />
@@ -450,8 +450,8 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
                       return (
                         <td
                           key={d.date}
-                          className={`w-11 min-w-11 p-1 border-b border-slate-100 text-center align-middle ${
-                            d.holiday ? "bg-violet-50/40" : blocked === "excused" ? "bg-amber-50/60" : absent ? "bg-red-50/50" : d.date === today ? "bg-blue-50/40" : ""
+                          className={`w-11 min-w-11 p-1 border-b border-slate-100 dark:border-night-700 text-center align-middle ${
+                            d.holiday ? "bg-violet-50/40 dark:bg-violet-500/15" : blocked === "excused" ? "bg-amber-50/60 dark:bg-amber-500/15" : absent ? "bg-red-50/50 dark:bg-red-500/15" : d.date === today ? "bg-blue-50/40 dark:bg-blue-500/15" : ""
                           }`}
                         >
                           <button
@@ -488,8 +488,8 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
                               rec
                                 ? toneOf(rec.value)
                                 : locked
-                                  ? "bg-slate-50 ring-slate-200/70 text-transparent"
-                                  : "bg-slate-100 ring-slate-200 text-transparent"
+                                  ? "bg-slate-50 dark:bg-night-800 ring-slate-200/70 dark:ring-night-700/70 text-transparent"
+                                  : "bg-slate-100 dark:bg-night-800 ring-slate-200 dark:ring-night-700 text-transparent"
                             } ${
                               rec?.transferred
                                 ? "outline-1 outline-dashed outline-offset-1 outline-slate-400"
@@ -502,10 +502,10 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
                       );
                     })}
 
-                    <td className="hidden sm:table-cell sticky right-0 z-10 w-20 min-w-20 px-2 py-2 bg-white border-b border-l border-slate-100 group-hover/row:bg-slate-50 transition-colors text-center">
+                    <td className="hidden sm:table-cell sticky right-0 z-10 w-20 min-w-20 px-2 py-2 bg-white dark:bg-night-900 border-b border-l border-slate-100 dark:border-night-700 group-hover/row:bg-slate-50 dark:row:bg-night-800 transition-colors text-center">
                       <span
                         className={`text-[13px] font-semibold tabular-nums ${
-                          avg >= 8 ? "text-emerald-600" : avg >= 6 ? "text-amber-600" : avg > 0 ? "text-red-500" : "text-slate-300"
+                          avg >= 8 ? "text-emerald-600 dark:text-emerald-400" : avg >= 6 ? "text-amber-600 dark:text-amber-400" : avg > 0 ? "text-red-500" : "text-slate-300 dark:text-slate-600"
                         }`}
                       >
                         {avg || "—"}
@@ -531,9 +531,9 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
                 left: Math.max(8, Math.min(picker.x - 100, window.innerWidth - 208)),
                 zIndex: 50,
               }}
-              className="flex flex-col gap-1 w-52 p-2 rounded-xl bg-white border border-slate-200 shadow-xl"
+              className="flex flex-col gap-1 w-52 p-2 rounded-xl bg-white dark:bg-night-900 border border-slate-200 dark:border-night-700 shadow-xl dark:shadow-none"
             >
-              <span className="px-1 text-[11px] font-semibold text-slate-400 tabular-nums">
+              <span className="px-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 tabular-nums">
                 {picker.date}
               </span>
               {picker.editable && (
@@ -576,7 +576,7 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
                       setSaving(false);
                     }
                   }}
-                  className="flex items-center justify-start gap-1 px-2 h-8 rounded-lg text-[13px] font-medium text-red-600 hover:bg-red-50 cursor-pointer transition-colors"
+                  className="flex items-center justify-start gap-1 px-2 h-8 rounded-lg text-[13px] font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15 cursor-pointer transition-colors"
                 >
                   <HiTrash />
                   {t("grade.remove")}

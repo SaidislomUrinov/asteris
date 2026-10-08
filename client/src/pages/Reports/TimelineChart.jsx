@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HiChartBar } from "react-icons/hi2";
 import { money } from "./reportData";
+import useTheme from "../../hooks/useTheme";
 
 // Diagramma TASHQI KUTUBXONASIZ, sof SVG bilan chizilgan (docs/API_CONTRACT.md §2.3).
 // Koordinatalar doim shu ichki tizimda hisoblanadi, `viewBox` esa uni
@@ -27,9 +28,9 @@ const shortNum = (v) => {
 
 function ChartSkeleton() {
   return (
-    <div className="flex flex-col gap-3 p-5 rounded-2xl bg-white border border-slate-200/80">
-      <div className="h-4 w-40 rounded bg-slate-100 animate-pulse" />
-      <div className="w-full h-64 rounded-xl bg-slate-50 animate-pulse" />
+    <div className="flex flex-col gap-3 p-5 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80">
+      <div className="h-4 w-40 rounded bg-slate-100 dark:bg-night-800 animate-pulse" />
+      <div className="w-full h-64 rounded-xl bg-slate-50 dark:bg-night-800 animate-pulse" />
     </div>
   );
 }
@@ -40,6 +41,11 @@ function ChartSkeleton() {
  */
 function TimelineChart({ rows = [], loading }) {
   const { t } = useTranslation();
+  // SVG ranglari JS'da — `dark:` klassi ishlamaydi (kunduzgi qiymatlar avvalgidek).
+  const { isDark } = useTheme();
+  const GRID = isDark ? "#1e2e52" : "#e2e8f0";
+  const AXIS = isDark ? "#2b3d66" : "#cbd5e1";
+  const DOT_FILL = isDark ? "#0d1830" : "#fff";
   const wrapRef = useRef(null);
   const [hover, setHover] = useState(null);
   const [visible, setVisible] = useState(() => SERIES.map((s) => s.key));
@@ -90,9 +96,9 @@ function TimelineChart({ rows = [], loading }) {
   const point = hover ? rows[hover.idx] : null;
 
   return (
-    <div className="flex flex-col gap-3 p-5 rounded-2xl bg-white border border-slate-200/80">
+    <div className="flex flex-col gap-3 p-5 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="font-semibold text-slate-800">{t("report.timelineTitle")}</p>
+        <p className="font-semibold text-slate-800 dark:text-slate-100">{t("report.timelineTitle")}</p>
 
         {/* Seriyani yoqib/o'chirish — uchta chiziq bir vaqtda ko'p bo'lsa
             foydalanuvchi keraksizini o'chirib qo'yadi. */}
@@ -109,12 +115,12 @@ function TimelineChart({ rows = [], loading }) {
                   )
                 }
                 className={`inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-[13px] font-medium cursor-pointer transition-colors duration-150 ${
-                  on ? "bg-slate-100 text-slate-700" : "text-slate-400 hover:bg-slate-50"
+                  on ? "bg-slate-100 dark:bg-night-800 text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-night-800"
                 }`}
               >
                 <span
                   className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: on ? s.color : "#cbd5e1" }}
+                  style={{ backgroundColor: on ? s.color : AXIS }}
                 />
                 {t(s.labelKey)}
               </button>
@@ -124,7 +130,7 @@ function TimelineChart({ rows = [], loading }) {
       </div>
 
       {!hasData ? (
-        <div className="flex flex-col items-center justify-center w-full h-64 gap-2 text-slate-400">
+        <div className="flex flex-col items-center justify-center w-full h-64 gap-2 text-slate-400 dark:text-slate-500">
           <HiChartBar className="text-4xl" />
           <p className="text-sm">{t("report.timelineEmpty")}</p>
         </div>
@@ -156,7 +162,7 @@ function TimelineChart({ rows = [], loading }) {
                   x2={VW - PAD.right}
                   y1={geom.y(v)}
                   y2={geom.y(v)}
-                  stroke="#e2e8f0"
+                  stroke={GRID}
                   strokeWidth="1"
                   vectorEffect="non-scaling-stroke"
                 />
@@ -179,7 +185,7 @@ function TimelineChart({ rows = [], loading }) {
                 x2={VW - PAD.right}
                 y1={geom.zeroY}
                 y2={geom.zeroY}
-                stroke="#cbd5e1"
+                stroke={AXIS}
                 strokeDasharray="4 4"
                 vectorEffect="non-scaling-stroke"
               />
@@ -211,7 +217,7 @@ function TimelineChart({ rows = [], loading }) {
                       cx={geom.x(hover.idx)}
                       cy={geom.y(rows[hover.idx][s.key])}
                       r="4"
-                      fill="#fff"
+                      fill={DOT_FILL}
                       stroke={s.color}
                       strokeWidth="2"
                       vectorEffect="non-scaling-stroke"
@@ -252,20 +258,20 @@ function TimelineChart({ rows = [], loading }) {
 
           {point && (
             <div
-              className="pointer-events-none absolute top-2 z-1 flex flex-col gap-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-lg text-xs"
+              className="pointer-events-none absolute top-2 z-1 flex flex-col gap-1 px-3 py-2 rounded-xl bg-white dark:bg-night-900 border border-slate-200 dark:border-night-700 shadow-lg dark:shadow-none text-xs"
               style={{
                 left: `${Math.min(82, Math.max(2, hover.left))}%`,
               }}
             >
-              <span className="font-semibold text-slate-700">{point.label}</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300">{point.label}</span>
               {SERIES.filter((s) => visible.includes(s.key)).map((s) => (
                 <span key={s.key} className="flex items-center gap-1.5 whitespace-nowrap">
                   <span
                     className="w-2 h-2 rounded-full shrink-0"
                     style={{ backgroundColor: s.color }}
                   />
-                  <span className="text-slate-400">{t(s.labelKey)}</span>
-                  <span className="font-jet font-semibold text-slate-800">
+                  <span className="text-slate-400 dark:text-slate-500">{t(s.labelKey)}</span>
+                  <span className="font-jet font-semibold text-slate-800 dark:text-slate-100">
                     {money(point[s.key])}
                   </span>
                 </span>

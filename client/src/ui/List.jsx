@@ -42,13 +42,13 @@ function List({
 
   return (
     <div
-      className={`flex flex-col w-full flex-1 min-h-0 bg-white border border-slate-200 rounded-xl overflow-hidden ${className}`}
+      className={`flex flex-col w-full flex-1 min-h-0 bg-white dark:bg-night-900 border border-slate-200 dark:border-night-700 rounded-xl overflow-hidden ${className}`}
     >
       <div className="flex-1 min-h-0 overflow-auto">
         {loading ? (
           <Loading height="40vh" />
         ) : rows.length === 0 ? (
-          <div className="flex items-center justify-center w-full h-40 text-slate-400 text-sm">
+          <div className="flex items-center justify-center w-full h-40 text-slate-400 dark:text-slate-500 text-sm">
             {empty}
           </div>
         ) : view === "grid" ? (
@@ -64,7 +64,7 @@ function List({
                 chiqib ketadi. Jadval qatorlarida z-index yo'q, shuning uchun
                 sarlavhani ular ustida ushlab turishga z-1 yetarli. */}
             <thead className="sticky top-0 z-1">
-              <tr className="bg-slate-50 text-left text-slate-500 text-[12px] uppercase">
+              <tr className="bg-slate-50 dark:bg-night-800 text-left text-slate-500 dark:text-slate-400 text-[12px] uppercase">
                 {columns.map((col) => (
                   <th
                     key={col.key}
@@ -79,7 +79,7 @@ function List({
               {rows.map((row, index) => (
                 <tr
                   key={rowKey(row, index)}
-                  className={`relative border-t border-slate-100 bg-white hover:bg-slate-50 transition-colors ${rowClassName(row, index)}`}
+                  className={`relative border-t border-slate-100 dark:border-night-700 bg-white dark:bg-night-900 hover:bg-slate-50 dark:hover:bg-night-800 transition-colors ${rowClassName(row, index)}`}
                 >
                   {columns.map((col) => (
                     <td
@@ -97,7 +97,7 @@ function List({
       </div>
 
       {(toolbar || (showPagination && totalPages > 1)) && (
-        <div className="flex items-center justify-between gap-1.5 w-full px-3 py-2.5 border-t border-slate-100 shrink-0">
+        <div className="flex items-center justify-between gap-1.5 w-full px-3 py-2.5 border-t border-slate-100 dark:border-night-700 shrink-0">
           <div className="flex items-center gap-1.5">{toolbar}</div>
 
           {showPagination && totalPages > 1 && (
@@ -106,7 +106,7 @@ function List({
                 type="button"
                 disabled={page <= 1}
                 onClick={() => onPageChange(Math.max(1, page - 1))}
-                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent duration-200"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-night-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent duration-200"
               >
                 <HiChevronLeft />
               </button>
@@ -115,7 +115,7 @@ function List({
                 p === "..." ? (
                   <span
                     key={`dots-${i}`}
-                    className="inline-flex items-center justify-center w-8 h-8 text-slate-400 text-sm"
+                    className="inline-flex items-center justify-center w-8 h-8 text-slate-400 dark:text-slate-500 text-sm"
                   >
                     ...
                   </span>
@@ -126,8 +126,8 @@ function List({
                     onClick={() => onPageChange(p)}
                     className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm font-medium duration-200 ${
                       p === page
-                        ? "bg-slate-800 text-white"
-                        : "text-slate-600 hover:bg-slate-100"
+                        ? "bg-slate-800 dark:bg-night-600 text-white"
+                        : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-night-700"
                     }`}
                   >
                     {p}
@@ -139,7 +139,7 @@ function List({
                 type="button"
                 disabled={page >= totalPages}
                 onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent duration-200"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-night-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent duration-200"
               >
                 <HiChevronRight />
               </button>

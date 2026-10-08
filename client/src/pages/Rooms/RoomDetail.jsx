@@ -163,7 +163,7 @@ function RoomDetail() {
 
   if (notFound || error) {
     return (
-      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
         <HiHome className="text-4xl" />
         <p className="text-sm">{t("room.notFound")}</p>
         <Button variant="outlined" onClick={() => navigate("/rooms")}>
@@ -226,7 +226,7 @@ function RoomDetail() {
           subtitle={centerMap[room.center] || "—"}
         >
           {room.capacity != null && (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-3 border-t border-slate-100">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-3 border-t border-slate-100 dark:border-night-700">
               <InfoMeta icon={<HiUsers />}>
                 {t("room.capacity")}: {room.capacity}
               </InfoMeta>
@@ -250,25 +250,25 @@ function RoomDetail() {
       </div>
 
       {unscheduledGroups.length > 0 && (
-        <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 bg-white">
+        <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
           <div className="flex flex-col gap-0.5">
-            <p className="font-semibold text-slate-800">{t("room.unscheduledTitle")}</p>
-            <p className="text-xs text-slate-400">{t("room.unscheduledHint")}</p>
+            <p className="font-semibold text-slate-800 dark:text-slate-100">{t("room.unscheduledTitle")}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{t("room.unscheduledHint")}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {unscheduledGroups.map((g) => (
               <div
                 key={g._id}
                 onClick={() => navigate(`/groups/${g._id}`)}
-                className="relative overflow-hidden flex flex-col gap-1 px-4 py-3 pl-5 rounded-xl bg-white border border-slate-200/80 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-slate-300"
+                className="relative overflow-hidden flex flex-col gap-1 px-4 py-3 pl-5 rounded-xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:hover:shadow-none hover:border-slate-300 dark:hover:border-night-600"
               >
                 <span className="absolute inset-y-0 left-0 w-1 bg-orange-400" />
-                <span className="text-base font-bold text-slate-900 truncate">{g.label}</span>
-                <span className="text-sm text-slate-500">
+                <span className="text-base font-bold text-slate-900 dark:text-slate-100 truncate">{g.label}</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">
                   {g.teacher || t("group.noTeacher")} · {g.studentsCount}{" "}
                   {t("nav.students").toLowerCase()}
                 </span>
-                <span className="text-xs text-orange-600 font-medium">
+                <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
                   {t("room.unscheduledBadge")}
                 </span>
               </div>
@@ -277,11 +277,11 @@ function RoomDetail() {
         </div>
       )}
 
-      <div className="flex flex-col flex-1 min-h-0 gap-3 p-4 rounded-xl border border-slate-200 bg-white">
+      <div className="flex flex-col flex-1 min-h-0 gap-3 p-4 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
         <div className="flex items-center justify-between gap-3 shrink-0">
           <div className="flex flex-col gap-0.5 min-w-0">
-            <p className="font-semibold text-slate-800">{t("room.weeklyScheduleTitle")}</p>
-            <p className="text-xs text-slate-400">
+            <p className="font-semibold text-slate-800 dark:text-slate-100">{t("room.weeklyScheduleTitle")}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">
               {t(canEditSchedule ? "room.weeklyScheduleHintEditable" : "room.weeklyScheduleHint")}
             </p>
           </div>

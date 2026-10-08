@@ -41,7 +41,7 @@ function ImageInput({
   return (
     <label className="flex flex-col gap-2 cursor-pointer w-fit">
       {label && (
-        <span className="text-sm text-slate-800">
+        <span className="text-sm text-slate-800 dark:text-slate-100">
           {label}
           {required && <span className="text-red-500">*</span>}
         </span>
@@ -53,10 +53,10 @@ function ImageInput({
           relative
           flex items-center justify-center
           rounded-xl
-          bg-slate-100
-          border border-slate-200
+          bg-slate-100 dark:bg-night-800
+          border border-slate-200 dark:border-night-700
           overflow-hidden
-          hover:bg-slate-200/60
+          hover:bg-slate-200/60 dark:hover:bg-night-700/60
           duration-200
           ${className}`}
       >
@@ -69,7 +69,7 @@ function ImageInput({
             className="w-full h-full object-cover"
           />
         ) : (
-          <HiOutlinePhotograph className="text-3xl text-slate-500" />
+          <HiOutlinePhotograph className="text-3xl text-slate-500 dark:text-slate-400" />
         )}
       </div>
 

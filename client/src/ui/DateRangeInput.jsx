@@ -57,11 +57,11 @@ function DateRangeInput({ value, onChange, placeholder, variant = "slate", class
   );
 
   const variants = {
-    slate: "bg-white border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
-    white: "bg-white border-slate-200",
+    slate: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none",
+    white: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700",
     // Faqat FilterBar ichida: Select bilan bir xil — qiymat tanlanganda
     // ochiq ko'k fon bilan ajralib turadi.
-    filter: "bg-white border-slate-200",
+    filter: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700",
   };
 
   const label = selected.from
@@ -139,15 +139,15 @@ function DateRangeInput({ value, onChange, placeholder, variant = "slate", class
         }}
         className={`select-trigger relative w-full h-11 rounded-xl flex items-center justify-between gap-2 px-3.5 border select-none cursor-pointer duration-200 ${
           variants[variant]
-        } ${variant === "filter" && label ? "!bg-blue-50 !border-blue-200 hover:!border-blue-300" : ""} ${
-          open ? "ring-3 ring-blue-500/15 border-blue-500" : "hover:border-slate-300"
+        } ${variant === "filter" && label ? "!bg-blue-50 dark:bg-blue-500/15 !border-blue-200 dark:border-blue-500/30 hover:!border-blue-300" : ""} ${
+          open ? "ring-3 ring-blue-500/15 border-blue-500" : "hover:border-slate-300 dark:hover:border-night-600"
         }`}
       >
         <span className="flex items-center gap-2 min-w-0">
-          <HiCalendarDays className="shrink-0 text-slate-400" />
+          <HiCalendarDays className="shrink-0 text-slate-400 dark:text-slate-500" />
           <span
-            className={`truncate text-[13px] ${label ? "text-slate-900" : "text-slate-400"} ${
-              variant === "filter" && label ? "font-medium text-blue-700" : ""
+            className={`truncate text-[13px] ${label ? "text-slate-900 dark:text-slate-100" : "text-slate-400 dark:text-slate-500"} ${
+              variant === "filter" && label ? "font-medium text-blue-700 dark:text-blue-400" : ""
             }`}
           >
             {label || placeholder || t("common.dateRange")}
@@ -162,7 +162,7 @@ function DateRangeInput({ value, onChange, placeholder, variant = "slate", class
               onChange({ from: "", to: "" });
               setOpen(false);
             }}
-            className="flex items-center justify-center w-6 h-6 shrink-0 rounded-lg text-slate-400 hover:bg-slate-200/70 hover:text-slate-600"
+            className="flex items-center justify-center w-6 h-6 shrink-0 rounded-lg text-slate-400 dark:text-slate-500 hover:bg-slate-200/70 dark:hover:bg-night-700/70 hover:text-slate-600 dark:hover:text-slate-300"
           >
             <HiXMark />
           </span>
@@ -180,7 +180,7 @@ function DateRangeInput({ value, onChange, placeholder, variant = "slate", class
               left: pos.left,
               zIndex: 9999,
             }}
-            className="flex flex-col sm:flex-row gap-2 p-2 rounded-2xl bg-white border border-slate-200 shadow-xl"
+            className="flex flex-col sm:flex-row gap-2 p-2 rounded-2xl bg-white dark:bg-night-900 border border-slate-200 dark:border-night-700 shadow-xl dark:shadow-none"
           >
             {/* Tez tanlash — eng ko'p kerak bo'ladigan oraliqlar */}
             <div className="flex sm:flex-col gap-1 sm:w-36 overflow-x-auto sm:overflow-visible">
@@ -194,8 +194,8 @@ function DateRangeInput({ value, onChange, placeholder, variant = "slate", class
                   }}
                   className={`shrink-0 px-2.5 h-8 rounded-lg text-[13px] font-medium text-left whitespace-nowrap transition-colors duration-150 cursor-pointer ${
                     activePreset === p.key
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-slate-600 hover:bg-slate-50"
+                      ? "bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-night-800"
                   }`}
                 >
                   {t(`common.datePresets.${p.key}`)}
@@ -203,7 +203,7 @@ function DateRangeInput({ value, onChange, placeholder, variant = "slate", class
               ))}
             </div>
 
-            <span className="hidden sm:block w-px bg-slate-100" />
+            <span className="hidden sm:block w-px bg-slate-100 dark:bg-night-800" />
 
             <div className="rdp-asteris">
               <DayPicker

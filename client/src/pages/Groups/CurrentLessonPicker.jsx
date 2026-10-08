@@ -52,21 +52,21 @@ function CurrentLessonPicker({ modules = [], value = 1, onChange }) {
   }, [activeIdx]);
 
   if (!total) {
-    return <p className="py-6 text-center text-sm text-slate-400">{t("syllabus.pickerEmpty")}</p>;
+    return <p className="py-6 text-center text-sm text-slate-400 dark:text-slate-500">{t("syllabus.pickerEmpty")}</p>;
   }
 
   return (
     <div className="flex flex-col gap-3 w-full min-w-0">
       {/* Tanlangan dars — doim ko'rinib turadi */}
-      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-blue-200 bg-blue-50/60">
+      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-blue-50/60 dark:bg-blue-500/15">
         <span className="flex items-center justify-center min-w-8 h-8 px-1.5 shrink-0 rounded-lg bg-blue-500 text-sm font-semibold tabular-nums text-white">
           {current}
         </span>
         <div className="flex flex-col min-w-0">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-600">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
             {t("syllabus.todayLesson")}
           </span>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
             {t("syllabus.pickerSummary", { done: current - 1, n: current })}
           </span>
         </div>
@@ -84,8 +84,8 @@ function CurrentLessonPicker({ modules = [], value = 1, onChange }) {
               onClick={() => setModuleIdx(i)}
               className={`flex flex-col items-start shrink-0 max-w-44 px-3 py-1.5 rounded-xl border text-left cursor-pointer transition-colors ${
                 active
-                  ? "border-blue-400 bg-blue-50 text-blue-700"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                  ? "border-blue-400 bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400"
+                  : "border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-night-600"
               }`}
             >
               <span className="text-xs font-semibold truncate w-full">{m.title}</span>
@@ -98,9 +98,9 @@ function CurrentLessonPicker({ modules = [], value = 1, onChange }) {
       </div>
 
       {/* Tanlangan modul darslari */}
-      <div className="flex flex-col h-64 min-w-0 overflow-y-auto rounded-xl border border-slate-200 bg-white">
+      <div className="flex flex-col h-64 min-w-0 overflow-y-auto rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
         {lessons.length === 0 ? (
-          <p className="px-4 py-6 text-center text-xs text-slate-400">{t("syllabus.noLessons")}</p>
+          <p className="px-4 py-6 text-center text-xs text-slate-400 dark:text-slate-500">{t("syllabus.noLessons")}</p>
         ) : (
           lessons.map((lesson, i) => {
             const no = first + i;
@@ -112,10 +112,10 @@ function CurrentLessonPicker({ modules = [], value = 1, onChange }) {
                 key={lesson._id || `l-${no}`}
                 type="button"
                 onClick={() => onChange?.(no)}
-                className={`flex items-center gap-3 px-3 py-2.5 text-left border-b border-slate-50 last:border-b-0 cursor-pointer transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2.5 text-left border-b border-slate-50 dark:border-night-700 last:border-b-0 cursor-pointer transition-colors ${
                   isSelected
-                    ? "bg-blue-50 border-l-2 border-l-blue-500"
-                    : "hover:bg-slate-50"
+                    ? "bg-blue-50 dark:bg-blue-500/15 border-l-2 border-l-blue-500"
+                    : "hover:bg-slate-50 dark:hover:bg-night-800"
                 }`}
               >
                 <span
@@ -123,8 +123,8 @@ function CurrentLessonPicker({ modules = [], value = 1, onChange }) {
                     isSelected
                       ? "bg-blue-500 text-white"
                       : isDone
-                        ? "bg-slate-100 text-slate-300"
-                        : "bg-slate-100 text-slate-500"
+                        ? "bg-slate-100 dark:bg-night-800 text-slate-300 dark:text-slate-600"
+                        : "bg-slate-100 dark:bg-night-800 text-slate-500 dark:text-slate-400"
                   }`}
                 >
                   {isDone ? <HiCheck /> : no}
@@ -132,24 +132,24 @@ function CurrentLessonPicker({ modules = [], value = 1, onChange }) {
                 <span
                   className={`min-w-0 flex-1 text-sm truncate ${
                     isSelected
-                      ? "font-semibold text-slate-900"
+                      ? "font-semibold text-slate-900 dark:text-slate-100"
                       : isDone
-                        ? "text-slate-400"
-                        : "text-slate-700"
+                        ? "text-slate-400 dark:text-slate-500"
+                        : "text-slate-700 dark:text-slate-300"
                   }`}
                 >
                   {lesson.title}
                 </span>
                 {isSelected && (
-                  <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-blue-100 text-[10px] font-semibold uppercase text-blue-600">
+                  <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-500/20 text-[10px] font-semibold uppercase text-blue-600 dark:text-blue-400">
                     {t("syllabus.todayLesson")}
                   </span>
                 )}
                 {isDone && (
-                  <span className="shrink-0 text-[11px] text-slate-400">{t("syllabus.passed")}</span>
+                  <span className="shrink-0 text-[11px] text-slate-400 dark:text-slate-500">{t("syllabus.passed")}</span>
                 )}
                 {!isDone && !isSelected && (
-                  <span className="shrink-0 text-[11px] text-slate-300">{t("syllabus.upcomingLesson")}</span>
+                  <span className="shrink-0 text-[11px] text-slate-300 dark:text-slate-600">{t("syllabus.upcomingLesson")}</span>
                 )}
               </button>
             );

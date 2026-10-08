@@ -32,7 +32,7 @@ function MiniBadges({ types, month, max = 3, size = 18 }) {
       {rest.length > 0 && (
         <span
           title={rest.map(titleOf).join("\n")}
-          className="inline-flex items-center h-4 px-1 rounded-full bg-slate-100 text-[10px] font-bold text-slate-500 leading-none"
+          className="inline-flex items-center h-4 px-1 rounded-full bg-slate-100 dark:bg-night-800 text-[10px] font-bold text-slate-500 dark:text-slate-400 leading-none"
         >
           +{rest.length}
         </span>

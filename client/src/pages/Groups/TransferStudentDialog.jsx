@@ -86,7 +86,7 @@ function TransferStudentDialog({
       }
     >
       <div className="flex flex-col gap-3 w-full">
-        <p className="text-sm text-slate-500">{t("student.transferHint", { name: student?.fullName })}</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{t("student.transferHint", { name: student?.fullName })}</p>
 
         {showCenterField && (
           <Select

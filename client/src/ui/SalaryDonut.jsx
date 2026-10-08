@@ -60,26 +60,26 @@ function SalaryDonut({ base = 0, bonus = 0, advance = 0, withdrawal = 0, penalty
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-4">
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
             {t("salary.final")}
           </span>
-          <span className="text-xl font-space font-bold text-slate-900 truncate">
+          <span className="text-xl font-space font-bold text-slate-900 dark:text-slate-100 truncate">
             {maskMoney(final, hidden)}
           </span>
-          <span className="text-[11px] text-slate-400">{t("student.somSuffix")}</span>
+          <span className="text-[11px] text-slate-400 dark:text-slate-500">{t("student.somSuffix")}</span>
         </div>
       </div>
 
       <div className="flex items-center gap-4 text-xs">
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: NET_COLOR }} />
-          <span className="text-slate-500">
+          <span className="text-slate-500 dark:text-slate-400">
             {t("salary.base")} + {t("salary.bonus")}
           </span>
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: DEDUCT_COLOR }} />
-          <span className="text-slate-500">{t("salary.deductions")}</span>
+          <span className="text-slate-500 dark:text-slate-400">{t("salary.deductions")}</span>
         </span>
       </div>
     </div>

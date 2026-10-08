@@ -55,10 +55,10 @@ function OpeningDebtsEditor({ value, onChange, errors = {} }) {
 
   return (
     <div className="flex flex-col gap-2 w-full">
-      <p className="pl-1 text-xs text-slate-400">{t("student.openingHint")}</p>
+      <p className="pl-1 text-xs text-slate-400 dark:text-slate-500">{t("student.openingHint")}</p>
 
       {rows.length === 0 ? (
-        <p className="pl-1 py-1 text-sm text-slate-400">{t("student.openingEmptyState")}</p>
+        <p className="pl-1 py-1 text-sm text-slate-400 dark:text-slate-500">{t("student.openingEmptyState")}</p>
       ) : (
         <div className="flex flex-col gap-2">
           {rows.map((row, index) => {
@@ -117,19 +117,19 @@ function OpeningDebtsEditor({ value, onChange, errors = {} }) {
         {t("student.openingAddRow")}
       </Button>
       {rows.length >= OPENING_MAX_ROWS && (
-        <span className="pl-1 text-xs text-slate-400">{t("student.openingTooMany")}</span>
+        <span className="pl-1 text-xs text-slate-400 dark:text-slate-500">{t("student.openingTooMany")}</span>
       )}
 
       {rows.length > 0 && (
-        <div className="flex items-center justify-between border-t border-slate-100 pt-2 mt-2">
-          <span className="text-sm text-slate-500">{t("student.openingTotalLabel")}</span>
+        <div className="flex items-center justify-between border-t border-slate-100 dark:border-night-700 pt-2 mt-2">
+          <span className="text-sm text-slate-500 dark:text-slate-400">{t("student.openingTotalLabel")}</span>
           <NumberText>
             {total.toLocaleString("uz-UZ")} {somSuffix}
           </NumberText>
         </div>
       )}
 
-      <div className="flex flex-col gap-1 bg-slate-50 rounded-xl p-3 mt-1">
+      <div className="flex flex-col gap-1 bg-slate-50 dark:bg-night-800 rounded-xl p-3 mt-1">
         <Input
           inputMode="numeric"
           variant="white"

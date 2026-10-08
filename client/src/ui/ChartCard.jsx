@@ -6,7 +6,7 @@
 function ChartCard({ children, className = "" }) {
   return (
     <div
-      className={`flex flex-col gap-3 p-5 rounded-xl border border-slate-200 bg-white h-full ${className}`}
+      className={`flex flex-col gap-3 p-5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 h-full ${className}`}
     >
       {children}
     </div>

@@ -717,7 +717,7 @@ function Schedule() {
             compact
           >
             {rooms.length === 0 ? (
-              <p className="px-3 py-2 rounded-lg bg-slate-50 text-xs text-slate-400">
+              <p className="px-3 py-2 rounded-lg bg-slate-50 dark:bg-night-800 text-xs text-slate-400 dark:text-slate-500">
                 {t("room.empty")}
               </p>
             ) : (
@@ -738,7 +738,7 @@ function Schedule() {
                 <div
                   key={sec.id}
                   className={`max-lg:contents lg:flex lg:flex-col lg:gap-1.5 lg:p-1.5 lg:rounded-xl lg:transition-colors lg:duration-300 ${
-                    open && !single ? "lg:bg-slate-100 lg:ring-1 lg:ring-slate-200/70" : ""
+                    open && !single ? "lg:bg-slate-100 dark:lg:bg-night-800 lg:ring-1 lg:ring-slate-200/70 dark:lg:ring-night-700/70" : ""
                   }`}
                 >
                   {!single && (
@@ -753,26 +753,26 @@ function Schedule() {
                       // ustidagi sarlavha bo'lib qoladi.
                       className={`flex items-center gap-2 px-2 h-11 shrink-0 rounded-[10px] text-left cursor-pointer transition-colors duration-300 max-lg:self-center ${
                         open
-                          ? "text-slate-900"
-                          : "bg-white border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                          ? "text-slate-900 dark:text-slate-100"
+                          : "bg-white dark:bg-night-900 border border-slate-200 dark:border-night-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-night-600 hover:bg-slate-50 dark:hover:bg-night-800"
                       }`}
                     >
                       <HiBuildingOffice2
                         className={`shrink-0 text-[17px] transition-colors duration-300 ${
-                          open ? "text-blue-500" : "text-slate-400"
+                          open ? "text-blue-500" : "text-slate-400 dark:text-slate-500"
                         }`}
                       />
                       <span className="flex-1 text-[13px] font-semibold truncate">{sec.name}</span>
                       <span
                         className={`shrink-0 min-w-5 px-1.5 h-5 flex items-center justify-center rounded-md text-[11px] font-semibold tabular-nums transition-colors duration-300 ${
-                          open ? "bg-white text-slate-600" : "bg-slate-100 text-slate-500"
+                          open ? "bg-white dark:bg-night-900 text-slate-600 dark:text-slate-300" : "bg-slate-100 dark:bg-night-800 text-slate-500 dark:text-slate-400"
                         }`}
                       >
                         {sec.rooms.length}
                       </span>
                       <HiChevronRight
                         className={`shrink-0 text-[13px] transition-transform duration-300 ${
-                          open ? "rotate-90 text-slate-400" : "text-slate-300"
+                          open ? "rotate-90 text-slate-400 dark:text-slate-500" : "text-slate-300 dark:text-slate-600"
                         }`}
                       />
                     </button>
@@ -803,12 +803,12 @@ function Schedule() {
                     className={`group relative flex items-center gap-2 h-11 shrink-0 pl-2.5 pr-2 rounded-[10px] text-left cursor-pointer transition-colors duration-150 ${
                       on
                         ? "bg-blue-500 text-white"
-                        : "bg-white text-slate-700 hover:bg-slate-50 max-lg:border max-lg:border-slate-200"
+                        : "bg-white dark:bg-night-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-night-800 max-lg:border max-lg:border-slate-200 dark:max-lg:border-night-700"
                     } ${(carrying || blockDrag) && !on ? "ring-2 ring-blue-400/70" : ""}`}
                   >
                     <HiHome
                       className={`shrink-0 text-[15px] ${
-                        on ? "text-white" : "text-slate-300 group-hover:text-slate-400"
+                        on ? "text-white" : "text-slate-300 dark:text-slate-600 group-hover:text-slate-400 dark:group-hover:text-slate-500"
                       }`}
                     />
                     <span
@@ -819,7 +819,7 @@ function Schedule() {
                     {r.count > 0 && (
                       <span
                         className={`shrink-0 min-w-5 px-1.5 h-5 flex items-center justify-center rounded-md text-[11px] font-semibold tabular-nums ${
-                          on ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                          on ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-night-800 text-slate-500 dark:text-slate-400"
                         }`}
                       >
                         {r.count}
@@ -866,20 +866,20 @@ function Schedule() {
                     // uslubda "o'qituvchi · o'quvchilar soni".
                     className={`relative flex flex-col justify-center gap-px px-2.5 py-1.5 rounded-[10px] border text-left transition-colors duration-150 disabled:cursor-default max-lg:shrink-0 lg:enabled:cursor-grab ${
                       on
-                        ? "bg-blue-50 border-blue-200"
-                        : "bg-white border-slate-200/70 enabled:hover:border-slate-300 enabled:hover:bg-slate-50"
+                        ? "bg-blue-50 dark:bg-blue-500/15 border-blue-200 dark:border-blue-500/30"
+                        : "bg-white dark:bg-night-900 border-slate-200/70 dark:border-night-700/70 enabled:hover:border-slate-300 dark:enabled:hover:border-night-600 enabled:hover:bg-slate-50 dark:enabled:hover:bg-night-800"
                     }`}
                   >
                     {on && (
                       <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-blue-500" />
                     )}
                     <span
-                      className={`text-[13px] font-semibold truncate leading-snug ${on ? "text-blue-900" : "text-slate-800"}`}
+                      className={`text-[13px] font-semibold truncate leading-snug ${on ? "text-blue-900 dark:text-blue-400" : "text-slate-800 dark:text-slate-100"}`}
                     >
                       {g.label}
                     </span>
                     <span
-                      className={`text-[11px] truncate leading-snug ${on ? "text-blue-700/70" : "text-slate-400"}`}
+                      className={`text-[11px] truncate leading-snug ${on ? "text-blue-700/70 dark:text-blue-400" : "text-slate-400 dark:text-slate-500"}`}
                     >
                       {g.teacher || t("group.noTeacher")}
                       <span className="px-1">•</span>
@@ -894,7 +894,7 @@ function Schedule() {
           )}
         </div>
 
-        <div className="flex flex-col gap-3 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] min-h-0 min-w-0 max-lg:min-h-[34rem]">
+        <div className="flex flex-col gap-3 p-4 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none min-h-0 min-w-0 max-lg:min-h-[34rem]">
           {/* Ish maydoni */}
           <div className="flex-1 min-h-0">
             {!step1 ? (
@@ -922,7 +922,7 @@ function Schedule() {
           </div>
 
           {/* Pastki panel — ish maydonining pastki chetida, ajratuvchi chiziq bilan. */}
-          <div className="hidden lg:flex items-center justify-end gap-3 -mx-4 -mb-4 px-4 py-3 border-t border-slate-200 rounded-b-2xl bg-slate-50/70">
+          <div className="hidden lg:flex items-center justify-end gap-3 -mx-4 -mb-4 px-4 py-3 border-t border-slate-200 dark:border-night-700 rounded-b-2xl bg-slate-50/70 dark:bg-night-800/70">
             <IconButton
               variant="outlined"
               color="black"
@@ -989,7 +989,7 @@ function Schedule() {
         }
       >
         {blockAction && (
-          <div className="flex flex-col gap-2.5 text-sm text-slate-600">
+          <div className="flex flex-col gap-2.5 text-sm text-slate-600 dark:text-slate-300">
             {blockAction.mode === "swap" ? (
               <>
                 <p className="leading-relaxed">
@@ -998,38 +998,38 @@ function Schedule() {
                     to: selectedGroup?.label,
                   })}
                 </p>
-                <div className="flex flex-col gap-1 px-3 py-2.5 rounded-xl bg-slate-50 text-xs">
-                  <span className="text-slate-500">
+                <div className="flex flex-col gap-1 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-night-800 text-xs">
+                  <span className="text-slate-500 dark:text-slate-400">
                     {rooms.find((r) => r._id === roomId)?.name}
-                    <span className="text-slate-300"> · </span>
+                    <span className="text-slate-300 dark:text-slate-600"> · </span>
                     {blockAction.block.days.map((d) => t(`group.dayShort.${d}`)).join(", ")}
                   </span>
-                  <span className="font-jet tabular-nums text-slate-800">
+                  <span className="font-jet tabular-nums text-slate-800 dark:text-slate-100">
                     {blockAction.block.startTime}–
                     {toHHMM(toMinutes(blockAction.block.startTime) + duration)}
-                    <span className="text-slate-400">
+                    <span className="text-slate-400 dark:text-slate-500">
                       {" "}
                       ({duration} {t("room.minShort")})
                     </span>
                   </span>
                 </div>
                 {blockAction.clash ? (
-                  <p className="px-3 py-2.5 rounded-xl bg-red-50 text-red-700 font-medium leading-relaxed">
+                  <p className="px-3 py-2.5 rounded-xl bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-400 font-medium leading-relaxed">
                     {t("group.rescheduleSwapClash", { label: blockAction.clash.label })}
                   </p>
                 ) : (
-                  <p className="text-xs text-slate-400 leading-relaxed">
+                  <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed">
                     {t("group.rescheduleSwapNote", { label: blockAction.block.label })}
                   </p>
                 )}
               </>
             ) : (
               <>
-                <p className="font-semibold text-slate-900">{blockAction.block.label}</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">{blockAction.block.label}</p>
                 {/* To'liq darslar bo'ladigan guruhlarga qo'shimcha kun
                     qo'shish/olib tashlash aynan shu yerda bo'ladi. */}
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-xs text-slate-400">{t("group.days")}</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">{t("group.days")}</span>
                   <div className="flex flex-wrap items-center gap-1">
                     {DAYS.map((d) => {
                       const on = blockAction.block.days?.includes(d);
@@ -1044,7 +1044,7 @@ function Schedule() {
                           className={`w-9 h-9 rounded-lg border text-xs font-semibold transition-colors duration-150 ${
                             on
                               ? "bg-blue-600 border-blue-600 text-white disabled:opacity-60"
-                              : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                              : "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-night-600 hover:text-slate-700 dark:hover:text-slate-300"
                           }`}
                         >
                           {t(`group.dayShort.${d}`)}
@@ -1072,7 +1072,7 @@ function Schedule() {
                   />
                 </div>
 
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed">
                   {t("group.rescheduleUnplaceHint", {
                     day: t(`group.day.${blockAction.day}`),
                   })}
@@ -1110,12 +1110,12 @@ function Schedule() {
           </>
         }
       >
-        <div className="flex flex-col gap-2.5 text-sm text-slate-600">
+        <div className="flex flex-col gap-2.5 text-sm text-slate-600 dark:text-slate-300">
           <p className="leading-relaxed">
             {t("group.rescheduleResetConfirm", { count: centerAssignedCount })}
           </p>
           {centerAssignedCount > 0 && !resetProgress && (
-            <p className="px-3 py-2.5 rounded-xl bg-red-50 text-red-700 font-medium leading-relaxed">
+            <p className="px-3 py-2.5 rounded-xl bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-400 font-medium leading-relaxed">
               {t("group.rescheduleWillClear", { count: centerAssignedCount })}
             </p>
           )}
@@ -1139,7 +1139,7 @@ function SaveStatus({ saving, count, t }) {
   const label = t(saving ? "schedule.saving" : "schedule.autoSave");
   return (
     <div
-      className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-sm font-medium bg-slate-100 text-slate-500"
+      className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-sm font-medium bg-slate-100 dark:bg-night-800 text-slate-500 dark:text-slate-400"
       aria-live="polite"
     >
       {icon}
@@ -1155,17 +1155,17 @@ function SaveStatus({ saving, count, t }) {
 function Panel({ title, count, scrollX = false, compact = false, children }) {
   return (
     <div
-      className={`flex flex-col gap-1.5 rounded-2xl bg-white border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] min-h-0 min-w-0 ${
+      className={`flex flex-col gap-1.5 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none min-h-0 min-w-0 ${
         compact ? "p-2 lg:p-2.5" : "p-2.5"
       }`}
     >
       <div
         className={`items-center justify-between gap-2 px-1 pt-0.5 ${compact ? "hidden lg:flex" : "flex"}`}
       >
-        <p className="text-[12px] font-bold uppercase tracking-wider text-slate-500 truncate">
+        <p className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
           {title}
         </p>
-        <span className="shrink-0 min-w-5 px-1.5 h-5 flex items-center justify-center rounded-md bg-slate-100 text-slate-500 text-[11px] font-semibold tabular-nums">
+        <span className="shrink-0 min-w-5 px-1.5 h-5 flex items-center justify-center rounded-md bg-slate-100 dark:bg-night-800 text-slate-500 dark:text-slate-400 text-[11px] font-semibold tabular-nums">
           {count}
         </span>
       </div>
@@ -1206,8 +1206,8 @@ function Guide({ step, t }) {
     { n: 4, key: "group.rescheduleStep4" },
   ];
   return (
-    <div className="flex flex-col items-center justify-center gap-5 h-full py-12 rounded-xl border border-dashed border-slate-200">
-      <span className="flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-50 text-blue-500 text-xl">
+    <div className="flex flex-col items-center justify-center gap-5 h-full py-12 rounded-xl border border-dashed border-slate-200 dark:border-night-700">
+      <span className="flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/15 text-blue-500 text-xl">
         <HiCursorArrowRays />
       </span>
       <div className="flex flex-col gap-2 w-full max-w-sm">
@@ -1218,7 +1218,7 @@ function Guide({ step, t }) {
             <div
               key={it.n}
               className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                active ? "bg-blue-50 text-blue-900 font-medium" : "text-slate-400"
+                active ? "bg-blue-50 dark:bg-blue-500/15 text-blue-900 dark:text-blue-400 font-medium" : "text-slate-400 dark:text-slate-500"
               }`}
             >
               <span
@@ -1227,7 +1227,7 @@ function Guide({ step, t }) {
                     ? "bg-emerald-500 text-white"
                     : active
                       ? "bg-blue-600 text-white"
-                      : "bg-slate-100 text-slate-400"
+                      : "bg-slate-100 dark:bg-night-800 text-slate-400 dark:text-slate-500"
                 }`}
               >
                 {past ? <HiCheck /> : it.n}
@@ -1247,26 +1247,26 @@ function ScheduleSkeleton() {
     <div className="flex flex-col w-full h-full gap-4 min-h-0">
       <div className="flex items-center gap-3">
         <div className="flex flex-col gap-2 flex-1">
-          <div className="h-4 w-40 rounded bg-slate-100 animate-pulse" />
-          <div className="h-3 w-64 rounded bg-slate-100 animate-pulse" />
+          <div className="h-4 w-40 rounded bg-slate-100 dark:bg-night-800 animate-pulse" />
+          <div className="h-3 w-64 rounded bg-slate-100 dark:bg-night-800 animate-pulse" />
         </div>
-        <div className="h-9 w-36 rounded-lg bg-slate-100 animate-pulse" />
-        <div className="h-9 w-28 rounded-lg bg-slate-100 animate-pulse" />
+        <div className="h-9 w-36 rounded-lg bg-slate-100 dark:bg-night-800 animate-pulse" />
+        <div className="h-9 w-28 rounded-lg bg-slate-100 dark:bg-night-800 animate-pulse" />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-4 flex-1 min-h-0">
         <div className="grid grid-cols-1 lg:grid-rows-2 gap-3 max-lg:h-[70px]">
           {Array.from({ length: 2 }).map((_, i) => (
             <div
               key={i}
-              className={`flex-col gap-2 p-2 lg:p-3 rounded-2xl bg-white border border-slate-200/80 ${
+              className={`flex-col gap-2 p-2 lg:p-3 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80 ${
                 i === 0 ? "flex" : "hidden lg:flex"
               }`}
             >
-              <div className="h-4 w-24 rounded bg-slate-100 animate-pulse max-lg:hidden" />
+              <div className="h-4 w-24 rounded bg-slate-100 dark:bg-night-800 animate-pulse max-lg:hidden" />
               {Array.from({ length: 4 }).map((__, j) => (
                 <div
                   key={j}
-                  className={`h-10 shrink-0 rounded-lg bg-slate-100/70 animate-pulse ${
+                  className={`h-10 shrink-0 rounded-lg bg-slate-100/70 dark:bg-night-800/70 animate-pulse ${
                     j > 0 ? "max-lg:hidden" : ""
                   }`}
                 />
@@ -1274,9 +1274,9 @@ function ScheduleSkeleton() {
             </div>
           ))}
         </div>
-        <div className="flex flex-col gap-3 p-4 rounded-2xl bg-white border border-slate-200/80 max-lg:min-h-[34rem]">
-          <div className="h-12 w-full rounded-lg bg-slate-100 animate-pulse" />
-          <div className="flex-1 rounded-xl bg-slate-100/60 animate-pulse" />
+        <div className="flex flex-col gap-3 p-4 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80 max-lg:min-h-[34rem]">
+          <div className="h-12 w-full rounded-lg bg-slate-100 dark:bg-night-800 animate-pulse" />
+          <div className="flex-1 rounded-xl bg-slate-100/60 dark:bg-night-800/60 animate-pulse" />
         </div>
       </div>
     </div>

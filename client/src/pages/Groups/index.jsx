@@ -205,7 +205,7 @@ function Groups() {
   return (
     <div className="flex flex-col w-full h-full gap-4">
       {isDesktop ? (
-        <div className={`flex flex-col gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]`}>
+        <div className={`flex flex-col gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-sm dark:shadow-none shadow-slate-900/[0.02]`}>
           {/* Filtr qatori konvensiyasi: maydonlar flex-1 (tor ekranda yangi
               qatorga o'tadi), amallar bitta guruhda ml-auto bilan o'ngda. */}
           <div className="flex flex-wrap items-center gap-2.5 [&>*]:flex-1 [&>*]:min-w-[200px]">
@@ -287,7 +287,7 @@ function Groups() {
           </div>
           {/* 2-qator: hafta kunlari doim ko'rinib turadi (chapda), "Tozalash"
               o'ngda — tanlangan filtr bo'lmasa o'chirilgan holatda. */}
-          <div className="flex items-end gap-2.5 pt-2.5 border-t border-slate-100">
+          <div className="flex items-end gap-2.5 pt-2.5 border-t border-slate-100 dark:border-night-700">
             <div className="w-full max-w-md">
               <DayPicker
                 placeholder={t("group.days")}
@@ -411,7 +411,7 @@ function Groups() {
       )}
 
       {error ? (
-        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
           <HiUserGroup className="text-4xl" />
           <p className="text-sm">{t("group.loadError")}</p>
           <Button variant="outlined" onClick={fetchGroups}>

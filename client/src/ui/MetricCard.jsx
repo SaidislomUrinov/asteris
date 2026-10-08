@@ -27,7 +27,7 @@ function MetricCard({
 
   return (
     <div
-      className={`relative overflow-hidden flex flex-col gap-3 p-5 pl-6 rounded-2xl bg-white border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${className}`}
+      className={`relative overflow-hidden flex flex-col gap-3 p-5 pl-6 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none ${className}`}
     >
       <span className={`absolute inset-y-0 left-0 w-1 ${a.edge}`} />
 
@@ -38,15 +38,15 @@ function MetricCard({
           {icon}
         </div>
         <div className="flex flex-col gap-0.5 min-w-0">
-          <p className="font-semibold text-slate-800 truncate">{title}</p>
-          {subtitle && <p className="text-xs text-slate-400 truncate">{subtitle}</p>}
+          <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">{title}</p>
+          {subtitle && <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{subtitle}</p>}
         </div>
       </div>
 
       {value != null && (
-        <p className="text-2xl font-space font-bold text-slate-900 leading-none">
+        <p className="text-2xl font-space font-bold text-slate-900 dark:text-slate-100 leading-none">
           {value}
-          {suffix ? <span className="text-base font-normal text-slate-400"> {suffix}</span> : null}
+          {suffix ? <span className="text-base font-normal text-slate-400 dark:text-slate-500"> {suffix}</span> : null}
         </p>
       )}
 

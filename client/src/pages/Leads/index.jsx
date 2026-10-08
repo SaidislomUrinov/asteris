@@ -238,20 +238,20 @@ function Leads() {
   const rowMenu = (row) => [
     ...(can("lead:update") && row.status !== "enrolled"
       ? [
-          { label: t("common.edit"), icon: HiPencilSquare, iconClass: "bg-blue-50 text-blue-600", onClick: () => setLeadDialog({ lead: row }) },
+          { label: t("common.edit"), icon: HiPencilSquare, iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400", onClick: () => setLeadDialog({ lead: row }) },
           ...(row.status !== "contacted"
-            ? [{ label: t("lead.markContacted"), icon: HiPhone, iconClass: "bg-orange-50 text-orange-600", onClick: () => setStatus(row, "contacted") }]
+            ? [{ label: t("lead.markContacted"), icon: HiPhone, iconClass: "bg-orange-50 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400", onClick: () => setStatus(row, "contacted") }]
             : []),
           ...(row.status !== "rejected"
-            ? [{ label: t("lead.markRejected"), icon: HiNoSymbol, iconClass: "bg-slate-100 text-slate-600", onClick: () => setStatus(row, "rejected") }]
-            : [{ label: t("lead.reopen"), icon: HiArrowRightCircle, iconClass: "bg-blue-50 text-blue-600", onClick: () => setStatus(row, "new") }]),
+            ? [{ label: t("lead.markRejected"), icon: HiNoSymbol, iconClass: "bg-slate-100 dark:bg-night-800 text-slate-600 dark:text-slate-300", onClick: () => setStatus(row, "rejected") }]
+            : [{ label: t("lead.reopen"), icon: HiArrowRightCircle, iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400", onClick: () => setStatus(row, "new") }]),
         ]
       : []),
     ...(row.status === "enrolled" && row.group
-      ? [{ label: t("lead.openGroup"), icon: HiUserGroup, iconClass: "bg-emerald-50 text-emerald-600", onClick: () => navigate(`/groups/${row.group}`) }]
+      ? [{ label: t("lead.openGroup"), icon: HiUserGroup, iconClass: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400", onClick: () => navigate(`/groups/${row.group}`) }]
       : []),
     ...(can("lead:delete")
-      ? [{ label: t("common.delete"), icon: HiTrash, iconClass: "bg-red-50 text-red-600", onClick: () => setDeleteTarget(row) }]
+      ? [{ label: t("common.delete"), icon: HiTrash, iconClass: "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400", onClick: () => setDeleteTarget(row) }]
       : []),
   ];
 
@@ -270,8 +270,8 @@ function Leads() {
       header: t("lead.fullName"),
       render: (row) => (
         <div className="flex flex-col">
-          <span className="font-semibold text-slate-800">{row.fullName}</span>
-          <span className="text-xs text-slate-400">{row.phone}</span>
+          <span className="font-semibold text-slate-800 dark:text-slate-100">{row.fullName}</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">{row.phone}</span>
         </div>
       ),
     },
@@ -280,16 +280,16 @@ function Leads() {
       header: t("lead.subject"),
       render: (row) => (
         <div className="flex flex-col">
-          <span className="font-medium text-slate-700">{subjectMap[row.subject]?.name || "—"}</span>
-          {showCenter && <span className="text-xs text-slate-400">{centerMap[row.center]?.name}</span>}
+          <span className="font-medium text-slate-700 dark:text-slate-300">{subjectMap[row.subject]?.name || "—"}</span>
+          {showCenter && <span className="text-xs text-slate-400 dark:text-slate-500">{centerMap[row.center]?.name}</span>}
         </div>
       ),
     },
-    { key: "preference", header: t("lead.preference"), render: (row) => <span className="text-slate-600">{preference(row)}</span> },
-    { key: "level", header: t("lead.level"), render: (row) => row.level || <span className="text-slate-300">—</span> },
-    { key: "source", header: t("lead.source"), render: (row) => <span className="text-slate-600">{t(`lead.sources.${row.source}`)}</span> },
+    { key: "preference", header: t("lead.preference"), render: (row) => <span className="text-slate-600 dark:text-slate-300">{preference(row)}</span> },
+    { key: "level", header: t("lead.level"), render: (row) => row.level || <span className="text-slate-300 dark:text-slate-600">—</span> },
+    { key: "source", header: t("lead.source"), render: (row) => <span className="text-slate-600 dark:text-slate-300">{t(`lead.sources.${row.source}`)}</span> },
     { key: "status", header: t("lead.statusLabel"), render: statusChip },
-    { key: "date", header: t("lead.date"), render: (row) => <span className="text-slate-500">{row.date?.split(" | ")[0]}</span> },
+    { key: "date", header: t("lead.date"), render: (row) => <span className="text-slate-500 dark:text-slate-400">{row.date?.split(" | ")[0]}</span> },
     {
       key: "actions",
       header: "",
@@ -300,8 +300,8 @@ function Leads() {
 
   const renderCard = (row) => (
     <div
-      className={`flex flex-col gap-2.5 p-3.5 rounded-xl border bg-white transition-colors ${
-        selected[row._id] ? "border-blue-400 bg-blue-50/40" : "border-slate-200"
+      className={`flex flex-col gap-2.5 p-3.5 rounded-xl border bg-white dark:bg-night-900 transition-colors ${
+        selected[row._id] ? "border-blue-400 bg-blue-50/40 dark:bg-blue-500/15" : "border-slate-200 dark:border-night-700"
       }`}
     >
       <div className="flex items-start gap-3">
@@ -311,14 +311,14 @@ function Leads() {
           </div>
         )}
         <div className="flex-1 min-w-0" onClick={() => selectable(row) && toggleRow(row)}>
-          <p className="font-semibold text-slate-800 truncate">{row.fullName}</p>
-          <p className="text-xs text-slate-400">{row.phone}</p>
+          <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">{row.fullName}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{row.phone}</p>
         </div>
         {statusChip(row)}
         {rowMenu(row).length > 0 && <DropMenu items={rowMenu(row)} />}
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
-        <span className="font-semibold text-slate-700">{subjectMap[row.subject]?.name || "—"}</span>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+        <span className="font-semibold text-slate-700 dark:text-slate-300">{subjectMap[row.subject]?.name || "—"}</span>
         <span>{preference(row)}</span>
         {row.level && <span>{row.level}</span>}
       </div>
@@ -343,11 +343,11 @@ function Leads() {
             type="button"
             onClick={() => setFilter("subject", "")}
             className={`shrink-0 flex items-center gap-2 h-9 pl-3 pr-2 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
-              !filters.subject ? "bg-slate-900 border-slate-900 text-white" : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
+              !filters.subject ? "bg-slate-900 border-slate-900 text-white" : "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-night-600"
             }`}
           >
             {t("lead.allWaiting")}
-            <span className={`px-1.5 rounded-md text-xs font-semibold ${!filters.subject ? "bg-white/15" : "bg-slate-100"}`}>{openTotal}</span>
+            <span className={`px-1.5 rounded-md text-xs font-semibold ${!filters.subject ? "bg-white/15 dark:bg-night-900/15" : "bg-slate-100 dark:bg-night-800"}`}>{openTotal}</span>
           </button>
           {summary.map((s) => {
             const on = filters.subject === s.subject;
@@ -357,14 +357,14 @@ function Leads() {
                 type="button"
                 onClick={() => setFilter("subject", on ? "" : s.subject)}
                 className={`shrink-0 flex items-center gap-2 h-9 pl-3 pr-2 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
-                  on ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:border-blue-300"
+                  on ? "bg-blue-600 border-blue-600 text-white" : "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 text-slate-600 dark:text-slate-300 hover:border-blue-300"
                 }`}
               >
                 {subjectMap[s.subject]?.name || "—"}
                 {showCenter && subjectMap[s.subject] && (
-                  <span className={`text-xs ${on ? "text-blue-100" : "text-slate-400"}`}>{centerMap[subjectMap[s.subject].center]?.name}</span>
+                  <span className={`text-xs ${on ? "text-blue-100" : "text-slate-400 dark:text-slate-500"}`}>{centerMap[subjectMap[s.subject].center]?.name}</span>
                 )}
-                <span className={`px-1.5 rounded-md text-xs font-semibold ${on ? "bg-white/20" : "bg-blue-50 text-blue-700"}`}>{s.count}</span>
+                <span className={`px-1.5 rounded-md text-xs font-semibold ${on ? "bg-white/20 dark:bg-night-900/20" : "bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400"}`}>{s.count}</span>
               </button>
             );
           })}
@@ -447,7 +447,7 @@ function Leads() {
       </FilterBar>
 
       {error ? (
-        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
           <HiInboxStack className="text-4xl" />
           <p className="text-sm">{t("lead.loadError")}</p>
           <Button variant="outlined" onClick={() => fetchLeads()}>
@@ -462,10 +462,10 @@ function Leads() {
           view={isDesktop ? "table" : "grid"}
           renderItem={renderCard}
           gridClassName="grid grid-cols-1 gap-2 p-2"
-          rowClassName={(row) => (selected[row._id] ? "!bg-blue-50/60" : "")}
+          rowClassName={(row) => (selected[row._id] ? "!bg-blue-50/60 dark:bg-blue-500/15" : "")}
           empty={
             <div className="flex flex-col items-center gap-2 py-2 text-center">
-              <HiOutlineViewfinderCircle className="text-3xl text-slate-300" />
+              <HiOutlineViewfinderCircle className="text-3xl text-slate-300 dark:text-slate-600" />
               <span>{activeFilterCount || search ? t("lead.emptyFiltered") : t("lead.empty")}</span>
             </div>
           }
@@ -473,7 +473,7 @@ function Leads() {
           totalPages={meta.totalPages}
           onPageChange={setPage}
           showPagination
-          toolbar={<span className="text-xs text-slate-400">{t("lead.total", { count: meta.total })}</span>}
+          toolbar={<span className="text-xs text-slate-400 dark:text-slate-500">{t("lead.total", { count: meta.total })}</span>}
         />
       )}
 
@@ -492,7 +492,7 @@ function Leads() {
                   ? t("lead.selectedMixed")
                   : `${subjectMap[selSubjects[0]]?.name || ""}${showCenter ? ` · ${centerMap[selCenters[0]]?.name || ""}` : ""}`}
               </p>
-              <p className="text-xs text-slate-400 truncate">{mixed ? t("lead.selectedMixedHint") : t("lead.selectedHint")}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{mixed ? t("lead.selectedMixedHint") : t("lead.selectedHint")}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -517,7 +517,7 @@ function Leads() {
               type="button"
               title={t("lead.clearSelection")}
               onClick={() => setSelected({})}
-              className="flex items-center justify-center shrink-0 w-9 h-9 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer"
+              className="flex items-center justify-center shrink-0 w-9 h-9 rounded-lg text-slate-400 dark:text-slate-500 hover:text-white hover:bg-white/10 cursor-pointer"
             >
               <HiXMark className="text-lg" />
             </button>

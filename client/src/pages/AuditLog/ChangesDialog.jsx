@@ -48,15 +48,15 @@ function ChangesDialog({ open, log, onClose }) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-semibold text-slate-800">{t("audit.changes")}</p>
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t("audit.changes")}</p>
 
             {changes.length === 0 ? (
-              <p className="text-sm text-slate-400">{t("audit.noChanges")}</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500">{t("audit.noChanges")}</p>
             ) : (
-              <div className="w-full overflow-x-auto rounded-xl border border-slate-200">
+              <div className="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-night-700">
                 <table className="w-full text-sm min-w-max">
                   <thead>
-                    <tr className="bg-slate-50 text-left text-slate-500 text-[12px] uppercase">
+                    <tr className="bg-slate-50 dark:bg-night-800 text-left text-slate-500 dark:text-slate-400 text-[12px] uppercase">
                       <th className="px-3 py-2.5 font-semibold">{t("audit.field")}</th>
                       <th className="px-3 py-2.5 font-semibold">{t("audit.from")}</th>
                       <th className="px-3 py-2.5 font-semibold">{t("audit.to")}</th>
@@ -64,14 +64,14 @@ function ChangesDialog({ open, log, onClose }) {
                   </thead>
                   <tbody>
                     {changes.map((c, i) => (
-                      <tr key={`${c.field}-${i}`} className="border-t border-slate-100">
-                        <td className="px-3 py-2.5 font-medium text-slate-700">
+                      <tr key={`${c.field}-${i}`} className="border-t border-slate-100 dark:border-night-700">
+                        <td className="px-3 py-2.5 font-medium text-slate-700 dark:text-slate-300">
                           {t(`audit.fields.${c.field}`, { defaultValue: c.field })}
                         </td>
-                        <td className="px-3 py-2.5 text-slate-400 line-through">
+                        <td className="px-3 py-2.5 text-slate-400 dark:text-slate-500 line-through">
                           {readable(c.from, t)}
                         </td>
-                        <td className="px-3 py-2.5 text-slate-800">{readable(c.to, t)}</td>
+                        <td className="px-3 py-2.5 text-slate-800 dark:text-slate-100">{readable(c.to, t)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -87,12 +87,12 @@ function ChangesDialog({ open, log, onClose }) {
 
 function Field({ label, value, sub }) {
   return (
-    <div className="flex flex-col gap-0.5 p-3 rounded-xl bg-slate-50">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+    <div className="flex flex-col gap-0.5 p-3 rounded-xl bg-slate-50 dark:bg-night-800">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
         {label}
       </span>
-      <span className="text-sm text-slate-800 truncate">{value || "—"}</span>
-      {sub && <span className="text-xs text-slate-400 truncate">{sub}</span>}
+      <span className="text-sm text-slate-800 dark:text-slate-100 truncate">{value || "—"}</span>
+      {sub && <span className="text-xs text-slate-400 dark:text-slate-500 truncate">{sub}</span>}
     </div>
   );
 }

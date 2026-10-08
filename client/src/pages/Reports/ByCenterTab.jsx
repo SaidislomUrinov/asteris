@@ -20,23 +20,23 @@ function ByCenterTab({ query, tick }) {
     {
       key: "center",
       header: <SortHeader label={t("report.center")} sortKey="center.name" sort={sort} onToggle={toggle} />,
-      render: (row) => <span className="font-semibold text-slate-800">{row.center?.name || "—"}</span>,
+      render: (row) => <span className="font-semibold text-slate-800 dark:text-slate-100">{row.center?.name || "—"}</span>,
     },
     {
       key: "revenue",
       header: <SortHeader label={t("report.revenue")} sortKey="revenue" sort={sort} onToggle={toggle} />,
-      render: (row) => <NumberText className="text-emerald-600">{money(row.revenue)}</NumberText>,
+      render: (row) => <NumberText className="text-emerald-600 dark:text-emerald-400">{money(row.revenue)}</NumberText>,
     },
     {
       key: "expense",
       header: <SortHeader label={t("report.expense")} sortKey="expense" sort={sort} onToggle={toggle} />,
-      render: (row) => <NumberText className="text-orange-600">{money(row.expense)}</NumberText>,
+      render: (row) => <NumberText className="text-orange-600 dark:text-orange-400">{money(row.expense)}</NumberText>,
     },
     {
       key: "profit",
       header: <SortHeader label={t("report.profit")} sortKey="profit" sort={sort} onToggle={toggle} />,
       render: (row) => (
-        <NumberText className={row.profit >= 0 ? "text-blue-600" : "text-red-500"}>
+        <NumberText className={row.profit >= 0 ? "text-blue-600 dark:text-blue-400" : "text-red-500"}>
           {money(row.profit)}
         </NumberText>
       ),
@@ -49,12 +49,12 @@ function ByCenterTab({ query, tick }) {
     {
       key: "students",
       header: <SortHeader label={t("report.students")} sortKey="students" sort={sort} onToggle={toggle} />,
-      render: (row) => <span className="text-slate-600">{row.students ?? 0}</span>,
+      render: (row) => <span className="text-slate-600 dark:text-slate-300">{row.students ?? 0}</span>,
     },
     {
       key: "groups",
       header: <SortHeader label={t("report.groups")} sortKey="groups" sort={sort} onToggle={toggle} />,
-      render: (row) => <span className="text-slate-600">{row.groups ?? 0}</span>,
+      render: (row) => <span className="text-slate-600 dark:text-slate-300">{row.groups ?? 0}</span>,
     },
     {
       key: "attendanceRate",

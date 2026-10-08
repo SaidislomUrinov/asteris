@@ -56,21 +56,21 @@ function RevenueByCollector({ month, center }) {
   useSocketEvent("payment:updated", fetchData);
 
   return (
-    <div className="flex flex-col w-full h-full min-h-0 p-5 rounded-xl border border-slate-200 bg-white gap-3">
+    <div className="flex flex-col w-full h-full min-h-0 p-5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 gap-3">
       <div className="flex items-start justify-between gap-2 shrink-0">
         <div className="flex flex-col">
-          <span className="flex items-center gap-2 font-semibold text-slate-800">
+          <span className="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100">
             <HiArrowTrendingUp className="text-emerald-500 text-xl" />
             {t("dashboard.revenueByCollector")}
           </span>
           {/* "Oylik tushum" kartochkasi `forMonth` (qaysi oy uchun) bo'yicha
               hisoblanadi, bu yerda esa to'lov SANASI (kassa oqimi) — ikkalasi
               turlicha chiqishi normal, shuning uchun izoh yozilgan. */}
-          <span className="text-xs text-slate-400 pl-7">{t("dashboard.revenueByDateHint")}</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500 pl-7">{t("dashboard.revenueByDateHint")}</span>
         </div>
         <button
           onClick={() => navigate("/revenue")}
-          className="flex items-center gap-0.5 text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer duration-200"
+          className="flex items-center gap-0.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-400 cursor-pointer duration-200"
         >
           {t("dashboard.revenueSeeAll")}
           <HiChevronRight className="text-sm" />
@@ -80,7 +80,7 @@ function RevenueByCollector({ month, center }) {
       {loading ? (
         <Loading height="180px" />
       ) : rows.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center text-sm text-slate-400 py-8">
+        <div className="flex flex-1 items-center justify-center text-sm text-slate-400 dark:text-slate-500 py-8">
           {t("revenue.empty")}
         </div>
       ) : (
@@ -92,25 +92,25 @@ function RevenueByCollector({ month, center }) {
             return (
               <div key={row.id || "unknown"} className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-sm text-slate-700 min-w-0">
-                    <HiUserCircle className="text-slate-400 text-lg shrink-0" />
+                  <span className="flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-300 min-w-0">
+                    <HiUserCircle className="text-slate-400 dark:text-slate-500 text-lg shrink-0" />
                     <span className="truncate">{row.name || t("revenue.collectorUnknown")}</span>
                     {row.role && (
-                      <span className="text-xs text-slate-400 shrink-0 truncate">
+                      <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0 truncate">
                         · {t(`revenue.roles.${row.role}`)}
                       </span>
                     )}
-                    <span className="text-xs text-slate-300 shrink-0">
+                    <span className="text-xs text-slate-300 dark:text-slate-600 shrink-0">
                       · {t("revenue.transactionCountTiny", { count: row.count })}
                     </span>
                   </span>
                   <NumberText className="text-sm shrink-0">{money(row.amount)}</NumberText>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                  <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-night-800 overflow-hidden">
                     <div className="h-full rounded-full bg-emerald-500" style={{ width: `${percent}%` }} />
                   </div>
-                  <span className="text-xs tabular-nums text-slate-400 w-9 text-right shrink-0">
+                  <span className="text-xs tabular-nums text-slate-400 dark:text-slate-500 w-9 text-right shrink-0">
                     {percent}%
                   </span>
                 </div>
@@ -121,11 +121,11 @@ function RevenueByCollector({ month, center }) {
       )}
 
       {!loading && rows.length > 0 && (
-        <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100 shrink-0">
-          <span className="text-xs text-slate-400">{t("revenue.total")}</span>
+        <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-night-700 shrink-0">
+          <span className="text-xs text-slate-400 dark:text-slate-500">{t("revenue.total")}</span>
           <span className="flex items-baseline gap-1 shrink-0">
             <NumberText className="text-base">{money(total)}</NumberText>
-            <span className="text-xs text-slate-400">{t("student.somSuffix")}</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">{t("student.somSuffix")}</span>
           </span>
         </div>
       )}

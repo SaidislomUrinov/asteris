@@ -179,7 +179,7 @@ function Rooms() {
 
   return (
     <div className="flex flex-col w-full h-full gap-4">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-sm dark:shadow-none shadow-slate-900/[0.02]">
         {/* Filtrlar bo'sh joyni to'ldiradi, amallar (Excel / Xona qo'shish)
             o'ng chekkaga tiraladi — /groups va /staff bilan bir xil naqsh.
             Avval sobit `sm:w-[30%]` / `sm:w-1/5` bo'lgani uchun Excel tugmasi
@@ -232,7 +232,7 @@ function Rooms() {
       </div>
 
       {error ? (
-        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
           <HiHome className="text-4xl" />
           <p className="text-sm">{t("room.loadError")}</p>
           <Button variant="outlined" onClick={fetchRooms}>
@@ -263,7 +263,7 @@ function Rooms() {
                     {
                       label: t("common.edit"),
                       icon: HiPencil,
-                      iconClass: "bg-blue-50 text-blue-600",
+                      iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
                       onClick: () => openEdit(row),
                     },
                     // "O'chirish" endi ARXIVLASH — xona yo'qolmaydi,
@@ -271,7 +271,7 @@ function Rooms() {
                     {
                       label: t("archive.archive"),
                       icon: HiArchiveBox,
-                      iconClass: "bg-amber-50 text-amber-600",
+                      iconClass: "bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400",
                       onClick: () => setDeleteTarget(row),
                     },
                   ]}

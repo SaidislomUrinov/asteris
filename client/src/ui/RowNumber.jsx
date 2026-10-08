@@ -10,7 +10,7 @@
  */
 function RowNumber({ value }) {
   return (
-    <span className="w-6 shrink-0 text-right text-xs font-semibold tabular-nums text-slate-400 max-sm:hidden">
+    <span className="w-6 shrink-0 text-right text-xs font-semibold tabular-nums text-slate-400 dark:text-slate-500 max-sm:hidden">
       {value}
     </span>
   );

@@ -25,7 +25,7 @@ const shortLink = (url) => url.replace(/^https?:\/\//, "");
 function TelegramRow({ label, children }) {
   return (
     <div className="flex items-center gap-2 min-w-0 min-h-7">
-      <span className="w-11 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+      <span className="w-11 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
         {label}
       </span>
       <div className="flex items-center gap-1.5 min-w-0 flex-1">{children}</div>
@@ -107,7 +107,7 @@ function GroupHeader({
               <Chip key={d} value={t(`group.day.${d}`)} color="slate" variant="ghost" />
             ))
           ) : (
-            <span className="text-sm text-slate-400">{t("group.days")}: —</span>
+            <span className="text-sm text-slate-400 dark:text-slate-500">{t("group.days")}: —</span>
           )}
         </div>
       </HeaderCard>
@@ -136,7 +136,7 @@ function GroupHeader({
             {bot ? (
               <TelegramBotLink className="max-w-full !bg-[#229ED9] !text-white !ring-0 !text-sm !py-1.5 hover:!bg-[#1c8bc0]" />
             ) : (
-              <span className="text-sm text-slate-400">{t("group.telegramBotMissing")}</span>
+              <span className="text-sm text-slate-400 dark:text-slate-500">{t("group.telegramBotMissing")}</span>
             )}
           </TelegramRow>
 
@@ -148,7 +148,7 @@ function GroupHeader({
                   target="_blank"
                   rel="noopener noreferrer"
                   title={link}
-                  className="inline-flex items-center gap-1.5 min-w-0 rounded-full bg-emerald-50 pl-2 pr-2.5 py-1.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200/70 hover:bg-emerald-100/70 transition-colors"
+                  className="inline-flex items-center gap-1.5 min-w-0 rounded-full bg-emerald-50 dark:bg-emerald-500/15 pl-2 pr-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-inset ring-emerald-200/70 dark:ring-emerald-500/30 hover:bg-emerald-100/70 dark:hover:bg-emerald-500/20 transition-colors"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                   <span className="truncate">{shortLink(link)}</span>
@@ -160,7 +160,7 @@ function GroupHeader({
                     title={t("group.telegramClickToEdit")}
                     aria-label={t("group.telegramClickToEdit")}
                     onClick={() => setTelegramOpen(true)}
-                    className="ml-auto w-7 h-7 shrink-0 rounded-lg flex items-center justify-center text-base text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
+                    className="ml-auto w-7 h-7 shrink-0 rounded-lg flex items-center justify-center text-base text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-night-800 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
                   >
                     <HiPencilSquare />
                   </button>
@@ -168,8 +168,8 @@ function GroupHeader({
               </>
             ) : (
               <>
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-night-600 shrink-0" />
                   {t("group.telegramNotConnectedShort")}
                 </span>
                 {canEditTelegram && (

@@ -42,7 +42,7 @@ function Lesson() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
         <HiUserGroup className="text-4xl" />
         <p className="text-sm">{t("lesson.error")}</p>
         <Button variant="outlined" onClick={fetchLesson}>
@@ -57,11 +57,11 @@ function Lesson() {
   if (!groupId) {
     return (
       <div className="flex flex-col w-full h-full items-center justify-center gap-2 py-10 px-4 text-center">
-        <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-50 text-2xl text-slate-300">
+        <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-50 dark:bg-night-800 text-2xl text-slate-300 dark:text-slate-600">
           <HiCalendarDays />
         </span>
-        <p className="text-sm font-medium text-slate-600">{t("lesson.emptyState")}</p>
-        <p className="text-xs text-slate-400 max-w-xs">{t("lesson.emptyHint")}</p>
+        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{t("lesson.emptyState")}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 max-w-xs">{t("lesson.emptyHint")}</p>
       </div>
     );
   }

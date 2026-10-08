@@ -118,22 +118,22 @@ function FieldSelect({ value, options, onChange }) {
         ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center gap-2 rounded-xl border bg-white px-3 h-11 text-left transition-colors ${
+        className={`w-full flex items-center gap-2 rounded-xl border bg-white dark:bg-night-900 px-3 h-11 text-left transition-colors ${
           open
-            ? "border-blue-500 ring-3 ring-blue-100"
-            : "border-slate-200 hover:border-slate-300"
+            ? "border-blue-500 ring-3 ring-blue-100 dark:ring-blue-500/30"
+            : "border-slate-200 dark:border-night-700 hover:border-slate-300 dark:hover:border-night-600"
         }`}
       >
-        <span className={`text-base shrink-0 ${value ? "text-blue-500" : "text-slate-400"}`}>
+        <span className={`text-base shrink-0 ${value ? "text-blue-500" : "text-slate-400 dark:text-slate-500"}`}>
           {selected?.icon}
         </span>
         <span
-          className={`flex-1 truncate text-sm ${value ? "text-slate-800 font-medium" : "text-slate-400"}`}
+          className={`flex-1 truncate text-sm ${value ? "text-slate-800 dark:text-slate-100 font-medium" : "text-slate-400 dark:text-slate-500"}`}
         >
           {selected?.label}
         </span>
         <HiChevronDown
-          className={`shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`shrink-0 text-slate-400 dark:text-slate-500 transition-transform ${open ? "rotate-180" : ""}`}
         />
       </button>
 
@@ -143,7 +143,7 @@ function FieldSelect({ value, options, onChange }) {
           <>
             <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
             <div
-              className="fixed z-40 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-[0_8px_24px_-6px_rgba(15,23,42,0.15)]"
+              className="fixed z-40 overflow-y-auto rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 p-1.5 shadow-[0_8px_24px_-6px_rgba(15,23,42,0.15)] dark:shadow-none"
               style={{ top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxHeight }}
             >
               {options.map((o) => {
@@ -157,10 +157,10 @@ function FieldSelect({ value, options, onChange }) {
                       setOpen(false);
                     }}
                     className={`w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-left transition-colors ${
-                      active ? "bg-blue-50 text-blue-700 font-medium" : "text-slate-700 hover:bg-slate-50"
+                      active ? "bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 font-medium" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-night-800"
                     }`}
                   >
-                    <span className={`text-base shrink-0 ${active ? "text-blue-500" : "text-slate-400"}`}>
+                    <span className={`text-base shrink-0 ${active ? "text-blue-500" : "text-slate-400 dark:text-slate-500"}`}>
                       {o.icon}
                     </span>
                     <span className="flex-1 truncate">{o.label}</span>
@@ -571,15 +571,15 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
         // `min-w-0` yo'q, shuning uchun `truncate` ishlatilsa sarlavha tor
         // ekranda qisqarmay yopish tugmasini siqib chiqarardi.
         <span className="flex items-center gap-3 min-w-0">
-          <span className="shrink-0 size-10 rounded-xl bg-blue-50 text-blue-500 grid place-items-center text-xl">
+          <span className="shrink-0 size-10 rounded-xl bg-blue-50 dark:bg-blue-500/15 text-blue-500 grid place-items-center text-xl">
             <HiTableCells />
           </span>
           <span className="flex flex-col min-w-0">
-            <span className="text-base sm:text-xl font-semibold text-slate-800 leading-tight">
+            <span className="text-base sm:text-xl font-semibold text-slate-800 dark:text-slate-100 leading-tight">
               {t("import.title")}
             </span>
             {step === "mapping" && !result && (
-              <span className="text-xs sm:text-[13px] font-normal text-slate-500 leading-tight">
+              <span className="text-xs sm:text-[13px] font-normal text-slate-500 dark:text-slate-400 leading-tight">
                 {t("import.mappingHint")}
               </span>
             )}
@@ -641,7 +641,7 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
       {result ? (
         <div className="flex flex-col gap-3 items-center py-6 text-center">
           <HiCheckCircle className="text-5xl text-emerald-500" />
-          <p className="text-slate-800 font-semibold">
+          <p className="text-slate-800 dark:text-slate-100 font-semibold">
             {t("import.done", {
               created: result.created ?? 0,
               enrolled: result.enrolled ?? 0,
@@ -654,7 +654,7 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
               {result.results
                 .filter((r) => !r.ok)
                 .map((r) => (
-                  <p key={r.index} className="text-xs text-red-600 flex items-center gap-1.5">
+                  <p key={r.index} className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1.5">
                     <HiExclamationTriangle className="shrink-0" />
                     {t("import.rowLabel", { index: r.index + 1 })}: {t(r.error, { defaultValue: r.error })}
                   </p>
@@ -662,7 +662,7 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
             </div>
           )}
           {undone && (
-            <p className="text-xs text-emerald-600 flex items-center gap-1.5">
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
               <HiCheckCircle className="shrink-0" /> {t("import.undone")}
             </p>
           )}
@@ -673,7 +673,7 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
               turardi va oyna cho'zilib ketardi. Tab uslubi GroupDetail'dagi
               o'quvchilar tablari bilan bir xil (umumiy `ui/` komponenti yo'q,
               shu sabab lokal takrorlanadi). */}
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 overflow-x-auto">
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-night-800 overflow-x-auto">
             {[
               // Mobilda qisqa yorliq: to'liq uchtasi 390px ekranga sig'maydi
               // (351px kerak, 326px bor) va uchinchisi ko'rinmay qolardi.
@@ -687,8 +687,8 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
                 onClick={() => setInputTab(tab.key)}
                 className={`flex items-center justify-center gap-1.5 shrink-0 px-2.5 sm:px-3 h-8 rounded-lg text-[12px] sm:text-[13px] font-semibold whitespace-nowrap cursor-pointer transition-colors duration-150 ${
                   inputTab === tab.key
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
+                    ? "bg-white dark:bg-night-900 text-slate-900 dark:text-slate-100 shadow-sm dark:shadow-none"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                 }`}
               >
                 <span className="shrink-0">{tab.icon}</span>
@@ -713,16 +713,16 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
           <div className="min-h-62.5">
             {inputTab === "paste" && (
               <div className="flex flex-col gap-1.5">
-                <span className="pl-2 text-sm text-slate-800">{t("import.pasteLabel")}</span>
+                <span className="pl-2 text-sm text-slate-800 dark:text-slate-100">{t("import.pasteLabel")}</span>
                 <textarea
                   value={pasteText}
                   onChange={(e) => setPasteText(e.target.value)}
                   placeholder={t("import.pastePlaceholder")}
                   rows={7}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-100 p-3 text-[13px] text-slate-800 outline-none focus:ring-3 focus:ring-blue-100 focus:border-blue-500 resize-none"
+                  className="w-full rounded-lg border border-slate-200 dark:border-night-700 bg-slate-100 dark:bg-night-800 p-3 text-[13px] text-slate-800 dark:text-slate-100 outline-none focus:ring-3 focus:ring-blue-100 dark:focus:ring-blue-500/30 focus:border-blue-500 resize-none"
                 />
-                <p className="pl-2 text-xs text-slate-400">{t("import.pasteHint")}</p>
-                <p className="pl-2 text-xs text-slate-400">{t("import.telegramColumnsHint")}</p>
+                <p className="pl-2 text-xs text-slate-400 dark:text-slate-500">{t("import.pasteHint")}</p>
+                <p className="pl-2 text-xs text-slate-400 dark:text-slate-500">{t("import.telegramColumnsHint")}</p>
               </div>
             )}
 
@@ -739,22 +739,22 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
                   onDrop={handleDrop}
                   className={`flex flex-col items-center justify-center gap-3 w-full px-6 py-10 rounded-xl border-2 border-dashed cursor-pointer transition-colors duration-150 ${
                     dragging
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50/40"
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-500/15"
+                      : "border-slate-200 dark:border-night-700 bg-slate-50 dark:bg-night-800 hover:border-blue-300 hover:bg-blue-50/40 dark:hover:bg-blue-500/15"
                   }`}
                 >
                   <span
                     className={`grid place-items-center size-12 rounded-2xl text-2xl transition-colors duration-150 ${
-                      dragging ? "bg-blue-500 text-white" : "bg-white text-blue-500 shadow-sm"
+                      dragging ? "bg-blue-500 text-white" : "bg-white dark:bg-night-900 text-blue-500 shadow-sm dark:shadow-none"
                     }`}
                   >
                     <HiArrowUpTray />
                   </span>
                   <span className="flex flex-col items-center gap-1 text-center">
-                    <span className="text-sm font-semibold text-slate-800">
+                    <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                       {t("import.dropTitle")}
                     </span>
-                    <span className="text-xs text-slate-400">{t("import.dropFormats")}</span>
+                    <span className="text-xs text-slate-400 dark:text-slate-500">{t("import.dropFormats")}</span>
                   </span>
                   {/* `import.chooseFile` kengaytmalarni ham o'z ichiga oladi —
                       bu yerda ular yuqorida allaqachon yozilgani uchun qisqa
@@ -763,25 +763,25 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
                     {t("import.dropBrowse")}
                   </span>
                 </button>
-                <p className="pl-2 text-xs text-slate-400">{t("import.fileHint")}</p>
-                <p className="pl-2 text-xs text-slate-400">{t("import.telegramColumnsHint")}</p>
+                <p className="pl-2 text-xs text-slate-400 dark:text-slate-500">{t("import.fileHint")}</p>
+                <p className="pl-2 text-xs text-slate-400 dark:text-slate-500">{t("import.telegramColumnsHint")}</p>
               </div>
             )}
 
             {inputTab === "help" && (
               <div className="flex flex-col gap-4 pl-2 pt-1">
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-semibold text-slate-800">
+                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                     {t("import.helpTitle")}
                   </span>
-                  <p className="text-[13px] text-slate-500 leading-relaxed">
+                  <p className="text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed">
                     {t("import.helpDesc")}
                   </p>
                 </div>
 
                 <div className="flex flex-col gap-2">
                   {["helpPointStudents", "helpPointDebt", "helpPointFormat"].map((key) => (
-                    <span key={key} className="flex items-start gap-2 text-[13px] text-slate-600">
+                    <span key={key} className="flex items-start gap-2 text-[13px] text-slate-600 dark:text-slate-300">
                       <HiCheckCircle className="shrink-0 mt-0.5 text-emerald-500" />
                       {t(`import.${key}`)}
                     </span>
@@ -800,7 +800,7 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
                   {t("import.helpCta")}
                 </a>
 
-                <p className="text-xs text-slate-400">{t("import.helpNote")}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500">{t("import.helpNote")}</p>
               </div>
             )}
           </div>
@@ -817,30 +817,30 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
                 <div
                   key={idx}
                   className={`grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,15rem)] items-center gap-3 rounded-[14px] border p-3 transition-colors ${
-                    mapped ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50/60"
+                    mapped ? "border-slate-200 dark:border-night-700 bg-white dark:bg-night-900" : "border-slate-200 dark:border-night-700 bg-slate-50/60 dark:bg-night-800/60"
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span
                       className={`shrink-0 size-7 rounded-full grid place-items-center text-xs font-semibold ${
-                        mapped ? "bg-blue-50 text-blue-600" : "bg-slate-200/70 text-slate-500"
+                        mapped ? "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400" : "bg-slate-200/70 dark:bg-night-700/70 text-slate-500 dark:text-slate-400"
                       }`}
                     >
                       {idx + 1}
                     </span>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-[11px] uppercase tracking-wide text-slate-400">
+                      <span className="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
                         {hasHeader && String(header ?? "").trim()
                           ? String(header).trim()
                           : t("import.column", { index: idx + 1 })}
                       </span>
-                      <span className="text-sm text-slate-800 font-medium truncate">
+                      <span className="text-sm text-slate-800 dark:text-slate-100 font-medium truncate">
                         {sample || "—"}
                       </span>
                     </div>
                   </div>
 
-                  <HiArrowRight className="hidden sm:block shrink-0 text-slate-300" />
+                  <HiArrowRight className="hidden sm:block shrink-0 text-slate-300 dark:text-slate-600" />
 
                   <FieldSelect
                     value={mapping[idx] || ""}
@@ -852,26 +852,26 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
             })}
           </div>
 
-          <label className="flex items-center gap-2.5 text-sm text-slate-600 cursor-pointer select-none">
+          <label className="flex items-center gap-2.5 text-sm text-slate-600 dark:text-slate-300 cursor-pointer select-none">
             <span className="relative grid place-items-center">
               <input
                 type="checkbox"
                 checked={hasHeader}
                 onChange={(e) => setHasHeader(e.target.checked)}
-                className="peer appearance-none size-5 rounded-md border border-slate-300 bg-white transition-colors checked:bg-blue-500 checked:border-blue-500 focus-visible:ring-3 focus-visible:ring-blue-100 outline-none cursor-pointer"
+                className="peer appearance-none size-5 rounded-md border border-slate-300 dark:border-night-600 bg-white dark:bg-night-900 transition-colors checked:bg-blue-500 checked:border-blue-500 focus-visible:ring-3 focus-visible:ring-blue-100 dark:focus-visible:ring-blue-500/30 outline-none cursor-pointer"
               />
               <HiCheck className="pointer-events-none absolute text-white text-sm opacity-0 peer-checked:opacity-100" />
             </span>
             {t("import.firstRowIsHeader")}
             <HiInformationCircle
-              className="text-slate-300 hover:text-slate-400 transition-colors"
+              className="text-slate-300 dark:text-slate-600 hover:text-slate-400 dark:hover:text-slate-500 transition-colors"
               title={t("import.headerHint")}
             />
           </label>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between text-xs text-slate-500 flex-wrap gap-1">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 flex-wrap gap-1">
             <span>{t("import.rowsCount", { count: rows.length })}</span>
             {invalidCount > 0 && (
               <span className="text-red-500 flex items-center gap-1">
@@ -880,10 +880,10 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
             )}
           </div>
 
-          <div className="w-full overflow-x-auto rounded-lg border border-slate-200">
+          <div className="w-full overflow-x-auto rounded-lg border border-slate-200 dark:border-night-700">
             <table className={`${showTelegramCols ? "min-w-[1120px]" : "min-w-[820px]"} w-full text-[13px]`}>
               <thead>
-                <tr className="bg-slate-50 text-slate-500 text-xs">
+                <tr className="bg-slate-50 dark:bg-night-800 text-slate-500 dark:text-slate-400 text-xs">
                   <th className="text-left px-2 py-2 font-medium">{t("student.fullName")}</th>
                   <th className="text-left px-2 py-2 font-medium">{t("student.phone")}</th>
                   <th className="text-left px-2 py-2 font-medium">{t("student.parentPhone")}</th>
@@ -903,20 +903,20 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
                   const errs = rowErrors[r._key] || {};
                   const match = lookupCache[PHONE_PREFIX + r.phone.trim()];
                   return (
-                    <tr key={r._key} className="border-t border-slate-100 align-top">
+                    <tr key={r._key} className="border-t border-slate-100 dark:border-night-700 align-top">
                       <td className="p-1.5">
                         <input
                           value={r.fullName}
                           onChange={(e) => updateRow(r._key, "fullName", e.target.value)}
-                          className={`w-full min-w-[140px] h-9 px-2 rounded-md border bg-white outline-none focus:ring-2 focus:ring-blue-100 ${
-                            errs.fullName ? "border-red-400" : "border-slate-200"
+                          className={`w-full min-w-[140px] h-9 px-2 rounded-md border bg-white dark:bg-night-900 outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/30 ${
+                            errs.fullName ? "border-red-400" : "border-slate-200 dark:border-night-700"
                           }`}
                         />
                         {errs.fullName && <p className="text-[11px] text-red-500 mt-0.5">{errs.fullName}</p>}
                       </td>
                       <td className="p-1.5">
                         <div className="flex items-center gap-1">
-                          <span className="text-xs text-slate-400 shrink-0">+998</span>
+                          <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">+998</span>
                           <input
                             value={r.phone}
                             onChange={(e) => {
@@ -924,8 +924,8 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
                               updateRow(r._key, "phone", digits);
                               runLookup(r._key, digits);
                             }}
-                            className={`w-full min-w-[100px] h-9 px-2 rounded-md border bg-white outline-none focus:ring-2 focus:ring-blue-100 ${
-                              errs.phone ? "border-red-400" : "border-slate-200"
+                            className={`w-full min-w-[100px] h-9 px-2 rounded-md border bg-white dark:bg-night-900 outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/30 ${
+                              errs.phone ? "border-red-400" : "border-slate-200 dark:border-night-700"
                             }`}
                           />
                         </div>
@@ -937,7 +937,7 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
                               updateRow(r._key, "existingStudentId", r.existingStudentId ? null : match._id)
                             }
                             className={`mt-0.5 flex items-center gap-1 text-[11px] cursor-pointer ${
-                              r.existingStudentId ? "text-emerald-600 font-medium" : "text-blue-500 underline"
+                              r.existingStudentId ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-blue-500 underline"
                             }`}
                           >
                             <HiUser className="shrink-0" />
@@ -951,7 +951,7 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
                         <input
                           value={r.parentPhone}
                           onChange={(e) => updateRow(r._key, "parentPhone", e.target.value)}
-                          className="w-full min-w-[120px] h-9 px-2 rounded-md border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-blue-100"
+                          className="w-full min-w-[120px] h-9 px-2 rounded-md border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/30"
                         />
                       </td>
                       {showTelegramCols &&
@@ -961,8 +961,8 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
                               value={r[field]}
                               placeholder="+998..."
                               onChange={(e) => updateRow(r._key, field, sanitizeTelegramInput(e.target.value))}
-                              className={`w-full min-w-[130px] h-9 px-2 rounded-md border bg-white outline-none focus:ring-2 focus:ring-blue-100 ${
-                                errs[field] ? "border-red-400" : "border-slate-200"
+                              className={`w-full min-w-[130px] h-9 px-2 rounded-md border bg-white dark:bg-night-900 outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/30 ${
+                                errs[field] ? "border-red-400" : "border-slate-200 dark:border-night-700"
                               }`}
                             />
                             {errs[field] && <p className="text-[11px] text-red-500 mt-0.5">{errs[field]}</p>}
@@ -973,21 +973,21 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
                           value={r.price}
                           placeholder={String(defaultPrice ?? "")}
                           onChange={(e) => updateRow(r._key, "price", cleanNumber(e.target.value))}
-                          className="w-full min-w-[100px] h-9 px-2 rounded-md border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-blue-100"
+                          className="w-full min-w-[100px] h-9 px-2 rounded-md border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/30"
                         />
                       </td>
                       <td className="p-1.5">
                         <input
                           value={r.openingBalance}
                           onChange={(e) => updateRow(r._key, "openingBalance", cleanNumber(e.target.value))}
-                          className="w-full min-w-[100px] h-9 px-2 rounded-md border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-blue-100"
+                          className="w-full min-w-[100px] h-9 px-2 rounded-md border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/30"
                         />
                       </td>
                       <td className="p-1.5 text-center">
                         <button
                           type="button"
                           onClick={() => removeRow(r._key)}
-                          className="text-slate-400 hover:text-red-500 cursor-pointer"
+                          className="text-slate-400 dark:text-slate-500 hover:text-red-500 cursor-pointer"
                         >
                           <HiTrash />
                         </button>

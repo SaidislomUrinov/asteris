@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import ChartCard from "../../ui/ChartCard";
+import useTheme from "../../hooks/useTheme";
 import {
   Area,
   AreaChart,
@@ -22,6 +23,7 @@ function formatDay(unix) {
 // legend shart emas (sarlavha seriyani ataydi).
 function RevenueChart({ payments = [] }) {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
 
   const data = useMemo(() => {
     const todayStart = new Date();
@@ -49,7 +51,7 @@ function RevenueChart({ payments = [] }) {
 
   return (
     <ChartCard>
-      <p className="font-semibold text-slate-800 shrink-0">{t("group.revenueChartTitle")}</p>
+      <p className="font-semibold text-slate-800 dark:text-slate-100 shrink-0">{t("group.revenueChartTitle")}</p>
 
       <div className="w-full flex-1 min-h-44">
         <ResponsiveContainer width="100%" height="100%">
@@ -60,11 +62,11 @@ function RevenueChart({ payments = [] }) {
                 <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid vertical={false} stroke="#e2e8f0" strokeDasharray="0" />
+            <CartesianGrid vertical={false} stroke={isDark ? "#1e2e52" : "#e2e8f0"} strokeDasharray="0" />
             <XAxis
               dataKey="label"
               tickLine={false}
-              axisLine={{ stroke: "#e2e8f0" }}
+              axisLine={{ stroke: isDark ? "#1e2e52" : "#e2e8f0" }}
               tick={{ fill: "#94a3b8", fontSize: 11 }}
               interval="preserveStartEnd"
             />
@@ -76,8 +78,9 @@ function RevenueChart({ payments = [] }) {
               ]}
               contentStyle={{
                 borderRadius: 10,
-                border: "1px solid #e2e8f0",
+                border: isDark ? "1px solid #1e2e52" : "1px solid #e2e8f0",
                 fontSize: 12,
+                ...(isDark ? { background: "#0d1830", color: "#e2e8f0" } : {}),
               }}
             />
             <Area
@@ -87,7 +90,7 @@ function RevenueChart({ payments = [] }) {
               strokeWidth={3}
               fill="url(#revenueFill)"
               dot={false}
-              activeDot={{ r: 4, fill: "#10b981", stroke: "#fff", strokeWidth: 2 }}
+              activeDot={{ r: 4, fill: "#10b981", stroke: isDark ? "#0d1830" : "#fff", strokeWidth: 2 }}
             />
           </AreaChart>
         </ResponsiveContainer>

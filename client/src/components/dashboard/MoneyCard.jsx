@@ -1,7 +1,7 @@
 import NumberText from "../../ui/NumberText";
 
 // Moliyaviy ko'rsatkichlar — sahifadagi ENG muhim raqamlar, shuning uchun
-// katta, rangli (gradient) kartalarda. `NumberText`da `text-black` qat'iy
+// katta, rangli (gradient) kartalarda. `NumberText`da `text-black dark:text-slate-100` qat'iy
 // yozilgani uchun oq rang `!` bilan bekor qilinadi.
 function MoneyCard({ icon, label, value, suffix, hint, gradient, shadow }) {
   return (
@@ -14,7 +14,7 @@ function MoneyCard({ icon, label, value, suffix, hint, gradient, shadow }) {
       </span>
 
       <div className="relative flex items-center gap-2">
-        <span className="flex items-center justify-center w-9 h-9 shrink-0 rounded-xl bg-white/20 text-lg">
+        <span className="flex items-center justify-center w-9 h-9 shrink-0 rounded-xl bg-white/20 dark:bg-night-900/20 text-lg">
           {icon}
         </span>
         <span className="text-sm font-medium text-white/90">{label}</span>

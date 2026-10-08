@@ -60,7 +60,7 @@ function Dialog({
         className={`fixed inset-0 flex items-center justify-center ${zIndex} p-4`}
       >
         <div
-          className={`bg-white rounded-3xl shadow-[0_24px_60px_-12px_rgba(15,23,42,0.25)] w-full md:w-150 relative isolate ${
+          className={`bg-white dark:bg-night-900 rounded-3xl shadow-[0_24px_60px_-12px_rgba(15,23,42,0.25)] dark:shadow-none w-full md:w-150 relative isolate ${
             closing ? "animate-dialog-out" : "animate-dialog-in"
           } ${className}`}
           onClick={(e) => e.stopPropagation()}
@@ -79,16 +79,16 @@ function Dialog({
           <div className="flex justify-between items-start gap-4 px-6 pt-6 pb-4">
             <div className="flex flex-col gap-1.5 min-w-0">
               {eyebrow ? (
-                <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-600">
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-600 dark:text-blue-400">
                   <span className="size-1.5 rounded-full bg-blue-500" />
                   {eyebrow}
                 </span>
               ) : null}
-              <h3 className="text-[24px] leading-tight text-slate-900 font-semibold tracking-tight">
+              <h3 className="text-[24px] leading-tight text-slate-900 dark:text-slate-100 font-semibold tracking-tight">
                 {title}
               </h3>
               {description ? (
-                <p className="text-sm text-slate-500 leading-relaxed">
+                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                   {description}
                 </p>
               ) : null}
@@ -98,7 +98,7 @@ function Dialog({
               type="button"
               onClick={onClose}
               aria-label={t("common.close")}
-              className="shrink-0 inline-flex items-center justify-center size-9 rounded-full bg-white/70 text-slate-400 backdrop-blur-sm cursor-pointer hover:bg-slate-100 hover:text-slate-700 active:scale-95 duration-200"
+              className="shrink-0 inline-flex items-center justify-center size-9 rounded-full bg-white/70 dark:bg-night-900/70 text-slate-400 dark:text-slate-500 backdrop-blur-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-night-800 hover:text-slate-700 dark:hover:text-slate-300 active:scale-95 duration-200"
             >
               <HiXMark className="text-[20px]" />
             </button>
@@ -111,7 +111,7 @@ function Dialog({
             {children}
           </div>
           {actions ? (
-            <div className="flex items-center border-t border-slate-100 py-3 justify-end w-full px-6 gap-2">
+            <div className="flex items-center border-t border-slate-100 dark:border-night-700 py-3 justify-end w-full px-6 gap-2">
               {actions}
             </div>
           ) : (

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import useTheme from "../../hooks/useTheme";
 import {
   DAY_RANGE_FROM,
   DAY_RANGE_TO,
@@ -37,14 +38,14 @@ const RESIZE_EDGE_PX = 7;
 // Fan (label) bo'yicha barqaror rang — bir fan butun jadvalda bir xil rangda
 // ko'rinadi, shuning uchun xona bandligi bir qarashda o'qiladi.
 const PALETTE = [
-  { block: "bg-blue-50 border-blue-200", accent: "bg-blue-500", text: "text-blue-950", sub: "text-blue-700/80", dot: "bg-blue-500" },
-  { block: "bg-violet-50 border-violet-200", accent: "bg-violet-500", text: "text-violet-950", sub: "text-violet-700/80", dot: "bg-violet-500" },
-  { block: "bg-emerald-50 border-emerald-200", accent: "bg-emerald-500", text: "text-emerald-950", sub: "text-emerald-700/80", dot: "bg-emerald-500" },
-  { block: "bg-amber-50 border-amber-200", accent: "bg-amber-500", text: "text-amber-950", sub: "text-amber-700/80", dot: "bg-amber-500" },
-  { block: "bg-rose-50 border-rose-200", accent: "bg-rose-500", text: "text-rose-950", sub: "text-rose-700/80", dot: "bg-rose-500" },
-  { block: "bg-cyan-50 border-cyan-200", accent: "bg-cyan-500", text: "text-cyan-950", sub: "text-cyan-700/80", dot: "bg-cyan-500" },
-  { block: "bg-indigo-50 border-indigo-200", accent: "bg-indigo-500", text: "text-indigo-950", sub: "text-indigo-700/80", dot: "bg-indigo-500" },
-  { block: "bg-teal-50 border-teal-200", accent: "bg-teal-500", text: "text-teal-950", sub: "text-teal-700/80", dot: "bg-teal-500" },
+  { block: "bg-blue-50 dark:bg-blue-500/15 border-blue-200 dark:border-blue-500/30", accent: "bg-blue-500", text: "text-blue-950 dark:text-blue-400", sub: "text-blue-700/80 dark:text-blue-400", dot: "bg-blue-500" },
+  { block: "bg-violet-50 dark:bg-violet-500/15 border-violet-200 dark:border-violet-500/30", accent: "bg-violet-500", text: "text-violet-950 dark:text-violet-400", sub: "text-violet-700/80 dark:text-violet-400", dot: "bg-violet-500" },
+  { block: "bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-500/30", accent: "bg-emerald-500", text: "text-emerald-950 dark:text-emerald-400", sub: "text-emerald-700/80 dark:text-emerald-400", dot: "bg-emerald-500" },
+  { block: "bg-amber-50 dark:bg-amber-500/15 border-amber-200 dark:border-amber-500/30", accent: "bg-amber-500", text: "text-amber-950 dark:text-amber-400", sub: "text-amber-700/80 dark:text-amber-400", dot: "bg-amber-500" },
+  { block: "bg-rose-50 dark:bg-rose-500/15 border-rose-200 dark:border-rose-500/30", accent: "bg-rose-500", text: "text-rose-950 dark:text-rose-400", sub: "text-rose-700/80 dark:text-rose-400", dot: "bg-rose-500" },
+  { block: "bg-cyan-50 dark:bg-cyan-500/15 border-cyan-200 dark:border-cyan-500/30", accent: "bg-cyan-500", text: "text-cyan-950 dark:text-cyan-400", sub: "text-cyan-700/80 dark:text-cyan-400", dot: "bg-cyan-500" },
+  { block: "bg-indigo-50 dark:bg-indigo-500/15 border-indigo-200 dark:border-indigo-500/30", accent: "bg-indigo-500", text: "text-indigo-950 dark:text-indigo-400", sub: "text-indigo-700/80 dark:text-indigo-400", dot: "bg-indigo-500" },
+  { block: "bg-teal-50 dark:bg-teal-500/15 border-teal-200 dark:border-teal-500/30", accent: "bg-teal-500", text: "text-teal-950 dark:text-teal-400", sub: "text-teal-700/80 dark:text-teal-400", dot: "bg-teal-500" },
 ];
 
 // Bitta kun uchun band bloklar orasidagi bo'sh oraliqlar — bo'sh joyga
@@ -135,6 +136,8 @@ function WeeklyRoomSchedule({
   fill = false,
 }) {
   const { t } = useTranslation();
+  // Soat chiziqlari inline `style`da — `dark:` ishlamaydi.
+  const { isDark } = useTheme();
   const columnsRef = useRef({});
   // Surish tugagach ustunga "click" ham yetib keladi — bo'sh slot dialogi
   // beixtiyor ochilib ketmasligi uchun keyingi bosish o'tkazib yuboriladi.
@@ -339,7 +342,7 @@ function WeeklyRoomSchedule({
 
   if (groups.length === 0) {
     return (
-      <div className="flex items-center justify-center w-full py-10 text-slate-400 text-sm">
+      <div className="flex items-center justify-center w-full py-10 text-slate-400 dark:text-slate-500 text-sm">
         {t("room.noGroupsYet")}
       </div>
     );
@@ -425,16 +428,16 @@ function WeeklyRoomSchedule({
   return (
     <div className={`flex flex-col gap-3 w-full min-w-0 ${fill ? "flex-1 min-h-0" : ""}`}>
       <div
-        className={`w-full isolate overflow-auto rounded-xl border border-slate-200 bg-white ${
+        className={`w-full isolate overflow-auto rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 ${
           busyCursor ? "select-none" : ""
         } ${fill ? "flex-1 min-h-0" : ""}`}
         style={fill ? undefined : { maxHeight: compact ? "48vh" : "68vh" }}
       >
         <div className="min-w-max">
           {/* Sarlavha: kunlar + har kunning bandligi */}
-          <div className="sticky top-0 z-20 flex bg-white/95 backdrop-blur-sm border-b border-slate-200">
+          <div className="sticky top-0 z-20 flex bg-white/95 dark:bg-night-900/95 backdrop-blur-sm border-b border-slate-200 dark:border-night-700">
             <div
-              className="sticky left-0 z-10 shrink-0 bg-white/95 border-r border-slate-200"
+              className="sticky left-0 z-10 shrink-0 bg-white/95 dark:bg-night-900/95 border-r border-slate-200 dark:border-night-700"
               style={{ width: gutterPx }}
             />
             {DAYS.map((day) => {
@@ -444,33 +447,33 @@ function WeeklyRoomSchedule({
               return (
                 <div
                   key={day}
-                  className={`flex-1 ${colMin} px-2 py-2 border-l border-slate-300 transition-colors ${
-                    isTarget ? "bg-blue-100/70" : isToday ? "bg-blue-50/70" : ""
+                  className={`flex-1 ${colMin} px-2 py-2 border-l border-slate-300 dark:border-night-600 transition-colors ${
+                    isTarget ? "bg-blue-100/70 dark:bg-blue-500/20" : isToday ? "bg-blue-50/70 dark:bg-blue-500/15" : ""
                   }`}
                 >
                   <div className="flex items-center gap-1.5">
                     <span
                       className={`text-base font-bold uppercase tracking-wider ${
-                        isToday ? "text-blue-700" : "text-slate-600"
+                        isToday ? "text-blue-700 dark:text-blue-400" : "text-slate-600 dark:text-slate-300"
                       }`}
                     >
                       {t(`group.dayShort.${day}`)}
                     </span>
-                    <span className="text-sm text-slate-400 truncate">
+                    <span className="text-sm text-slate-400 dark:text-slate-500 truncate">
                       {t(`group.day.${day}`)}
                     </span>
                   </div>
                   <div className="mt-0.5 flex items-center gap-1.5 text-sm">
                     {blocks.length ? (
                       <>
-                        <span className="font-semibold text-slate-700">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">
                           {t("room.lessonCount", { count: blocks.length })}
                         </span>
-                        <span className="text-slate-300">·</span>
-                        <span className="text-slate-500 font-jet">{fmtDuration(busy)}</span>
+                        <span className="text-slate-300 dark:text-slate-600">·</span>
+                        <span className="text-slate-500 dark:text-slate-400 font-jet">{fmtDuration(busy)}</span>
                       </>
                     ) : (
-                      <span className="text-emerald-600 font-medium">{t("room.dayFree")}</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t("room.dayFree")}</span>
                     )}
                   </div>
                 </div>
@@ -482,13 +485,13 @@ function WeeklyRoomSchedule({
           <div className="relative flex">
             {/* Soat ustuni */}
             <div
-              className="sticky left-0 z-10 shrink-0 bg-white border-r border-slate-200"
+              className="sticky left-0 z-10 shrink-0 bg-white dark:bg-night-900 border-r border-slate-200 dark:border-night-700"
               style={{ width: gutterPx, height: bodyPx }}
             >
               {hours.map((h, i) => (
                 <div
                   key={h}
-                  className={`absolute right-2 text-sm font-jet font-semibold text-slate-900 tabular-nums ${
+                  className={`absolute right-2 text-sm font-jet font-semibold text-slate-900 dark:text-slate-100 tabular-nums ${
                     i === 0 ? "" : "-translate-y-1/2"
                   }`}
                   style={{ top: i * hourPx }}
@@ -503,7 +506,7 @@ function WeeklyRoomSchedule({
               className="relative flex flex-1"
               style={{
                 height: bodyPx,
-                backgroundImage: `repeating-linear-gradient(to bottom, rgb(203 213 225) 0 1px, transparent 1px ${hourPx}px)`,
+                backgroundImage: `repeating-linear-gradient(to bottom, ${isDark ? "rgb(30 46 82)" : "rgb(203 213 225)"} 0 1px, transparent 1px ${hourPx}px)`,
               }}
             >
               {DAYS.map((day) => {
@@ -517,10 +520,10 @@ function WeeklyRoomSchedule({
                       columnsRef.current[day] = el;
                     }}
                     onClick={(e) => handleColumnClick(day, e)}
-                    className={`relative flex-1 ${colMin} border-l border-slate-300 ${
-                      day === "sun" ? "bg-slate-50/60" : ""
-                    } ${isToday ? "bg-blue-50/40" : ""} ${isTarget ? "bg-blue-50/70" : ""} ${
-                      onFreeSlotClick && !busyCursor ? "cursor-pointer hover:bg-emerald-50/50" : ""
+                    className={`relative flex-1 ${colMin} border-l border-slate-300 dark:border-night-600 ${
+                      day === "sun" ? "bg-slate-50/60 dark:bg-night-800/60" : ""
+                    } ${isToday ? "bg-blue-50/40 dark:bg-blue-500/15" : ""} ${isTarget ? "bg-blue-50/70 dark:bg-blue-500/15" : ""} ${
+                      onFreeSlotClick && !busyCursor ? "cursor-pointer hover:bg-emerald-50/50 dark:hover:bg-emerald-500/15" : ""
                     }`}
                   >
                     {blocks.map((g) => {
@@ -563,18 +566,18 @@ function WeeklyRoomSchedule({
                           }}
                           title={`${g.label} · ${toHHMM(startMin)}–${toHHMM(endMin)}${g.teacher ? ` · ${g.teacher}` : ""}`}
                           className={`absolute overflow-hidden flex text-left rounded-md border transition-[opacity,box-shadow] duration-150 ${
-                            invalid ? "bg-red-50 border-red-300 ring-2 ring-red-400" : c.block
+                            invalid ? "bg-red-50 dark:bg-red-500/15 border-red-300 ring-2 ring-red-400" : c.block
                           } ${isPending ? "border-dashed" : ""} ${
                             isCurrent && !invalid ? "ring-2 ring-violet-400 z-10" : ""
                           } ${
                             // Tahrirlash modalida joriy guruh tiniq turadi,
                             // qolganlari xiralashadi (kursor tegsa qaytadi).
                             currentGroupId && !isCurrent ? "opacity-30 hover:opacity-100" : ""
-                          } ${live?.ghost ? "z-20 shadow-lg" : ""} ${saving ? "opacity-60" : ""} ${
+                          } ${live?.ghost ? "z-20 shadow-lg dark:shadow-none" : ""} ${saving ? "opacity-60" : ""} ${
                             draggable
-                              ? "cursor-grab active:cursor-grabbing hover:shadow-md hover:z-10"
+                              ? "cursor-grab active:cursor-grabbing hover:shadow-md dark:hover:shadow-none hover:z-10"
                               : onGroupClick
-                                ? "cursor-pointer hover:shadow-md hover:z-10"
+                                ? "cursor-pointer hover:shadow-md dark:hover:shadow-none hover:z-10"
                                 : "cursor-default"
                           }`}
                           style={{
@@ -627,9 +630,9 @@ function WeeklyRoomSchedule({
                     {/* Ko'chirish arvohi — dars shu kunga qayerga tushishi */}
                     {drag?.moved && dragDays.includes(day) && (
                       <div
-                        className={`absolute z-20 overflow-hidden flex rounded-md border shadow-lg pointer-events-none ${
+                        className={`absolute z-20 overflow-hidden flex rounded-md border shadow-lg dark:shadow-none pointer-events-none ${
                           dragInvalid
-                            ? "bg-red-50 border-red-300 ring-2 ring-red-400"
+                            ? "bg-red-50 dark:bg-red-500/15 border-red-300 ring-2 ring-red-400"
                             : `${colorOf(drag.group.label).block} ring-2 ring-blue-400`
                         }`}
                         style={{
@@ -675,7 +678,7 @@ function WeeklyRoomSchedule({
                     style={{ top: (nowMin - rangeStart) * pxPerMin }}
                   >
                     <div className="h-[1.5px] bg-rose-500" />
-                    <div className="absolute left-0 -top-[3px] w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
+                    <div className="absolute left-0 -top-[3px] w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-night-900" />
                   </div>
                 );
               })()}
@@ -685,7 +688,7 @@ function WeeklyRoomSchedule({
       </div>
 
       {/* Legenda: fan → rang, va haftalik jami bandlik */}
-      <div className="flex flex-wrap shrink-0 items-center gap-x-4 gap-y-1.5 text-sm text-slate-500">
+      <div className="flex flex-wrap shrink-0 items-center gap-x-4 gap-y-1.5 text-sm text-slate-500 dark:text-slate-400">
         {subjects.map((s) => (
           <span key={s} className="flex items-center gap-1.5">
             <span className={`w-2 h-2 rounded-full ${colorOf(s).dot}`} />
@@ -696,7 +699,7 @@ function WeeklyRoomSchedule({
           <span className="w-3 h-2 rounded-sm border border-dashed border-slate-400" />
           {t("group.statusPending")}
         </span>
-        <span className="ms-auto font-medium text-slate-600">
+        <span className="ms-auto font-medium text-slate-600 dark:text-slate-300">
           {t("room.weekBusy")}: <span className="font-jet">{fmtDuration(weekBusyMin)}</span>
         </span>
       </div>

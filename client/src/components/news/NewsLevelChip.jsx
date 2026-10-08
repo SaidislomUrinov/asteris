@@ -11,7 +11,7 @@ function NewsLevelChip({ level, size = "md", className = "" }) {
       className={`inline-flex items-center gap-1 rounded-md font-semibold ${
         size === "sm" ? "h-5 px-1.5 text-[10px]" : "h-6 px-2 text-[11px]"
       } ${
-        critical ? "bg-red-50 text-red-600 ring-1 ring-red-100" : "bg-amber-50 text-amber-700 ring-1 ring-amber-100"
+        critical ? "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400 ring-1 ring-red-100 dark:ring-red-500/30" : "bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 ring-1 ring-amber-100 dark:ring-amber-500/30"
       } ${className}`}
     >
       {critical ? <HiExclamationTriangle className="text-[13px]" /> : <HiMegaphone className="text-[13px]" />}

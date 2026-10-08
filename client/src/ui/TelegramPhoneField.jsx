@@ -39,7 +39,7 @@ function TelegramPhoneField({
   };
 
   return (
-    <div className="flex flex-col gap-2.5 w-full rounded-xl border border-slate-200 bg-slate-50/60 p-2.5">
+    <div className="flex flex-col gap-2.5 w-full rounded-xl border border-slate-200 dark:border-night-700 bg-slate-50/60 dark:bg-night-800/60 p-2.5">
       {children}
       <Checkbox
         variant="square"
@@ -51,7 +51,7 @@ function TelegramPhoneField({
       />
 
       {!same && (
-        <div className="pl-2 border-l-2 border-slate-200">
+        <div className="pl-2 border-l-2 border-slate-200 dark:border-night-700">
           <div className="pl-2.5">
             <Input
               type="tel"

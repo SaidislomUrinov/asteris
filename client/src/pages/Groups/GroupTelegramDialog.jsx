@@ -80,8 +80,8 @@ function GroupTelegramDialog({ open, group, label, onClose, onSaved }) {
           <div className="flex items-center gap-2.5 p-3 rounded-xl bg-[#229ED9]/[0.06] ring-1 ring-inset ring-[#229ED9]/15">
             <FaTelegram className="text-2xl text-[#229ED9] shrink-0" aria-hidden="true" />
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-semibold text-slate-800 truncate">{label}</span>
-              <span className="text-xs text-slate-500">{t("group.telegramDialogDesc")}</span>
+              <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{label}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{t("group.telegramDialogDesc")}</span>
             </div>
           </div>
         )}

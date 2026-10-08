@@ -45,27 +45,27 @@ const ACCENTS = [
     ring: "hover:border-emerald-400",
     color: "emerald",
     sloganKey: "subscription.sloganQuickStart",
-    box: "bg-emerald-50",
+    box: "bg-emerald-50 dark:bg-emerald-500/15",
     boxIcon: "text-emerald-500",
-    boxValue: "text-emerald-900",
+    boxValue: "text-emerald-900 dark:text-emerald-400",
   },
   {
     border: "border-blue-400",
     ring: "hover:border-blue-500",
     color: "blue",
     sloganKey: "subscription.sloganPopular",
-    box: "bg-blue-50",
+    box: "bg-blue-50 dark:bg-blue-500/15",
     boxIcon: "text-blue-500",
-    boxValue: "text-blue-900",
+    boxValue: "text-blue-900 dark:text-blue-400",
   },
   {
     border: "border-violet-300",
     ring: "hover:border-violet-400",
     color: "violet",
     sloganKey: "subscription.sloganFull",
-    box: "bg-violet-50",
+    box: "bg-violet-50 dark:bg-violet-500/15",
     boxIcon: "text-violet-500",
-    boxValue: "text-violet-900",
+    boxValue: "text-violet-900 dark:text-violet-400",
   },
 ];
 
@@ -247,7 +247,7 @@ function TariffsTab() {
 
   if (error)
     return (
-      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 py-10">
+      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500 py-10">
         <HiCreditCard className="text-4xl" />
         <p className="text-sm">{t("subscription.loadError")}</p>
         <Button variant="outlined" onClick={fetchTariffs}>
@@ -258,7 +258,7 @@ function TariffsTab() {
 
   if (!rows.length)
     return (
-      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 py-10">
+      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500 py-10">
         <HiCreditCard className="text-4xl" />
         <p className="text-sm">{t("subscription.tariffsEmpty")}</p>
       </div>
@@ -270,8 +270,8 @@ function TariffsTab() {
       <div
         className={`flex items-center gap-3 p-4 rounded-xl border ${
           expiringSoon
-            ? "border-orange-200 bg-orange-50 text-orange-700"
-            : "border-emerald-200 bg-emerald-50 text-emerald-700"
+            ? "border-orange-200 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/15 text-orange-700 dark:text-orange-400"
+            : "border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
         }`}
       >
         {expiringSoon ? (
@@ -310,15 +310,15 @@ function TariffsTab() {
         return (
           <div
             key={tariff._id}
-            className={`flex flex-col gap-4 p-5 rounded-xl border-2 bg-white duration-200 ${
+            className={`flex flex-col gap-4 p-5 rounded-xl border-2 bg-white dark:bg-night-900 duration-200 ${
               insufficientCenters
                 ? "opacity-60 grayscale-[30%]"
-                : "hover:-translate-y-1 hover:shadow-xl"
+                : "hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-none"
             } ${isCurrent ? "border-emerald-500" : `${accent.border} ${accent.ring}`}`}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex flex-col gap-1">
-                <p className="font-space font-bold text-2xl text-slate-800">
+                <p className="font-space font-bold text-2xl text-slate-800 dark:text-slate-100">
                   {tariff.name}
                 </p>
                 <Chip
@@ -336,7 +336,7 @@ function TariffsTab() {
             </div>
 
             {insufficientCenters && (
-              <div className="flex items-start gap-2 p-2.5 rounded-lg bg-red-50 text-red-600 text-xs">
+              <div className="flex items-start gap-2 p-2.5 rounded-lg bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400 text-xs">
                 <HiExclamationTriangle className="text-sm shrink-0 mt-0.5" />
                 <span>
                   {t("subscription.insufficientCenterLimit", {
@@ -347,14 +347,14 @@ function TariffsTab() {
               </div>
             )}
 
-            <p className="text-base font-semibold text-slate-500">
+            <p className="text-base font-semibold text-slate-500 dark:text-slate-400">
               {tariff.price.toLocaleString("uz-UZ")}{" "}
-              <span className="font-normal text-slate-400">
+              <span className="font-normal text-slate-400 dark:text-slate-500">
                 {t("subscription.perMonth")}
               </span>
             </p>
 
-            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100">
+            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 dark:border-night-700">
               {LIMIT_FIELDS.map((f) => {
                 const Icon = f.icon;
                 return (
@@ -408,11 +408,11 @@ function TariffsTab() {
             </div>
 
             {tariff.allowedPermissions?.length > 0 && (
-              <div className="flex flex-col gap-2 pt-3 border-t border-slate-100">
+              <div className="flex flex-col gap-2 pt-3 border-t border-slate-100 dark:border-night-700">
                 <button
                   type="button"
                   onClick={() => toggleExpanded(tariff._id)}
-                  className="flex items-center justify-between w-full cursor-pointer text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-600 duration-150"
+                  className="flex items-center justify-between w-full cursor-pointer text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 duration-150"
                 >
                   {t("subscription.featuresTitle")}
                   <HiChevronDown
@@ -435,7 +435,7 @@ function TariffsTab() {
                       .map((p) => (
                       <div key={p} className="flex items-center gap-2 text-sm">
                         <HiCheckCircle className="text-emerald-500 text-base shrink-0" />
-                        <span className="text-slate-700">
+                        <span className="text-slate-700 dark:text-slate-300">
                           {t(featureLabelKey(p))}
                         </span>
                       </div>

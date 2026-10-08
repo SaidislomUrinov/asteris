@@ -21,7 +21,7 @@ function ProgressBar({ value = 0, max = 0, label, color = "blue", light = false 
     <div className="flex flex-col gap-1 w-full">
       {label && (
         <div
-          className={`flex items-center justify-between text-xs font-medium ${light ? "text-white/80" : "text-slate-500"}`}
+          className={`flex items-center justify-between text-xs font-medium ${light ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}
         >
           <span>{label}</span>
           <span>
@@ -30,7 +30,7 @@ function ProgressBar({ value = 0, max = 0, label, color = "blue", light = false 
         </div>
       )}
       <div
-        className={`w-full h-1.5 rounded-full overflow-hidden ${light ? "bg-white/20" : "bg-slate-100"}`}
+        className={`w-full h-1.5 rounded-full overflow-hidden ${light ? "bg-white/20 dark:bg-night-900/20" : "bg-slate-100 dark:bg-night-800"}`}
       >
         <div
           className={`h-full rounded-full transition-all duration-300 ${COLORS[color] || COLORS.blue}`}

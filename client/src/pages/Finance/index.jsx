@@ -72,7 +72,7 @@ function Finance() {
 
   return (
     <div className="flex flex-col w-full h-full gap-4">
-      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 w-fit overflow-x-auto max-w-full">
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-night-800 w-fit overflow-x-auto max-w-full">
         {TABS.map((tb) => {
           const Icon = tb.icon;
           const active = tab === tb.key;
@@ -82,7 +82,7 @@ function Finance() {
               type="button"
               onClick={() => setTab(tb.key)}
               className={`flex items-center gap-2 px-3.5 h-9 rounded-lg text-sm font-semibold whitespace-nowrap cursor-pointer transition-colors ${
-                active ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                active ? "bg-white dark:bg-night-900 text-slate-900 dark:text-slate-100 shadow-sm dark:shadow-none" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >
               <Icon className="text-base" />
@@ -93,13 +93,13 @@ function Finance() {
       </div>
 
       {tab === "salary" && (
-        <div className="flex flex-col gap-1 p-5 sm:p-6 rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="flex flex-col gap-1 p-5 sm:p-6 rounded-2xl border border-slate-200/70 dark:border-night-700/70 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
           <div className="flex items-center justify-between gap-2 flex-wrap pb-4">
             <div className="flex items-center gap-2">
-              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600">
+              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                 <HiBanknotes className="text-base" />
               </span>
-              <p className="font-semibold text-slate-800">{t("salary.title")}</p>
+              <p className="font-semibold text-slate-800 dark:text-slate-100">{t("salary.title")}</p>
               {typeChip()}
             </div>
             <MonthNav month={month} label={monthLabel} onChange={setMonth} max={currentMonth()} />
@@ -121,9 +121,9 @@ function Finance() {
                 />
               </div>
 
-              <div className="hidden lg:block w-px bg-slate-100 self-stretch" />
+              <div className="hidden lg:block w-px bg-slate-100 dark:bg-night-800 self-stretch" />
 
-              <div className="flex flex-col divide-y divide-slate-100 pt-1">
+              <div className="flex flex-col divide-y divide-slate-100 dark:divide-night-700 pt-1">
                 <LedgerRow label={t("salary.base")} value={salary?.base} hidden={hideFinance} />
                 <LedgerRow
                   label={t("salary.bonus")}
@@ -149,10 +149,10 @@ function Finance() {
                   tone="negative"
                   hidden={hideFinance}
                 />
-                <div className="flex items-center justify-between pt-3 mt-1 border-t-2 border-slate-100">
-                  <span className="font-semibold text-slate-800">{t("salary.final")}</span>
+                <div className="flex items-center justify-between pt-3 mt-1 border-t-2 border-slate-100 dark:border-night-700">
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">{t("salary.final")}</span>
                   <NumberText
-                    className={`!text-lg ${salary?.final < 0 ? "text-red-600" : "text-emerald-600"}`}
+                    className={`!text-lg ${salary?.final < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}
                   >
                     {money(salary?.final)}
                   </NumberText>
@@ -164,9 +164,9 @@ function Finance() {
       )}
 
       {tab === "transactions" && (
-        <div className="flex flex-col gap-1 p-5 sm:p-6 rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="flex flex-col gap-1 p-5 sm:p-6 rounded-2xl border border-slate-200/70 dark:border-night-700/70 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
           <div className="flex items-center justify-between gap-2 flex-wrap pb-4">
-            <p className="font-semibold text-slate-800">{t("finance.tabTransactions")}</p>
+            <p className="font-semibold text-slate-800 dark:text-slate-100">{t("finance.tabTransactions")}</p>
             <MonthNav month={month} label={monthLabel} onChange={setMonth} max={currentMonth()} />
           </div>
 
@@ -174,13 +174,13 @@ function Finance() {
             <Loading height="20vh" />
           ) : !salary?.transactions?.length ? (
             <div className="flex flex-col items-center justify-center gap-1.5 py-8 text-center">
-              <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 text-lg text-slate-300">
+              <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 dark:bg-night-800 text-lg text-slate-300 dark:text-slate-600">
                 <HiClipboardDocumentList />
               </span>
-              <p className="text-xs text-slate-400">{t("salary.noTransactions")}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">{t("salary.noTransactions")}</p>
             </div>
           ) : (
-            <div className="flex flex-col divide-y divide-slate-100">
+            <div className="flex flex-col divide-y divide-slate-100 dark:divide-night-700">
               {salary.transactions.map((tx) => (
                 <div
                   key={tx._id}
@@ -197,15 +197,15 @@ function Finance() {
                     <div className="flex flex-col min-w-0">
                       <span
                         className={`font-semibold text-sm ${
-                          tx.status === "active" ? "text-slate-800" : "text-slate-400 line-through"
+                          tx.status === "active" ? "text-slate-800 dark:text-slate-100" : "text-slate-400 dark:text-slate-500 line-through"
                         }`}
                       >
                         {money(tx.amount)} {t("student.somSuffix")}
                       </span>
-                      {tx.note && <span className="text-xs text-slate-400 truncate">{tx.note}</span>}
+                      {tx.note && <span className="text-xs text-slate-400 dark:text-slate-500 truncate">{tx.note}</span>}
                     </div>
                   </div>
-                  <span className="text-xs text-slate-400 shrink-0">{tx.date}</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">{tx.date}</span>
                 </div>
               ))}
             </div>

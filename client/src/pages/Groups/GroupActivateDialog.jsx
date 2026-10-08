@@ -106,7 +106,7 @@ function GroupActivateDialog({ open, onClose, group, teachers = [], rooms = [], 
       }
     >
       <div className="flex flex-col gap-3 w-full">
-        <p className="text-sm text-slate-500">{t("group.activateHint")}</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{t("group.activateHint")}</p>
 
         <Select
           label={t("group.teacher")}
@@ -128,7 +128,7 @@ function GroupActivateDialog({ open, onClose, group, teachers = [], rooms = [], 
         />
 
         <div className="flex flex-col gap-1.5">
-          <span className="pl-2 text-sm text-slate-800">
+          <span className="pl-2 text-sm text-slate-800 dark:text-slate-100">
             {t("group.days")}
             <span className="text-red-500">*</span>
           </span>
@@ -143,7 +143,7 @@ function GroupActivateDialog({ open, onClose, group, teachers = [], rooms = [], 
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold duration-150 cursor-pointer border ${
                     selected
                       ? "bg-blue-500 border-blue-500 text-white"
-                      : "bg-white border-slate-200 text-slate-500 hover:border-blue-300"
+                      : "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 text-slate-500 dark:text-slate-400 hover:border-blue-300"
                   }`}
                 >
                   {t(`group.dayShort.${day}`)}
@@ -161,7 +161,7 @@ function GroupActivateDialog({ open, onClose, group, teachers = [], rooms = [], 
           value={form.startDate}
           onChange={(e) => setForm((prev) => ({ ...prev, startDate: e.target.value }))}
         />
-        <p className="pl-2 -mt-2 text-xs text-slate-400">{t("group.startDateHint")}</p>
+        <p className="pl-2 -mt-2 text-xs text-slate-400 dark:text-slate-500">{t("group.startDateHint")}</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <TimeInput

@@ -107,8 +107,8 @@ function Salary() {
       header: t("salary.staff"),
       render: (row) => (
         <div className="flex flex-col">
-          <span className="font-semibold text-slate-800">{row.staff.name}</span>
-          <span className="text-xs text-slate-400">{t(`role.${row.staff.role}`)}</span>
+          <span className="font-semibold text-slate-800 dark:text-slate-100">{row.staff.name}</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">{t(`role.${row.staff.role}`)}</span>
         </div>
       ),
     },
@@ -124,7 +124,7 @@ function Salary() {
       // Faqat haqiqatan hodimga BERILGAN summalar (avans + oldindan olingan)
       // — jarima endi bu yig'indiga kirmaydi, alohida ustunda ko'rsatiladi.
       render: (row) => (
-        <NumberText className="text-orange-600">
+        <NumberText className="text-orange-600 dark:text-orange-400">
           {money(row.advance + row.withdrawal)}
         </NumberText>
       ),
@@ -135,7 +135,7 @@ function Salary() {
       // Jarima har doim minus ishorasi bilan ko'rsatiladi (masalan -120,000),
       // jarima yo'q bo'lsa neytral "0".
       render: (row) => (
-        <NumberText className={row.penalty ? "text-red-600" : "text-slate-400"}>
+        <NumberText className={row.penalty ? "text-red-600 dark:text-red-400" : "text-slate-400 dark:text-slate-500"}>
           {row.penalty ? `-${money(row.penalty)}` : money(0)}
         </NumberText>
       ),
@@ -143,13 +143,13 @@ function Salary() {
     {
       key: "bonus",
       header: t("salary.bonus"),
-      render: (row) => <NumberText className="text-emerald-600">{money(row.bonus)}</NumberText>,
+      render: (row) => <NumberText className="text-emerald-600 dark:text-emerald-400">{money(row.bonus)}</NumberText>,
     },
     {
       key: "final",
       header: t("salary.final"),
       render: (row) => (
-        <NumberText className={row.final < 0 ? "text-red-600" : ""}>{money(row.final)}</NumberText>
+        <NumberText className={row.final < 0 ? "text-red-600 dark:text-red-400" : ""}>{money(row.final)}</NumberText>
       ),
     },
     {
@@ -165,7 +165,7 @@ function Salary() {
                     {
                       label: t("salary.paymentPenaltyAction"),
                       icon: HiBanknotes,
-                      iconClass: "bg-emerald-50 text-emerald-600",
+                      iconClass: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
                       onClick: () => openTransactionDialog(row),
                     },
                   ]
@@ -173,7 +173,7 @@ function Salary() {
               {
                 label: t("salary.transactionsMenu"),
                 icon: HiClipboardDocumentList,
-                iconClass: "bg-slate-50 text-slate-600",
+                iconClass: "bg-slate-50 dark:bg-night-800 text-slate-600 dark:text-slate-300",
                 onClick: () => openTransactionsList(row),
               },
             ]}
@@ -213,7 +213,7 @@ function Salary() {
       </FilterBar>
 
       {error ? (
-        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
           <HiBanknotes className="text-4xl" />
           <p className="text-sm">{t("salary.loadError")}</p>
           <Button variant="outlined" onClick={fetchData}>

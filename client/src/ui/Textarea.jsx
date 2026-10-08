@@ -37,14 +37,14 @@ function Textarea({
   };
 
   const variants = {
-    slate: "bg-white border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
-    white: "bg-white border-slate-200",
+    slate: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none",
+    white: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700",
   };
 
   return (
     <label className="flex flex-col gap-1.5 w-full">
       {label && (
-        <span className="text-xs font-medium text-slate-600">
+        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
           {label}
           {required && <span className="text-rose-500">*</span>}
         </span>
@@ -52,7 +52,7 @@ function Textarea({
 
       <div className="relative flex items-center w-full">
         <textarea
-          className={`${className} duration-200 min-w-full max-w-full max-h-50 min-h-33 outline-none rounded-xl px-3.5 py-3 focus:ring-3 hover:border-slate-300 border leading-relaxed ${variants[variant]} ${colors[color]} disabled:bg-slate-50 disabled:shadow-none disabled:text-slate-400 disabled:cursor-not-allowed text-[13px] text-slate-900 placeholder:text-slate-400`}
+          className={`${className} duration-200 min-w-full max-w-full max-h-50 min-h-33 outline-none rounded-xl px-3.5 py-3 focus:ring-3 hover:border-slate-300 dark:hover:border-night-600 border leading-relaxed ${variants[variant]} ${colors[color]} disabled:bg-slate-50 dark:disabled:bg-night-800 disabled:shadow-none disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed text-[13px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500`}
           value={value}
           onChange={onChange}
           placeholder={placeholder}

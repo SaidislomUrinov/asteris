@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import UpdateLang from "./UpdateLang";
 import NotificationBell from "./NotificationBell";
 import HelpMenu from "./HelpMenu";
+import ThemeToggle from "./ThemeToggle";
 import { resolveSectionTitleKey } from "../utils/navSections";
 
 export default function Top() {
@@ -34,6 +35,7 @@ export default function Top() {
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
+        <ThemeToggle />
         <HelpMenu titleKey={resolvedKey} />
         <NotificationBell />
         <UpdateLang dark />

@@ -109,27 +109,27 @@ function QrCardDialog({ open, onClose, student }) {
       }
     >
       {loading || !preview ? (
-        <div className="aspect-[85.6/54] w-full rounded-2xl bg-slate-100 animate-pulse" />
+        <div className="aspect-[85.6/54] w-full rounded-2xl bg-slate-100 dark:bg-night-800 animate-pulse" />
       ) : (
         <div className="flex flex-col gap-3">
           <img
             src={preview}
             alt={student?.fullName}
-            className="w-full rounded-2xl ring-1 ring-slate-200 shadow-[0_8px_24px_-6px_rgba(15,23,42,0.12)]"
+            className="w-full rounded-2xl ring-1 ring-slate-200 dark:ring-night-700 shadow-[0_8px_24px_-6px_rgba(15,23,42,0.12)] dark:shadow-none"
           />
 
-          <p className="flex items-start gap-2 text-xs text-slate-500">
-            <HiDocumentText className="text-sm shrink-0 mt-0.5 text-slate-400" />
+          <p className="flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <HiDocumentText className="text-sm shrink-0 mt-0.5 text-slate-400 dark:text-slate-500" />
             {t("attendance.qrCardHint")}
           </p>
 
           {/* Qayta generatsiya — xavfli amal, shuning uchun ikki bosqichli */}
-          <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-slate-50 ring-1 ring-slate-200/70">
+          <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-night-800 ring-1 ring-slate-200/70 dark:ring-night-700/70">
             <div className="flex flex-col min-w-48 flex-1">
-              <span className="text-sm font-semibold text-slate-800">
+              <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                 {confirmReset ? t("attendance.qrResetConfirmTitle") : t("attendance.qrResetTitle")}
               </span>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
                 {confirmReset ? t("attendance.qrResetConfirmHint") : t("attendance.qrResetHint")}
               </span>
             </div>

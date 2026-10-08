@@ -42,34 +42,34 @@ function LessonCard({ lesson, cardRef, onClick, t, navigate }) {
       ref={cardRef}
       onClick={() => onClick(() => navigate(`/groups/${lesson._id}`))}
       style={{ width: CARD_WIDTH }}
-      className={`flex flex-col gap-2 p-3.5 shrink-0 select-none rounded-xl border border-l-4 bg-white cursor-pointer transition-shadow hover:shadow-md ${style.border} ${
-        isOngoing ? "border-slate-200 ring-2 ring-blue-100" : "border-slate-200"
+      className={`flex flex-col gap-2 p-3.5 shrink-0 select-none rounded-xl border border-l-4 bg-white dark:bg-night-900 cursor-pointer transition-shadow hover:shadow-md dark:hover:shadow-none ${style.border} ${
+        isOngoing ? "border-slate-200 dark:border-night-700 ring-2 ring-blue-100 dark:ring-blue-500/30" : "border-slate-200 dark:border-night-700"
       }`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="font-semibold text-slate-800 truncate">{lesson.subjectName}</span>
+        <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">{lesson.subjectName}</span>
         <span className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${style.chip}`}>
-          {isOngoing && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+          {isOngoing && <span className="w-1.5 h-1.5 rounded-full bg-white dark:bg-night-900 animate-pulse" />}
           {t(`dashboard.lessonStatus.${lesson.status}`)}
         </span>
       </div>
 
-      <div className="flex items-center gap-1.5 text-xs text-slate-500">
+      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
         <HiClock className={style.icon} />
         <span>
           {lesson.startTime}–{lesson.endTime}
         </span>
       </div>
-      <div className="flex items-center gap-1.5 text-xs text-slate-500">
+      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
         <HiUser className={style.icon} />
         <span className="truncate">{lesson.teacherName}</span>
       </div>
-      <div className="flex items-center gap-1.5 text-xs text-slate-500">
+      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
         <HiHome className={style.icon} />
         <span className="truncate">{lesson.roomName}</span>
       </div>
 
-      <p className="text-xs font-medium text-slate-400 pt-1.5 border-t border-slate-100">
+      <p className="text-xs font-medium text-slate-400 dark:text-slate-500 pt-1.5 border-t border-slate-100 dark:border-night-700">
         {lesson.status === "ongoing" && t("dashboard.lessonElapsed", { count: lesson.minutes })}
         {lesson.status === "upcoming" && t("dashboard.lessonStartsIn", { count: lesson.minutes })}
         {lesson.status === "finished" && t("dashboard.lessonFinished")}
@@ -187,16 +187,16 @@ function TodayLessonsScroll({ center }) {
   };
 
   return (
-    <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 bg-white h-full min-h-0">
+    <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 h-full min-h-0">
       <div className="flex items-center justify-between gap-2 shrink-0">
-        <p className="font-semibold text-slate-800">{t("dashboard.todayLessons")}</p>
-        <span className="text-xs text-slate-400">{getTashkentNow().time}</span>
+        <p className="font-semibold text-slate-800 dark:text-slate-100">{t("dashboard.todayLessons")}</p>
+        <span className="text-xs text-slate-400 dark:text-slate-500">{getTashkentNow().time}</span>
       </div>
 
       {loading ? (
         <Loading height="15vh" />
       ) : withStatuses.length === 0 ? (
-        <div className="flex items-center justify-center flex-1 min-h-32 text-slate-400 text-sm text-center px-4">
+        <div className="flex items-center justify-center flex-1 min-h-32 text-slate-400 dark:text-slate-500 text-sm text-center px-4">
           {t("dashboard.noLessonsToday")}
         </div>
       ) : (

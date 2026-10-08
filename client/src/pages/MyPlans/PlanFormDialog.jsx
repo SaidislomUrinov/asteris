@@ -101,7 +101,7 @@ function PlanFormDialog({ open, onClose, plan = null, subjects = [], defaultSubj
         />
         {subjectError && <p className="text-xs text-red-500">{t("teachingPlan.subjectRequired")}</p>}
         {subjects.length === 0 && (
-          <p className="text-xs text-slate-400">{t("teachingPlan.noSubjects")}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{t("teachingPlan.noSubjects")}</p>
         )}
       </div>
     </Dialog>

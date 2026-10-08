@@ -55,17 +55,17 @@ function Switch({
         className={`relative inline-flex shrink-0 items-center h-6 w-11 p-0.5 rounded-full border transition-colors duration-200 outline-none ${
           checked
             ? `${colors[color]} border-transparent`
-            : "bg-slate-200 border-slate-300/60 hover:bg-slate-300/70"
+            : "bg-slate-200 dark:bg-night-700 border-slate-300/60 dark:border-night-600/60 hover:bg-slate-300/70 dark:hover:bg-night-600/70"
         } ${disabled ? "cursor-not-allowed" : "cursor-pointer"} ${rings[color]}`}
       >
         <span
-          className={`block w-5 h-5 rounded-full bg-white shadow-[0_1px_2px_rgba(15,23,42,0.25)] transition-transform duration-200 ${
+          className={`block w-5 h-5 rounded-full bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.25)] dark:shadow-none transition-transform duration-200 ${
             checked ? "translate-x-5" : "translate-x-0"
           }`}
         />
       </button>
       {label && (
-        <span className="text-[13px] text-slate-700 select-none">{label}</span>
+        <span className="text-[13px] text-slate-700 dark:text-slate-300 select-none">{label}</span>
       )}
     </label>
   );

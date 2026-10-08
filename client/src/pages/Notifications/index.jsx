@@ -202,7 +202,7 @@ function Notifications() {
     <div className="flex flex-col w-full h-full gap-6">
       {/* `shrink-0` — `overflow-x-auto` element flex ustunda balandlik bo'yicha
           0 gacha siqila oladi; xabarlar ko'p bo'lsa tablar ezilib qolardi. */}
-      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 w-full sm:w-fit overflow-x-auto shrink-0">
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-night-800 w-full sm:w-fit overflow-x-auto shrink-0">
         {TABS.map((x) => {
           const count = x.key === "news" ? newsUnread : unread;
           const active = (tab === "news" ? "news" : "notifications") === x.key;
@@ -213,7 +213,7 @@ function Notifications() {
               onClick={() => setTab(x.key)}
               aria-pressed={active}
               className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 h-8 shrink-0 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors duration-150 ${
-                active ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                active ? "bg-white dark:bg-night-900 text-slate-900 dark:text-slate-100 shadow-sm dark:shadow-none" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >
               {t(x.labelKey)}
@@ -247,18 +247,18 @@ function Notifications() {
           )}
 
           {/* ── Bildirishnomalar ro'yxati ────────────────────────────────── */}
-          <div className="flex flex-col gap-1 p-5 sm:p-6 rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+          <div className="flex flex-col gap-1 p-5 sm:p-6 rounded-2xl border border-slate-200/70 dark:border-night-700/70 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
             <div className="flex items-center justify-between gap-3 pb-4 flex-wrap">
-              <p className="font-semibold text-slate-800">{t("notification.title")}</p>
+              <p className="font-semibold text-slate-800 dark:text-slate-100">{t("notification.title")}</p>
 
               <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex items-center gap-1 p-0.5 rounded-lg bg-slate-100">
+                <div className="flex items-center gap-1 p-0.5 rounded-lg bg-slate-100 dark:bg-night-800">
                   <button
                     type="button"
                     onClick={() => setFilter("all")}
                     aria-pressed={filter === "all"}
                     className={`px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors ${
-                      filter === "all" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                      filter === "all" ? "bg-white dark:bg-night-900 text-slate-800 dark:text-slate-100 shadow-sm dark:shadow-none" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                     }`}
                   >
                     {t("notification.filterAll")}
@@ -268,7 +268,7 @@ function Notifications() {
                     onClick={() => setFilter("unread")}
                     aria-pressed={filter === "unread"}
                     className={`px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors ${
-                      filter === "unread" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                      filter === "unread" ? "bg-white dark:bg-night-900 text-slate-800 dark:text-slate-100 shadow-sm dark:shadow-none" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                     }`}
                   >
                     {t("notification.filterUnread")}
@@ -296,7 +296,7 @@ function Notifications() {
             ) : visibleItems.length === 0 ? (
               <NotificationEmptyState />
             ) : (
-              <div className="flex flex-col divide-y divide-slate-100">
+              <div className="flex flex-col divide-y divide-slate-100 dark:divide-night-700">
                 {visibleItems.map((item) => (
                   <NotificationItem key={item._id} item={item} t={t} onOpen={openItem} />
                 ))}

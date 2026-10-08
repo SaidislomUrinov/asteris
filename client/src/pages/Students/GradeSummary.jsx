@@ -5,11 +5,11 @@ import { HiChevronDown, HiStar } from "react-icons/hi2";
 // Baho rangi — GradesTab bilan bir xil oila (10 ballik: 9+ yashil, 7+ ko'k, 5+ sariq, past qizil).
 const toneOf = (avg) =>
   avg >= 9
-    ? "text-emerald-600"
+    ? "text-emerald-600 dark:text-emerald-400"
     : avg >= 7
-      ? "text-blue-600"
+      ? "text-blue-600 dark:text-blue-400"
       : avg >= 5
-        ? "text-amber-600"
+        ? "text-amber-600 dark:text-amber-400"
         : "text-red-500";
 
 /**
@@ -28,9 +28,9 @@ function GradeSummary({ summary }) {
 
   if (!summary || !summary.count) {
     return (
-      <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-slate-50">
-        <span className="text-xs text-slate-400">{t("grade.title")}</span>
-        <span className="text-sm text-slate-400">{t("grade.noGrades")}</span>
+      <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-slate-50 dark:bg-night-800">
+        <span className="text-xs text-slate-400 dark:text-slate-500">{t("grade.title")}</span>
+        <span className="text-sm text-slate-400 dark:text-slate-500">{t("grade.noGrades")}</span>
       </div>
     );
   }
@@ -41,46 +41,46 @@ function GradeSummary({ summary }) {
   };
 
   return (
-    <div className="flex flex-col rounded-lg bg-slate-50 overflow-hidden">
+    <div className="flex flex-col rounded-lg bg-slate-50 dark:bg-night-800 overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
-        className="flex items-center justify-between gap-2 p-2.5 text-left cursor-pointer hover:bg-slate-100/70 transition-colors"
+        className="flex items-center justify-between gap-2 p-2.5 text-left cursor-pointer hover:bg-slate-100/70 dark:hover:bg-night-800/70 transition-colors"
       >
         <span className="flex flex-col gap-0.5 min-w-0">
-          <span className="text-xs text-slate-400">{t("grade.title")}</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">{t("grade.title")}</span>
           <span className="flex items-baseline gap-1">
             <HiStar className={`self-center ${toneOf(summary.average)}`} />
             <span className={`text-sm font-semibold ${toneOf(summary.average)}`}>
               {summary.average}
             </span>
-            <span className="text-xs text-slate-400">/ 10</span>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-xs text-slate-400 dark:text-slate-500">/ 10</span>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500">
               ({t("grade.countShort", { count: summary.count })})
             </span>
           </span>
         </span>
         <HiChevronDown
-          className={`shrink-0 text-slate-400 transition-transform duration-200 ${
+          className={`shrink-0 text-slate-400 dark:text-slate-500 transition-transform duration-200 ${
             open ? "rotate-180" : ""
           }`}
         />
       </button>
 
       {open && (
-        <div className="flex flex-col border-t border-slate-200/70">
+        <div className="flex flex-col border-t border-slate-200/70 dark:border-night-700/70">
           {summary.months.map((m) => (
             <div
               key={m.month}
-              className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-b border-slate-200/50 last:border-0"
+              className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-b border-slate-200/50 dark:border-night-700/50 last:border-0"
             >
-              <span className="text-xs text-slate-500 capitalize truncate">{label(m.month)}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 capitalize truncate">{label(m.month)}</span>
               <span className="flex items-baseline gap-1 shrink-0">
                 <span className={`text-[13px] font-semibold ${toneOf(m.average)}`}>
                   {m.average}
                 </span>
-                <span className="text-[11px] text-slate-400">/ 10</span>
-                <span className="text-[11px] text-slate-300 tabular-nums">({m.count})</span>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">/ 10</span>
+                <span className="text-[11px] text-slate-300 dark:text-slate-600 tabular-nums">({m.count})</span>
               </span>
             </div>
           ))}

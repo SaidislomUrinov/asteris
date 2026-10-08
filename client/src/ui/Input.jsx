@@ -51,17 +51,17 @@ function Input({
   };
 
   const variants = {
-    slate: "bg-white border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
-    white: "bg-white border-slate-200",
+    slate: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none",
+    white: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700",
     // Faqat FilterBar ichida: Select `variant="filter"` bilan bir xil tekis
     // ko'rinish, qidiruv maydoni toolbar qatoriga vizual mos tursin uchun.
-    filter: "bg-white border-slate-200",
+    filter: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700",
   };
 
   return (
     <label className="flex flex-col gap-1.5 w-full">
       {label && (
-        <span className="text-xs font-medium text-slate-600">
+        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
           {label}
           {required && <span className="text-rose-500">*</span>}
         </span>
@@ -70,16 +70,16 @@ function Input({
       <div
         className={`input-wrap relative flex items-center w-full h-11 rounded-xl border transition-colors duration-200 focus-within:ring-3 ${
           error
-            ? "border-rose-500 ring-rose-500/12 bg-white"
-            : `hover:border-slate-300 ${variants[variant]} ${colors[color]}`
+            ? "border-rose-500 ring-rose-500/12 bg-white dark:bg-night-900"
+            : `hover:border-slate-300 dark:hover:border-night-600 ${variants[variant]} ${colors[color]}`
         } ${
           disabled
-            ? "bg-slate-50 border-slate-200 shadow-none cursor-not-allowed"
+            ? "bg-slate-50 dark:bg-night-800 border-slate-200 dark:border-night-700 shadow-none cursor-not-allowed"
             : ""
         }`}
       >
         {icon && (
-          <span className="absolute right-3.5 text-slate-400 text-[15px]">
+          <span className="absolute right-3.5 text-slate-400 dark:text-slate-500 text-[15px]">
             {icon}
           </span>
         )}
@@ -88,7 +88,7 @@ function Input({
             statik matn sifatida chiziladi, shu sabab foydalanuvchi uni
             hech qachon backspace bilan o'chira olmaydi. */}
         {prefix && (
-          <span className="pl-3.5 text-[13px] text-slate-500 select-none shrink-0">{prefix}</span>
+          <span className="pl-3.5 text-[13px] text-slate-500 dark:text-slate-400 select-none shrink-0">{prefix}</span>
         )}
 
         <input
@@ -97,7 +97,7 @@ function Input({
             prefix ? "pl-1.5" : "pl-3.5"
           } ${
             icon ? "pr-9" : "pr-3.5"
-          } disabled:cursor-not-allowed text-[13px] text-slate-900 disabled:text-slate-400 placeholder:text-slate-400`}
+          } disabled:cursor-not-allowed text-[13px] text-slate-900 dark:text-slate-100 disabled:text-slate-400 dark:disabled:text-slate-500 placeholder:text-slate-400 dark:placeholder:text-slate-500`}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
@@ -107,7 +107,7 @@ function Input({
       </div>
 
       {hint && (
-        <span className={`text-[11px] ${error ? "text-rose-600" : "text-slate-400"}`}>
+        <span className={`text-[11px] ${error ? "text-rose-600 dark:text-rose-400" : "text-slate-400 dark:text-slate-500"}`}>
           {hint}
         </span>
       )}

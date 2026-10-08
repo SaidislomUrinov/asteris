@@ -113,11 +113,11 @@ function NewsTab() {
   useSocketEvent("connect", () => fetchPage(1));
 
   return (
-    <div className="flex flex-col gap-1 p-5 sm:p-6 rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <div className="flex flex-col gap-1 p-5 sm:p-6 rounded-2xl border border-slate-200/70 dark:border-night-700/70 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
       <div className="flex items-center justify-between gap-3 pb-4 flex-wrap">
-        <p className="font-semibold text-slate-800">
+        <p className="font-semibold text-slate-800 dark:text-slate-100">
           {t("news.title")}
-          {unread > 0 && <span className="ml-1.5 text-sm font-medium text-slate-400 tabular-nums">({unread})</span>}
+          {unread > 0 && <span className="ml-1.5 text-sm font-medium text-slate-400 dark:text-slate-500 tabular-nums">({unread})</span>}
         </p>
         {unread > 0 && (
           <Button color="blue" variant="text" className="gap-1 !px-0 normal-case text-xs" onClick={markAll}>
@@ -131,25 +131,25 @@ function NewsTab() {
         <Loading height="20vh" />
       ) : error ? (
         <div className="flex flex-col items-center justify-center gap-3 h-[300px] text-center px-4">
-          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 text-2xl text-red-300">
+          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-500/15 text-2xl text-red-300">
             <HiExclamationCircle />
           </span>
-          <p className="text-sm font-medium text-slate-500">{t("news.loadError")}</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("news.loadError")}</p>
           <Button variant="outlined" color="slate" onClick={() => fetchPage(1)}>
             {t("common.retry")}
           </Button>
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 h-[300px] text-center px-4">
-          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-50 text-2xl text-slate-300">
+          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-50 dark:bg-night-800 text-2xl text-slate-300 dark:text-slate-600">
             <HiNewspaper />
           </span>
-          <p className="text-sm font-medium text-slate-500">{t("news.empty")}</p>
-          <p className="text-xs text-slate-400 max-w-xs">{t("news.emptySubtitle")}</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("news.empty")}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 max-w-xs">{t("news.emptySubtitle")}</p>
         </div>
       ) : (
         <>
-          <div className="flex flex-col divide-y divide-slate-100">
+          <div className="flex flex-col divide-y divide-slate-100 dark:divide-night-700">
             {items.map((item) => (
               <NewsItem key={item._id} item={item} onOpen={openItem} />
             ))}

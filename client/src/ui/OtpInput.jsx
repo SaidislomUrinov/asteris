@@ -39,8 +39,8 @@ function OtpInput({
   };
 
   const variants = {
-    slate: "bg-white border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
-    white: "bg-white border-slate-200",
+    slate: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none",
+    white: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700",
   };
 
   const digits = Array.from({ length: fields }, (_, i) => value[i] ?? "");
@@ -88,7 +88,7 @@ function OtpInput({
   return (
     <div className={`flex flex-col gap-1 w-full ${className}`}>
       {label && (
-        <span className="text-xs font-medium text-slate-600">
+        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
           {label}
           {required && <span className="text-rose-500">*</span>}
         </span>
@@ -109,10 +109,10 @@ function OtpInput({
             onKeyDown={(e) => handleKeyDown(e, index)}
             onPaste={handlePaste}
             className={`
-              w-11 h-11 text-center text-slate-900 font-semibold text-base
+              w-11 h-11 text-center text-slate-900 dark:text-slate-100 font-semibold text-base
               outline-none rounded-xl border duration-200
               focus:ring-3 caret-transparent
-              disabled:bg-slate-50 disabled:shadow-none disabled:cursor-not-allowed
+              disabled:bg-slate-50 dark:disabled:bg-night-800 disabled:shadow-none disabled:cursor-not-allowed
               ${variants[variant]} ${colors[color]}
             `}
           />

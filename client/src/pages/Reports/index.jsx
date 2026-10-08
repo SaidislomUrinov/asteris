@@ -135,14 +135,14 @@ function Reports() {
         search={
           // Davr tanlagichi — hisobotning asosiy boshqaruvi, shuning uchun
           // mobil filtr modalida emas, doim ko'rinadigan qatorda turadi.
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 overflow-x-auto">
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-night-800 overflow-x-auto">
             {PERIODS.map((p) => (
               <button
                 key={p}
                 type="button"
                 onClick={() => setPeriod(p)}
                 className={`shrink-0 px-3 h-8 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors duration-150 ${
-                  period === p ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  period === p ? "bg-white dark:bg-night-900 text-slate-900 dark:text-slate-100 shadow-sm dark:shadow-none" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                 }`}
               >
                 {t(`report.periods.${p}`)}
@@ -187,7 +187,7 @@ function Reports() {
       </FilterBar>
 
       {customIncomplete ? (
-        <div className="flex items-center justify-center w-full flex-1 min-h-60 text-sm text-slate-400 rounded-2xl bg-white border border-slate-200/80">
+        <div className="flex items-center justify-center w-full flex-1 min-h-60 text-sm text-slate-400 dark:text-slate-500 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80">
           {t("report.pickRange")}
         </div>
       ) : hasFinance && summary.error ? (
@@ -199,7 +199,7 @@ function Reports() {
           {hasFinance && <TimelineChart rows={timeline.data || []} loading={timeline.loading} />}
 
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 overflow-x-auto">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-night-800 overflow-x-auto">
               {tabs.map((x) => (
                 <button
                   key={x.key}
@@ -207,8 +207,8 @@ function Reports() {
                   onClick={() => setTab(x.key)}
                   className={`shrink-0 px-3 h-8 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors duration-150 ${
                     tab === x.key
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
+                      ? "bg-white dark:bg-night-900 text-slate-900 dark:text-slate-100 shadow-sm dark:shadow-none"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                   }`}
                 >
                   {x.label}

@@ -215,7 +215,7 @@ function GroupScheduleDialog({
     >
       <div className="flex flex-col gap-4 w-full">
         {canEditSchedule && (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {assistantOnly ? t("group.scheduleAssistantOnlyHint") : t("group.scheduleHint")}
           </p>
         )}
@@ -283,7 +283,7 @@ function GroupScheduleDialog({
             />
 
             <div className="flex flex-col gap-1.5">
-              <span className="pl-2 text-sm text-slate-800">
+              <span className="pl-2 text-sm text-slate-800 dark:text-slate-100">
                 {t("group.days")}
                 <span className="text-red-500">*</span>
               </span>
@@ -301,7 +301,7 @@ function GroupScheduleDialog({
                       } ${
                         selected
                           ? "bg-blue-500 border-blue-500 text-white"
-                          : "bg-white border-slate-200 text-slate-500 hover:border-blue-300"
+                          : "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 text-slate-500 dark:text-slate-400 hover:border-blue-300"
                       }`}
                     >
                       {t(`group.dayShort.${day}`)}
@@ -331,8 +331,8 @@ function GroupScheduleDialog({
             </div>
 
             {!assistantOnly && form.room && (
-              <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
-                <p className="text-sm font-semibold text-slate-700">
+              <div className="flex flex-col gap-2 pt-2 border-t border-slate-100 dark:border-night-700">
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   {t("room.weeklyScheduleTitle")}
                 </p>
                 {scheduleLoading || !schedule ? (

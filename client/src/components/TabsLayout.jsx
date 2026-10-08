@@ -19,15 +19,15 @@ export default function TabsLayout({ tabs }) {
   return (
     <div className="flex flex-col gap-3 h-full min-h-0">
       {tabs.length > 1 && (
-        <nav className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 overflow-x-auto shrink-0 self-start max-w-full">
+        <nav className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-night-800 overflow-x-auto shrink-0 self-start max-w-full">
           {tabs.map((tab) => (
             <Link
               key={tab.to}
               to={tab.to}
               className={`shrink-0 px-3 h-8 inline-flex items-center rounded-lg text-[13px] font-semibold transition-colors duration-150 ${
                 tab.to === activeTo
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-white dark:bg-night-900 text-slate-900 dark:text-slate-100 shadow-sm dark:shadow-none"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >
               {t(tab.labelKey)}

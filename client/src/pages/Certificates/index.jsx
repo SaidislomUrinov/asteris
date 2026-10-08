@@ -96,17 +96,17 @@ function Certificates() {
         <Loading height="40vh" />
       ) : rows.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 flex-1 min-h-60 text-center">
-          <HiDocumentText className="text-4xl text-slate-300" />
-          <p className="text-sm text-slate-400">{t("certificateTemplate.empty")}</p>
+          <HiDocumentText className="text-4xl text-slate-300 dark:text-slate-600" />
+          <p className="text-sm text-slate-400 dark:text-slate-500">{t("certificateTemplate.empty")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {rows.map((tpl) => (
             <div
               key={tpl._id}
-              className="flex flex-col gap-1.5 rounded-lg border border-slate-200 bg-white overflow-hidden group"
+              className="flex flex-col gap-1.5 rounded-lg border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 overflow-hidden group"
             >
-              <div className="relative w-full aspect-[1.4/1] bg-slate-100 overflow-hidden">
+              <div className="relative w-full aspect-[1.4/1] bg-slate-100 dark:bg-night-800 overflow-hidden">
                 <img
                   src={`${API}${tpl.backgroundUrl}`}
                   alt={tpl.name}
@@ -134,8 +134,8 @@ function Certificates() {
                 </div>
               </div>
               <div className="flex flex-col gap-0.5 px-2 pb-2">
-                <span className="text-sm font-semibold text-slate-800 truncate">{tpl.name}</span>
-                <span className="text-[11px] text-slate-400">{tpl.date}</span>
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{tpl.name}</span>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">{tpl.date}</span>
               </div>
             </div>
           ))}
@@ -157,7 +157,7 @@ function Certificates() {
           </>
         }
       >
-        <p className="text-sm text-slate-600">{t("certificateTemplate.deleteConfirm")}</p>
+        <p className="text-sm text-slate-600 dark:text-slate-300">{t("certificateTemplate.deleteConfirm")}</p>
       </Dialog>
     </div>
   );

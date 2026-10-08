@@ -135,7 +135,7 @@ function Centers() {
 
   return (
     <div className="flex flex-col w-full h-full gap-4">
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-xl border border-slate-200 bg-white">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
         <div className="w-full sm:w-80">
           <Input
             placeholder={t("common.search")}
@@ -156,7 +156,7 @@ function Centers() {
       </div>
 
       {error ? (
-        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
           <HiBuildingOffice2 className="text-4xl" />
           <p className="text-sm">{t("center.loadError")}</p>
           <Button variant="outlined" onClick={fetchCenters}>
@@ -166,7 +166,7 @@ function Centers() {
       ) : loading ? (
         <Loading height="40vh" />
       ) : rows.length === 0 ? (
-        <div className="flex items-center justify-center w-full flex-1 text-slate-400 text-sm">
+        <div className="flex items-center justify-center w-full flex-1 text-slate-400 dark:text-slate-500 text-sm">
           {t("center.empty")}
         </div>
       ) : (
@@ -182,10 +182,10 @@ function Centers() {
               <div
                 key={center._id}
                 onClick={() => navigate(`/centers/${center._id}`)}
-                className={`flex flex-col gap-3 p-5 rounded-xl border bg-white duration-200 ${
+                className={`flex flex-col gap-3 p-5 rounded-xl border bg-white dark:bg-night-900 duration-200 ${
                   blocked
-                    ? "border-slate-200 bg-slate-50 cursor-pointer"
-                    : "border-slate-200 hover:-translate-y-1 hover:shadow-xl cursor-pointer"
+                    ? "border-slate-200 dark:border-night-700 bg-slate-50 dark:bg-night-800 cursor-pointer"
+                    : "border-slate-200 dark:border-night-700 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-none cursor-pointer"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -196,12 +196,12 @@ function Centers() {
                           ? center.logo
                           : `${API}${center.logo}`
                       }
-                      className={`w-18 h-18 rounded-full object-cover shrink-0 bg-slate-100 ${
+                      className={`w-18 h-18 rounded-full object-cover shrink-0 bg-slate-100 dark:bg-night-800 ${
                         blocked ? "grayscale opacity-60" : ""
                       }`}
                     />
                   ) : (
-                    <div className="w-18 h-18 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-2xl shrink-0">
+                    <div className="w-18 h-18 rounded-full bg-slate-100 dark:bg-night-800 flex items-center justify-center text-slate-400 dark:text-slate-500 text-2xl shrink-0">
                       <HiBuildingOffice2 />
                     </div>
                   )}
@@ -215,7 +215,7 @@ function Centers() {
                         {
                           label: t("common.detail"),
                           icon: HiEye,
-                          iconClass: "bg-slate-50 text-slate-600",
+                          iconClass: "bg-slate-50 dark:bg-night-800 text-slate-600 dark:text-slate-300",
                           onClick: () => navigate(`/centers/${center._id}`),
                         },
                         // Bloklangan filial Read-Only — tahrirlash yashiriladi.
@@ -225,14 +225,14 @@ function Centers() {
                               {
                                 label: t("common.edit"),
                                 icon: HiPencil,
-                                iconClass: "bg-blue-50 text-blue-600",
+                                iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
                                 onClick: () => openEdit(center),
                               },
                             ]),
                         {
                           label: t("common.delete"),
                           icon: HiTrash,
-                          iconClass: "bg-red-50 text-red-600",
+                          iconClass: "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400",
                           onClick: () => setDeleteTarget(center),
                         },
                       ]}
@@ -244,7 +244,7 @@ function Centers() {
                   <div className="flex items-center gap-2 min-w-0">
                     <p
                       className={`font-space font-bold text-lg truncate ${
-                        blocked ? "text-slate-500" : "text-slate-800"
+                        blocked ? "text-slate-500 dark:text-slate-400" : "text-slate-800 dark:text-slate-100"
                       }`}
                     >
                       {center.name}
@@ -254,7 +254,7 @@ function Centers() {
                     {blocked && <Chip value={t("center.blocked")} color="slate" />}
                   </div>
                   {center.slogan && (
-                    <p className="text-sm text-slate-500 truncate">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
                       {center.slogan}
                     </p>
                   )}
@@ -262,10 +262,10 @@ function Centers() {
 
                 {blocked && (
                   <div
-                    className="flex flex-col gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200"
+                    className="flex flex-col gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <p className="text-xs text-amber-800">{t("center.blockedHint")}</p>
+                    <p className="text-xs text-amber-800 dark:text-amber-400">{t("center.blockedHint")}</p>
                     <Button
                       color="emerald"
                       variant="outlined"
@@ -277,13 +277,13 @@ function Centers() {
                       {t("center.unblock")}
                     </Button>
                     {!canUnblock && (
-                      <p className="text-[11px] text-amber-700">{t("center.unblockLimit")}</p>
+                      <p className="text-[11px] text-amber-700 dark:text-amber-400">{t("center.unblockLimit")}</p>
                     )}
                   </div>
                 )}
 
                 {center.date && (
-                  <p className="text-xs text-slate-400 pt-2 border-t border-slate-100">
+                  <p className="text-xs text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-100 dark:border-night-700">
                     {center.date}
                   </p>
                 )}
@@ -298,7 +298,7 @@ function Centers() {
                 type="button"
                 disabled={meta.page <= 1}
                 onClick={() => setPage(Math.max(1, meta.page - 1))}
-                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent duration-200"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-night-800 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent duration-200"
               >
                 <HiChevronLeft />
               </button>
@@ -307,7 +307,7 @@ function Centers() {
                 p === "..." ? (
                   <span
                     key={`dots-${i}`}
-                    className="inline-flex items-center justify-center w-8 h-8 text-slate-400 text-sm"
+                    className="inline-flex items-center justify-center w-8 h-8 text-slate-400 dark:text-slate-500 text-sm"
                   >
                     ...
                   </span>
@@ -319,7 +319,7 @@ function Centers() {
                     className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm font-medium duration-200 ${
                       p === meta.page
                         ? "bg-slate-800 text-white"
-                        : "text-slate-600 hover:bg-slate-100"
+                        : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-night-800"
                     }`}
                   >
                     {p}
@@ -331,7 +331,7 @@ function Centers() {
                 type="button"
                 disabled={meta.page >= meta.totalPages}
                 onClick={() => setPage(Math.min(meta.totalPages, meta.page + 1))}
-                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent duration-200"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-night-800 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent duration-200"
               >
                 <HiChevronRight />
               </button>

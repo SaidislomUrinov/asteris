@@ -39,19 +39,19 @@ export default function HelpMenu({ titleKey }) {
     articleKey && {
       label: t("help.guide"),
       icon: HiBookOpen,
-      iconClass: "bg-blue-50 text-blue-600",
+      iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
       onClick: () => setModal("guide"),
     },
     videoUrl && {
       label: t("help.video"),
       icon: HiPlayCircle,
-      iconClass: "bg-rose-50 text-rose-600",
+      iconClass: "bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400",
       onClick: () => setModal("video"),
     },
     {
       label: unread > 0 ? `${t("help.chat")} (${unread})` : t("help.chat"),
       icon: HiChatBubbleLeftRight,
-      iconClass: "bg-emerald-50 text-emerald-600",
+      iconClass: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
       onClick: () => setModal("chat"),
     },
   ].filter(Boolean);

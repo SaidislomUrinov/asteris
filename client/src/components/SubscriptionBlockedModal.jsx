@@ -21,14 +21,14 @@ function SubscriptionBlockedModal() {
 
   return createPortal(
     <div className="fixed inset-0 w-full h-full bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="flex flex-col items-center gap-4 text-center bg-white rounded-xl shadow-lg w-full max-w-md p-6">
-        <div className="w-14 h-14 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-3xl">
+      <div className="flex flex-col items-center gap-4 text-center bg-white dark:bg-night-900 rounded-xl shadow-lg dark:shadow-none w-full max-w-md p-6">
+        <div className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-500/15 text-red-500 flex items-center justify-center text-3xl">
           <HiExclamationTriangle />
         </div>
-        <h3 className="text-lg font-semibold text-slate-800">
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
           {t("subscriptionBlocked.title")}
         </h3>
-        <p className="text-sm text-slate-500">{t("subscriptionBlocked.message")}</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{t("subscriptionBlocked.message")}</p>
       </div>
     </div>,
     document.body,

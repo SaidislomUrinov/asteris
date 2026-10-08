@@ -51,19 +51,19 @@ function DebtorsTab({ query, tick }) {
         <button
           type="button"
           onClick={() => row.student?._id && navigate(`/students/${row.student._id}`)}
-          className="flex flex-col items-start text-left cursor-pointer hover:text-blue-600 duration-200"
+          className="flex flex-col items-start text-left cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 duration-200"
         >
-          <span className="font-semibold text-slate-800">
+          <span className="font-semibold text-slate-800 dark:text-slate-100">
             {row.student?.fullName || row.student || "—"}
           </span>
-          <span className="text-xs text-slate-400">{row.phone}</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">{row.phone}</span>
         </button>
       ),
     },
     {
       key: "group",
       header: t("report.group"),
-      render: (row) => <span className="text-slate-600">{row.group?.name || row.group || "—"}</span>,
+      render: (row) => <span className="text-slate-600 dark:text-slate-300">{row.group?.name || row.group || "—"}</span>,
     },
     {
       key: "months",
@@ -71,7 +71,7 @@ function DebtorsTab({ query, tick }) {
       render: (row) => (
         <div className="flex items-center gap-1 flex-wrap max-w-64">
           {(row.months || []).length === 0 ? (
-            <span className="text-xs text-slate-400">—</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">—</span>
           ) : (
             row.months.map((m) => (
               <Chip key={m ?? "unknown"} value={m ?? t("student.openingMonthUnknown")} color="red" />
@@ -90,13 +90,13 @@ function DebtorsTab({ query, tick }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-red-50/70 border border-red-100">
-        <span className="flex items-center gap-2 text-sm font-medium text-red-600">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-red-50/70 dark:bg-red-500/15 border border-red-100 dark:border-red-500/30">
+        <span className="flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400">
           <HiExclamationCircle className="text-lg shrink-0" />
           {t("report.totalDebt")}
         </span>
         <span className="flex items-baseline gap-1">
-          <NumberText className="text-base text-red-600">{money(totalDebt)}</NumberText>
+          <NumberText className="text-base text-red-600 dark:text-red-400">{money(totalDebt)}</NumberText>
           <span className="text-xs text-red-400">{t("student.somSuffix")}</span>
         </span>
       </div>

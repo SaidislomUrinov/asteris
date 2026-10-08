@@ -23,7 +23,7 @@ function SubscriptionExpiredBanner() {
   if (!expired) return null;
 
   return (
-    <div className="flex items-center gap-3 w-full px-4 py-2.5 bg-red-50 border-b border-red-200 text-red-700">
+    <div className="flex items-center gap-3 w-full px-4 py-2.5 bg-red-50 dark:bg-red-500/15 border-b border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400">
       <HiExclamationTriangle className="text-lg shrink-0" />
       <p className="text-sm font-medium flex-1">{t("subscription.expiredBannerText")}</p>
       <Button color="red" className="shrink-0 !py-1.5 !px-3 text-sm" onClick={() => navigate("/subscription")}>

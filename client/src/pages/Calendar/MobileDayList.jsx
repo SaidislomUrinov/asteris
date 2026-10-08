@@ -27,9 +27,9 @@ function MobileDayList({ cells, days, stats, selected, todayKey, canManage, unma
     <div className="flex flex-col gap-2.5">
       <div className="grid grid-cols-3 gap-2">
         {chips.map((c) => (
-          <div key={c.label} className="flex flex-col px-3 py-2 rounded-xl border border-slate-200 bg-white">
-            <span className="font-space text-lg font-bold text-slate-900 tabular-nums leading-tight">{c.value}</span>
-            <span className="text-[11px] text-slate-500 truncate">{c.label}</span>
+          <div key={c.label} className="flex flex-col px-3 py-2 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
+            <span className="font-space text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums leading-tight">{c.value}</span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{c.label}</span>
           </div>
         ))}
       </div>
@@ -48,11 +48,11 @@ function MobileDayList({ cells, days, stats, selected, todayKey, canManage, unma
                 isToday
                   ? "bg-slate-900 border-slate-900 text-white"
                   : holiday
-                    ? "bg-red-50 border-red-200 text-slate-700"
-                    : "bg-white border-slate-200 text-slate-700"
+                    ? "bg-red-50 dark:bg-red-500/15 border-red-200 dark:border-red-500/30 text-slate-700 dark:text-slate-300"
+                    : "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 text-slate-700 dark:text-slate-300"
               }`}
             >
-              <span className={`text-[10px] font-bold uppercase ${isToday ? "text-white/60" : "text-slate-400"}`}>
+              <span className={`text-[10px] font-bold uppercase ${isToday ? "text-white/60" : "text-slate-400 dark:text-slate-500"}`}>
                 {t(`group.dayShort.${cell.weekdayCode}`)}
               </span>
               <span className="font-space text-base font-bold tabular-nums">{cell.day}</span>
@@ -87,7 +87,7 @@ function MobileDayList({ cells, days, stats, selected, todayKey, canManage, unma
 
           return (
             <div key={cell.key} className="flex flex-col gap-2">
-              {weekStart && cell.day > 1 && <div className="h-px bg-slate-200 mx-1 my-1" />}
+              {weekStart && cell.day > 1 && <div className="h-px bg-slate-200 dark:bg-night-700 mx-1 my-1" />}
               <div
                 id={`cal-day-${cell.key}`}
                 role={selectable ? "button" : undefined}
@@ -96,25 +96,25 @@ function MobileDayList({ cells, days, stats, selected, todayKey, canManage, unma
                 onKeyDown={(e) => selectable && (e.key === "Enter" || e.key === " ") && onToggle(cell.key)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl border transition-colors ${
                   isSelected
-                    ? "border-blue-400 bg-blue-50"
+                    ? "border-blue-400 bg-blue-50 dark:bg-blue-500/15"
                     : holiday
-                      ? "border-red-200 bg-red-50"
+                      ? "border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/15"
                       : isToday
-                        ? "border-slate-900 bg-white"
-                        : "border-slate-200 bg-white"
+                        ? "border-slate-900 bg-white dark:bg-night-900"
+                        : "border-slate-200 dark:border-night-700 bg-white dark:bg-night-900"
                 } ${selectable ? "cursor-pointer" : ""}`}
               >
                 <div className="flex flex-col items-center w-10 shrink-0 leading-none">
-                  <span className={`font-space text-xl font-bold tabular-nums ${isSun ? "text-red-500" : "text-slate-900"}`}>
+                  <span className={`font-space text-xl font-bold tabular-nums ${isSun ? "text-red-500" : "text-slate-900 dark:text-slate-100"}`}>
                     {cell.day}
                   </span>
-                  <span className="text-[10px] font-bold uppercase text-slate-400 mt-1">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 mt-1">
                     {t(`group.dayShort.${cell.weekdayCode}`)}
                   </span>
                 </div>
                 <div className="flex flex-col flex-1 min-w-0">
-                  <span className={`text-sm font-semibold ${holiday ? "text-red-700 line-clamp-2" : "text-slate-800 truncate"}`}>{title}</span>
-                  <span className="text-xs text-slate-400 truncate">{subtitle}</span>
+                  <span className={`text-sm font-semibold ${holiday ? "text-red-700 dark:text-red-400 line-clamp-2" : "text-slate-800 dark:text-slate-100 truncate"}`}>{title}</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500 truncate">{subtitle}</span>
                 </div>
                 {holiday && canManage ? (
                   <button
@@ -124,14 +124,14 @@ function MobileDayList({ cells, days, stats, selected, todayKey, canManage, unma
                       e.stopPropagation();
                       onUnmark(cell.key);
                     }}
-                    className="shrink-0 px-2.5 h-8 rounded-lg bg-red-100 text-red-700 text-xs font-bold disabled:opacity-50 cursor-pointer"
+                    className="shrink-0 px-2.5 h-8 rounded-lg bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 text-xs font-bold disabled:opacity-50 cursor-pointer"
                   >
                     {t("calendar.unmarkShort")}
                   </button>
                 ) : selectable ? (
                   <span
                     className={`flex items-center justify-center shrink-0 w-6 h-6 rounded-lg border-[1.5px] ${
-                      isSelected ? "bg-blue-500 border-blue-500 text-white" : "border-slate-300 bg-white"
+                      isSelected ? "bg-blue-500 border-blue-500 text-white" : "border-slate-300 dark:border-night-600 bg-white dark:bg-night-900"
                     }`}
                   >
                     {isSelected && <HiCheck className="text-sm" />}

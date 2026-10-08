@@ -26,28 +26,28 @@ const money = (v) => `${(v || 0).toLocaleString("uz-UZ")}`;
 function SalaryPanel({ salary, loading, hidden, month, monthLabel, maxMonth, onMonthChange }) {
   const { t } = useTranslation();
   return (
-    <section className="flex flex-col gap-4 p-5 rounded-xl border border-slate-200 bg-white">
+    <section className="flex flex-col gap-4 p-5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600">
+          <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
             <HiBanknotes aria-hidden="true" />
           </span>
-          <h2 className="font-semibold text-slate-800">{t("salary.title")}</h2>
+          <h2 className="font-semibold text-slate-800 dark:text-slate-100">{t("salary.title")}</h2>
         </div>
         <MonthNav month={month} label={monthLabel} onChange={onMonthChange} max={maxMonth} />
       </header>
 
       {loading ? (
         <div className="flex flex-col gap-3 animate-pulse" aria-busy="true">
-          <div className="mx-auto w-40 h-40 rounded-full border-[14px] border-slate-100" />
+          <div className="mx-auto w-40 h-40 rounded-full border-[14px] border-slate-100 dark:border-night-700" />
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-5 rounded-md bg-slate-100" />
+            <div key={i} className="h-5 rounded-md bg-slate-100 dark:bg-night-800" />
           ))}
         </div>
       ) : hidden ? (
         <HiddenFinancePanel className="min-h-48" />
       ) : !salary ? (
-        <p className="text-sm text-slate-400 py-6 text-center">{t("teacherHome.noSalary")}</p>
+        <p className="text-sm text-slate-400 dark:text-slate-500 py-6 text-center">{t("teacherHome.noSalary")}</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-[240px_1fr] lg:grid-cols-1 gap-4 sm:gap-6 lg:gap-4 items-center">
           <div className="flex justify-center">
@@ -64,7 +64,7 @@ function SalaryPanel({ salary, loading, hidden, month, monthLabel, maxMonth, onM
           </div>
 
           <div className="flex flex-col min-w-0">
-            <div className="flex flex-col divide-y divide-slate-100">
+            <div className="flex flex-col divide-y divide-slate-100 dark:divide-night-700">
               <LedgerRow label={t("salary.base")} value={salary.base} />
               <LedgerRow label={t("salary.bonus")} value={salary.bonus} tone="positive" />
               <LedgerRow label={t("salary.advance")} value={salary.advance} tone="negative" />
@@ -75,19 +75,19 @@ function SalaryPanel({ salary, loading, hidden, month, monthLabel, maxMonth, onM
                 bo'lsa (manfiy) yashil emas, qizil ohangda. */}
             <div
               className={`flex items-center justify-between gap-3 mt-2 px-3 py-3 rounded-xl ${
-                salary.final < 0 ? "bg-rose-50" : "bg-emerald-50"
+                salary.final < 0 ? "bg-rose-50 dark:bg-rose-500/15" : "bg-emerald-50 dark:bg-emerald-500/15"
               }`}
             >
-              <span className={`text-sm font-semibold ${salary.final < 0 ? "text-rose-800" : "text-emerald-800"}`}>
+              <span className={`text-sm font-semibold ${salary.final < 0 ? "text-rose-800 dark:text-rose-400" : "text-emerald-800 dark:text-emerald-400"}`}>
                 {t("salary.final")}
               </span>
               <span className="flex items-baseline gap-1 min-w-0">
                 <NumberText
-                  className={`!text-lg truncate ${salary.final < 0 ? "!text-rose-600" : "!text-emerald-700"}`}
+                  className={`!text-lg truncate ${salary.final < 0 ? "!text-rose-600 dark:text-rose-400" : "!text-emerald-700 dark:text-emerald-400"}`}
                 >
                   {money(salary.final)}
                 </NumberText>
-                <span className="text-xs text-slate-400 shrink-0">{t("student.somSuffix")}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">{t("student.somSuffix")}</span>
               </span>
             </div>
           </div>

@@ -78,7 +78,7 @@ function DropdownMenu({ items = [], onOpenChange, trigger, align = "end" }) {
           <div
             ref={dropdownRef}
             style={{ top: pos.top, left: pos.left, zIndex: 9999 }}
-            className="fixed w-56 flex flex-col gap-0.5 bg-white rounded-xl border border-slate-200 shadow-[0_12px_28px_-8px_rgba(15,23,42,0.18)] p-1.5"
+            className="fixed w-56 flex flex-col gap-0.5 bg-white dark:bg-night-900 rounded-xl border border-slate-200 dark:border-night-700 shadow-[0_12px_28px_-8px_rgba(15,23,42,0.18)] dark:shadow-none p-1.5"
           >
             {items.map((item, index) => {
               // `disabled` band xira va bosilmaydi; `hint` — nega yopiqligi
@@ -97,7 +97,7 @@ function DropdownMenu({ items = [], onOpenChange, trigger, align = "end" }) {
                       item.onClick?.();
                       setOpen(false);
                     }}
-                    className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] font-medium text-slate-700 text-left transition-colors enabled:cursor-pointer enabled:hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] font-medium text-slate-700 dark:text-slate-300 text-left transition-colors enabled:cursor-pointer enabled:hover:bg-slate-50 dark:enabled:hover:bg-night-800 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <span
                       className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${item.iconClass}`}
@@ -107,7 +107,7 @@ function DropdownMenu({ items = [], onOpenChange, trigger, align = "end" }) {
                     <span className="flex flex-col min-w-0">
                       <span className="truncate leading-snug">{item.label}</span>
                       {item.hint && (
-                        <span className="text-[11px] font-normal leading-snug text-slate-500 whitespace-normal">
+                        <span className="text-[11px] font-normal leading-snug text-slate-500 dark:text-slate-400 whitespace-normal">
                           {item.hint}
                         </span>
                       )}

@@ -198,7 +198,7 @@ function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
         </TelegramPhoneField>
 
         {entries.length > 0 && (
-          <div className="flex flex-col gap-3 pt-1 border-t border-slate-100">
+          <div className="flex flex-col gap-3 pt-1 border-t border-slate-100 dark:border-night-700">
             {entries.map((en) => {
               const past = pastCyclesOf(en);
               const isOpen = !!openPast[en._id];
@@ -222,12 +222,12 @@ function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
                   />
 
                   {past.length > 0 && (
-                    <div className="flex flex-col rounded-xl border border-slate-200 bg-slate-50/60">
+                    <div className="flex flex-col rounded-xl border border-slate-200 dark:border-night-700 bg-slate-50/60 dark:bg-night-800/60">
                       <button
                         type="button"
                         aria-expanded={isOpen}
                         onClick={() => setOpenPast((prev) => ({ ...prev, [en._id]: !isOpen }))}
-                        className="flex items-center justify-between gap-2 px-3 h-10 text-sm font-medium text-slate-600 cursor-pointer"
+                        className="flex items-center justify-between gap-2 px-3 h-10 text-sm font-medium text-slate-600 dark:text-slate-300 cursor-pointer"
                       >
                         <span className="flex items-center gap-2 min-w-0">
                           <span className="truncate">{t("student.pastMonthsPrice")}</span>
@@ -241,9 +241,9 @@ function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
                       </button>
 
                       {isOpen && (
-                        <div className="flex flex-col gap-2 px-3 pb-3 border-t border-slate-200 pt-2">
-                          <p className="flex items-start gap-1.5 text-xs text-slate-500">
-                            <HiInformationCircle className="shrink-0 mt-0.5 text-sm text-slate-400" />
+                        <div className="flex flex-col gap-2 px-3 pb-3 border-t border-slate-200 dark:border-night-700 pt-2">
+                          <p className="flex items-start gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                            <HiInformationCircle className="shrink-0 mt-0.5 text-sm text-slate-400 dark:text-slate-500" />
                             {t("student.pastMonthsHint")}
                           </p>
                           <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto">
@@ -255,15 +255,15 @@ function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
                                 <div
                                   key={key}
                                   className={`flex items-center gap-2 rounded-lg px-2 py-1.5 border ${
-                                    changed ? "bg-blue-50 border-blue-200" : "bg-white border-slate-200"
+                                    changed ? "bg-blue-50 dark:bg-blue-500/15 border-blue-200 dark:border-blue-500/30" : "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700"
                                   }`}
                                 >
                                   <div className="flex-1 min-w-0 flex flex-col leading-tight">
-                                    <span className="text-sm font-semibold text-slate-700 capitalize wrap-break-word">
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 capitalize wrap-break-word">
                                       {monthLabel(c.month)}
                                     </span>
                                     {changed && (
-                                      <span className="text-[11px] text-slate-400 line-through truncate">
+                                      <span className="text-[11px] text-slate-400 dark:text-slate-500 line-through truncate">
                                         {maskMoney(c.price, false)}
                                       </span>
                                     )}

@@ -41,11 +41,11 @@ const lessonState = (g) => {
   const start = g.startTime ? toMinutes(g.startTime) : null;
   const end = g.endTime ? toMinutes(g.endTime) : null;
   if (start === null || end === null)
-    return { border: "border-slate-200", text: "text-slate-400", key: "" };
+    return { border: "border-slate-200 dark:border-night-700", text: "text-slate-400 dark:text-slate-500", key: "" };
   if (now >= start && now < end)
-    return { border: "border-blue-500", text: "text-blue-600", key: "ongoing" };
+    return { border: "border-blue-500", text: "text-blue-600 dark:text-blue-400", key: "ongoing" };
   if (now >= end)
-    return { border: "border-slate-200", text: "text-slate-300", key: "finished" };
+    return { border: "border-slate-200 dark:border-night-700", text: "text-slate-300 dark:text-slate-600", key: "finished" };
   return { border: "border-orange-300", text: "text-orange-500", key: "upcoming" };
 };
 
@@ -245,20 +245,20 @@ function ReceptionHome() {
           icon={<HiUsers />}
           label={t("receptionHome.activeStudents")}
           value={debtorsLoading ? "…" : debtorsFailed ? "—" : activeStudents}
-          color="bg-cyan-50 text-cyan-500"
+          color="bg-cyan-50 dark:bg-cyan-500/15 text-cyan-500"
         />
         <StatCard
           icon={<HiCalendarDays />}
           label={t("receptionHome.todayLessons")}
           value={groupsLoading ? "…" : groupsFailed ? "—" : groups.length}
-          color="bg-orange-50 text-orange-500"
+          color="bg-orange-50 dark:bg-orange-500/15 text-orange-500"
         />
         <div className="col-span-2 sm:col-span-1 min-w-0">
           <StatCard
             icon={<HiBanknotes />}
             label={t("receptionHome.debtors")}
             value={debtorsLoading ? "…" : debtorsFailed ? "—" : debtorsTotal}
-            color="bg-red-50 text-red-500"
+            color="bg-red-50 dark:bg-red-500/15 text-red-500"
           />
         </div>
       </div>
@@ -270,41 +270,41 @@ function ReceptionHome() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
         <ChartCard className="overflow-hidden">
           <div className="flex items-center justify-between gap-2">
-            <p className="font-semibold text-slate-800">{t("receptionHome.todayLessons")}</p>
+            <p className="font-semibold text-slate-800 dark:text-slate-100">{t("receptionHome.todayLessons")}</p>
             {!groupsLoading && groups.length > 0 && (
               <Chip value={groups.length} color="orange" variant="ghost" />
             )}
           </div>
 
           {!canViewGroups ? (
-            <p className="text-sm text-slate-400 py-8 text-center">{t("receptionHome.noPermission")}</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500 py-8 text-center">{t("receptionHome.noPermission")}</p>
           ) : groupsLoading ? (
             <Loading height="15vh" />
           ) : groupsFailed ? (
             <SectionError message={t("receptionHome.loadError")} onRetry={fetchGroups} />
           ) : groups.length === 0 ? (
-            <p className="text-sm text-slate-400 py-8 text-center">{t("receptionHome.noLessonsToday")}</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500 py-8 text-center">{t("receptionHome.noLessonsToday")}</p>
           ) : (
-            <div className="flex flex-col divide-y divide-slate-100 border-t border-slate-100 -mx-5 -mb-5 max-h-80 overflow-y-auto">
+            <div className="flex flex-col divide-y divide-slate-100 dark:divide-night-700 border-t border-slate-100 dark:border-night-700 -mx-5 -mb-5 max-h-80 overflow-y-auto">
               {groups.map((g) => {
                 const state = lessonState(g);
                 return (
                   <div
                     key={g._id}
                     onClick={() => navigate(`/groups/${g._id}`)}
-                    className={`flex items-center gap-3 px-5 py-2.5 border-l-3 hover:bg-slate-50 cursor-pointer transition-colors ${state.border}`}
+                    className={`flex items-center gap-3 px-5 py-2.5 border-l-3 hover:bg-slate-50 dark:hover:bg-night-800 cursor-pointer transition-colors ${state.border}`}
                   >
                     <div className="flex flex-col min-w-0 flex-1">
-                      <span className="font-semibold text-slate-800 truncate">
+                      <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">
                         {g.subjectName || subjectMap[g.subject] || "?"}
                       </span>
-                      <span className="text-xs text-slate-400 truncate">
+                      <span className="text-xs text-slate-400 dark:text-slate-500 truncate">
                         {g.teacherName || "—"} · {g.roomName || roomMap[g.room] || "—"}
                       </span>
                     </div>
                     <div className="flex flex-col items-end shrink-0">
-                      <span className="flex items-center gap-1 text-sm font-medium text-slate-600">
-                        <HiClock className="text-slate-300" />
+                      <span className="flex items-center gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+                        <HiClock className="text-slate-300 dark:text-slate-600" />
                         {g.startTime || "—"}–{g.endTime || "—"}
                       </span>
                       <span className={`text-[11px] font-semibold ${state.text}`}>
@@ -320,35 +320,35 @@ function ReceptionHome() {
 
         <ChartCard className="overflow-hidden">
           <div className="flex items-center justify-between gap-2">
-            <p className="font-semibold text-slate-800">{t("receptionHome.debtors")}</p>
+            <p className="font-semibold text-slate-800 dark:text-slate-100">{t("receptionHome.debtors")}</p>
             {!debtorsLoading && debtorsTotal > 0 && (
               <Chip value={debtorsTotal} color="red" variant="ghost" />
             )}
           </div>
 
           {!canViewStudents ? (
-            <p className="text-sm text-slate-400 py-8 text-center">{t("receptionHome.noPermission")}</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500 py-8 text-center">{t("receptionHome.noPermission")}</p>
           ) : debtorsLoading ? (
             <Loading height="15vh" />
           ) : debtorsFailed ? (
             <SectionError message={t("receptionHome.loadError")} onRetry={fetchStudents} />
           ) : debtors.length === 0 ? (
-            <p className="text-sm text-slate-400 py-8 text-center">{t("receptionHome.noDebtors")}</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500 py-8 text-center">{t("receptionHome.noDebtors")}</p>
           ) : (
             <>
-              <div className="flex flex-col divide-y divide-slate-100 border-t border-slate-100 -mx-5 -mb-5 max-h-80 overflow-y-auto">
+              <div className="flex flex-col divide-y divide-slate-100 dark:divide-night-700 border-t border-slate-100 dark:border-night-700 -mx-5 -mb-5 max-h-80 overflow-y-auto">
                 {debtors.map((s) => (
                   <div
                     key={s._id}
                     onClick={() => navigate(`/students/${s._id}`)}
-                    className="flex items-center gap-3 px-5 py-2.5 hover:bg-red-50/60 cursor-pointer transition-colors"
+                    className="flex items-center gap-3 px-5 py-2.5 hover:bg-red-50/60 dark:hover:bg-red-500/15 cursor-pointer transition-colors"
                   >
                     <Avatar user={{ _id: s._id, name: s.fullName, avatar: s.photo }} size={34} />
                     <div className="flex flex-col min-w-0 flex-1">
-                      <span className="font-semibold text-slate-800 truncate">{s.fullName}</span>
-                      <span className="text-xs text-slate-400 truncate">{s.phone}</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">{s.fullName}</span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500 truncate">{s.phone}</span>
                     </div>
-                    <span className="font-semibold text-red-600 shrink-0 text-sm">
+                    <span className="font-semibold text-red-600 dark:text-red-400 shrink-0 text-sm">
                       {maskMoney(totalDebtOf(s), hideFinance)} {hideFinance ? "" : t("student.somSuffix")}
                     </span>
                   </div>
@@ -358,7 +358,7 @@ function ReceptionHome() {
                 <button
                   type="button"
                   onClick={() => navigate("/students?debtStatus=debtor")}
-                  className="-mx-5 -mb-5 px-5 py-2.5 border-t border-slate-100 text-sm font-semibold text-red-600 hover:bg-red-50 cursor-pointer transition-colors"
+                  className="-mx-5 -mb-5 px-5 py-2.5 border-t border-slate-100 dark:border-night-700 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15 cursor-pointer transition-colors"
                 >
                   {t("receptionHome.viewAllDebtors", { count: debtorsTotal })}
                 </button>
@@ -394,49 +394,49 @@ function ReceptionHome() {
 
       {/* Tezkor amallar — eng past prioritet, shuning uchun eng pastda */}
       <ChartCard className="h-auto">
-        <p className="font-semibold text-slate-800">{t("receptionHome.quickActions")}</p>
+        <p className="font-semibold text-slate-800 dark:text-slate-100">{t("receptionHome.quickActions")}</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {canViewStudents && (
             <button
               type="button"
               onClick={() => navigate("/students")}
-              className="group flex items-center gap-3 p-3.5 rounded-lg border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 active:bg-emerald-100 transition-colors cursor-pointer text-left min-h-[3.25rem]"
+              className="group flex items-center gap-3 p-3.5 rounded-lg border border-slate-200 dark:border-night-700 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/15 active:bg-emerald-100 dark:active:bg-emerald-500/20 transition-colors cursor-pointer text-left min-h-[3.25rem]"
             >
-              <div className="w-9 h-9 shrink-0 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+              <div className="w-9 h-9 shrink-0 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg">
                 <HiUsers />
               </div>
-              <span className="font-semibold text-slate-700 flex-1">
+              <span className="font-semibold text-slate-700 dark:text-slate-300 flex-1">
                 {t("receptionHome.goToStudents")}
               </span>
-              <HiChevronRight className="shrink-0 text-slate-300 group-hover:text-emerald-500 transition-colors" />
+              <HiChevronRight className="shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-emerald-500 transition-colors" />
             </button>
           )}
           {canViewGroups && (
             <button
               type="button"
               onClick={() => navigate("/groups")}
-              className="group flex items-center gap-3 p-3.5 rounded-lg border border-slate-200 hover:border-blue-400 hover:bg-blue-50 active:bg-blue-100 transition-colors cursor-pointer text-left min-h-[3.25rem]"
+              className="group flex items-center gap-3 p-3.5 rounded-lg border border-slate-200 dark:border-night-700 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/15 active:bg-blue-100 dark:active:bg-blue-500/20 transition-colors cursor-pointer text-left min-h-[3.25rem]"
             >
-              <div className="w-9 h-9 shrink-0 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+              <div className="w-9 h-9 shrink-0 rounded-lg bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg">
                 <HiUserGroup />
               </div>
-              <span className="font-semibold text-slate-700 flex-1">{t("receptionHome.goToGroups")}</span>
-              <HiChevronRight className="shrink-0 text-slate-300 group-hover:text-blue-500 transition-colors" />
+              <span className="font-semibold text-slate-700 dark:text-slate-300 flex-1">{t("receptionHome.goToGroups")}</span>
+              <HiChevronRight className="shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors" />
             </button>
           )}
           {can("attendance:view") && (
             <button
               type="button"
               onClick={() => navigate("/groups")}
-              className="group flex items-center gap-3 p-3.5 rounded-lg border border-slate-200 hover:border-violet-400 hover:bg-violet-50 active:bg-violet-100 transition-colors cursor-pointer text-left min-h-[3.25rem]"
+              className="group flex items-center gap-3 p-3.5 rounded-lg border border-slate-200 dark:border-night-700 hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/15 active:bg-violet-100 dark:active:bg-violet-500/20 transition-colors cursor-pointer text-left min-h-[3.25rem]"
             >
-              <div className="w-9 h-9 shrink-0 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center text-lg">
+              <div className="w-9 h-9 shrink-0 rounded-lg bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400 flex items-center justify-center text-lg">
                 <HiClipboardDocumentCheck />
               </div>
-              <span className="font-semibold text-slate-700 flex-1">
+              <span className="font-semibold text-slate-700 dark:text-slate-300 flex-1">
                 {t("receptionHome.goToAttendance")}
               </span>
-              <HiChevronRight className="shrink-0 text-slate-300 group-hover:text-violet-500 transition-colors" />
+              <HiChevronRight className="shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-violet-500 transition-colors" />
             </button>
           )}
         </div>

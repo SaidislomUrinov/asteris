@@ -244,11 +244,11 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
   if (loadError) {
     return (
       <div className="flex flex-col flex-1 items-center justify-center gap-2 text-center">
-        <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 text-2xl text-red-400">
+        <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-500/15 text-2xl text-red-400">
           <HiExclamationTriangle />
         </span>
-        <p className="text-sm font-medium text-slate-600">{t("syllabus.loadError")}</p>
-        <p className="text-xs text-slate-400">{t(loadError)}</p>
+        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{t("syllabus.loadError")}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500">{t(loadError)}</p>
         <Button variant="outlined" color="black" onClick={fetchSyllabus}>
           {t("syllabus.retry")}
         </Button>
@@ -262,7 +262,7 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
     <div className="flex flex-col flex-1 gap-3">
       {/* Sarlavha + amallar */}
       <div className="flex items-start justify-between gap-2 flex-wrap">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
           {t("syllabus.title")}
         </p>
         <div className="flex items-center gap-2">
@@ -292,10 +292,10 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
               {menuOpen && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                  <div className="absolute right-0 top-full z-20 mt-1 min-w-52 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+                  <div className="absolute right-0 top-full z-20 mt-1 min-w-52 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 p-1 shadow-lg dark:shadow-none">
                     <button
                       type="button"
-                      className="w-full px-3 py-2 text-left text-sm text-slate-700 rounded-lg hover:bg-slate-50 cursor-pointer"
+                      className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-night-800 cursor-pointer"
                       onClick={() => {
                         setMenuOpen(false);
                         setCurrentNo(nextNo || 1);
@@ -315,9 +315,9 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
       {/* Progress — hali bitta ham mavzu kiritilmagan bo'lsa ko'rsatilmaydi
           (aks holda "Modul 1/1 · 0-dars · 0/0" kabi ma'nosiz qator chiqardi). */}
       {hasSyllabus && totalLessons > 0 && (
-        <div className="flex flex-col gap-2 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
+        <div className="flex flex-col gap-2 p-3 rounded-xl border border-slate-200 dark:border-night-700 bg-slate-50/60 dark:bg-night-800/60">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-slate-800">
+            <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
               {finished
                 ? t("syllabus.finished")
                 : t("syllabus.progress", {
@@ -326,7 +326,7 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
                     lesson: nextNo || totalLessons,
                   })}
             </span>
-            <span className="text-xs font-jet tabular-nums text-slate-500">
+            <span className="text-xs font-jet tabular-nums text-slate-500 dark:text-slate-400">
               {Math.min(doneCount, totalLessons)}/{totalLessons}
             </span>
           </div>
@@ -341,11 +341,11 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
       {/* Modullar akkordeoni */}
       {!hasSyllabus ? (
         <div className="flex flex-col flex-1 items-center justify-center gap-2 text-center">
-          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-50 text-2xl text-slate-300">
+          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-50 dark:bg-night-800 text-2xl text-slate-300 dark:text-slate-600">
             <HiClipboardDocumentList />
           </span>
-          <p className="text-sm font-medium text-slate-600">{t("syllabus.empty")}</p>
-          <p className="text-xs text-slate-400 max-w-xs">{t("syllabus.emptyHint")}</p>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{t("syllabus.empty")}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 max-w-xs">{t("syllabus.emptyHint")}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -359,8 +359,8 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
             return (
               <div
                 key={module._id || `m-${mi}`}
-                className={`flex flex-col rounded-xl border bg-white overflow-hidden ${
-                  isCurrentModule ? "border-blue-300 ring-1 ring-blue-100" : "border-slate-200"
+                className={`flex flex-col rounded-xl border bg-white dark:bg-night-900 overflow-hidden ${
+                  isCurrentModule ? "border-blue-300 ring-1 ring-blue-100 dark:ring-blue-500/30" : "border-slate-200 dark:border-night-700"
                 }`}
               >
                 <div className="flex items-center gap-2 p-3">
@@ -370,18 +370,18 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
                     className="flex items-center gap-2 min-w-0 flex-1 text-left cursor-pointer"
                   >
                     <HiChevronDown
-                      className={`shrink-0 text-slate-400 transition-transform duration-200 ${
+                      className={`shrink-0 text-slate-400 dark:text-slate-500 transition-transform duration-200 ${
                         open ? "" : "-rotate-90"
                       }`}
                     />
-                    <span className="text-sm font-semibold text-slate-800 truncate">
+                    <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
                       {module.title}
                     </span>
-                    <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-slate-100 text-[11px] text-slate-500 tabular-nums">
+                    <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-night-800 text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
                       {t("syllabus.moduleLessons", { count: lessons.length })}
                     </span>
                     {lessons.length > 0 && (
-                      <span className="hidden sm:inline shrink-0 text-[11px] text-slate-400 tabular-nums">
+                      <span className="hidden sm:inline shrink-0 text-[11px] text-slate-400 dark:text-slate-500 tabular-nums">
                         {t("syllabus.moduleProgress", {
                           done: doneInModule,
                           total: lessons.length,
@@ -423,9 +423,9 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
                 </div>
 
                 {open && (
-                  <div className="flex flex-col border-t border-slate-100">
+                  <div className="flex flex-col border-t border-slate-100 dark:border-night-700">
                     {lessons.length === 0 ? (
-                      <p className="px-4 py-3 text-xs text-slate-400">{t("syllabus.noLessons")}</p>
+                      <p className="px-4 py-3 text-xs text-slate-400 dark:text-slate-500">{t("syllabus.noLessons")}</p>
                     ) : (
                       lessons.map((lesson) => {
                         const no = numbering.map[lesson._id];
@@ -435,8 +435,8 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
                         return (
                           <div
                             key={lesson._id}
-                            className={`flex items-start gap-3 px-3 py-2.5 border-b border-slate-50 last:border-b-0 ${
-                              isCurrent ? "bg-blue-50/60" : ""
+                            className={`flex items-start gap-3 px-3 py-2.5 border-b border-slate-50 dark:border-night-700 last:border-b-0 ${
+                              isCurrent ? "bg-blue-50/60 dark:bg-blue-500/15" : ""
                             }`}
                           >
                             <span
@@ -444,8 +444,8 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
                                 isCurrent
                                   ? "bg-blue-500 text-white"
                                   : isDone
-                                    ? "bg-slate-100 text-slate-300"
-                                    : "bg-slate-100 text-slate-500"
+                                    ? "bg-slate-100 dark:bg-night-800 text-slate-300 dark:text-slate-600"
+                                    : "bg-slate-100 dark:bg-night-800 text-slate-500 dark:text-slate-400"
                               }`}
                             >
                               {no}
@@ -456,14 +456,14 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
                                 <span
                                   className={`text-sm font-semibold ${
                                     isDone
-                                      ? "text-slate-400 line-through decoration-slate-300"
-                                      : "text-slate-800"
+                                      ? "text-slate-400 dark:text-slate-500 line-through decoration-slate-300"
+                                      : "text-slate-800 dark:text-slate-100"
                                   }`}
                                 >
                                   {lesson.title}
                                 </span>
                                 {isCurrent && (
-                                  <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-[10px] font-semibold uppercase text-blue-600">
+                                  <span className="px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-500/20 text-[10px] font-semibold uppercase text-blue-600 dark:text-blue-400">
                                     {t("syllabus.current")}
                                   </span>
                                 )}
@@ -471,15 +471,15 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
                               {lesson.description && (
                                 <p
                                   className={`text-xs whitespace-pre-line ${
-                                    isDone ? "text-slate-300" : "text-slate-500"
+                                    isDone ? "text-slate-300 dark:text-slate-600" : "text-slate-500 dark:text-slate-400"
                                   }`}
                                 >
                                   {lesson.description}
                                 </p>
                               )}
                               {showHomework && lesson.homework && (
-                                <p className={`text-xs ${isDone ? "text-slate-300" : "text-blue-600"}`}>
-                                  <span className="text-slate-400">
+                                <p className={`text-xs ${isDone ? "text-slate-300 dark:text-slate-600" : "text-blue-600 dark:text-blue-400"}`}>
+                                  <span className="text-slate-400 dark:text-slate-500">
                                     {t("syllabus.homeworkLabel")}:{" "}
                                   </span>
                                   {lesson.homework}
@@ -554,7 +554,7 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
               kalendarga tushishini bilmasdan qo'shilsa, keyin "nega o'tgan
               kunga yozilmadi" degan savol tug'iladi. */}
           {!moduleDialog?.module && (
-            <p className="text-xs text-slate-400 leading-relaxed pt-1 border-t border-slate-100">
+            <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed pt-1 border-t border-slate-100 dark:border-night-700">
               {t("syllabus.calendarHint")}
             </p>
           )}
@@ -606,7 +606,7 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
         }
       >
         <div className="flex flex-col gap-3 w-full">
-          <p className="text-sm font-semibold text-slate-800">
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
             {t("syllabus.currentLessonQuestion")}
           </p>
           <CurrentLessonPicker
@@ -634,7 +634,7 @@ function SyllabusTab({ groupId, canWrite = false, canImport = false }) {
           </>
         }
       >
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-slate-600 dark:text-slate-300">
           {removeTarget?.kind === "module"
             ? t("syllabus.deleteModuleConfirm", { title: removeTarget?.title })
             : t("syllabus.deleteLessonConfirm", { title: removeTarget?.title })}

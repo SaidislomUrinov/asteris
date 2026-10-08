@@ -96,8 +96,8 @@ function HomeworkDayCard({ date, badge = null, muted = false, item, suggestion =
   return (
     <div
       data-date={date}
-      className={`flex flex-col gap-2.5 p-3 rounded-xl border bg-white transition-colors ${
-        badge === "today" ? "border-blue-200 ring-1 ring-blue-100" : muted ? "border-slate-100" : "border-slate-200"
+      className={`flex flex-col gap-2.5 p-3 rounded-xl border bg-white dark:bg-night-900 transition-colors ${
+        badge === "today" ? "border-blue-200 dark:border-blue-500/30 ring-1 ring-blue-100 dark:ring-blue-500/30" : muted ? "border-slate-100 dark:border-night-700" : "border-slate-200 dark:border-night-700"
       }`}
     >
       <div className="flex items-center gap-2.5">
@@ -106,10 +106,10 @@ function HomeworkDayCard({ date, badge = null, muted = false, item, suggestion =
             badge === "today"
               ? "bg-blue-500 text-white"
               : badge === "tomorrow"
-                ? "bg-blue-50 text-blue-600"
+                ? "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400"
                 : muted
-                  ? "bg-slate-50 text-slate-400"
-                  : "bg-slate-100 text-slate-600"
+                  ? "bg-slate-50 dark:bg-night-800 text-slate-400 dark:text-slate-500"
+                  : "bg-slate-100 dark:bg-night-800 text-slate-600 dark:text-slate-300"
           }`}
         >
           <span className="text-[9px] font-semibold uppercase opacity-80">
@@ -119,15 +119,15 @@ function HomeworkDayCard({ date, badge = null, muted = false, item, suggestion =
         </div>
 
         <div className="flex flex-col min-w-0 leading-tight">
-          <span className={`text-[13px] font-semibold truncate ${muted ? "text-slate-500" : "text-slate-800"}`}>
+          <span className={`text-[13px] font-semibold truncate ${muted ? "text-slate-500 dark:text-slate-400" : "text-slate-800 dark:text-slate-100"}`}>
             {weekdayLabel}, {dayMonth}
           </span>
           {badge ? (
-            <span className={`text-[11px] font-semibold ${badge === "today" ? "text-blue-600" : "text-slate-400"}`}>
+            <span className={`text-[11px] font-semibold ${badge === "today" ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-500"}`}>
               {t(`homework.${badge}`)}
             </span>
           ) : (
-            stamp && <span className="text-[11px] text-slate-400 truncate">{stamp}</span>
+            stamp && <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate">{stamp}</span>
           )}
         </div>
 
@@ -145,12 +145,12 @@ function HomeworkDayCard({ date, badge = null, muted = false, item, suggestion =
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={suggestion || t("homework.placeholder")}
-          className="w-full resize-none overflow-hidden rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] leading-relaxed text-slate-900 outline-none placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-3 ring-blue-500/15 duration-200"
+          className="w-full resize-none overflow-hidden rounded-lg border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 px-3 py-2 text-[13px] leading-relaxed text-slate-900 dark:text-slate-100 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-night-600 focus:border-blue-500 focus:ring-3 ring-blue-500/15 duration-200"
         />
       ) : (
         <p
           className={`text-[13px] leading-relaxed whitespace-pre-wrap break-words ${
-            base ? (muted ? "text-slate-600" : "text-slate-800") : "text-slate-400"
+            base ? (muted ? "text-slate-600 dark:text-slate-300" : "text-slate-800 dark:text-slate-100") : "text-slate-400 dark:text-slate-500"
           }`}
         >
           {base || t("homework.noHomework")}
@@ -160,7 +160,7 @@ function HomeworkDayCard({ date, badge = null, muted = false, item, suggestion =
       {(showSuggestion || (canWrite && dirty) || (canWrite && draft.length >= COUNTER_FROM)) && (
         <div className="flex items-center gap-2 flex-wrap">
           {canWrite && draft.length >= COUNTER_FROM && (
-            <span className="text-[11px] text-amber-600">
+            <span className="text-[11px] text-amber-600 dark:text-amber-400">
               {draft.length}/{MAX_LENGTH}
             </span>
           )}
@@ -169,7 +169,7 @@ function HomeworkDayCard({ date, badge = null, muted = false, item, suggestion =
               <button
                 type="button"
                 onClick={() => setDraft(suggestion)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-dashed border-blue-200 bg-blue-50/60 text-[12px] font-medium text-blue-600 hover:bg-blue-50 hover:border-blue-300 cursor-pointer transition-colors"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-dashed border-blue-200 dark:border-blue-500/30 bg-blue-50/60 dark:bg-blue-500/15 text-[12px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/15 hover:border-blue-300 cursor-pointer transition-colors"
               >
                 <HiArrowDownTray className="text-sm shrink-0" />
                 {t("homework.fromSyllabus")}

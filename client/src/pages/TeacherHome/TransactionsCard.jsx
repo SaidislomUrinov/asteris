@@ -38,16 +38,16 @@ function TransactionsCard({ salary, loading, hidden, monthLabel }) {
   const visibleTx = expanded ? transactions : transactions.slice(0, INITIAL_TX);
 
   return (
-    <section className="flex flex-col rounded-xl border border-slate-200 bg-white overflow-hidden">
+    <section className="flex flex-col rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 overflow-hidden">
       <div className="flex flex-col gap-2 p-5">
         <header className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="flex items-center justify-center w-7 h-7 shrink-0 rounded-lg bg-blue-50 text-blue-600">
+            <span className="flex items-center justify-center w-7 h-7 shrink-0 rounded-lg bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400">
               <HiReceiptPercent aria-hidden="true" />
             </span>
-            <h2 className="font-semibold text-slate-800 truncate">{t("salary.transactions")}</h2>
+            <h2 className="font-semibold text-slate-800 dark:text-slate-100 truncate">{t("salary.transactions")}</h2>
           </div>
-          <span className="shrink-0 px-2.5 py-1 rounded-full bg-slate-100 text-xs font-medium text-slate-600 capitalize">
+          <span className="shrink-0 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-night-800 text-xs font-medium text-slate-600 dark:text-slate-300 capitalize">
             {monthLabel}
           </span>
         </header>
@@ -55,42 +55,42 @@ function TransactionsCard({ salary, loading, hidden, monthLabel }) {
         {loading ? (
           <div className="flex flex-col gap-2 pt-1 animate-pulse" aria-busy="true">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-10 rounded-lg bg-slate-100" />
+              <div key={i} className="h-10 rounded-lg bg-slate-100 dark:bg-night-800" />
             ))}
           </div>
         ) : hidden ? (
-          <div className="flex items-center gap-2.5 py-3 text-slate-400">
+          <div className="flex items-center gap-2.5 py-3 text-slate-400 dark:text-slate-500">
             <HiEyeSlash className="text-lg shrink-0" aria-hidden="true" />
             <p className="text-xs">{t("common.financeHidden")}</p>
           </div>
         ) : transactions.length === 0 ? (
-          <div className="flex items-center gap-2.5 py-3 text-slate-400">
+          <div className="flex items-center gap-2.5 py-3 text-slate-400 dark:text-slate-500">
             <HiClipboardDocumentList className="text-lg shrink-0" aria-hidden="true" />
             <p className="text-xs">{t("teacherHome.noTransactions")}</p>
           </div>
         ) : (
           <>
-            <ul className="flex flex-col divide-y divide-slate-100">
+            <ul className="flex flex-col divide-y divide-slate-100 dark:divide-night-700">
               {visibleTx.map((tx) => {
                 const cancelled = tx.status === "cancelled";
                 const positive = tx.type === "bonus";
                 return (
                   <li key={tx._id} className={`flex items-center gap-3 py-2.5 ${cancelled ? "opacity-50" : ""}`}>
                     <span
-                      className={`w-2 h-2 shrink-0 rounded-full ${TX_DOT[tx.type] || "bg-slate-300"}`}
+                      className={`w-2 h-2 shrink-0 rounded-full ${TX_DOT[tx.type] || "bg-slate-300 dark:bg-night-600"}`}
                       aria-hidden="true"
                     />
                     <div className="flex flex-col flex-1 min-w-0">
-                      <span className={`text-sm font-medium text-slate-700 ${cancelled ? "line-through" : ""}`}>
+                      <span className={`text-sm font-medium text-slate-700 dark:text-slate-300 ${cancelled ? "line-through" : ""}`}>
                         {t(`salary.txType.${tx.type}`)}
                       </span>
-                      <span className="text-xs text-slate-400 truncate">
+                      <span className="text-xs text-slate-400 dark:text-slate-500 truncate">
                         {[tx.date?.split(" | ")[0], tx.note].filter(Boolean).join(" · ")}
                       </span>
                     </div>
                     <NumberText
                       className={`shrink-0 ${
-                        cancelled ? "line-through !text-slate-400" : positive ? "!text-emerald-600" : "!text-slate-700"
+                        cancelled ? "line-through !text-slate-400 dark:text-slate-500" : positive ? "!text-emerald-600 dark:text-emerald-400" : "!text-slate-700 dark:text-slate-300"
                       }`}
                     >
                       {positive ? "+" : "−"}
@@ -104,7 +104,7 @@ function TransactionsCard({ salary, loading, hidden, monthLabel }) {
               <button
                 type="button"
                 onClick={() => setExpanded((v) => !v)}
-                className="self-center h-10 px-4 rounded-xl text-sm font-medium text-blue-600 hover:bg-blue-50 cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+                className="self-center h-10 px-4 rounded-xl text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/15 cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
               >
                 {expanded ? t("teacherHome.showLess") : t("teacherHome.showAll", { count: transactions.length })}
               </button>
@@ -115,10 +115,10 @@ function TransactionsCard({ salary, loading, hidden, monthLabel }) {
 
       {/* O'quvchilar boti — kartaning pastki yordamchi qatori */}
       {botLink && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-5 py-3.5 border-t border-slate-100 bg-slate-50/60">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-5 py-3.5 border-t border-slate-100 dark:border-night-700 bg-slate-50/60 dark:bg-night-800/60">
           <div className="flex flex-col min-w-0">
-            <h3 className="text-sm font-semibold text-slate-800">{t("student.botLinkLabel")}</h3>
-            <p className="text-xs text-slate-400">{t("student.botLinkHint")}</p>
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t("student.botLinkLabel")}</h3>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{t("student.botLinkHint")}</p>
           </div>
           <div className="min-w-0 max-w-full">
             <TelegramBotLink className="max-w-full" />

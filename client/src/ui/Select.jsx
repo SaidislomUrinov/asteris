@@ -36,13 +36,13 @@ function Select({
   };
 
   const selectedItemColors = {
-    emerald: "bg-emerald-50 text-emerald-700",
-    blue: "bg-blue-50 text-blue-700",
-    black: "bg-slate-100 text-slate-900",
-    red: "bg-red-50 text-red-700",
-    orange: "bg-orange-50 text-orange-700",
-    yellow: "bg-yellow-50 text-yellow-700",
-    slate: "bg-slate-100 text-slate-700",
+    emerald: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+    blue: "bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400",
+    black: "bg-slate-100 dark:bg-night-800 text-slate-900 dark:text-slate-100",
+    red: "bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-400",
+    orange: "bg-orange-50 dark:bg-orange-500/15 text-orange-700 dark:text-orange-400",
+    yellow: "bg-yellow-50 dark:bg-yellow-500/15 text-yellow-700 dark:text-yellow-400",
+    slate: "bg-slate-100 dark:bg-night-800 text-slate-700 dark:text-slate-300",
   };
 
   // Qiymat tanlanganda maydon avval butunlay rangga bo'yalardi; yangi dizaynda
@@ -50,16 +50,16 @@ function Select({
   // faqat matnning to'qligi bilan ajralib turadi — shu sabab alohida
   // "active trigger" ranglari kerak emas.
   const variants = {
-    slate: "bg-white border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
-    white: "bg-white border-slate-200",
+    slate: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none",
+    white: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700",
     // Faqat FilterBar ichida ishlatiladi: bo'sh bo'lganda oddiy oq, qiymat
     // tanlanganda ochiq ko'k fon bilan ajralib turadi — foydalanuvchi qaysi
     // filtrlar faol ekanini qatorga qarab darhol ko'radi.
-    filter: "bg-white border-slate-200",
+    filter: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700",
   };
 
   const filterSelectedClasses =
-    "!bg-blue-50 !border-blue-200 hover:!border-blue-300";
+    "!bg-blue-50 dark:bg-blue-500/15 !border-blue-200 dark:border-blue-500/30 hover:!border-blue-300";
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(value);
   const [pos, setPos] = useState({
@@ -145,7 +145,7 @@ function Select({
   return (
     <div className={`flex flex-col gap-1 w-full min-w-[100px] ${className}`}>
       {label && (
-        <span className="text-xs font-medium text-slate-600">
+        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
           {label} {required && <span className="text-rose-500">*</span>}
         </span>
       )}
@@ -157,16 +157,16 @@ function Select({
           variants[variant]
         } ${
           disabled
-            ? "bg-slate-50 border-slate-200 shadow-none cursor-not-allowed"
-            : `cursor-pointer hover:border-slate-300`
+            ? "bg-slate-50 dark:bg-night-800 border-slate-200 dark:border-night-700 shadow-none cursor-not-allowed"
+            : `cursor-pointer hover:border-slate-300 dark:hover:border-night-600`
         } ${variant === "filter" && selected ? filterSelectedClasses : ""} ${open ? `ring-3 ${colors[color]} ${openBorderColors[color]}` : ""}`}
       >
         <span className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
-          {icon && <span className="text-slate-400 shrink-0 text-[15px]">{icon}</span>}
+          {icon && <span className="text-slate-400 dark:text-slate-500 shrink-0 text-[15px]">{icon}</span>}
           <span
-            className={`truncate min-w-0 text-[13px] ${selected ? "text-slate-900" : "text-slate-400"} ${
-              variant === "filter" && selected ? "font-medium text-blue-700" : ""
-            } ${disabled ? "text-slate-400" : ""}`}
+            className={`truncate min-w-0 text-[13px] ${selected ? "text-slate-900 dark:text-slate-100" : "text-slate-400 dark:text-slate-500"} ${
+              variant === "filter" && selected ? "font-medium text-blue-700 dark:text-blue-400" : ""
+            } ${disabled ? "text-slate-400 dark:text-slate-500" : ""}`}
           >
             {selected
               ? options.find((o) => o.value === selected)?.label
@@ -174,7 +174,7 @@ function Select({
           </span>
         </span>
         <HiChevronDown
-          className={`shrink-0 text-slate-400 text-base transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          className={`shrink-0 text-slate-400 dark:text-slate-500 text-base transition-transform duration-200 ${open ? "rotate-180" : ""}`}
         />
       </div>
 
@@ -191,7 +191,7 @@ function Select({
               maxHeight: pos.maxHeight,
               zIndex: 9999,
             }}
-            className="bg-white border border-slate-200 rounded-xl shadow-[0_12px_28px_-8px_rgba(15,23,42,0.18)] overflow-y-auto p-1.5 flex flex-col gap-0.5"
+            className="bg-white dark:bg-night-900 border border-slate-200 dark:border-night-700 rounded-xl shadow-[0_12px_28px_-8px_rgba(15,23,42,0.18)] dark:shadow-none overflow-y-auto p-1.5 flex flex-col gap-0.5"
           >
             {options.map((option) => (
               <div
@@ -201,7 +201,7 @@ function Select({
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-[13px] transition-colors ${
                   option.value === selected
                     ? `${selectedItemColors[color]} font-semibold`
-                    : "text-slate-700 hover:bg-slate-50"
+                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-night-800"
                 }`}
               >
                 {option.icon && <span>{option.icon}</span>}

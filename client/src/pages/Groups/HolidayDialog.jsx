@@ -21,7 +21,7 @@ function HolidayDialog({ open, onClose, date, existing, onMark, onUnmark, saving
   return (
     <Dialog open={open} onClose={onClose} title={t("group.holidayDialogTitle", { date })}>
       <div className="flex flex-col gap-4 w-full">
-        <p className="text-base text-slate-600">{t("group.holidayDialogHint")}</p>
+        <p className="text-base text-slate-600 dark:text-slate-300">{t("group.holidayDialogHint")}</p>
 
         <Input
           label={t("group.holidayNote")}
@@ -35,14 +35,14 @@ function HolidayDialog({ open, onClose, date, existing, onMark, onUnmark, saving
           type="button"
           disabled={saving}
           onClick={() => onMark(false, note.trim())}
-          className="flex items-start gap-3 p-4 rounded-lg border border-slate-200 hover:border-red-300 hover:bg-red-50/50 text-left cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-start gap-3 p-4 rounded-lg border border-slate-200 dark:border-night-700 hover:border-red-300 hover:bg-red-50/50 dark:hover:bg-red-500/15 text-left cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <div className="w-11 h-11 shrink-0 rounded-lg bg-red-100 text-red-600 flex items-center justify-center text-xl">
+          <div className="w-11 h-11 shrink-0 rounded-lg bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center text-xl">
             <HiNoSymbol />
           </div>
           <div>
-            <p className="font-bold text-base text-slate-800">{t("group.holidayNotChargeable")}</p>
-            <p className="text-sm text-slate-600">{t("group.holidayNotChargeableDesc")}</p>
+            <p className="font-bold text-base text-slate-800 dark:text-slate-100">{t("group.holidayNotChargeable")}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300">{t("group.holidayNotChargeableDesc")}</p>
           </div>
         </button>
 
@@ -50,14 +50,14 @@ function HolidayDialog({ open, onClose, date, existing, onMark, onUnmark, saving
           type="button"
           disabled={saving}
           onClick={() => onMark(true, note.trim())}
-          className="flex items-start gap-3 p-4 rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 text-left cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-start gap-3 p-4 rounded-lg border border-slate-200 dark:border-night-700 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:bg-blue-500/15 text-left cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <div className="w-11 h-11 shrink-0 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xl">
+          <div className="w-11 h-11 shrink-0 rounded-lg bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl">
             <HiBanknotes />
           </div>
           <div>
-            <p className="font-bold text-base text-slate-800">{t("group.holidayChargeable")}</p>
-            <p className="text-sm text-slate-600">{t("group.holidayChargeableDesc")}</p>
+            <p className="font-bold text-base text-slate-800 dark:text-slate-100">{t("group.holidayChargeable")}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300">{t("group.holidayChargeableDesc")}</p>
           </div>
         </button>
 

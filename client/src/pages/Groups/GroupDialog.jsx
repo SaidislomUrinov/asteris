@@ -246,7 +246,7 @@ function GroupDialog({
         />
 
         <div className="flex flex-col gap-1.5">
-          <span className="pl-2 text-sm text-slate-800">{t("group.days")}</span>
+          <span className="pl-2 text-sm text-slate-800 dark:text-slate-100">{t("group.days")}</span>
           <div className="flex flex-wrap gap-1.5">
             {DAYS.map((day) => {
               const selected = form.days.includes(day);
@@ -258,7 +258,7 @@ function GroupDialog({
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold duration-150 cursor-pointer border ${
                     selected
                       ? "bg-blue-500 border-blue-500 text-white"
-                      : "bg-white border-slate-200 text-slate-500 hover:border-blue-300"
+                      : "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 text-slate-500 dark:text-slate-400 hover:border-blue-300"
                   }`}
                 >
                   {t(`group.dayShort.${day}`)}

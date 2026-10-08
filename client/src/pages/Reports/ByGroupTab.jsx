@@ -28,28 +28,28 @@ function ByGroupTab({ query, tick }) {
         <button
           type="button"
           onClick={() => row.group?._id && navigate(`/groups/${row.group._id}`)}
-          className="flex flex-col items-start text-left cursor-pointer hover:text-blue-600 duration-200"
+          className="flex flex-col items-start text-left cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 duration-200"
         >
-          <span className="font-semibold text-slate-800">{row.group?.name || "—"}</span>
-          {row.teacher && <span className="text-xs text-slate-400">{row.teacher}</span>}
+          <span className="font-semibold text-slate-800 dark:text-slate-100">{row.group?.name || "—"}</span>
+          {row.teacher && <span className="text-xs text-slate-400 dark:text-slate-500">{row.teacher}</span>}
         </button>
       ),
     },
     {
       key: "students",
       header: <SortHeader label={t("report.students")} sortKey="students" sort={sort} onToggle={toggle} />,
-      render: (row) => <span className="text-slate-600">{row.students ?? 0}</span>,
+      render: (row) => <span className="text-slate-600 dark:text-slate-300">{row.students ?? 0}</span>,
     },
     {
       key: "revenue",
       header: <SortHeader label={t("report.revenue")} sortKey="revenue" sort={sort} onToggle={toggle} />,
-      render: (row) => <NumberText className="text-emerald-600">{money(row.revenue)}</NumberText>,
+      render: (row) => <NumberText className="text-emerald-600 dark:text-emerald-400">{money(row.revenue)}</NumberText>,
     },
     {
       key: "debt",
       header: <SortHeader label={t("report.debt")} sortKey="debt" sort={sort} onToggle={toggle} />,
       render: (row) => (
-        <NumberText className={row.debt ? "text-red-500" : "text-slate-400"}>
+        <NumberText className={row.debt ? "text-red-500" : "text-slate-400 dark:text-slate-500"}>
           {money(row.debt)}
         </NumberText>
       ),

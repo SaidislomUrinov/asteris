@@ -34,7 +34,7 @@ function HeaderCard({
 
   return (
     <div
-      className={`relative overflow-hidden flex flex-col gap-2 p-3 pl-4 rounded-2xl bg-white border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] min-w-0 ${className}`}
+      className={`relative overflow-hidden flex flex-col gap-2 p-3 pl-4 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none min-w-0 ${className}`}
     >
       <span className={`absolute inset-y-0 left-0 w-1 ${a.edge}`} />
 
@@ -48,21 +48,21 @@ function HeaderCard({
           <p
             className={
               strong
-                ? "font-space font-bold text-base leading-snug text-slate-900 truncate"
-                : "text-sm font-semibold text-slate-800 truncate"
+                ? "font-space font-bold text-base leading-snug text-slate-900 dark:text-slate-100 truncate"
+                : "text-sm font-semibold text-slate-800 dark:text-slate-100 truncate"
             }
           >
             {title}
           </p>
-          {subtitle && <p className="text-xs text-slate-400 truncate">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{subtitle}</p>}
         </div>
         {badge && <div className="shrink-0">{badge}</div>}
       </div>
 
       {value != null && (
-        <p className="text-xl font-space font-bold text-slate-900 leading-none tabular-nums truncate">
+        <p className="text-xl font-space font-bold text-slate-900 dark:text-slate-100 leading-none tabular-nums truncate">
           {value}
-          {suffix ? <span className="text-sm font-normal text-slate-400"> {suffix}</span> : null}
+          {suffix ? <span className="text-sm font-normal text-slate-400 dark:text-slate-500"> {suffix}</span> : null}
         </p>
       )}
 

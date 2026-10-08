@@ -117,7 +117,7 @@ function IssueCertificateDialog({ open, onClose, mode, studentId, groupId, group
       {loadingTemplates ? (
         <Loading height="10vh" />
       ) : templates.length === 0 ? (
-        <p className="text-sm text-slate-400 py-4 text-center">{t("certificateTemplate.empty")}</p>
+        <p className="text-sm text-slate-400 dark:text-slate-500 py-4 text-center">{t("certificateTemplate.empty")}</p>
       ) : (
         <div className="flex flex-col gap-3 w-full">
           <Select

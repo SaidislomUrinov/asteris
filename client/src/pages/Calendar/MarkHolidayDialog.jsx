@@ -22,13 +22,13 @@ function MarkHolidayDialog({ open, onClose, dates = [], onConfirm, saving }) {
       title={t("calendar.markDialogTitle", { count: dates.length })}
     >
       <div className="flex flex-col gap-4 w-full">
-        <p className="text-base text-slate-600">{t("calendar.markDialogHint")}</p>
+        <p className="text-base text-slate-600 dark:text-slate-300">{t("calendar.markDialogHint")}</p>
 
         <div className="flex flex-wrap gap-1.5">
           {sortedDates.map((d) => (
             <span
               key={d}
-              className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold"
+              className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-night-800 text-slate-700 dark:text-slate-300 text-xs font-semibold"
             >
               {d}
             </span>

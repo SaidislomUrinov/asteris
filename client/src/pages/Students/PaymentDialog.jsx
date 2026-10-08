@@ -123,12 +123,12 @@ function PaymentDialog({
     >
       <div onKeyDown={(k) => k.key === "Enter" && submit()} className="flex flex-col gap-3 w-full">
         {debt > 0 && (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {t("student.debt")}: {debt.toLocaleString("uz-UZ")} {t("student.somSuffix")}
           </p>
         )}
         {remainingCycleAmount > 0 && (
-          <p className="text-sm text-blue-600">
+          <p className="text-sm text-blue-600 dark:text-blue-400">
             {t("student.currentMonthDueHint", {
               amount: remainingCycleAmount.toLocaleString("uz-UZ"),
             })}
@@ -160,7 +160,7 @@ function PaymentDialog({
           onChange={(e) => setForMonth(e.target.value)}
         />
         {!minMonth && (
-          <p className="pl-2 -mt-2 text-xs text-slate-400">{t("student.forMonthDisabledHint")}</p>
+          <p className="pl-2 -mt-2 text-xs text-slate-400 dark:text-slate-500">{t("student.forMonthDisabledHint")}</p>
         )}
         <Input
           label={t("student.paymentNote")}

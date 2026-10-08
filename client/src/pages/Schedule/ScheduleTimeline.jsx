@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import useTheme from "../../hooks/useTheme";
 import { HiPencilSquare, HiTrash } from "react-icons/hi2";
 import {
   DAY_RANGE_FROM,
@@ -23,14 +24,14 @@ const DRAG_THRESHOLD = 4; // px — bundan kichik siljish "bosish" hisoblanadi
 // guruh timeline'da doim bir xil rangda ko'rinadi.
 // eslint-disable-next-line react-refresh/only-export-components
 export const BLOCK_COLORS = [
-  { bg: "bg-blue-50", border: "border-blue-200", bar: "bg-blue-500", text: "text-blue-950", sub: "text-blue-700/75" },
-  { bg: "bg-violet-50", border: "border-violet-200", bar: "bg-violet-500", text: "text-violet-950", sub: "text-violet-700/75" },
-  { bg: "bg-emerald-50", border: "border-emerald-200", bar: "bg-emerald-500", text: "text-emerald-950", sub: "text-emerald-700/75" },
-  { bg: "bg-amber-50", border: "border-amber-200", bar: "bg-amber-500", text: "text-amber-950", sub: "text-amber-700/75" },
-  { bg: "bg-rose-50", border: "border-rose-200", bar: "bg-rose-500", text: "text-rose-950", sub: "text-rose-700/75" },
-  { bg: "bg-cyan-50", border: "border-cyan-200", bar: "bg-cyan-500", text: "text-cyan-950", sub: "text-cyan-700/75" },
-  { bg: "bg-indigo-50", border: "border-indigo-200", bar: "bg-indigo-500", text: "text-indigo-950", sub: "text-indigo-700/75" },
-  { bg: "bg-teal-50", border: "border-teal-200", bar: "bg-teal-500", text: "text-teal-950", sub: "text-teal-700/75" },
+  { bg: "bg-blue-50 dark:bg-blue-500/15", border: "border-blue-200 dark:border-blue-500/30", bar: "bg-blue-500", text: "text-blue-950 dark:text-blue-400", sub: "text-blue-700/75 dark:text-blue-400" },
+  { bg: "bg-violet-50 dark:bg-violet-500/15", border: "border-violet-200 dark:border-violet-500/30", bar: "bg-violet-500", text: "text-violet-950 dark:text-violet-400", sub: "text-violet-700/75 dark:text-violet-400" },
+  { bg: "bg-emerald-50 dark:bg-emerald-500/15", border: "border-emerald-200 dark:border-emerald-500/30", bar: "bg-emerald-500", text: "text-emerald-950 dark:text-emerald-400", sub: "text-emerald-700/75 dark:text-emerald-400" },
+  { bg: "bg-amber-50 dark:bg-amber-500/15", border: "border-amber-200 dark:border-amber-500/30", bar: "bg-amber-500", text: "text-amber-950 dark:text-amber-400", sub: "text-amber-700/75 dark:text-amber-400" },
+  { bg: "bg-rose-50 dark:bg-rose-500/15", border: "border-rose-200 dark:border-rose-500/30", bar: "bg-rose-500", text: "text-rose-950 dark:text-rose-400", sub: "text-rose-700/75 dark:text-rose-400" },
+  { bg: "bg-cyan-50 dark:bg-cyan-500/15", border: "border-cyan-200 dark:border-cyan-500/30", bar: "bg-cyan-500", text: "text-cyan-950 dark:text-cyan-400", sub: "text-cyan-700/75 dark:text-cyan-400" },
+  { bg: "bg-indigo-50 dark:bg-indigo-500/15", border: "border-indigo-200 dark:border-indigo-500/30", bar: "bg-indigo-500", text: "text-indigo-950 dark:text-indigo-400", sub: "text-indigo-700/75 dark:text-indigo-400" },
+  { bg: "bg-teal-50 dark:bg-teal-500/15", border: "border-teal-200 dark:border-teal-500/30", bar: "bg-teal-500", text: "text-teal-950 dark:text-teal-400", sub: "text-teal-700/75 dark:text-teal-400" },
 ];
 
 // O'quv markazlarida darslar odatda "toq" (Du·Cho·Ju) yoki "juft"
@@ -152,6 +153,8 @@ function ScheduleTimeline({
   onResize,
 }) {
   const { t } = useTranslation();
+  // Soat chiziqlari inline `style`da — `dark:` ishlamaydi.
+  const { isDark } = useTheme();
   const rootRef = useRef(null);
   const colsRef = useRef({});
   const [hover, setHover] = useState(null); // { day, start }
@@ -446,7 +449,7 @@ function ScheduleTimeline({
   return (
     <div
       ref={rootRef}
-      className={`w-full h-full isolate overflow-auto rounded-xl border border-slate-200/70 bg-white ${
+      className={`w-full h-full isolate overflow-auto rounded-xl border border-slate-200/70 dark:border-night-700/70 bg-white dark:bg-night-900 ${
         drag ? "select-none" : ""
       }`}
     >
@@ -455,28 +458,28 @@ function ScheduleTimeline({
         {/* Qatlamlar (ichki `isolate` doirasida): kun sarlavhalari 30 →
             soat ustuni 20 → arvoh blok 15 → darslar 10. Shu tartib buzilsa
             gorizontal scroll'da darslar soat ustuni ustidan chiqib qoladi. */}
-        <div className="sticky top-0 z-30 flex bg-white/95 backdrop-blur-sm border-b border-slate-200/70">
-          <div className="sticky left-0 z-10 shrink-0 w-14 bg-white/95 border-r border-slate-200/70" />
+        <div className="sticky top-0 z-30 flex bg-white/95 dark:bg-night-900/95 backdrop-blur-sm border-b border-slate-200/70 dark:border-night-700/70">
+          <div className="sticky left-0 z-10 shrink-0 w-14 bg-white/95 dark:bg-night-900/95 border-r border-slate-200/70 dark:border-night-700/70" />
           {DAYS.map((day) => {
             const on = hoverDays.includes(day) || dragDays.includes(day);
             const count = byDay[day].length;
             return (
               <div
                 key={day}
-                className={`flex-1 min-w-[8rem] px-3 py-2.5 border-l border-slate-300 transition-colors ${
-                  on ? "bg-blue-50/60" : ""
+                className={`flex-1 min-w-[8rem] px-3 py-2.5 border-l border-slate-300 dark:border-night-600 transition-colors ${
+                  on ? "bg-blue-50/60 dark:bg-blue-500/15" : ""
                 }`}
               >
                 <div className="flex items-baseline gap-1.5">
                   <span
-                    className={`text-sm font-semibold ${on ? "text-blue-700" : "text-slate-700"}`}
+                    className={`text-sm font-semibold ${on ? "text-blue-700 dark:text-blue-400" : "text-slate-700 dark:text-slate-300"}`}
                   >
                     {t(`group.dayShort.${day}`)}
                   </span>
-                  <span className="text-xs text-slate-400 truncate">{t(`group.day.${day}`)}</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500 truncate">{t(`group.day.${day}`)}</span>
                 </div>
                 {count > 0 && (
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500">
                     {t("room.lessonCount", { count })}
                   </span>
                 )}
@@ -488,13 +491,13 @@ function ScheduleTimeline({
         <div className="relative flex">
           {/* Soat ustuni */}
           <div
-            className="sticky left-0 z-20 shrink-0 w-14 bg-white border-r border-slate-200/70"
+            className="sticky left-0 z-20 shrink-0 w-14 bg-white dark:bg-night-900 border-r border-slate-200/70 dark:border-night-700/70"
             style={{ height: bodyPx }}
           >
             {hours.map((h, i) => (
               <div
                 key={h}
-                className={`absolute right-2 text-[13px] font-jet font-semibold text-slate-900 tabular-nums ${
+                className={`absolute right-2 text-[13px] font-jet font-semibold text-slate-900 dark:text-slate-100 tabular-nums ${
                   i === 0 ? "" : "-translate-y-1/2"
                 }`}
                 style={{ top: i * HOUR_PX }}
@@ -509,7 +512,7 @@ function ScheduleTimeline({
             className="flex flex-1"
             style={{
               height: bodyPx,
-              backgroundImage: `repeating-linear-gradient(to bottom, rgb(203 213 225) 0 1px, transparent 1px ${HOUR_PX}px)`,
+              backgroundImage: `repeating-linear-gradient(to bottom, ${isDark ? "rgb(30 46 82)" : "rgb(203 213 225)"} 0 1px, transparent 1px ${HOUR_PX}px)`,
             }}
           >
             {DAYS.map((day) => {
@@ -525,8 +528,8 @@ function ScheduleTimeline({
                   onMouseLeave={() => setHover((h) => (h?.day === day ? null : h))}
                   onClick={(e) => handleClick(day, e)}
                   onMouseUp={(e) => carrying && handleClick(day, e)}
-                  className={`relative flex-1 min-w-[8rem] border-l border-slate-300 ${
-                    target || dragTarget ? "bg-blue-50/25" : ""
+                  className={`relative flex-1 min-w-[8rem] border-l border-slate-300 dark:border-night-600 ${
+                    target || dragTarget ? "bg-blue-50/25 dark:bg-blue-500/15" : ""
                   } ${canPlace && !drag ? "cursor-pointer" : ""}`}
                 >
                   {/* Sichqoncha ostidagi "arvoh" bloklar — dars QAYSI kunlarga
@@ -699,10 +702,10 @@ function BlockAction({ title, danger, onClick, children }) {
         e.stopPropagation();
         onClick();
       }}
-      className={`flex items-center justify-center w-5 h-5 rounded-md bg-white/90 border border-slate-200/80 text-[11px] shadow-sm transition-colors duration-150 ${
+      className={`flex items-center justify-center w-5 h-5 rounded-md bg-white/90 dark:bg-night-900/90 border border-slate-200/80 dark:border-night-700/80 text-[11px] shadow-sm dark:shadow-none transition-colors duration-150 ${
         danger
           ? "text-red-500 hover:bg-red-500 hover:border-red-500 hover:text-white"
-          : "text-slate-500 hover:bg-slate-900 hover:border-slate-900 hover:text-white"
+          : "text-slate-500 dark:text-slate-400 hover:bg-slate-900 hover:border-slate-900 hover:text-white"
       }`}
     >
       {children}
@@ -715,18 +718,18 @@ function Ghost({ start, duration, busy, label, t }) {
   return (
     <div
       className={`absolute inset-x-1 z-[15] pointer-events-none rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-0.5 overflow-hidden ${
-        busy ? "border-rose-300 bg-rose-50/70" : "border-blue-400 bg-blue-50/70"
+        busy ? "border-rose-300 bg-rose-50/70 dark:bg-rose-500/15" : "border-blue-400 bg-blue-50/70 dark:bg-blue-500/15"
       }`}
       style={{ top: (start - RANGE_FROM) * PX_PER_MIN, height: duration * PX_PER_MIN - 3 }}
     >
       {label && !busy && (
-        <span className="text-[11px] font-semibold text-blue-800 truncate max-w-full px-1">
+        <span className="text-[11px] font-semibold text-blue-800 dark:text-blue-400 truncate max-w-full px-1">
           {label}
         </span>
       )}
       <span
         className={`text-[11px] font-jet tabular-nums font-semibold ${
-          busy ? "text-rose-600" : "text-blue-700"
+          busy ? "text-rose-600 dark:text-rose-400" : "text-blue-700 dark:text-blue-400"
         }`}
       >
         {busy ? t("group.rescheduleBusySlot") : `${toHHMM(start)}–${toHHMM(start + duration)}`}

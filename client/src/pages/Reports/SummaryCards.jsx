@@ -15,12 +15,12 @@ import { money, percent } from "./reportData";
 // Skeleton — MetricCard bilan bir xil o'lchamda, sahifa "sakramasligi" uchun.
 function CardSkeleton() {
   return (
-    <div className="flex flex-col gap-3 p-5 pl-6 rounded-2xl bg-white border border-slate-200/80">
+    <div className="flex flex-col gap-3 p-5 pl-6 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-slate-100 animate-pulse" />
-        <div className="h-3.5 w-24 rounded bg-slate-100 animate-pulse" />
+        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-night-800 animate-pulse" />
+        <div className="h-3.5 w-24 rounded bg-slate-100 dark:bg-night-800 animate-pulse" />
       </div>
-      <div className="h-6 w-32 rounded bg-slate-100 animate-pulse" />
+      <div className="h-6 w-32 rounded bg-slate-100 dark:bg-night-800 animate-pulse" />
     </div>
   );
 }
@@ -38,12 +38,12 @@ function Trend({ value, invert = false }) {
   return (
     <span
       className={`inline-flex items-center gap-1 text-xs font-semibold ${
-        good ? "text-emerald-600" : "text-red-500"
+        good ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"
       }`}
     >
       <Icon className="text-sm" />
       {percent(value)}
-      <span className="font-normal text-slate-400">{t("report.vsPrevious")}</span>
+      <span className="font-normal text-slate-400 dark:text-slate-500">{t("report.vsPrevious")}</span>
     </span>
   );
 }
@@ -111,7 +111,7 @@ function SummaryCards({ summary, loading }) {
           value={money(summary.debt)}
           suffix={suffix}
         >
-          <span className="text-xs text-slate-400">{t("report.debtHint")}</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">{t("report.debtHint")}</span>
         </MetricCard>
       </div>
 
@@ -160,26 +160,26 @@ function SummaryCards({ summary, loading }) {
 
 function MiniStat({ icon, label, value, tone = "slate" }) {
   const tones = {
-    emerald: "bg-emerald-50 text-emerald-600",
-    blue: "bg-blue-50 text-blue-600",
-    violet: "bg-violet-50 text-violet-600",
-    cyan: "bg-cyan-50 text-cyan-600",
-    red: "bg-red-50 text-red-600",
-    slate: "bg-slate-50 text-slate-400",
+    emerald: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+    blue: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
+    violet: "bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400",
+    cyan: "bg-cyan-50 dark:bg-cyan-500/15 text-cyan-600 dark:text-cyan-400",
+    red: "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400",
+    slate: "bg-slate-50 dark:bg-night-800 text-slate-400 dark:text-slate-500",
   };
 
   return (
-    <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-2xl bg-white ring-1 ring-slate-200/70">
+    <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-2xl bg-white dark:bg-night-900 ring-1 ring-slate-200/70 dark:ring-night-700/70">
       <span
         className={`flex items-center justify-center w-9 h-9 shrink-0 rounded-xl text-lg ${tones[tone]}`}
       >
         {icon}
       </span>
       <div className="flex flex-col min-w-0">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 truncate">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
           {label}
         </span>
-        <span className="font-jet font-semibold text-sm text-slate-900 truncate">{value ?? 0}</span>
+        <span className="font-jet font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">{value ?? 0}</span>
       </div>
     </div>
   );

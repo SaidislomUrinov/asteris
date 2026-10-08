@@ -14,7 +14,7 @@ function RankPeriodLabel({ month, className = "" }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 h-6 px-2 rounded-full bg-amber-50 text-[11px] font-semibold text-amber-700 whitespace-nowrap ${className}`}
+      className={`inline-flex items-center gap-1 h-6 px-2 rounded-full bg-amber-50 dark:bg-amber-500/15 text-[11px] font-semibold text-amber-700 dark:text-amber-400 whitespace-nowrap ${className}`}
     >
       <HiTrophy className="text-xs shrink-0" />
       {t("rank.monthLabel", { month: name })}

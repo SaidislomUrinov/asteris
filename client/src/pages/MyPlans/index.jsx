@@ -92,11 +92,11 @@ function MyPlans() {
     if (error) {
       return (
         <div className="flex flex-col flex-1 items-center justify-center gap-2 py-12 text-center">
-          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 text-2xl text-red-400">
+          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-500/15 text-2xl text-red-400">
             <HiExclamationTriangle />
           </span>
-          <p className="text-sm font-medium text-slate-600">{t("teachingPlan.loadError")}</p>
-          <p className="text-xs text-slate-400">{t(error)}</p>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{t("teachingPlan.loadError")}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{t(error)}</p>
           <Button variant="outlined" color="black" onClick={() => fetchPlans()}>
             {t("common.retry")}
           </Button>
@@ -107,13 +107,13 @@ function MyPlans() {
     if (plans.length === 0) {
       return (
         <div className="flex flex-col flex-1 items-center justify-center gap-2 py-12 text-center">
-          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-50 text-2xl text-slate-300">
+          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-50 dark:bg-night-800 text-2xl text-slate-300 dark:text-slate-600">
             <HiRectangleStack />
           </span>
-          <p className="text-sm font-medium text-slate-600">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
             {subject ? t("teachingPlan.emptyFiltered") : t("teachingPlan.empty")}
           </p>
-          <p className="text-xs text-slate-400 max-w-xs">{t("teachingPlan.emptyHint")}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 max-w-xs">{t("teachingPlan.emptyHint")}</p>
           <Button className="gap-1.5 mt-1" onClick={openCreate}>
             <HiPlus className="text-base" />
             {t("teachingPlan.new")}
@@ -133,7 +133,7 @@ function MyPlans() {
 
   return (
     <div className="flex flex-col w-full h-full gap-4">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-sm dark:shadow-none shadow-slate-900/[0.02]">
         {/* Fan filtri — chiplar, ko'p bo'lsa keyingi qatorga o'tadi. */}
         <div className="flex items-center gap-1.5 min-w-0 flex-1 flex-wrap">
           {subjects.length > 0 &&
@@ -147,7 +147,7 @@ function MyPlans() {
                   className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap cursor-pointer transition-colors ${
                     active
                       ? "bg-slate-900 text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      : "bg-slate-100 dark:bg-night-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-night-700"
                   }`}
                 >
                   {s.name}

@@ -114,24 +114,24 @@ function AttendanceDonut({ groupId, courseStartMonth }) {
     <ChartCard>
       <div className="flex items-center justify-between gap-2 shrink-0">
         <div>
-          <p className="font-semibold text-slate-800">{t("group.attendanceTitle")}</p>
-          <p className="text-xs text-slate-400">{t("group.attendanceDesc")}</p>
+          <p className="font-semibold text-slate-800 dark:text-slate-100">{t("group.attendanceTitle")}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{t("group.attendanceDesc")}</p>
         </div>
         <div className="flex items-center gap-1">
           <button
             type="button"
             disabled={!canGoPrev}
             onClick={() => setMonth((m) => shiftMonth(m, -1))}
-            className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-night-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             <HiChevronLeft />
           </button>
-          <span className="text-xs font-medium text-slate-600 min-w-20 text-center">{monthLabel}</span>
+          <span className="text-xs font-medium text-slate-600 dark:text-slate-300 min-w-20 text-center">{monthLabel}</span>
           <button
             type="button"
             disabled={!canGoNext}
             onClick={() => setMonth((m) => shiftMonth(m, 1))}
-            className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-night-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             <HiChevronRight />
           </button>
@@ -166,41 +166,41 @@ function AttendanceDonut({ groupId, courseStartMonth }) {
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-3xl font-space font-bold text-slate-800">
+              <span className="text-3xl font-space font-bold text-slate-800 dark:text-slate-100">
                 {stats?.presentPercent ?? 0}%
               </span>
-              <span className="text-xs text-slate-400">{t("group.attendancePresent")}</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">{t("group.attendancePresent")}</span>
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100 shrink-0">
+          <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100 dark:border-night-700 shrink-0">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: PRESENT_COLOR }} />
-                <span className="text-slate-600">{t("group.attendancePresent")}</span>
+                <span className="text-slate-600 dark:text-slate-300">{t("group.attendancePresent")}</span>
               </div>
-              <span className="font-semibold text-slate-800">{stats?.presentPercent ?? 0}%</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-100">{stats?.presentPercent ?? 0}%</span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: EXCUSED_COLOR }} />
-                <span className="text-slate-600">{t("group.attendanceExcused")}</span>
+                <span className="text-slate-600 dark:text-slate-300">{t("group.attendanceExcused")}</span>
               </div>
-              <span className="font-semibold text-slate-800">{stats?.excusedPercent ?? 0}%</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-100">{stats?.excusedPercent ?? 0}%</span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: ABSENT_COLOR }} />
-                <span className="text-slate-600">{t("group.attendanceAbsent")}</span>
+                <span className="text-slate-600 dark:text-slate-300">{t("group.attendanceAbsent")}</span>
               </div>
-              <span className="font-semibold text-slate-800">{stats?.absentPercent ?? 0}%</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-100">{stats?.absentPercent ?? 0}%</span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: UNMARKED_COLOR }} />
-                <span className="text-slate-600">{t("group.attendanceUnmarked")}</span>
+                <span className="text-slate-600 dark:text-slate-300">{t("group.attendanceUnmarked")}</span>
               </div>
-              <span className="font-semibold text-slate-800">{stats?.unmarkedPercent ?? 0}%</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-100">{stats?.unmarkedPercent ?? 0}%</span>
             </div>
           </div>
         </>

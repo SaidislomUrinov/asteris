@@ -57,7 +57,7 @@ function SubscribeModal({ open, onClose, tariff, onActivated }) {
         </>
       }
     >
-      <p className="text-sm text-slate-500 mb-1">
+      <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
         {t("subscription.selectDuration")}
       </p>
       <div className="flex flex-col gap-2">
@@ -71,19 +71,19 @@ function SubscribeModal({ open, onClose, tariff, onActivated }) {
               onClick={() => setMonths(opt.months)}
               className={`flex items-center justify-between w-full p-3 rounded-lg border-2 duration-150 cursor-pointer text-left ${
                 selected
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-slate-200 hover:border-blue-300"
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-500/15"
+                  : "border-slate-200 dark:border-night-700 hover:border-blue-300"
               }`}
             >
               <div className="flex items-center gap-2">
                 {selected ? (
                   <HiCheckCircle className="text-blue-500 text-lg shrink-0" />
                 ) : (
-                  <span className="w-[18px] h-[18px] rounded-full border border-slate-300 shrink-0" />
+                  <span className="w-[18px] h-[18px] rounded-full border border-slate-300 dark:border-night-600 shrink-0" />
                 )}
-                <span className="font-semibold text-slate-800">{t(opt.labelKey)}</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-100">{t(opt.labelKey)}</span>
                 {opt.discount > 0 && (
-                  <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-600">
+                  <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                     {t("subscription.discountBadge", {
                       percent: Math.round(opt.discount * 100),
                     })}
@@ -91,10 +91,10 @@ function SubscribeModal({ open, onClose, tariff, onActivated }) {
                 )}
               </div>
               <span className="flex flex-col items-end">
-                <span className="font-semibold text-slate-800">
+                <span className="font-semibold text-slate-800 dark:text-slate-100">
                   {total.toLocaleString("uz-UZ")} {t("subscription.somSuffix")}
                 </span>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">
                   {Math.round(total / opt.months).toLocaleString("uz-UZ")}{" "}
                   {t("subscription.perMonth")}
                 </span>
@@ -104,10 +104,10 @@ function SubscribeModal({ open, onClose, tariff, onActivated }) {
         })}
       </div>
 
-      <div className="flex items-center justify-between pt-3 mt-1 border-t border-slate-100 text-sm">
-        <span className="text-slate-500">{t("subscription.totalPrice")}</span>
+      <div className="flex items-center justify-between pt-3 mt-1 border-t border-slate-100 dark:border-night-700 text-sm">
+        <span className="text-slate-500 dark:text-slate-400">{t("subscription.totalPrice")}</span>
         <span className="flex flex-col items-end">
-          <span className="font-space font-bold text-lg text-slate-800">
+          <span className="font-space font-bold text-lg text-slate-800 dark:text-slate-100">
             {calcAmount(
               tariff?.price || 0,
               months,
@@ -115,7 +115,7 @@ function SubscribeModal({ open, onClose, tariff, onActivated }) {
             ).toLocaleString("uz-UZ")}{" "}
             {t("subscription.somSuffix")}
           </span>
-          <span className="text-[11px] text-slate-400">
+          <span className="text-[11px] text-slate-400 dark:text-slate-500">
             {Math.round(
               calcAmount(
                 tariff?.price || 0,

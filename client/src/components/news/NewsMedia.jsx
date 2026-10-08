@@ -45,7 +45,7 @@ function NewsMedia({ media = [], title }) {
   }
 
   return (
-    <div className="relative w-full aspect-video overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200/60">
+    <div className="relative w-full aspect-video overflow-hidden rounded-2xl bg-slate-100 dark:bg-night-800 ring-1 ring-slate-200/60 dark:ring-night-700/60">
       <div key={i} className="absolute inset-0">
         {slide}
       </div>
@@ -56,7 +56,7 @@ function NewsMedia({ media = [], title }) {
             type="button"
             onClick={() => setIndex((n) => (n - 1 + items.length) % items.length)}
             aria-label={t("news.prevMedia")}
-            className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center size-9 rounded-full bg-white/90 text-slate-700 shadow-md cursor-pointer hover:bg-white active:scale-95 transition"
+            className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center size-9 rounded-full bg-white/90 dark:bg-night-900/90 text-slate-700 dark:text-slate-300 shadow-md dark:shadow-none cursor-pointer hover:bg-white dark:hover:bg-night-900 active:scale-95 transition"
           >
             <HiChevronLeft className="text-lg" />
           </button>
@@ -64,7 +64,7 @@ function NewsMedia({ media = [], title }) {
             type="button"
             onClick={() => setIndex((n) => (n + 1) % items.length)}
             aria-label={t("news.nextMedia")}
-            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center size-9 rounded-full bg-white/90 text-slate-700 shadow-md cursor-pointer hover:bg-white active:scale-95 transition"
+            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center size-9 rounded-full bg-white/90 dark:bg-night-900/90 text-slate-700 dark:text-slate-300 shadow-md dark:shadow-none cursor-pointer hover:bg-white dark:hover:bg-night-900 active:scale-95 transition"
           >
             <HiChevronRight className="text-lg" />
           </button>

@@ -50,7 +50,7 @@ function IntegrationCard({
   return (
     <>
       <div
-        className={`flex flex-col gap-4 p-4 sm:p-5 border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-shadow duration-200 hover:shadow-[0_2px_10px_rgba(15,23,42,0.06)] ${
+        className={`flex flex-col gap-4 p-4 sm:p-5 border border-slate-200/70 dark:border-night-700/70 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none transition-shadow duration-200 hover:shadow-[0_2px_10px_rgba(15,23,42,0.06)] dark:hover:shadow-none ${
           fullBleed
             ? "w-screen relative left-1/2 -translate-x-1/2 rounded-none border-x-0 sm:w-full sm:max-w-2xl sm:static sm:translate-x-0 sm:rounded-2xl sm:border-x"
             : "w-full sm:max-w-2xl rounded-2xl"
@@ -63,18 +63,18 @@ function IntegrationCard({
 
           <div className="flex items-start justify-between gap-2 min-w-0 flex-1">
             <div className="flex flex-col gap-1.5 min-w-0">
-              <p className="font-semibold text-slate-800">{t("telegram.title")}</p>
+              <p className="font-semibold text-slate-800 dark:text-slate-100">{t("telegram.title")}</p>
 
               {loading ? (
-                <div className="h-5 w-24 rounded-full bg-slate-100 animate-pulse" />
+                <div className="h-5 w-24 rounded-full bg-slate-100 dark:bg-night-800 animate-pulse" />
               ) : linked ? (
-                <span className="flex items-center gap-1.5 w-fit text-[13px] font-medium text-emerald-600">
+                <span className="flex items-center gap-1.5 w-fit text-[13px] font-medium text-emerald-600 dark:text-emerald-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   {t("telegram.linked")}
                 </span>
               ) : (
-                <span className="flex items-center gap-1.5 w-fit text-[13px] font-medium text-slate-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                <span className="flex items-center gap-1.5 w-fit text-[13px] font-medium text-slate-400 dark:text-slate-500">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-night-600" />
                   {t("telegram.notLinked")}
                 </span>
               )}
@@ -124,11 +124,11 @@ function IntegrationCard({
         </div>
 
         {!loading && linked && (
-          <div className="flex flex-col gap-2 pt-4 border-t border-slate-100">
+          <div className="flex flex-col gap-2 pt-4 border-t border-slate-100 dark:border-night-700">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex flex-col gap-0.5 min-w-0">
-                <span className="text-sm font-medium text-slate-700">{t("telegram.langLabel")}</span>
-                <span className="text-xs text-slate-400">{t("telegram.langDesc")}</span>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("telegram.langLabel")}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">{t("telegram.langDesc")}</span>
               </div>
               <Select
                 className="w-full sm:w-44 shrink-0"
@@ -143,7 +143,7 @@ function IntegrationCard({
       </div>
 
       <Dialog open={infoOpen} onClose={() => setInfoOpen(false)} title={t("telegram.aboutTitle")}>
-        <p className="text-sm text-slate-600 leading-relaxed">{t(descriptionKey)}</p>
+        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{t(descriptionKey)}</p>
       </Dialog>
     </>
   );

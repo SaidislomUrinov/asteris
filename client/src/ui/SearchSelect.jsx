@@ -47,8 +47,8 @@ function SearchSelect({
     slate: "ring-slate-500/15 border-slate-500",
   };
   const variants = {
-    slate: "bg-white border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
-    white: "bg-white border-slate-200",
+    slate: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none",
+    white: "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700",
   };
 
   const [open, setOpen] = useState(false);
@@ -155,7 +155,7 @@ function SearchSelect({
   return (
     <div className={`flex flex-col gap-1 w-full ${className}`}>
       {label && (
-        <span className="text-xs font-medium text-slate-600">
+        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
           {label}{required && <span className="text-rose-500">*</span>}
         </span>
       )}
@@ -165,10 +165,10 @@ function SearchSelect({
         onClick={handleOpen}
         className={`relative w-full h-11 rounded-xl flex items-center justify-between border px-3.5 select-none duration-200
           ${variants[variant]}
-          ${disabled ? "bg-slate-50 border-slate-200 shadow-none cursor-not-allowed" : "cursor-pointer hover:border-slate-300"}
+          ${disabled ? "bg-slate-50 dark:bg-night-800 border-slate-200 dark:border-night-700 shadow-none cursor-not-allowed" : "cursor-pointer hover:border-slate-300 dark:hover:border-night-600"}
           ${open ? `ring-3 ${colors[color]}` : ""}`}
       >
-        <span className={`truncate text-[13px] ${value ? "text-slate-900" : "text-slate-400"}`}>
+        <span className={`truncate text-[13px] ${value ? "text-slate-900 dark:text-slate-100" : "text-slate-400 dark:text-slate-500"}`}>
           {value ? shown : _placeholder}
         </span>
         <div className="flex items-center gap-1 shrink-0 ml-2">
@@ -176,14 +176,14 @@ function SearchSelect({
             <button
               onMouseDown={(e) => e.preventDefault()}
               onClick={handleClear}
-              className="text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+              className="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors cursor-pointer"
             >
               <HiXMark size={14} />
             </button>
           )}
           <HiChevronDown
             size={16}
-            className={`text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+            className={`text-slate-400 dark:text-slate-500 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
           />
         </div>
       </div>
@@ -192,25 +192,25 @@ function SearchSelect({
         <div
           ref={dropdownRef}
           style={{ position: "fixed", top: pos.top, bottom: pos.bottom, left: pos.left, width: pos.width, maxHeight: pos.maxHeight, zIndex: 9999 }}
-          className="bg-white border border-zinc-200 rounded-xl shadow-xl flex flex-col overflow-hidden"
+          className="bg-white dark:bg-night-900 border border-zinc-200 dark:border-night-700 rounded-xl shadow-xl flex flex-col overflow-hidden"
         >
           {/* Search input */}
-          <div className="p-2 border-b border-slate-100 shrink-0">
+          <div className="p-2 border-b border-slate-100 dark:border-night-700 shrink-0">
             <input
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={_searchPlaceholder}
-              className="w-full h-8 px-3 rounded-lg bg-slate-100 text-[13px] text-slate-800 placeholder:text-slate-400 outline-none focus:bg-slate-50 transition-colors"
+              className="w-full h-8 px-3 rounded-lg bg-slate-100 dark:bg-night-800 text-[13px] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:bg-slate-50 dark:focus:bg-night-800 transition-colors"
             />
           </div>
 
           {/* Results */}
           <div className="overflow-y-auto flex-1 py-1">
             {loading ? (
-              <p className="text-center text-zinc-400 text-[12px] py-4">{t("common.searching")}</p>
+              <p className="text-center text-zinc-400 dark:text-slate-500 text-[12px] py-4">{t("common.searching")}</p>
             ) : options.length === 0 ? (
-              <p className="text-center text-zinc-400 text-[12px] py-4">
+              <p className="text-center text-zinc-400 dark:text-slate-500 text-[12px] py-4">
                 {query.trim() ? t("common.noResults") : t("common.typeToSearch")}
               </p>
             ) : options.map((opt) => (
@@ -219,10 +219,10 @@ function SearchSelect({
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSelect(opt)}
                 className={`flex flex-col px-3 py-2 cursor-pointer transition-colors text-[13px]
-                  ${opt.value === value ? "bg-blue-50 text-blue-700 font-semibold" : "text-zinc-700 hover:bg-zinc-50"}`}
+                  ${opt.value === value ? "bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 font-semibold" : "text-zinc-700 dark:text-slate-300 hover:bg-zinc-50 dark:hover:bg-night-800"}`}
               >
                 <span className="font-medium">{opt.label}</span>
-                {opt.sub && <span className="text-[11px] text-zinc-400 mt-0.5">{opt.sub}</span>}
+                {opt.sub && <span className="text-[11px] text-zinc-400 dark:text-slate-500 mt-0.5">{opt.sub}</span>}
               </div>
             ))}
           </div>

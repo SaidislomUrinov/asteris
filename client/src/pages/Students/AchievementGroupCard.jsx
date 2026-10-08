@@ -8,12 +8,12 @@ import { BADGE_TYPES, badgeNameKey, formatBadgeMonth, monthOfTs } from "../../ut
 
 // Medal kartochkasi foni — oltin / kumush / bronza.
 const MEDAL_TONE = {
-  1: "bg-amber-50 border-amber-200",
-  2: "bg-slate-50 border-slate-200",
-  3: "bg-orange-50 border-orange-200",
+  1: "bg-amber-50 dark:bg-amber-500/15 border-amber-200 dark:border-amber-500/30",
+  2: "bg-slate-50 dark:bg-night-800 border-slate-200 dark:border-night-700",
+  3: "bg-orange-50 dark:bg-orange-500/15 border-orange-200 dark:border-orange-500/30",
 };
 
-const LABEL = "text-[11px] font-semibold uppercase tracking-wide text-slate-400";
+const LABEL = "text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500";
 
 /**
  * O'quvchi yutuqlari — bitta guruh kartasi. Faol guruhda joriy oy progressi
@@ -45,10 +45,10 @@ function AchievementGroupCard({ group: g, monthNames, currentMonthName }) {
               count={e.count}
               label={`${t(badgeNameKey(e.type))}${months.length ? ` — ${months.join(", ")}` : ""}`}
             />
-            <span className="text-[11px] font-medium text-slate-600 text-center leading-tight line-clamp-2">
+            <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300 text-center leading-tight line-clamp-2">
               {t(badgeNameKey(e.type))}
             </span>
-            {months[0] && <span className="text-[10px] text-slate-400 text-center leading-tight">{months[0]}</span>}
+            {months[0] && <span className="text-[10px] text-slate-400 dark:text-slate-500 text-center leading-tight">{months[0]}</span>}
           </div>
         );
       })}
@@ -64,8 +64,8 @@ function AchievementGroupCard({ group: g, monthNames, currentMonthName }) {
         >
           <RankMedal position={m.position} size={18} animated={false} />
           <div className="flex flex-col min-w-0 leading-tight">
-            <span className="text-xs font-semibold text-slate-800">{formatBadgeMonth(m.month, monthNames)}</span>
-            <span className="text-[11px] text-slate-500">
+            <span className="text-xs font-semibold text-slate-800 dark:text-slate-100">{formatBadgeMonth(m.month, monthNames)}</span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">
               {t(`badge.medalTier${m.position}`)}
               {m.total > 0 && ` · ${t("badge.medalPlace", { position: m.position, total: m.total })}`}
             </span>
@@ -77,16 +77,16 @@ function AchievementGroupCard({ group: g, monthNames, currentMonthName }) {
 
   return (
     <article
-      className={`flex flex-col gap-4 p-4 rounded-2xl border min-w-0 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${
-        active ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50/70"
+      className={`flex flex-col gap-4 p-4 rounded-2xl border min-w-0 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none ${
+        active ? "border-slate-200 dark:border-night-700 bg-white dark:bg-night-900" : "border-slate-200 dark:border-night-700 bg-slate-50/70 dark:bg-night-800/70"
       }`}
     >
       <header className="flex items-start justify-between gap-3 min-w-0">
         <div className="flex flex-col gap-1 min-w-0">
-          <h3 className="font-semibold text-slate-800 break-words leading-snug">{title}</h3>
+          <h3 className="font-semibold text-slate-800 dark:text-slate-100 break-words leading-snug">{title}</h3>
           {from && (
-            <p className="flex items-center gap-1.5 text-xs text-slate-500">
-              <HiCalendarDays className="shrink-0 text-slate-400" />
+            <p className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+              <HiCalendarDays className="shrink-0 text-slate-400 dark:text-slate-500" />
               <span>
                 {from} — {to || "…"}
               </span>
@@ -105,11 +105,11 @@ function AchievementGroupCard({ group: g, monthNames, currentMonthName }) {
         <>
           <div className="flex flex-col gap-2">
             <span className={LABEL}>{t("badge.earned")}</span>
-            {earnedList || <p className="text-sm text-slate-400">{t("badge.noneEarned")}</p>}
+            {earnedList || <p className="text-sm text-slate-400 dark:text-slate-500">{t("badge.noneEarned")}</p>}
           </div>
           <div className="flex flex-col gap-2">
             <span className={LABEL}>{t("badge.medals")}</span>
-            {medalList || <p className="text-sm text-slate-400">{t("badge.noMedals")}</p>}
+            {medalList || <p className="text-sm text-slate-400 dark:text-slate-500">{t("badge.noMedals")}</p>}
           </div>
         </>
       ) : (
@@ -124,7 +124,7 @@ function AchievementGroupCard({ group: g, monthNames, currentMonthName }) {
           {medalList && (
             <div
               className={`flex flex-col gap-2 min-w-0 ${
-                earnedList ? "pt-3 border-t sm:pt-0 sm:border-t-0 sm:pl-4 sm:border-l border-slate-200/70" : ""
+                earnedList ? "pt-3 border-t sm:pt-0 sm:border-t-0 sm:pl-4 sm:border-l border-slate-200/70 dark:border-night-700/70" : ""
               }`}
             >
               <span className={LABEL}>{t("badge.medals")}</span>
@@ -135,7 +135,7 @@ function AchievementGroupCard({ group: g, monthNames, currentMonthName }) {
       )}
 
       {active && (
-        <div className="flex flex-col gap-2.5 pt-3 border-t border-slate-100">
+        <div className="flex flex-col gap-2.5 pt-3 border-t border-slate-100 dark:border-night-700">
           <span className={LABEL}>{t("badge.progressTitle", { month: currentMonthName })}</span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
             {BADGE_TYPES.map((type) => (

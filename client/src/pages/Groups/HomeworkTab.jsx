@@ -169,25 +169,25 @@ function HomeworkTab({ groupId, canWrite, lessonByDate = {}, extendTo }) {
     <div className="flex flex-col gap-3 flex-1">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <MonthNav month={month} label={label} onChange={setMonth} />
-        {canWrite && <span className="hidden sm:inline text-[11px] text-slate-400">{t("homework.saveHint")}</span>}
+        {canWrite && <span className="hidden sm:inline text-[11px] text-slate-400 dark:text-slate-500">{t("homework.saveHint")}</span>}
       </div>
 
       {loading ? (
         <div className="flex flex-col gap-2">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-28 rounded-xl bg-slate-100 animate-pulse" />
+            <div key={i} className="h-28 rounded-xl bg-slate-100 dark:bg-night-800 animate-pulse" />
           ))}
         </div>
       ) : error ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-slate-400">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-slate-400 dark:text-slate-500">
           {t("common.error")}
           <Button variant="outlined" color="slate" onClick={fetchMonth}>
             {t("common.retry")}
           </Button>
         </div>
       ) : upcoming.length + past.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 text-slate-400">
-          <HiOutlineClipboardDocumentList className="text-3xl text-slate-300" />
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500">
+          <HiOutlineClipboardDocumentList className="text-3xl text-slate-300 dark:text-slate-600" />
           <span className="text-sm">{t("homework.empty")}</span>
         </div>
       ) : (
@@ -195,10 +195,10 @@ function HomeworkTab({ groupId, canWrite, lessonByDate = {}, extendTo }) {
           {upcoming.map((date) => renderCard(date))}
           {past.length > 0 && (
             <div className="flex items-center gap-2 pt-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                 {t("homework.past")}
               </span>
-              <div className="flex-1 h-px bg-slate-100" />
+              <div className="flex-1 h-px bg-slate-100 dark:bg-night-800" />
             </div>
           )}
           <div className="flex flex-col gap-2 opacity-90">{past.map((date) => renderCard(date, true))}</div>

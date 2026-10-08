@@ -158,16 +158,16 @@ function StaffProfile() {
   return (
     <div className="flex flex-col w-full h-full gap-6">
       {/* ── Hero — avatar, ism, rol, ro'yxatdan o'tgan sana, tarif ──────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl border border-slate-200/70 dark:border-night-700/70 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
         <div className="flex items-center gap-4 min-w-0">
           <Avatar user={user} size={64} />
           <div className="flex flex-col gap-2 min-w-0">
-            <p className="font-space font-bold text-2xl text-slate-900 truncate">{user.name}</p>
+            <p className="font-space font-bold text-2xl text-slate-900 dark:text-slate-100 truncate">{user.name}</p>
             <div className="flex items-center gap-2 flex-wrap">
               <Chip value={t(`role.${user.role}`)} color={accent} variant="ghost" />
               {user.date && (
-                <span className="flex items-center gap-1 text-xs text-slate-400">
-                  <HiCalendarDays className="text-slate-300" />
+                <span className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
+                  <HiCalendarDays className="text-slate-300 dark:text-slate-600" />
                   {t("profile.registeredAt", { date: user.date })}
                 </span>
               )}
@@ -179,9 +179,9 @@ function StaffProfile() {
       {/* ── Ikki ustun — chap: shaxsiy ma'lumot, o'ng: telegram + til ───── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Chap — Shaxsiy ma'lumotlar */}
-        <div className="flex flex-col gap-4 p-5 sm:p-6 rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <p className="font-semibold text-slate-800 flex items-center gap-2">
-            <HiUser className="text-slate-400" />
+        <div className="flex flex-col gap-4 p-5 sm:p-6 rounded-2xl border border-slate-200/70 dark:border-night-700/70 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
+          <p className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <HiUser className="text-slate-400 dark:text-slate-500" />
             {t("profile.requisitesTitle")}
           </p>
 
@@ -192,9 +192,9 @@ function StaffProfile() {
             onChange={(e) => setName(e.target.value)}
           />
 
-          <div className="flex flex-col gap-3 pt-3 mt-1 border-t border-slate-100">
-            <p className="text-sm font-medium text-slate-700 flex items-center gap-2">
-              <HiKey className="text-slate-400" />
+          <div className="flex flex-col gap-3 pt-3 mt-1 border-t border-slate-100 dark:border-night-700">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <HiKey className="text-slate-400 dark:text-slate-500" />
               {t("profile.changePasswordTitle")}
             </p>
             <Input
@@ -213,7 +213,7 @@ function StaffProfile() {
             />
           </div>
 
-          <div className="flex justify-end pt-4 mt-1 border-t border-slate-100">
+          <div className="flex justify-end pt-4 mt-1 border-t border-slate-100 dark:border-night-700">
             <Button color="blue" loading={saving} onClick={saveRequisites} className="w-full sm:w-auto">
               {t("common.save")}
             </Button>
@@ -235,9 +235,9 @@ function StaffProfile() {
             />
           )}
 
-          <div className="flex flex-col gap-3 p-5 sm:p-6 rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-            <p className="font-semibold text-slate-800 flex items-center gap-2">
-              <HiLanguage className="text-slate-400" />
+          <div className="flex flex-col gap-3 p-5 sm:p-6 rounded-2xl border border-slate-200/70 dark:border-night-700/70 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
+            <p className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <HiLanguage className="text-slate-400 dark:text-slate-500" />
               {t("profile.languageTitle")}
             </p>
             <UpdateLang />

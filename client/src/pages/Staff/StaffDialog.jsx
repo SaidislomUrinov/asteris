@@ -452,17 +452,17 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
         }
       >
         <div className="flex flex-col gap-3 w-full">
-          <div className="flex flex-col gap-1 p-3 rounded-xl bg-slate-100">
-            <span className="text-xs text-slate-500">{t("staff.login")}</span>
-            <span className="font-semibold text-slate-800">
+          <div className="flex flex-col gap-1 p-3 rounded-xl bg-slate-100 dark:bg-night-800">
+            <span className="text-xs text-slate-500 dark:text-slate-400">{t("staff.login")}</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-100">
               {credentials.login}
             </span>
           </div>
-          <div className="flex flex-col gap-1 p-3 rounded-xl bg-slate-100">
-            <span className="text-xs text-slate-500">
+          <div className="flex flex-col gap-1 p-3 rounded-xl bg-slate-100 dark:bg-night-800">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
               {t("staff.password")}
             </span>
-            <span className="font-semibold text-slate-800">
+            <span className="font-semibold text-slate-800 dark:text-slate-100">
               {credentials.password}
             </span>
           </div>
@@ -529,7 +529,7 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
               }
             />
             {isEdit && (
-              <p className="pl-2 text-xs text-slate-400">
+              <p className="pl-2 text-xs text-slate-400 dark:text-slate-500">
                 {t("staff.passwordHint")}
               </p>
             )}
@@ -554,15 +554,15 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
         />
 
         {isTeachingRole && (
-          <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
-            <span className="pl-2 text-sm text-slate-800 flex items-center gap-1.5">
+          <div className="flex flex-col gap-2 pt-2 border-t border-slate-100 dark:border-night-700">
+            <span className="pl-2 text-sm text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
               <HiBookOpen className="text-base" />
               {t("staff.subjects")}
             </span>
             {!form.centerId ? (
-              <p className="pl-2 text-xs text-slate-400">{t("staff.selectCenterFirst")}</p>
+              <p className="pl-2 text-xs text-slate-400 dark:text-slate-500">{t("staff.selectCenterFirst")}</p>
             ) : centerSubjects.length === 0 ? (
-              <p className="pl-2 text-xs text-slate-400">{t("staff.noSubjectsInCenter")}</p>
+              <p className="pl-2 text-xs text-slate-400 dark:text-slate-500">{t("staff.noSubjectsInCenter")}</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pl-2">
                 {centerSubjects.map((s) => (
@@ -578,13 +578,13 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
           </div>
         )}
 
-        <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
-          <span className="pl-2 text-sm text-slate-800">
+        <div className="flex flex-col gap-2 pt-2 border-t border-slate-100 dark:border-night-700">
+          <span className="pl-2 text-sm text-slate-800 dark:text-slate-100">
             {t("staff.salaryType")}
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {visibleSalaryTypes.length === 0 && (
-              <span className="flex items-center gap-1.5 pl-2 text-xs text-slate-400 sm:col-span-2">
+              <span className="flex items-center gap-1.5 pl-2 text-xs text-slate-400 dark:text-slate-500 sm:col-span-2">
                 <HiLockClosed className="text-sm" />
                 {t("staff.salaryTypeNoneInTariff")}
               </span>
@@ -604,8 +604,8 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
                     allowed ? "cursor-pointer" : "cursor-not-allowed opacity-50"
                   } ${
                     selected
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-slate-200 hover:border-blue-300"
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-500/15"
+                      : "border-slate-200 dark:border-night-700 hover:border-blue-300"
                   }`}
                 >
                   <span onClick={(e) => e.stopPropagation()} className="pt-0.5">
@@ -621,14 +621,14 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
                     />
                   </span>
                   <div className="flex flex-col gap-0.5 min-w-0">
-                    <span className="text-sm font-semibold text-slate-800">
+                    <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                       {t(featureLabelKey(perm))}
                     </span>
-                    <span className="text-xs text-slate-500 leading-snug">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 leading-snug">
                       {SALARY_DESCRIPTION_KEYS[perm] ? t(SALARY_DESCRIPTION_KEYS[perm]) : ""}
                     </span>
                     {!inTariff && (
-                      <span className="flex items-center gap-1 text-[11px] text-amber-600 pt-0.5">
+                      <span className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 pt-0.5">
                         <HiLockClosed className="text-xs" />
                         {t("staff.notInTariff")}
                       </span>
@@ -660,12 +660,12 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
           )}
         </div>
 
-        <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
-          <span className="pl-2 text-sm text-slate-800">
+        <div className="flex flex-col gap-2 pt-2 border-t border-slate-100 dark:border-night-700">
+          <span className="pl-2 text-sm text-slate-800 dark:text-slate-100">
             {t("staff.permissions")}
           </span>
           {isTeachingRole ? (
-            <p className="pl-2 text-xs text-slate-400 leading-snug">
+            <p className="pl-2 text-xs text-slate-400 dark:text-slate-500 leading-snug">
               {t("staff.teachingScopeHint")}
             </p>
           ) : (
@@ -679,7 +679,7 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
           <div className="flex flex-col gap-3">
             {permissionGroups.map((group) => (
               <div key={group.titleKey} className="flex flex-col gap-1.5">
-                <span className="pl-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <span className="pl-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   {t(group.titleKey)}
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pl-2">

@@ -144,8 +144,8 @@ function AuditLog() {
         <div className="flex items-center gap-2.5">
           <Avatar user={{ _id: row.actor?.id, name: row.actor?.name }} size={32} />
           <div className="flex flex-col">
-            <span className="font-semibold text-slate-800">{row.actor?.name || "—"}</span>
-            <span className="text-xs text-slate-400">
+            <span className="font-semibold text-slate-800 dark:text-slate-100">{row.actor?.name || "—"}</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">
               {row.actor?.role
                 ? t(`audit.roles.${row.actor.role}`, { defaultValue: row.actor.role })
                 : t(`audit.kinds.${row.actor?.kind}`, { defaultValue: row.actor?.kind || "" })}
@@ -169,8 +169,8 @@ function AuditLog() {
       header: t("audit.entity"),
       render: (row) => (
         <div className="flex flex-col">
-          <span className="text-slate-800">{row.entity?.label || "—"}</span>
-          <span className="text-xs text-slate-400">
+          <span className="text-slate-800 dark:text-slate-100">{row.entity?.label || "—"}</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">
             {t(`audit.entities.${row.entity?.type}`, { defaultValue: row.entity?.type || "" })}
           </span>
         </div>
@@ -179,12 +179,12 @@ function AuditLog() {
     {
       key: "center",
       header: t("audit.center"),
-      render: (row) => <span className="text-slate-500">{row.center?.name || "—"}</span>,
+      render: (row) => <span className="text-slate-500 dark:text-slate-400">{row.center?.name || "—"}</span>,
     },
     {
       key: "date",
       header: t("audit.date"),
-      render: (row) => <span className="text-slate-500 text-xs">{row.date || "—"}</span>,
+      render: (row) => <span className="text-slate-500 dark:text-slate-400 text-xs">{row.date || "—"}</span>,
     },
     {
       // Tafsilot `Dialog` ichida ochiladi. `ui/List` qator bosilishini
@@ -284,7 +284,7 @@ function AuditLog() {
       </FilterBar>
 
       {error ? (
-        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
           <HiClipboardDocumentList className="text-4xl" />
           <p className="text-sm">{t("audit.loadError")}</p>
           <Button variant="outlined" onClick={fetchLogs}>

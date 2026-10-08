@@ -23,22 +23,22 @@ function MonthNav({ month, label, onChange, max, className = "" }) {
   const disableNext = !!max && month >= max;
 
   return (
-    <div className={`flex items-center gap-0.5 p-1 rounded-full bg-slate-50 ${className}`}>
+    <div className={`flex items-center gap-0.5 p-1 rounded-full bg-slate-50 dark:bg-night-800 ${className}`}>
       <button
         type="button"
         onClick={() => shift(-1)}
-        className="flex items-center justify-center w-7 h-7 rounded-full text-slate-400 hover:bg-white hover:text-slate-700 hover:shadow-sm cursor-pointer transition-all"
+        className="flex items-center justify-center w-7 h-7 rounded-full text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-night-900 hover:text-slate-700 dark:hover:text-slate-300 hover:shadow-sm dark:hover:shadow-none cursor-pointer transition-all"
       >
         <HiChevronLeft className="text-sm" />
       </button>
-      <span className="min-w-24 text-center text-xs font-semibold text-slate-700 capitalize">
+      <span className="min-w-24 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 capitalize">
         {label}
       </span>
       <button
         type="button"
         disabled={disableNext}
         onClick={() => shift(1)}
-        className="flex items-center justify-center w-7 h-7 rounded-full text-slate-400 enabled:hover:bg-white enabled:hover:text-slate-700 enabled:hover:shadow-sm enabled:cursor-pointer disabled:opacity-25 transition-all"
+        className="flex items-center justify-center w-7 h-7 rounded-full text-slate-400 dark:text-slate-500 enabled:hover:bg-white dark:enabled:hover:bg-night-900 enabled:hover:text-slate-700 dark:enabled:hover:text-slate-300 enabled:hover:shadow-sm dark:enabled:hover:shadow-none enabled:cursor-pointer disabled:opacity-25 transition-all"
       >
         <HiChevronRight className="text-sm" />
       </button>

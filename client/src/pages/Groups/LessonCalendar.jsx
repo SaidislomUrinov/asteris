@@ -138,22 +138,22 @@ function LessonCalendar({
   return (
     <ChartCard>
       <div className="flex items-center justify-between gap-2 shrink-0">
-        <p className="font-semibold text-slate-800">{t("group.calendarTitle")}</p>
+        <p className="font-semibold text-slate-800 dark:text-slate-100">{t("group.calendarTitle")}</p>
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => changeMonth(-1)}
-            className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+            className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-night-800 transition-colors"
           >
             <HiChevronLeft />
           </button>
-          <span className="text-sm font-medium text-slate-600 min-w-32 text-center">
+          <span className="text-sm font-medium text-slate-600 dark:text-slate-300 min-w-32 text-center">
             {monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}
           </span>
           <button
             type="button"
             onClick={() => changeMonth(1)}
-            className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+            className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-night-800 transition-colors"
           >
             <HiChevronRight />
           </button>
@@ -167,7 +167,7 @@ function LessonCalendar({
           <span
             key={d}
             className={`text-[11px] lg:text-xs font-bold uppercase py-1 ${
-              d === "sun" ? "text-red-400" : "text-slate-600"
+              d === "sun" ? "text-red-400" : "text-slate-600 dark:text-slate-300"
             }`}
           >
             {t(`group.dayShort.${d}`)}
@@ -209,31 +209,31 @@ function LessonCalendar({
               } ${cell.key === todayKey ? "ring-2 ring-violet-500 ring-inset" : ""} ${
                 holiday
                   ? holiday.chargeable
-                    ? "bg-blue-200 text-blue-700 line-through decoration-2"
-                    : "bg-slate-200 text-slate-400 line-through decoration-2"
+                    ? "bg-blue-200 text-blue-700 dark:text-blue-400 line-through decoration-2"
+                    : "bg-slate-200 dark:bg-night-700 text-slate-400 dark:text-slate-500 line-through decoration-2"
                   : cell.variant === "lesson"
                     ? "bg-blue-500 text-white hover:bg-blue-600"
                     : cell.variant === "estimated"
-                      ? "bg-blue-100 text-blue-400"
+                      ? "bg-blue-100 dark:bg-blue-500/20 text-blue-400"
                       : cell.weekdayCode === "sun"
                         ? "text-red-500"
-                        : "text-slate-600"
+                        : "text-slate-600 dark:text-slate-300"
               }`}
             >
               {cell.day}
               {/* Mavzu yozilgan kun — pastda kichik nuqta. */}
               {showPlans && dayLesson && !holiday && (
-                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white/90" />
+                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white/90 dark:bg-night-900/90" />
               )}
             </button>
           );
         })}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 text-xs text-slate-500 shrink-0">
+      <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 dark:border-night-700 text-xs text-slate-500 dark:text-slate-400 shrink-0">
         {status === "pending" ? (
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-100 border border-blue-200" />
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-100 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30" />
             <span>{t("group.estimatedLessonDays")}</span>
           </div>
         ) : (
@@ -243,7 +243,7 @@ function LessonCalendar({
           </div>
         )}
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-slate-200" />
+          <span className="w-2.5 h-2.5 rounded-full bg-slate-200 dark:bg-night-700" />
           <span>{t("group.holidayLegend")}</span>
         </div>
         <div className="flex items-center gap-1.5">

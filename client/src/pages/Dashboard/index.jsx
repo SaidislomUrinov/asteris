@@ -204,7 +204,7 @@ function Dashboard() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
         <HiChartPie className="text-4xl" />
         <p className="text-sm">{t("dashboard.loadError")}</p>
         <Button variant="outlined" onClick={fetchStats}>
@@ -290,37 +290,37 @@ function Dashboard() {
           icon={<HiUsers />}
           label={t("dashboard.activeStudents")}
           value={data.activeStudents}
-          color="bg-cyan-50 text-cyan-500"
+          color="bg-cyan-50 dark:bg-cyan-500/15 text-cyan-500"
         />
         <StatCard
           icon={<HiUserGroup />}
           label={t("dashboard.activeGroups")}
           value={data.activeGroups}
-          color="bg-pink-50 text-pink-500"
+          color="bg-pink-50 dark:bg-pink-500/15 text-pink-500"
         />
         <StatCard
           icon={<HiUserGroup />}
           label={t("dashboard.pendingGroups")}
           value={data.pendingGroups}
-          color="bg-slate-100 text-slate-500"
+          color="bg-slate-100 dark:bg-night-800 text-slate-500 dark:text-slate-400"
         />
         <StatCard
           icon={<HiUsers />}
           label={t("dashboard.staffCount")}
           value={data.staffCount}
-          color="bg-violet-50 text-violet-500"
+          color="bg-violet-50 dark:bg-violet-500/15 text-violet-500"
         />
         <StatCard
           icon={<HiHome />}
           label={t("room.title")}
           value={roomsCount}
-          color="bg-orange-50 text-orange-500"
+          color="bg-orange-50 dark:bg-orange-500/15 text-orange-500"
         />
         <StatCard
           icon={<HiRectangleGroup />}
           label={t("subject.title")}
           value={subjectsCount}
-          color="bg-blue-50 text-blue-500"
+          color="bg-blue-50 dark:bg-blue-500/15 text-blue-500"
         />
       </div>
 

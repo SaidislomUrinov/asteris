@@ -55,24 +55,24 @@ function OwnerProfile() {
 
   return (
     <div className="flex flex-col w-full h-full gap-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-slate-200/70 dark:border-night-700/70 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
         <div className="flex items-center gap-4 min-w-0">
           <Avatar user={user} size={56} />
           <div className="flex flex-col gap-1.5 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-space font-bold text-xl text-slate-900 truncate">{user.name}</p>
+              <p className="font-space font-bold text-xl text-slate-900 dark:text-slate-100 truncate">{user.name}</p>
               <Chip value={t("auth.roleOwner")} color="blue" variant="ghost" />
             </div>
-            <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
+            <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500 flex-wrap">
               {user.phone && (
                 <span className="flex items-center gap-1">
-                  <HiKey className="text-slate-300" />
+                  <HiKey className="text-slate-300 dark:text-slate-600" />
                   {user.phone}
                 </span>
               )}
               {user.date && (
                 <span className="flex items-center gap-1">
-                  <HiCalendarDays className="text-slate-300" />
+                  <HiCalendarDays className="text-slate-300 dark:text-slate-600" />
                   {user.date}
                 </span>
               )}
@@ -81,11 +81,11 @@ function OwnerProfile() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 p-5 sm:p-6 rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <div className="flex flex-col gap-1 p-5 sm:p-6 rounded-2xl border border-slate-200/70 dark:border-night-700/70 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1px_1fr] gap-6">
           <div className="flex flex-col gap-3">
-            <p className="font-semibold text-slate-800 flex items-center gap-2">
-              <HiUser className="text-slate-400" />
+            <p className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <HiUser className="text-slate-400 dark:text-slate-500" />
               {t("profile.requisitesTitle")}
             </p>
             <Input
@@ -96,11 +96,11 @@ function OwnerProfile() {
             />
           </div>
 
-          <div className="hidden lg:block w-px bg-slate-100 self-stretch" />
+          <div className="hidden lg:block w-px bg-slate-100 dark:bg-night-800 self-stretch" />
 
           <div className="flex flex-col gap-3">
-            <p className="font-semibold text-slate-800 flex items-center gap-2">
-              <HiKey className="text-slate-400" />
+            <p className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <HiKey className="text-slate-400 dark:text-slate-500" />
               {t("profile.changePasswordTitle")}
             </p>
             <Input
@@ -120,7 +120,7 @@ function OwnerProfile() {
           </div>
         </div>
 
-        <div className="flex justify-end pt-5 mt-4 border-t border-slate-100">
+        <div className="flex justify-end pt-5 mt-4 border-t border-slate-100 dark:border-night-700">
           <Button color="blue" loading={saving} onClick={saveRequisites} className="w-full sm:w-auto">
             {t("common.save")}
           </Button>

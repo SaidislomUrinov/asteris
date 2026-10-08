@@ -177,7 +177,7 @@ function LeadDialog({ open, onClose, lead = null, centers = [], subjects = [], d
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <span className="pl-2 text-sm text-slate-800">{t("lead.preferredDays")}</span>
+          <span className="pl-2 text-sm text-slate-800 dark:text-slate-100">{t("lead.preferredDays")}</span>
           <div className="flex flex-wrap gap-1.5">
             {DAYS.map((day) => {
               const selected = form.preferredDays.includes(day);
@@ -189,7 +189,7 @@ function LeadDialog({ open, onClose, lead = null, centers = [], subjects = [], d
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold duration-150 cursor-pointer border ${
                     selected
                       ? "bg-blue-500 border-blue-500 text-white"
-                      : "bg-white border-slate-200 text-slate-500 hover:border-blue-300"
+                      : "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 text-slate-500 dark:text-slate-400 hover:border-blue-300"
                   }`}
                 >
                   {t(`group.dayShort.${day}`)}
@@ -197,7 +197,7 @@ function LeadDialog({ open, onClose, lead = null, centers = [], subjects = [], d
               );
             })}
           </div>
-          <span className="pl-2 text-xs text-slate-400">{t("lead.preferredDaysHint")}</span>
+          <span className="pl-2 text-xs text-slate-400 dark:text-slate-500">{t("lead.preferredDaysHint")}</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

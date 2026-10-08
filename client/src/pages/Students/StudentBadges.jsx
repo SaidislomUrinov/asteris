@@ -121,40 +121,40 @@ function StudentBadges({ studentId, onLoaded, showTitle = true }) {
       {showTitle && (
         <div className="flex items-center gap-2">
           <HiTrophy className="text-amber-500" />
-          <p className="font-semibold text-slate-800">{t("badge.title")}</p>
+          <p className="font-semibold text-slate-800 dark:text-slate-100">{t("badge.title")}</p>
         </div>
       )}
 
       {loading ? (
         <div className="flex flex-col gap-5">
-          <div className="h-16 rounded-2xl border border-slate-200 bg-white animate-pulse" />
+          <div className="h-16 rounded-2xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 animate-pulse" />
           <div className="flex flex-col gap-3">
-            <div className="h-5 w-32 border-b border-slate-200 pb-2">
-              <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
+            <div className="h-5 w-32 border-b border-slate-200 dark:border-night-700 pb-2">
+              <div className="h-3 w-24 rounded bg-slate-100 dark:bg-night-800 animate-pulse" />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {[0, 1].map((i) => (
-                <div key={i} className="flex flex-col gap-4 p-4 rounded-2xl border border-slate-200 bg-white">
+                <div key={i} className="flex flex-col gap-4 p-4 rounded-2xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
                   <div className="flex justify-between gap-3">
                     <div className="flex flex-col gap-2">
-                      <div className="h-4 w-40 rounded bg-slate-100 animate-pulse" />
-                      <div className="h-3 w-28 rounded bg-slate-100 animate-pulse" />
+                      <div className="h-4 w-40 rounded bg-slate-100 dark:bg-night-800 animate-pulse" />
+                      <div className="h-3 w-28 rounded bg-slate-100 dark:bg-night-800 animate-pulse" />
                     </div>
-                    <div className="h-5 w-16 rounded-full bg-slate-100 animate-pulse" />
+                    <div className="h-5 w-16 rounded-full bg-slate-100 dark:bg-night-800 animate-pulse" />
                   </div>
                   <div className="flex gap-3">
                     {[0, 1, 2].map((j) => (
-                      <div key={j} className="w-11 h-11 rounded-xl bg-slate-100 animate-pulse" />
+                      <div key={j} className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-night-800 animate-pulse" />
                     ))}
                   </div>
-                  <div className="h-8 w-48 rounded-xl bg-slate-100 animate-pulse" />
+                  <div className="h-8 w-48 rounded-xl bg-slate-100 dark:bg-night-800 animate-pulse" />
                 </div>
               ))}
             </div>
           </div>
         </div>
       ) : error ? (
-        <div className="flex flex-col items-center justify-center gap-2 py-8 rounded-xl border border-slate-200 bg-white text-slate-400">
+        <div className="flex flex-col items-center justify-center gap-2 py-8 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 text-slate-400 dark:text-slate-500">
           <HiExclamationTriangle className="text-2xl text-red-400" />
           <p className="text-sm">{t("badge.loadError")}</p>
           <Button variant="outlined" color="slate" onClick={() => load()}>
@@ -162,40 +162,40 @@ function StudentBadges({ studentId, onLoaded, showTitle = true }) {
           </Button>
         </div>
       ) : groups.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-2 py-8 rounded-xl border border-dashed border-slate-200 bg-white text-slate-400">
+        <div className="flex flex-col items-center justify-center gap-2 py-8 rounded-xl border border-dashed border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 text-slate-400 dark:text-slate-500">
           <BadgeIcon type="champion" size={40} earned={false} animated={false} />
           <p className="text-sm">{t("badge.empty")}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-5">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 rounded-2xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 bg-blue-50 text-blue-500">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 bg-blue-50 dark:bg-blue-500/15 text-blue-500">
                 <HiSparkles className="text-xl" />
               </div>
               <div className="flex flex-col min-w-0 leading-tight">
-                <span className="text-xl font-semibold text-slate-800 tabular-nums">{badgeTotal}</span>
-                <span className="text-xs text-slate-500">{t("badge.totalBadges")}</span>
+                <span className="text-xl font-semibold text-slate-800 dark:text-slate-100 tabular-nums">{badgeTotal}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{t("badge.totalBadges")}</span>
               </div>
             </div>
-            <div className="hidden sm:block w-px self-stretch bg-slate-200" />
+            <div className="hidden sm:block w-px self-stretch bg-slate-200 dark:bg-night-700" />
             <div className="flex items-center gap-3 min-w-0">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 bg-amber-50 text-amber-500">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 bg-amber-50 dark:bg-amber-500/15 text-amber-500">
                 <HiTrophy className="text-xl" />
               </div>
               <div className="flex flex-col min-w-0 leading-tight">
-                <span className="text-xl font-semibold text-slate-800 tabular-nums">{medalTotal}</span>
-                <span className="text-xs text-slate-500">{t("badge.totalMedals")}</span>
+                <span className="text-xl font-semibold text-slate-800 dark:text-slate-100 tabular-nums">{medalTotal}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{t("badge.totalMedals")}</span>
               </div>
             </div>
           </div>
 
           {sections.map((sec) => (
             <div key={sec.state} className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-night-700">
                 <span className={`w-2 h-2 rounded-full ${STATE_META[sec.state]?.dot || "bg-slate-400"}`} />
-                <h2 className="text-sm font-semibold text-slate-800">{t(`badge.sections.${sec.state}`)}</h2>
-                <span className="px-1.5 rounded-md bg-slate-100 text-[11px] font-semibold text-slate-500 tabular-nums">
+                <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t(`badge.sections.${sec.state}`)}</h2>
+                <span className="px-1.5 rounded-md bg-slate-100 dark:bg-night-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400 tabular-nums">
                   {sec.items.length}
                 </span>
               </div>

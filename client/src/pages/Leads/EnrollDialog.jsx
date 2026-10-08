@@ -146,17 +146,17 @@ function EnrollDialog({ open, onClose, mode, leads = [], subject, center, teache
         actions={<Button onClick={() => onClose(result)}>{t("lead.openGroup")}</Button>}
       >
         <div className="flex flex-col gap-3 w-full">
-          <p className="flex items-center gap-2 text-sm text-emerald-700">
+          <p className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
             <HiCheckCircle className="text-lg shrink-0" />
             {t("lead.enrolledCount", { count: result.enrolled.length })}
           </p>
-          <div className="flex flex-col gap-1.5 rounded-xl bg-red-50 p-3">
-            <p className="flex items-center gap-2 text-sm font-semibold text-red-700">
+          <div className="flex flex-col gap-1.5 rounded-xl bg-red-50 dark:bg-red-500/15 p-3">
+            <p className="flex items-center gap-2 text-sm font-semibold text-red-700 dark:text-red-400">
               <HiExclamationTriangle className="text-lg shrink-0" />
               {t("lead.failedCount", { count: result.failed.length })}
             </p>
             {result.failed.map((f) => (
-              <p key={f.leadId} className="pl-7 text-sm text-red-600">
+              <p key={f.leadId} className="pl-7 text-sm text-red-600 dark:text-red-400">
                 {f.fullName} — {t(f.msg)}
               </p>
             ))}
@@ -189,7 +189,7 @@ function EnrollDialog({ open, onClose, mode, leads = [], subject, center, teache
       <div className="flex flex-col gap-4 w-full">
         <div className="flex flex-wrap gap-1.5">
           {leads.map((l) => (
-            <span key={l._id} className="px-2.5 py-1 rounded-lg bg-slate-100 text-xs font-medium text-slate-700">
+            <span key={l._id} className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-night-800 text-xs font-medium text-slate-700 dark:text-slate-300">
               {l.fullName}
             </span>
           ))}
@@ -229,7 +229,7 @@ function EnrollDialog({ open, onClose, mode, leads = [], subject, center, teache
               ]}
             />
             <div className="flex flex-col gap-1.5">
-              <span className="pl-2 text-sm text-slate-800">
+              <span className="pl-2 text-sm text-slate-800 dark:text-slate-100">
                 {t("group.days")} <span className="text-red-500">*</span>
               </span>
               <div className="flex flex-wrap gap-1.5">
@@ -243,7 +243,7 @@ function EnrollDialog({ open, onClose, mode, leads = [], subject, center, teache
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold duration-150 cursor-pointer border ${
                         selected
                           ? "bg-blue-500 border-blue-500 text-white"
-                          : "bg-white border-slate-200 text-slate-500 hover:border-blue-300"
+                          : "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 text-slate-500 dark:text-slate-400 hover:border-blue-300"
                       }`}
                     >
                       {t(`group.dayShort.${day}`)}
@@ -252,7 +252,7 @@ function EnrollDialog({ open, onClose, mode, leads = [], subject, center, teache
                 })}
               </div>
               {suggestDays(leads).length > 0 && (
-                <span className="pl-2 text-xs text-slate-400">{t("lead.daysSuggested")}</span>
+                <span className="pl-2 text-xs text-slate-400 dark:text-slate-500">{t("lead.daysSuggested")}</span>
               )}
             </div>
             <div className="grid grid-cols-2 gap-3">

@@ -32,10 +32,10 @@ const STATUSES = ["present", "absent", "excused"];
 // ajraladigan bo'lishi uchun (AttendanceCheckbox faqat ikonka, kartada esa
 // yorliq ham kerak).
 const STATUS_TONE = {
-  present: { icon: HiCheck, cls: "bg-emerald-500/12 text-emerald-600 ring-emerald-500/25" },
+  present: { icon: HiCheck, cls: "bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 ring-emerald-500/25" },
   absent: { icon: HiXMark, cls: "bg-red-500/12 text-red-500 ring-red-500/25" },
-  excused: { icon: HiExclamationCircle, cls: "bg-amber-500/15 text-amber-600 ring-amber-500/25" },
-  unmarked: { icon: null, cls: "bg-slate-100 text-slate-500 ring-slate-200" },
+  excused: { icon: HiExclamationCircle, cls: "bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-amber-500/25" },
+  unmarked: { icon: null, cls: "bg-slate-100 dark:bg-night-800 text-slate-500 dark:text-slate-400 ring-slate-200 dark:ring-night-700" },
 };
 
 const monthOf = (str) => Number(str.slice(5, 7)) - 1;
@@ -78,7 +78,7 @@ function StudentName({ student, onOpen, className }) {
     <button
       type="button"
       onClick={() => onOpen(student)}
-      className={`${className} text-left cursor-pointer hover:text-blue-600 hover:underline underline-offset-2 decoration-blue-300`}
+      className={`${className} text-left cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 hover:underline underline-offset-2 decoration-blue-300`}
     >
       {student.fullName}
     </button>
@@ -301,11 +301,11 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
             type="button"
             title={t("group.monthlyPrevMonth")}
             onClick={() => setMonth((m) => shiftMonth(m, -1))}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-night-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer transition-colors"
           >
             <HiChevronLeft />
           </button>
-          <span className="min-w-32 text-center text-sm font-semibold text-slate-800 capitalize">
+          <span className="min-w-32 text-center text-sm font-semibold text-slate-800 dark:text-slate-100 capitalize">
             {label}
           </span>
           <button
@@ -313,7 +313,7 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
             title={t("group.monthlyNextMonth")}
             disabled={isCurrent}
             onClick={() => setMonth((m) => shiftMonth(m, 1))}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 enabled:hover:bg-slate-100 enabled:hover:text-slate-700 enabled:cursor-pointer disabled:opacity-30 transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 enabled:hover:bg-slate-100 dark:enabled:hover:bg-night-800 enabled:hover:text-slate-700 dark:enabled:hover:text-slate-300 enabled:cursor-pointer disabled:opacity-30 transition-colors"
           >
             <HiChevronRight />
           </button>
@@ -346,11 +346,11 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
         <MatrixSkeleton rows={students.length || 6} rowHeight={52} />
       ) : !data || data.days.length === 0 ? (
         <div className="flex flex-col flex-1 items-center justify-center gap-1 text-center">
-          <p className="text-sm font-medium text-slate-500">{t("group.monthlyEmpty")}</p>
-          <p className="text-xs text-slate-400">{t("group.monthlyEmptyHint")}</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("group.monthlyEmpty")}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{t("group.monthlyEmptyHint")}</p>
         </div>
       ) : students.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center text-sm text-slate-400">
+        <div className="flex flex-1 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
           {t("group.monthlyNoStudents")}
         </div>
       ) : (
@@ -375,12 +375,12 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                     active
                       ? "bg-blue-500 border-blue-500 text-white"
                       : d.holiday
-                        ? "bg-violet-50 border-violet-200 text-violet-500"
+                        ? "bg-violet-50 dark:bg-violet-500/15 border-violet-200 dark:border-violet-500/30 text-violet-500"
                         : d.transferred
-                          ? "bg-slate-50 border-dashed border-slate-300 text-slate-400"
+                          ? "bg-slate-50 dark:bg-night-800 border-dashed border-slate-300 dark:border-night-600 text-slate-400 dark:text-slate-500"
                           : today
-                            ? "bg-blue-50 border-blue-200 text-blue-700"
-                            : "bg-white border-slate-200 text-slate-600"
+                            ? "bg-blue-50 dark:bg-blue-500/15 border-blue-200 dark:border-blue-500/30 text-blue-700 dark:text-blue-400"
+                            : "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 text-slate-600 dark:text-slate-300"
                   }`}
                 >
                   <span className={`text-[10px] font-semibold uppercase leading-tight ${active ? "text-white/80" : ""}`}>
@@ -397,10 +397,10 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
           {/* Xulosa + tezkor bulk amal */}
           <div className="flex items-center justify-between gap-3 px-0.5">
             <div className="flex flex-col gap-0.5 min-w-0">
-              <span className="text-sm font-semibold text-slate-800">
+              <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                 {t("group.studentsCount", { count: students.length })}
               </span>
-              <span className="flex items-center gap-2.5 text-[11px] text-slate-500">
+              <span className="flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-slate-400">
                 <span className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   {selectedSummary.present}
@@ -413,8 +413,8 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                   {selectedSummary.excused}
                 </span>
-                <span className="flex items-center gap-1 text-slate-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                <span className="flex items-center gap-1 text-slate-400 dark:text-slate-500">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-night-600" />
                   {selectedSummary.unmarked}
                 </span>
               </span>
@@ -442,7 +442,7 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
               return (
                 <div
                   key={s._id}
-                  className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200/70"
+                  className="flex items-center gap-3 p-3 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/70 dark:border-night-700/70"
                 >
                   <RowNumber value={index + 1} />
                   {/* Tor mobil kartada (o'ngda keng status tugmasi) medal ism
@@ -457,9 +457,9 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                     <StudentName
                       student={s}
                       onOpen={onOpenStudent}
-                      className="text-[13px] font-semibold text-slate-800 truncate leading-tight"
+                      className="text-[13px] font-semibold text-slate-800 dark:text-slate-100 truncate leading-tight"
                     />
-                    <span className="text-[11px] text-slate-400 truncate leading-tight">{s.phone}</span>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate leading-tight">{s.phone}</span>
                   </div>
                   <button
                     type="button"
@@ -500,14 +500,14 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
             chiqib qolardi. */}
         <div
           ref={scrollRef}
-          className="hidden md:block w-full isolate overflow-x-auto rounded-xl border border-slate-200"
+          className="hidden md:block w-full isolate overflow-x-auto rounded-xl border border-slate-200 dark:border-night-700"
         >
           {/* `w-max` — jadval kontent kengligiga cho'ziladi, ustunlar
               siqilib bir-birining ustiga chiqmaydi. */}
           <table className="w-max min-w-full border-separate border-spacing-0">
             <thead>
               <tr>
-                <th className="sticky left-0 z-20 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-slate-50 border-b border-r border-slate-200 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                <th className="sticky left-0 z-20 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-slate-50 dark:bg-night-800 border-b border-r border-slate-200 dark:border-night-700 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   {t("student.fullName")}
                 </th>
                 {data.days.map((d) => {
@@ -526,13 +526,13 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                       onClick={() => setSelectedDate(d.date)}
                       className={`w-11 min-w-11 px-1 py-1.5 border-b text-center cursor-pointer transition-colors ${
                         active
-                          ? "border-blue-400 bg-blue-100"
-                          : `border-slate-200 ${d.holiday ? "bg-violet-50" : d.transferred ? "bg-slate-100/70" : today ? "bg-blue-50/70" : "bg-slate-50"} hover:bg-slate-100`
+                          ? "border-blue-400 bg-blue-100 dark:bg-blue-500/20"
+                          : `border-slate-200 ${d.holiday ? "bg-violet-50 dark:bg-violet-500/15" : d.transferred ? "bg-slate-100/70 dark:bg-night-800/70" : today ? "bg-blue-50/70 dark:bg-blue-500/15" : "bg-slate-50 dark:bg-night-800"} hover:bg-slate-100`
                       }`}
                     >
                       <span
                         className={`block text-[10px] font-semibold uppercase leading-tight ${
-                          active ? "text-blue-600" : d.holiday ? "text-violet-500" : today ? "text-blue-500" : "text-slate-400"
+                          active ? "text-blue-600 dark:text-blue-400" : d.holiday ? "text-violet-500" : today ? "text-blue-500" : "text-slate-400 dark:text-slate-500"
                         }`}
                       >
                         {t(`group.dayShort.${d.day}`)}
@@ -540,14 +540,14 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                       <span
                         className={`block text-[13px] font-semibold tabular-nums leading-tight ${
                           active
-                            ? "text-blue-700"
+                            ? "text-blue-700 dark:text-blue-400"
                             : d.holiday
-                              ? "text-violet-600"
+                              ? "text-violet-600 dark:text-violet-400"
                               : today
-                                ? "text-blue-700"
+                                ? "text-blue-700 dark:text-blue-400"
                                 : d.future || d.transferred
-                                  ? "text-slate-400"
-                                  : "text-slate-700"
+                                  ? "text-slate-400 dark:text-slate-500"
+                                  : "text-slate-700 dark:text-slate-300"
                         }`}
                       >
                         {Number(d.date.slice(8, 10))}
@@ -557,7 +557,7 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                 })}
                 {/* Mobilda foiz ustuni ko'rsatilmaydi — tor ekranda kunlarga
                     joy qolishi muhimroq (foiz katta ekranda ko'rinadi). */}
-                <th className="hidden sm:table-cell sticky right-0 z-20 w-24 min-w-24 px-2 py-2 bg-slate-50 border-b border-l border-slate-200 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                <th className="hidden sm:table-cell sticky right-0 z-20 w-24 min-w-24 px-2 py-2 bg-slate-50 dark:bg-night-800 border-b border-l border-slate-200 dark:border-night-700 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   {t("group.monthlyAttendanceRate")}
                 </th>
               </tr>
@@ -568,7 +568,7 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                 const row = byStudent.get(s._id);
                 return (
                   <tr key={s._id} className="group/row">
-                    <td className="sticky left-0 z-10 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-white border-b border-r border-slate-100 group-hover/row:bg-slate-50 transition-colors">
+                    <td className="sticky left-0 z-10 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-white dark:bg-night-900 border-b border-r border-slate-100 dark:border-night-700 group-hover/row:bg-slate-50 dark:row:bg-night-800 transition-colors">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <RowNumber value={index + 1} />
                         <StudentPhotoAvatar student={s} onUpdated={onPhotoUpdated} size={32} rounded="rounded-full" />
@@ -577,11 +577,11 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                             <StudentName
                               student={s}
                               onOpen={onOpenStudent}
-                              className="text-[13px] font-semibold text-slate-800 truncate leading-tight"
+                              className="text-[13px] font-semibold text-slate-800 dark:text-slate-100 truncate leading-tight"
                             />
                             <RankMedal position={ranks[s._id]} size={19} />
                           </span>
-                          <span className="hidden sm:block text-[11px] text-slate-400 truncate leading-tight">
+                          <span className="hidden sm:block text-[11px] text-slate-400 dark:text-slate-500 truncate leading-tight">
                             {s.phone}
                           </span>
                         </div>
@@ -625,8 +625,8 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                       return (
                         <td
                           key={d.date}
-                          className={`w-11 min-w-11 p-1 border-b border-slate-100 text-center align-middle ${
-                            holiday ? "bg-violet-50/40" : today ? "bg-blue-50/40" : ""
+                          className={`w-11 min-w-11 p-1 border-b border-slate-100 dark:border-night-700 text-center align-middle ${
+                            holiday ? "bg-violet-50/40 dark:bg-violet-500/15" : today ? "bg-blue-50/40 dark:bg-blue-500/15" : ""
                           }`}
                         >
                           <AttendanceCheckbox
@@ -652,7 +652,7 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                       );
                     })}
 
-                    <td className="hidden sm:table-cell sticky right-0 z-10 w-24 min-w-24 px-2 py-2 bg-white border-b border-l border-slate-100 group-hover/row:bg-slate-50 transition-colors">
+                    <td className="hidden sm:table-cell sticky right-0 z-10 w-24 min-w-24 px-2 py-2 bg-white dark:bg-night-900 border-b border-l border-slate-100 dark:border-night-700 group-hover/row:bg-slate-50 dark:row:bg-night-800 transition-colors">
                       <PercentCell
                         percent={row?.percent || 0}
                         title={t("group.monthlyMarkedOf", {
@@ -682,9 +682,9 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                 left: Math.max(8, Math.min(picker.x - 80, window.innerWidth - 168)),
                 zIndex: 50,
               }}
-              className="flex flex-col gap-0.5 w-40 p-1 rounded-xl bg-white border border-slate-200 shadow-xl"
+              className="flex flex-col gap-0.5 w-40 p-1 rounded-xl bg-white dark:bg-night-900 border border-slate-200 dark:border-night-700 shadow-xl dark:shadow-none"
             >
-              <span className="px-2 py-1 text-[11px] font-semibold text-slate-400 tabular-nums">
+              <span className="px-2 py-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 tabular-nums">
                 {picker.date}
               </span>
               {STATUSES.map((s) => (
@@ -693,7 +693,7 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                   type="button"
                   disabled={saving}
                   onClick={() => mark(s)}
-                  className="flex items-center justify-start gap-1 w-full px-2 h-9 rounded-lg text-[13px] font-medium text-slate-700 text-left hover:bg-slate-50 disabled:opacity-50 cursor-pointer transition-colors"
+                  className="flex items-center justify-start gap-1 w-full px-2 h-9 rounded-lg text-[13px] font-medium text-slate-700 dark:text-slate-300 text-left hover:bg-slate-50 dark:hover:bg-night-800 disabled:opacity-50 cursor-pointer transition-colors"
                 >
                   <AttendanceCheckbox status={s} disabled title="" onClick={() => {}} />
                   {t(`group.attendance${s[0].toUpperCase()}${s.slice(1)}`)}
@@ -721,7 +721,7 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
           </>
         }
       >
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-slate-600 dark:text-slate-300">
           {t("group.mobileMarkAllConfirm", { count: bulkTargets.length, date: selectedDate })}
         </p>
       </Dialog>
@@ -732,7 +732,7 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
 // Status izohlari — sarlavhada (desktop) yoki jadval ostida (mobil).
 function Legend({ t, className = "" }) {
   return (
-    <div className={`items-center gap-x-3 text-[11px] text-slate-400 ${className}`}>
+    <div className={`items-center gap-x-3 text-[11px] text-slate-400 dark:text-slate-500 ${className}`}>
       {STATUSES.map((s) => (
         <span key={s} className="flex items-center gap-1.5">
           <span className={`w-1.5 h-1.5 rounded-full ${CELL[s].dot}`} />
@@ -750,13 +750,13 @@ function Legend({ t, className = "" }) {
 // Foiz — raqam va ostida ingichka progress chizig'i.
 function PercentCell({ percent, title }) {
   const tone =
-    percent >= 80 ? "text-emerald-600" : percent >= 50 ? "text-amber-600" : "text-red-500";
+    percent >= 80 ? "text-emerald-600 dark:text-emerald-400" : percent >= 50 ? "text-amber-600 dark:text-amber-400" : "text-red-500";
   const bar =
     percent >= 80 ? "bg-emerald-500" : percent >= 50 ? "bg-amber-500" : "bg-red-400";
   return (
     <div className="flex flex-col items-center gap-1" title={title}>
       <span className={`text-[13px] font-semibold tabular-nums ${tone}`}>{percent}%</span>
-      <span className="w-full h-1 rounded-full bg-slate-100 overflow-hidden">
+      <span className="w-full h-1 rounded-full bg-slate-100 dark:bg-night-800 overflow-hidden">
         <span className={`block h-full rounded-full ${bar}`} style={{ width: `${percent}%` }} />
       </span>
     </div>

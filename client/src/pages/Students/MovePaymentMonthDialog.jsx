@@ -32,7 +32,7 @@ function MovePaymentMonthDialog({ open, onClose, studentId, entry, payment, onSa
           <span>
             {formatMonthName(month, monthNames)}
             {debt > 0 && (
-              <span className="text-red-600">
+              <span className="text-red-600 dark:text-red-400">
                 {" — "}
                 {maskMoney(debt, hideFinance)} {somSuffix} {t("student.moveMonthDebtSuffix")}
               </span>
@@ -81,9 +81,9 @@ function MovePaymentMonthDialog({ open, onClose, studentId, entry, payment, onSa
       }
     >
       <div className="flex flex-col gap-3 w-full">
-        <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-slate-50">
+        <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-slate-50 dark:bg-night-800">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-lg font-semibold text-slate-800">
+            <span className="text-lg font-semibold text-slate-800 dark:text-slate-100">
               {maskMoney(payment?.amount, hideFinance)} {somSuffix}
             </span>
             {payment?.type && (
@@ -93,14 +93,14 @@ function MovePaymentMonthDialog({ open, onClose, studentId, entry, payment, onSa
                 variant="ghost"
               />
             )}
-            <span className="flex items-center gap-1 ml-auto text-xs text-slate-400">
+            <span className="flex items-center gap-1 ml-auto text-xs text-slate-400 dark:text-slate-500">
               <HiCalendar />
               {payment?.date ? new Date(payment.date * 1000).toLocaleDateString("uz-UZ") : "—"}
             </span>
           </div>
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-slate-500 dark:text-slate-400">
             {t("student.moveMonthCurrentLabel")}:{" "}
-            <span className="font-medium text-slate-700">{formatMonthName(currentMonth, monthNames) || "—"}</span>
+            <span className="font-medium text-slate-700 dark:text-slate-300">{formatMonthName(currentMonth, monthNames) || "—"}</span>
           </span>
         </div>
 
@@ -115,7 +115,7 @@ function MovePaymentMonthDialog({ open, onClose, studentId, entry, payment, onSa
         />
 
         {forMonth && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-700">
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 text-xs text-amber-700 dark:text-amber-400">
             <HiExclamationTriangle className="text-base shrink-0" />
             <span>{t("student.moveMonthWarning")}</span>
           </div>

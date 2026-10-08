@@ -148,8 +148,8 @@ function TeacherHome() {
         subtitle={t(isAssistant ? "teacherHome.greetingDescAssistant" : "teacherHome.greetingDesc")}
         toggle={<HideFinanceToggle hidden={hideFinance} onToggle={toggleHideFinance} />}
       >
-        <div className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-full border border-slate-200/70 bg-white text-xs font-medium text-slate-600 capitalize">
-          <HiCalendarDays className="text-slate-400" aria-hidden="true" />
+        <div className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-full border border-slate-200/70 dark:border-night-700/70 bg-white dark:bg-night-900 text-xs font-medium text-slate-600 dark:text-slate-300 capitalize">
+          <HiCalendarDays className="text-slate-400 dark:text-slate-500" aria-hidden="true" />
           {todayLabel}
         </div>
       </DashboardHeader>
@@ -157,11 +157,11 @@ function TeacherHome() {
       {!data && loading ? (
         <DashboardSkeleton />
       ) : !data && failed ? (
-        <div className="flex flex-col items-center gap-3 px-6 py-12 rounded-2xl border border-slate-200/70 bg-white text-center">
-          <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-rose-50 text-xl text-rose-500">
+        <div className="flex flex-col items-center gap-3 px-6 py-12 rounded-2xl border border-slate-200/70 dark:border-night-700/70 bg-white dark:bg-night-900 text-center">
+          <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-rose-50 dark:bg-rose-500/15 text-xl text-rose-500">
             <HiExclamationTriangle aria-hidden="true" />
           </span>
-          <p className="text-sm font-medium text-slate-700">{t("teacherHome.loadError")}</p>
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("teacherHome.loadError")}</p>
           <button
             type="button"
             onClick={fetchDashboard}
@@ -187,28 +187,28 @@ function TeacherHome() {
             <div className="grid grid-cols-2 gap-3 lg:col-span-2">
               <StatCard
                 icon={<HiCalendarDays />}
-                color="bg-orange-50 text-orange-500"
+                color="bg-orange-50 dark:bg-orange-500/15 text-orange-500"
                 label={t("teacherHome.todayLessons")}
                 value={stats?.todayLessons ?? 0}
                 hint={todayHint}
               />
               <StatCard
                 icon={<HiUserGroup />}
-                color="bg-pink-50 text-pink-500"
+                color="bg-pink-50 dark:bg-pink-500/15 text-pink-500"
                 label={t("teacherHome.activeGroups")}
                 value={stats?.groups ?? 0}
                 hint={stats?.pendingGroups ? t("teacherHome.pendingCount", { count: stats.pendingGroups }) : ""}
               />
               <StatCard
                 icon={<HiUsers />}
-                color="bg-cyan-50 text-cyan-500"
+                color="bg-cyan-50 dark:bg-cyan-500/15 text-cyan-500"
                 label={t("teacherHome.myStudents")}
                 value={stats?.students ?? 0}
                 hint={stats?.groups ? t("teacherHome.inGroups", { count: stats.groups }) : ""}
               />
               <StatCard
                 icon={<HiHome />}
-                color="bg-violet-50 text-violet-500"
+                color="bg-violet-50 dark:bg-violet-500/15 text-violet-500"
                 label={t("teacherHome.myRooms")}
                 value={stats?.rooms ?? 0}
                 hint={capacity ? t("teacherHome.totalCapacity", { count: capacity }) : ""}

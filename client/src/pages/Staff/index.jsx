@@ -178,7 +178,7 @@ function Staff() {
       header: t("staff.name"),
       render: (row) => (
         <span
-          className="font-semibold text-slate-800 hover:text-blue-600 cursor-pointer transition-colors"
+          className="font-semibold text-slate-800 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
           onClick={() => navigate(`/staff/${row._id}`)}
         >
           {row.name}
@@ -219,21 +219,21 @@ function Staff() {
               {
                 label: t("common.detail"),
                 icon: HiEye,
-                iconClass: "bg-slate-50 text-slate-600",
+                iconClass: "bg-slate-50 dark:bg-night-800 text-slate-600 dark:text-slate-300",
                 onClick: () => navigate(`/staff/${row._id}`),
               },
               {
                 label: t("common.edit"),
                 icon: HiPencil,
-                iconClass: "bg-blue-50 text-blue-600",
+                iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
                 onClick: () => openEdit(row),
               },
               {
                 label: t(row.blocked ? "staff.unblock" : "staff.block"),
                 icon: row.blocked ? HiLockOpen : HiLockClosed,
                 iconClass: row.blocked
-                  ? "bg-emerald-50 text-emerald-600"
-                  : "bg-orange-50 text-orange-600",
+                  ? "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                  : "bg-orange-50 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400",
                 disabled: blockingId === row._id,
                 onClick: () => toggleBlock(row),
               },
@@ -243,7 +243,7 @@ function Staff() {
               {
                 label: t("archive.archive"),
                 icon: HiArchiveBox,
-                iconClass: "bg-amber-50 text-amber-600",
+                iconClass: "bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400",
                 onClick: () => setDeleteTarget(row),
               },
             ]}
@@ -256,7 +256,7 @@ function Staff() {
   return (
     <div className="flex flex-col w-full h-full gap-4">
       {isDesktop ? (
-        <div className="flex flex-wrap items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]">
+        <div className="flex flex-wrap items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-sm dark:shadow-none shadow-slate-900/[0.02]">
           {/* Filtrlar bo'sh joyni to'ldiradi, amal tugmasi o'ng chekkaga
               tiraladi — avval `w-1/4` sobit bo'lgani uchun qator "Hodim
               qo'shish" da tugab, o'ngda bo'sh joy qolardi. */}
@@ -329,7 +329,7 @@ function Staff() {
           </Button>
         </div>
       ) : (
-        <div className="flex flex-col gap-2.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]">
+        <div className="flex flex-col gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-sm dark:shadow-none shadow-slate-900/[0.02]">
           <div className="flex items-center gap-2">
             <div className="flex-1 min-w-0">
               <Input
@@ -428,7 +428,7 @@ function Staff() {
       )}
 
       {error ? (
-        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+        <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
           <HiUsers className="text-4xl" />
           <p className="text-sm">{t("staff.loadError")}</p>
           <Button variant="outlined" onClick={fetchStaff}>

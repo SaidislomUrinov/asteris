@@ -44,7 +44,7 @@ function Checkbox({
     yellow:  "hover:border-yellow-500",
     slate:   "hover:border-slate-700",
   };
-  const uncheckedBase = "bg-white border-slate-300";
+  const uncheckedBase = "bg-white dark:bg-night-900 border-slate-300 dark:border-night-600";
 
   const shape = variant === "circle" ? "rounded-full" : "rounded-md";
 
@@ -84,7 +84,7 @@ function Checkbox({
         )}
       </button>
       {label && (
-        <span className="text-[13px] text-slate-700 select-none">{label}</span>
+        <span className="text-[13px] text-slate-700 dark:text-slate-300 select-none">{label}</span>
       )}
     </label>
   );

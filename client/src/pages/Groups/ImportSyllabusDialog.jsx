@@ -140,10 +140,10 @@ function ImportSyllabusDialog({ open, onClose, groupId, hasSyllabus = false, onI
     if (list.error) {
       return (
         <div className="flex flex-col flex-1 items-center justify-center gap-2 text-center">
-          <span className="flex items-center justify-center w-12 h-12 rounded-2xl bg-red-50 text-xl text-red-400">
+          <span className="flex items-center justify-center w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-500/15 text-xl text-red-400">
             <HiExclamationTriangle />
           </span>
-          <p className="text-sm text-slate-600">{t("syllabus.loadError")}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300">{t("syllabus.loadError")}</p>
           <Button variant="outlined" color="black" onClick={list.refetch}>
             {t("syllabus.retry")}
           </Button>
@@ -154,10 +154,10 @@ function ImportSyllabusDialog({ open, onClose, groupId, hasSyllabus = false, onI
       const EmptyIcon = tab === TAB_PLANS ? HiClipboardDocumentList : HiUserGroup;
       return (
         <div className="flex flex-col flex-1 items-center justify-center gap-2 text-center">
-          <span className="flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-50 text-xl text-slate-300">
+          <span className="flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-50 dark:bg-night-800 text-xl text-slate-300 dark:text-slate-600">
             <EmptyIcon />
           </span>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             {tab === TAB_PLANS ? t("syllabus.importPlansEmpty") : t("syllabus.importEmpty")}
           </p>
         </div>
@@ -175,25 +175,25 @@ function ImportSyllabusDialog({ open, onClose, groupId, hasSyllabus = false, onI
               onClick={() => select(tab, s)}
               className={`flex items-center gap-3 p-3 rounded-xl border text-left cursor-pointer transition-colors ${
                 active
-                  ? "border-blue-400 bg-blue-50/60"
-                  : "border-slate-200 bg-white hover:border-slate-300"
+                  ? "border-blue-400 bg-blue-50/60 dark:bg-blue-500/15"
+                  : "border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 hover:border-slate-300 dark:hover:border-night-600"
               }`}
             >
               <div className="flex flex-col min-w-0 flex-1 gap-0.5">
-                <span className="text-sm font-semibold text-slate-800 truncate">
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
                   {tab === TAB_PLANS ? s.title : s.name}
                 </span>
                 {tab === TAB_PLANS && (
-                  <span className="flex items-center gap-1.5 min-w-0 text-xs text-slate-500">
+                  <span className="flex items-center gap-1.5 min-w-0 text-xs text-slate-500 dark:text-slate-400">
                     <span className="truncate">{s.teacher?.name || "—"}</span>
                     {s.mine && (
-                      <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-emerald-50 text-[10px] font-semibold uppercase text-emerald-600">
+                      <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-500/15 text-[10px] font-semibold uppercase text-emerald-600 dark:text-emerald-400">
                         {t("syllabus.importMine")}
                       </span>
                     )}
                   </span>
                 )}
-                <span className="text-xs text-slate-400 tabular-nums">
+                <span className="text-xs text-slate-400 dark:text-slate-500 tabular-nums">
                   {t("syllabus.importMeta", {
                     modules: s.moduleCount || 0,
                     lessons: s.lessonCount || 0,
@@ -252,19 +252,19 @@ function ImportSyllabusDialog({ open, onClose, groupId, hasSyllabus = false, onI
                 <li key={n} className="flex items-center gap-2 min-w-0 flex-1 last:flex-none">
                   <span
                     className={`flex items-center justify-center w-6 h-6 shrink-0 rounded-full text-xs font-semibold ${
-                      active || done ? "bg-blue-500 text-white" : "bg-slate-100 text-slate-400"
+                      active || done ? "bg-blue-500 text-white" : "bg-slate-100 dark:bg-night-800 text-slate-400 dark:text-slate-500"
                     }`}
                   >
                     {done ? <HiCheckCircle className="text-base" /> : n}
                   </span>
                   <span
                     className={`text-sm truncate ${
-                      active ? "font-semibold text-slate-900" : "text-slate-400"
+                      active ? "font-semibold text-slate-900 dark:text-slate-100" : "text-slate-400 dark:text-slate-500"
                     }`}
                   >
                     {label}
                   </span>
-                  {n === 1 && <span className="flex-1 h-px min-w-3 bg-slate-200" />}
+                  {n === 1 && <span className="flex-1 h-px min-w-3 bg-slate-200 dark:bg-night-700" />}
                 </li>
               );
             })}
@@ -272,7 +272,7 @@ function ImportSyllabusDialog({ open, onClose, groupId, hasSyllabus = false, onI
 
           {step === 1 ? (
             <>
-              <div className="flex p-1 rounded-xl bg-slate-100 shrink-0">
+              <div className="flex p-1 rounded-xl bg-slate-100 dark:bg-night-800 shrink-0">
                 {tabs.map((item) => (
                   <button
                     key={item.key}
@@ -283,8 +283,8 @@ function ImportSyllabusDialog({ open, onClose, groupId, hasSyllabus = false, onI
                     }}
                     className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-semibold cursor-pointer transition-colors ${
                       tab === item.key
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-500 hover:text-slate-700"
+                        ? "bg-white dark:bg-night-900 text-slate-900 dark:text-slate-100 shadow-sm dark:shadow-none"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                     }`}
                   >
                     {item.label}
@@ -306,15 +306,15 @@ function ImportSyllabusDialog({ open, onClose, groupId, hasSyllabus = false, onI
 
               {renderList()}
 
-              <p className="shrink-0 text-xs text-slate-400">{t("syllabus.importHint")}</p>
+              <p className="shrink-0 text-xs text-slate-400 dark:text-slate-500">{t("syllabus.importHint")}</p>
             </>
           ) : (
             <>
               <div className="flex flex-col gap-0.5 shrink-0">
-                <p className="text-sm font-semibold text-slate-800">
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                   {t("syllabus.currentLessonQuestion")}
                 </p>
-                <p className="text-xs text-slate-400 truncate">
+                <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
                   {selected?.kind === TAB_PLANS ? selected?.item?.title : selected?.item?.name}
                 </p>
               </div>
@@ -347,7 +347,7 @@ function ImportSyllabusDialog({ open, onClose, groupId, hasSyllabus = false, onI
           </>
         }
       >
-        <p className="text-sm text-slate-600">{t("syllabus.importReplaceWarning")}</p>
+        <p className="text-sm text-slate-600 dark:text-slate-300">{t("syllabus.importReplaceWarning")}</p>
       </Dialog>
     </>
   );

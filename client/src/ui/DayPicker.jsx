@@ -22,7 +22,7 @@ function DayPicker({ value = [], onChange, placeholder }) {
 
   return (
     <div className="flex flex-col justify-center gap-1.5 w-full h-full min-w-0">
-      {placeholder && <span className="text-xs text-slate-400 px-0.5">{placeholder}</span>}
+      {placeholder && <span className="text-xs text-slate-400 dark:text-slate-500 px-0.5">{placeholder}</span>}
       <div className="flex items-center gap-1 w-full">
         {DAYS.map((day) => {
           const on = value.includes(day);
@@ -34,7 +34,7 @@ function DayPicker({ value = [], onChange, placeholder }) {
               className={`flex-1 min-w-0 h-9 rounded-lg border text-xs font-semibold duration-150 cursor-pointer ${
                 on
                   ? "bg-blue-600 border-blue-600 text-white"
-                  : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                  : "bg-white dark:bg-night-900 border-slate-200 dark:border-night-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-night-600 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >
               {t(`group.dayShort.${day}`)}

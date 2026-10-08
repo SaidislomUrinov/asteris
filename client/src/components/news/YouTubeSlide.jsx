@@ -36,7 +36,7 @@ function YouTubeSlide({ id, title }) {
       <LazyImage src={youtubeThumb(id)} alt={title || ""} className="w-full h-full object-cover" />
       <span className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
       <span className="absolute inset-0 flex items-center justify-center">
-        <span className="flex items-center justify-center size-16 rounded-full bg-white/95 text-red-600 shadow-lg group-hover:scale-105 transition-transform">
+        <span className="flex items-center justify-center size-16 rounded-full bg-white/95 dark:bg-night-900/95 text-red-600 dark:text-red-400 shadow-lg dark:shadow-none group-hover:scale-105 transition-transform">
           <HiPlay className="text-3xl translate-x-0.5" />
         </span>
       </span>

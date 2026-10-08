@@ -199,7 +199,7 @@ function CenterDetail() {
 
   if (notFound || error) {
     return (
-      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400">
+      <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
         <HiBuildingOffice2 className="text-4xl" />
         <p className="text-sm">{t("center.notFound")}</p>
         <Button variant="outlined" onClick={() => navigate("/centers")}>
@@ -248,11 +248,11 @@ function CenterDetail() {
       </div>
 
       {center.status === "blocked" && (
-        <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-50 border border-amber-200">
+        <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30">
           <HiLockClosed className="text-lg text-amber-500 shrink-0 mt-0.5" />
           <div className="flex flex-col gap-0.5 min-w-0">
-            <p className="text-sm font-semibold text-amber-900">{t("center.readOnlyTitle")}</p>
-            <p className="text-xs text-amber-800">{t("center.blockedHint")}</p>
+            <p className="text-sm font-semibold text-amber-900 dark:text-amber-400">{t("center.readOnlyTitle")}</p>
+            <p className="text-xs text-amber-800 dark:text-amber-400">{t("center.blockedHint")}</p>
           </div>
         </div>
       )}
@@ -273,7 +273,7 @@ function CenterDetail() {
           subtitle={center.slogan || t("center.title")}
           accent="blue"
         >
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-3 border-t border-slate-100">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-3 border-t border-slate-100 dark:border-night-700">
             {center.date && <InfoMeta icon={<HiCalendar />}>{center.date}</InfoMeta>}
             <InfoMeta icon={<HiHome />}>
               {roomsCount} {t("center.roomsCount").toLowerCase()}
@@ -291,7 +291,7 @@ function CenterDetail() {
           value={statsLoading ? "…" : (stats?.activeStudents ?? 0)}
           accent="indigo"
         >
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-400 dark:text-slate-500">
             {statsLoading
               ? "…"
               : `${stats?.activeGroups ?? 0} ${t("group.statusActive").toLowerCase()} · ${
@@ -310,7 +310,7 @@ function CenterDetail() {
       </div>
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="font-semibold text-slate-800">{t("center.statsTitle")}</p>
+        <p className="font-semibold text-slate-800 dark:text-slate-100">{t("center.statsTitle")}</p>
         <MonthInput
           className="w-44"
           value={month}
@@ -346,7 +346,7 @@ function CenterDetail() {
           suffix={hideFinance ? "" : t("student.somSuffix")}
           accent="amber"
         >
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-400 dark:text-slate-500">
             {t("center.teacherSalaryCount", { count: teacherSalary.count })}
           </p>
         </MetricCard>
@@ -380,32 +380,32 @@ function CenterDetail() {
             <div className="lg:col-span-1">
               {hideFinance ? <HiddenFinancePanel /> : <ExpenseCategoryDonut data={expenseByCategory} />}
             </div>
-            <div className="lg:col-span-2 flex flex-col rounded-xl border border-slate-200 bg-white overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100 font-semibold text-slate-800 text-sm">
+            <div className="lg:col-span-2 flex flex-col rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-night-700 font-semibold text-slate-800 dark:text-slate-100 text-sm">
                 {t("dashboard.recentPayments")}
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto max-h-72">
                 {stats.recentPayments.length === 0 ? (
-                  <div className="flex items-center justify-center w-full h-24 text-slate-400 text-sm">
+                  <div className="flex items-center justify-center w-full h-24 text-slate-400 dark:text-slate-500 text-sm">
                     {t("dashboard.noPayments")}
                   </div>
                 ) : (
                   <table className="w-full text-sm min-w-max">
                     <tbody>
                       {stats.recentPayments.map((p, i) => (
-                        <tr key={i} className="border-t border-slate-100 first:border-t-0">
+                        <tr key={i} className="border-t border-slate-100 dark:border-night-700 first:border-t-0">
                           <td className="px-4 py-2.5">
                             <div className="flex items-center gap-2.5">
                               <Avatar user={{ _id: p.student._id, name: p.student.fullName, avatar: p.student.photo }} size={30} />
-                              <span className="font-semibold text-slate-800">{p.student.fullName}</span>
+                              <span className="font-semibold text-slate-800 dark:text-slate-100">{p.student.fullName}</span>
                             </div>
                           </td>
                           <td className="px-4 py-2.5">
-                            <NumberText className="text-emerald-600">
+                            <NumberText className="text-emerald-600 dark:text-emerald-400">
                               {maskMoney(p.amount, hideFinance)}
                             </NumberText>
                           </td>
-                          <td className="px-4 py-2.5 text-slate-400 text-xs whitespace-nowrap">
+                          <td className="px-4 py-2.5 text-slate-400 dark:text-slate-500 text-xs whitespace-nowrap">
                             {p.date}
                           </td>
                         </tr>

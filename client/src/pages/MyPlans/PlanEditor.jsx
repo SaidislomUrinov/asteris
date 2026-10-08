@@ -267,7 +267,7 @@ function PlanEditor() {
   const backLink = (
     <Link
       to="/my-plans"
-      className="inline-flex items-center gap-1.5 self-start text-sm font-medium text-slate-500 hover:text-slate-800"
+      className="inline-flex items-center gap-1.5 self-start text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100"
     >
       <HiArrowLeft />
       {t("teachingPlan.back")}
@@ -277,13 +277,13 @@ function PlanEditor() {
   if (loading) {
     return (
       <div className="flex flex-col w-full gap-4 animate-pulse">
-        <span className="h-4 w-28 rounded bg-slate-100" />
-        <div className="flex flex-col gap-2 p-4 rounded-2xl border border-slate-200 bg-white">
-          <span className="h-6 w-1/2 rounded bg-slate-100" />
-          <span className="h-4 w-24 rounded bg-slate-100" />
+        <span className="h-4 w-28 rounded bg-slate-100 dark:bg-night-800" />
+        <div className="flex flex-col gap-2 p-4 rounded-2xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
+          <span className="h-6 w-1/2 rounded bg-slate-100 dark:bg-night-800" />
+          <span className="h-4 w-24 rounded bg-slate-100 dark:bg-night-800" />
         </div>
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-14 rounded-xl border border-slate-200 bg-white" />
+          <div key={i} className="h-14 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900" />
         ))}
       </div>
     );
@@ -294,11 +294,11 @@ function PlanEditor() {
       <div className="flex flex-col w-full h-full gap-4">
         {backLink}
         <div className="flex flex-col flex-1 items-center justify-center gap-2 text-center">
-          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 text-2xl text-red-400">
+          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-500/15 text-2xl text-red-400">
             <HiExclamationTriangle />
           </span>
-          <p className="text-sm font-medium text-slate-600">{t("teachingPlan.loadError")}</p>
-          {loadError && <p className="text-xs text-slate-400">{t(loadError)}</p>}
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{t("teachingPlan.loadError")}</p>
+          {loadError && <p className="text-xs text-slate-400 dark:text-slate-500">{t(loadError)}</p>}
           <Button variant="outlined" color="black" onClick={() => fetchPlan()}>
             {t("common.retry")}
           </Button>
@@ -314,22 +314,22 @@ function PlanEditor() {
       {backLink}
 
       {/* Sarlavha kartasi */}
-      <div className="flex items-start gap-3 p-4 rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]">
-        <span className="flex items-center justify-center w-11 h-11 shrink-0 rounded-xl bg-blue-50 text-xl text-blue-500">
+      <div className="flex items-start gap-3 p-4 rounded-2xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-sm dark:shadow-none shadow-slate-900/[0.02]">
+        <span className="flex items-center justify-center w-11 h-11 shrink-0 rounded-xl bg-blue-50 dark:bg-blue-500/15 text-xl text-blue-500">
           <HiClipboardDocumentList />
         </span>
         <div className="flex flex-col min-w-0 flex-1 gap-1.5">
-          <h1 className="text-lg sm:text-xl font-semibold leading-snug tracking-tight text-slate-900 break-words">{plan.title}</h1>
-          <div className="flex items-center gap-2 flex-wrap text-xs text-slate-500">
+          <h1 className="text-lg sm:text-xl font-semibold leading-snug tracking-tight text-slate-900 dark:text-slate-100 break-words">{plan.title}</h1>
+          <div className="flex items-center gap-2 flex-wrap text-xs text-slate-500 dark:text-slate-400">
             {plan.subject?.name && (
-              <span className="px-2 py-0.5 rounded-md bg-violet-50 font-semibold text-violet-600">
+              <span className="px-2 py-0.5 rounded-md bg-violet-50 dark:bg-violet-500/15 font-semibold text-violet-600 dark:text-violet-400">
                 {plan.subject.name}
               </span>
             )}
             <span className="tabular-nums">
               {t("syllabus.importMeta", { modules: modules.length, lessons: lessonCount })}
             </span>
-            <span className="text-slate-300">·</span>
+            <span className="text-slate-300 dark:text-slate-600">·</span>
             <span className="tabular-nums">
               {t("teachingPlan.updated", { date: formatPlanDate(plan.updatedAt) })}
             </span>
@@ -375,7 +375,7 @@ function PlanEditor() {
                 {
                   label: t("teachingPlan.editTitle"),
                   icon: HiPencilSquare,
-                  iconClass: "bg-blue-50 text-blue-600",
+                  iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
                   onClick: () => {
                     setFormKey((k) => k + 1);
                     setFormOpen(true);
@@ -384,14 +384,14 @@ function PlanEditor() {
                 {
                   label: t("teachingPlan.duplicate"),
                   icon: HiDocumentDuplicate,
-                  iconClass: "bg-slate-100 text-slate-600",
+                  iconClass: "bg-slate-100 dark:bg-night-800 text-slate-600 dark:text-slate-300",
                   disabled: busy,
                   onClick: duplicate,
                 },
                 {
                   label: t("teachingPlan.delete"),
                   icon: HiArchiveBox,
-                  iconClass: "bg-amber-50 text-amber-600",
+                  iconClass: "bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400",
                   onClick: () => setDeleteOpen(true),
                 },
               ]}
@@ -402,9 +402,9 @@ function PlanEditor() {
 
       {/* Modullar */}
       <div className="flex items-center justify-between gap-2">
-        <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+        <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
           {t("teachingPlan.modules")}
-          <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 tabular-nums">
+          <span className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-night-800 text-slate-500 dark:text-slate-400 tabular-nums">
             {modules.length}
           </span>
         </p>
@@ -416,11 +416,11 @@ function PlanEditor() {
 
       {modules.length === 0 ? (
         <div className="flex flex-col flex-1 items-center justify-center gap-2 py-12 text-center">
-          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-50 text-2xl text-slate-300">
+          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-50 dark:bg-night-800 text-2xl text-slate-300 dark:text-slate-600">
             <HiClipboardDocumentList />
           </span>
-          <p className="text-sm font-medium text-slate-600">{t("teachingPlan.noModules")}</p>
-          <p className="text-xs text-slate-400 max-w-xs">{t("teachingPlan.noModulesHint")}</p>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{t("teachingPlan.noModules")}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 max-w-xs">{t("teachingPlan.noModulesHint")}</p>
           <Button className="gap-1.5 mt-1" onClick={() => openModuleDialog()}>
             <HiPlus className="text-base" />
             {t("syllabus.newModule")}
@@ -524,7 +524,7 @@ function PlanEditor() {
           </>
         }
       >
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-slate-600 dark:text-slate-300">
           {removeTarget?.kind === "module"
             ? t("syllabus.deleteModuleConfirm", { title: removeTarget?.title })
             : t("syllabus.deleteLessonConfirm", { title: removeTarget?.title })}
@@ -547,7 +547,7 @@ function PlanEditor() {
           </>
         }
       >
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-slate-600 dark:text-slate-300">
           {t("teachingPlan.deleteConfirm", { title: plan.title })}
         </p>
       </Dialog>
