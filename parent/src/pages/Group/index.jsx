@@ -1,6 +1,7 @@
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { HiOutlineAcademicCap } from "react-icons/hi2";
+import { useState } from "react";
+import { HiOutlineAcademicCap, HiOutlineQrCode } from "react-icons/hi2";
 import { FaTelegram } from "react-icons/fa";
 import { Page } from "../../components/Page";
 import { SegmentTabs } from "../../components/SegmentTabs";
@@ -16,7 +17,9 @@ import { RankCard } from "../../components/RankCard";
 import { BadgesTab } from "./BadgesTab";
 import { LessonPlanTab } from "./LessonPlanTab";
 import { useRequest } from "../../hooks/useRequest";
-import { getBadges, getLessonPlan } from "../../api/parent";
+import { getBadges, getLessonPlan, getQrCard } from "../../api/parent";
+import { QrCardSheet } from "./QrCardSheet";
+import { cn } from "../../utils/cn";
 import { Button } from "../../components/Button";
 import { openTelegramLink } from "../../lib/telegram";
 
@@ -51,6 +54,11 @@ export const Group = () => {
     ? baseTabs.flatMap((v) => (v === PLAN_AFTER[isStudent ? "student" : "parent"] ? [v, "plan"] : [v]))
     : baseTabs;
   const tabs = showBadges ? [...withPlan, "badges"] : withPlan;
+  // QR karta: faqat faol a'zolikda so'raladi; javob muvaffaqiyatli bo'lsa
+  // tugma ko'rinadi (`parent.qrUnavailable` va boshqa xatoda — jimgina yo'q).
+  const isActive = findEntry(eid)?.group?.status === "active";
+  const qr = useRequest(() => getQrCard(eid), [eid], { enabled: isActive });
+  const [qrOpen, setQrOpen] = useState(false);
 
   // O'quvchi to'lov tabiga (eski havola) kirsa — vazifalarga
   if (isStudent && !onBadges && !onPlan && !STUDENT_TABS.includes(tab))
@@ -81,12 +89,23 @@ export const Group = () => {
       {/* Reyting faqat faol a'zolikda — tugagan guruhda so'rov yuborilmaydi */}
       {group.status === "active" && <RankCard entryId={eid} />}
       {/* Telegram guruh — faqat faol a'zolikda va markaz havola qo'ygan bo'lsa */}
-      {group.status === "active" && group.telegramLink && (
-        <Button variant="soft" onClick={() => openTelegramLink(group.telegramLink)}>
-          <FaTelegram className="w-5 h-5 shrink-0" />
-          {t("group.telegram")}
-        </Button>
+      {group.status === "active" && (qr.data || group.telegramLink) && (
+        <div className={cn("grid gap-2.5", qr.data && group.telegramLink && "grid-cols-2")}>
+          {qr.data && (
+            <Button variant="soft" onClick={() => setQrOpen(true)}>
+              <HiOutlineQrCode className="w-5 h-5 shrink-0" />
+              {t("group.qrCard.button")}
+            </Button>
+          )}
+          {group.telegramLink && (
+            <Button variant="soft" onClick={() => openTelegramLink(group.telegramLink)}>
+              <FaTelegram className="w-5 h-5 shrink-0" />
+              {t("group.telegram")}
+            </Button>
+          )}
+        </div>
       )}
+      {qrOpen && qr.data && <QrCardSheet onClose={() => setQrOpen(false)} entryId={eid} initial={qr.data} />}
       <SegmentTabs
         items={tabs.map((v) => ({ value: v, label: t(`group.tab.${v}`) }))}
         value={tabs.includes(tab) ? tab : tabs[0]}

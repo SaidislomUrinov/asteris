@@ -1,21 +1,23 @@
 import { useTranslation } from "react-i18next";
-import { HiOutlinePhone, HiOutlineBanknotes } from "react-icons/hi2";
-import { Avatar, Card } from "../../components/Card";
-import { initials } from "../../utils/format";
+import { HiOutlinePhone, HiOutlineBanknotes, HiOutlinePaperAirplane, HiOutlineInformationCircle } from "react-icons/hi2";
+import { haptic } from "../../lib/telegram";
+import { Card } from "../../components/Card";
 import { callPhone } from "../utils";
 import { MetaLine } from "../components/MetaLine";
 import { TelegramPill } from "./TelegramPill";
 import { ActionChip } from "./ActionChip";
+import { StudentPhotoAvatar } from "./StudentPhotoAvatar";
 
 // O'quvchi profili (details §3.1): ism, telefon, ota-ona telefoni, Telegram
-// juft belgisi; amallar — Qo'ng'iroq (o'quvchi / ota-ona), To'lov.
-export const StudentProfileCard = ({ student: s, canCall, onPay, payDisabled }) => {
+// juft belgisi; amallar — Qo'ng'iroq (o'quvchi / ota-ona), To'lov, QR kartani
+// Telegramga yuborish (`qrDisabled` — hech kim ulanmagan: xira + izoh).
+export const StudentProfileCard = ({ student: s, canCall, onPay, payDisabled, onSendQr, qrDisabled, qrBusy }) => {
   const { t } = useTranslation();
-  const hasActions = (canCall && (s.phone || s.parentPhone)) || onPay;
+  const hasActions = (canCall && (s.phone || s.parentPhone)) || onPay || onSendQr;
   return (
     <Card className="flex flex-col gap-3">
       <div className="flex items-center gap-3 min-w-0">
-        <Avatar text={initials(s.fullName)} className="w-14 h-14 rounded-2xl text-lg" />
+        <StudentPhotoAvatar student={s} className="w-14 h-14 text-lg" />
         <div className="min-w-0">
           <div className="font-extrabold text-[18px] leading-tight tracking-tight break-words">{s.fullName}</div>
           {canCall && s.phone && <div className="tabular text-[13px] text-hint mt-0.5">{s.phone}</div>}
@@ -45,6 +47,15 @@ export const StudentProfileCard = ({ student: s, canCall, onPay, payDisabled }) 
               {t("worker.student.callParentShort")}
             </ActionChip>
           )}
+          {onSendQr && (
+            <ActionChip
+              icon={HiOutlinePaperAirplane}
+              disabled={qrDisabled || qrBusy}
+              onClick={() => (qrDisabled || qrBusy ? haptic("warning") : onSendQr())}
+            >
+              {t(qrBusy ? "worker.qr.sendBusy" : "worker.qr.sendShort")}
+            </ActionChip>
+          )}
           {onPay && (
             <ActionChip icon={HiOutlineBanknotes} primary disabled={payDisabled} onClick={onPay}>
               {t("worker.student.pay")}
@@ -52,6 +63,7 @@ export const StudentProfileCard = ({ student: s, canCall, onPay, payDisabled }) 
           )}
         </div>
       )}
+      {onSendQr && qrDisabled && <div className="flex items-center gap-1.5 text-[12.5px] leading-snug text-hint -mt-1"><HiOutlineInformationCircle className="w-4 h-4 shrink-0" />{t("worker.qr.sendNoTelegram")}</div>}
     </Card>
   );
 };

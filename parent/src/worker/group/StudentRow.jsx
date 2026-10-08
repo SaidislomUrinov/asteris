@@ -3,6 +3,7 @@ import { HiEllipsisVertical } from "react-icons/hi2";
 import { Avatar, Pill } from "../../components/Card";
 import { initials, money } from "../../utils/format";
 import { cn } from "../../utils/cn";
+import { photoSrc } from "../../lib/studentPhoto";
 
 const MARK_TONE = { present: "ok", absent: "bad", excused: "warn" };
 
@@ -21,7 +22,7 @@ export const StudentRow = ({ index, student: s, entry, mark, showDebt, sub, onOp
         onClick={onOpen}
         className={cn("flex items-center gap-3 min-w-0 flex-1 text-left", onOpen && "active:opacity-70")}
       >
-        <Avatar text={initials(s.fullName)} tone={index} />
+        <Avatar text={initials(s.fullName)} tone={index} src={photoSrc(s.photo)} alt={s.fullName} />
         <span className="min-w-0 flex-1">
           <span className="block font-bold text-[14.5px] leading-tight truncate">{s.fullName}</span>
           {sub && <span className="block tabular text-[12px] text-hint truncate mt-0.5">{sub}</span>}

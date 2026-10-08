@@ -18,7 +18,8 @@
     "fileTypeNotAllowed": "Bu turdagi faylni yuklab bo'lmaydi",
     "invalidInput": "Ma'lumot noto'g'ri kiritilgan",
     "notFound": "Topilmadi",
-    "tooManyRequests": "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring"
+    "tooManyRequests": "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring",
+    "fileTooLarge": "Fayl hajmi juda katta (10 MB gacha)"
   },
   "error": {
     "title": "Xatolik yuz berdi",
@@ -51,7 +52,11 @@
     "authUnavailable": "Kirish vaqtincha ishlamayapti. Keyinroq urinib ko'ring",
     "invalidSettings": "Sozlamalar noto'g'ri",
     "settingsUpdated": "Sozlamalar saqlandi",
-    "unlinked": "Telegram hisobi uzildi"
+    "unlinked": "Telegram hisobi uzildi",
+    "qrUnavailable": "QR karta bu guruh uchun mavjud emas",
+    "qrSendTooSoon": "Karta hozirgina yuborildi — biroz kuting",
+    "qrSendFailed": "Kartani Telegramga yuborib bo‘lmadi. Botni bloklamaganingizni tekshiring",
+    "qrCardSent": "Karta Telegram chatingizga yuborildi"
   },
   "notLinked": {
     "title": "Botda /start bosing",
@@ -120,7 +125,17 @@
     "rescheduled": "Dars jadvali yangilandi",
     "scheduleFinished": "Yakunlangan guruh jadvali o'zgartirilmaydi",
     "teacherNotFound": "Tanlangan o'qituvchi topilmadi",
-    "telegramUpdated": "Telegram guruh manzili yangilandi"
+    "telegramUpdated": "Telegram guruh manzili yangilandi",
+    "qrCard": {
+      "button": "QR karta",
+      "title": "QR davomat kartasi",
+      "hint": "Kirishda skanerga ko‘rsating",
+      "download": "Yuklab olish",
+      "sending": "Yuborilmoqda…",
+      "downloadHint": "Karta Telegram chatingizga rasm bo‘lib keladi",
+      "sent": "Karta Telegram chatingizga yuborildi",
+      "close": "Yopish"
+    }
   },
   "days": {
     "mon": "Du",
@@ -352,7 +367,11 @@
     "transferNotActive": "Faqat faol a'zolikni o'tkazish mumkin",
     "transferSameGroup": "O'quvchi allaqachon shu guruhda",
     "transferred": "O'quvchi boshqa guruhga o'tkazildi",
-    "updated": "O'quvchi ma'lumotlari yangilandi"
+    "updated": "O'quvchi ma'lumotlari yangilandi",
+    "photoUpdated": "Rasm saqlandi",
+    "photoRemoved": "Rasm olib tashlandi",
+    "photoRequired": "Rasm tanlanmadi",
+    "photoInvalid": "Fayl rasm emas yoki uni o'qib bo'lmadi"
   },
   "rankCard": {
     "title": "Guruhdagi o'rin",
@@ -905,7 +924,14 @@
       "attendance": "Davomat",
       "gradeAvg": "O'rtacha baho",
       "gradesCount": "{{count}} ta baho",
-      "teacherScope": "Faqat yutuqlar va o'z guruhlaringiz"
+      "teacherScope": "Faqat yutuqlar va o'z guruhlaringiz",
+      "photoEdit": "Rasmni o'zgartirish",
+      "photoAdd": "Rasm qo'yish",
+      "photoTitle": "O'quvchi rasmi",
+      "photoReplace": "Rasmni almashtirish",
+      "photoRemove": "Rasmni olib tashlash",
+      "photoRemoveTitle": "Rasmni olib tashlaysizmi?",
+      "photoRemoveText": "{{name}} rasmi o'chiriladi, o'rniga bosh harflar ko'rinadi."
     },
     "centerNotFound": "Filial topilmadi",
     "qr": {
@@ -938,7 +964,38 @@
         "text": "QR skaner uchun Telegram ilovasining yangi versiyasi kerak."
       },
       "pickTitle": "Guruhni tanlang",
-      "pickHint": "Bugun bir nechta guruhda dars bor. Qaysi biriga yozilsin?"
+      "pickHint": "Bugun bir nechta guruhda dars bor. Qaysi biriga yozilsin?",
+      "card": {
+        "label": "Davomat kartasi",
+        "student": "O‘quvchi",
+        "groups": "Guruhlar",
+        "footer": "Kartani skanerga ko‘rsating — davomat avtomatik belgilanadi"
+      },
+      "sendAction": "QR kartani Telegramga yuborish",
+      "sendShort": "QR yuborish",
+      "sendBusy": "Yuborilmoqda…",
+      "sendNoTelegram": "Telegramga hech kim ulanmagan",
+      "sendBoth": "O'quvchi va ota-onaga yuborildi",
+      "sendStudentOnly": "Faqat o'quvchiga yuborildi",
+      "sendParentOnly": "Faqat ota-onaga yuborildi",
+      "sendParentFailed": "O'quvchiga yuborildi, ota-onaga yetkazilmadi",
+      "sendStudentFailed": "Ota-onaga yuborildi, o'quvchiga yetkazilmadi"
+    },
+    "support": {
+      "title": "Yordam",
+      "subtitle": "Odatda 30–60 daqiqada javob beramiz",
+      "offline": "Aloqa yo'q — qayta ulanmoqda…",
+      "admin": "WENET yordam",
+      "today": "Bugun",
+      "yesterday": "Kecha",
+      "emptyTitle": "Savolingiz bormi?",
+      "emptyText": "Yozing yoki skrinshot yuboring. Javobni shu yerda olasiz.",
+      "loadingOlder": "Oldingi xabarlar yuklanmoqda…",
+      "placeholder": "Xabar yozing…",
+      "attach": "Rasm biriktirish",
+      "send": "Yuborish",
+      "openImage": "Rasmni kattalashtirish",
+      "closeImage": "Yopish"
     }
   },
   "archive": {
@@ -965,7 +1022,12 @@
     "markedLate": "Kelgan (kechikkan) deb belgilandi",
     "alreadyMarked": "Bu o'quvchi bugun allaqachon belgilangan",
     "chooseGroupTitle": "Guruhni tanlang",
-    "chooseGroupHint": "{{name}} bugun bir nechta guruhda darsga ega. Qaysi biriga yozilsin?"
+    "chooseGroupHint": "{{name}} bugun bir nechta guruhda darsga ega. Qaysi biriga yozilsin?",
+    "qrCardSent": "QR karta Telegramga yuborildi",
+    "qrNoTelegram": "Telegramga hech kim ulanmagan",
+    "qrSendTooSoon": "QR karta hozirgina yuborildi, birozdan so'ng qayta urinib ko'ring",
+    "qrInvalidImage": "QR karta rasmi noto'g'ri",
+    "qrSendFailed": "QR kartani Telegramga yuborib bo'lmadi"
   },
   "billing": {
     "invalidCycleMode": "Noto'g'ri to'lov sikli rejimi",

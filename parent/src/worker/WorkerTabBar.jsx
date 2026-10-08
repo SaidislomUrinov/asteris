@@ -29,7 +29,7 @@ export const WorkerTabBar = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { role, roleColor, can, hasFeature, readOnly, openSheet } = useWorker();
+  const { role, roleColor, can, hasFeature, readOnly, openSheet, chatUnread } = useWorker();
   const slots = buildSlots(role, can, hasFeature);
   const slotKeys = slots.map((s) => s.tab).filter(Boolean);
 
@@ -90,10 +90,14 @@ export const WorkerTabBar = () => {
               style={{ color: active ? roleColor : "var(--tg-hint)" }}
             >
               <span
-                className="w-12 h-7 rounded-full grid place-items-center transition-colors"
+                className="relative w-12 h-7 rounded-full grid place-items-center transition-colors"
                 style={{ backgroundColor: active ? `color-mix(in srgb, ${roleColor} 14%, transparent)` : "transparent" }}
               >
                 {createElement(active ? def.on : def.off, { className: "w-[22px] h-[22px]" })}
+                {/* Menyu ichidagi "Yordam"da javob kutmoqda — kichik nuqta. */}
+                {s.tab === "menu" && chatUnread > 0 && (
+                  <span className="absolute top-0.5 right-2.5 w-2 h-2 rounded-full bg-bad ring-2 ring-card" aria-hidden="true" />
+                )}
               </span>
               <span className="truncate max-w-full">{t(def.key)}</span>
             </Link>

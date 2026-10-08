@@ -4,6 +4,7 @@ import {
   HiOutlineFunnel, HiFunnel, HiOutlineUserGroup, HiUserGroup,
   HiOutlineStar, HiStar, HiChartBar, HiPlus, HiCheck,
   HiOutlineSquares2X2, HiSquares2X2, HiOutlineQrCode, HiQrCode,
+  HiOutlineLifebuoy, HiLifebuoy,
 } from "react-icons/hi2";
 
 // Rol rangi — faqat rol belgisi, faol tab va markaziy tugmada (§5).
@@ -35,6 +36,9 @@ export const TAB_DEFS = {
   menu: { to: "/menu", key: "worker.tab.menu", on: HiSquares2X2, off: HiOutlineSquares2X2 },
   // QR davomat — yozish amali (`writes`): obuna tugagan (readOnly) bo'lsa yashiriladi.
   qr: { to: "/qr", key: "worker.qr.title", on: HiQrCode, off: HiOutlineQrCode, perm: "attendance:create", feature: "attendance.qr", writes: true },
+  // Yordam chati (API_CONTRACT_qr_card_send_and_worker_chat.md §B) — hamma
+  // ishchiga ochiq (server: tenantAuth), obuna tugaganda ham ishlaydi.
+  support: { to: "/support", key: "worker.support.title", on: HiLifebuoy, off: HiOutlineLifebuoy },
 };
 
 // Band shu rol va ruxsat/tarif uchun ochiqmi.
@@ -43,6 +47,14 @@ export const defAllowed = (def, role, can, hasFeature, readOnly = false) =>
 
 // QR davomat ko'rinish sharti (API_CONTRACT_worker_qr_attendance.md §2).
 export const qrAllowed = ({ can, hasFeature, readOnly }) => defAllowed(TAB_DEFS.qr, null, can, hasFeature, readOnly);
+
+// QR kartani Telegramga yuborish bandi (§A.3): ko'rinish sharti QR karta
+// ochiladigan joylar bilan bir xil; bosiladigan — kamida bittasi ulangan.
+// Holat noma'lum bo'lsa (masalan o'qituvchi sahifaga to'g'ridan-to'g'ri
+// kirgan) — bosiladi, server o'zi `attendance.qrNoTelegram` qaytaradi.
+export const qrSendAllowed = ({ can, hasFeature }) => hasFeature("attendance.qr") && can("attendance:view");
+export const qrSendEnabled = (s) =>
+  !s || (s.studentTelegram == null && s.parentTelegram == null) || s.studentTelegram === "linked" || s.parentTelegram === "linked";
 
 // Bir xil kartani shu oraliqda qayta o'qish e'tiborsiz (client bilan bir xil).
 export const QR_RESCAN_COOLDOWN = 3000;
@@ -63,7 +75,18 @@ export const ROLE_LAYOUT = {
 };
 
 // "Menyu" sahifasidagi bandlar tartibi — tab bar'ga sig'maganlari shu yerda.
-export const MENU_ORDER = ["qr", "finance", "report", "debtors", "leads", "grades", "salary", "notifications", "profile"];
+export const MENU_ORDER = ["qr", "finance", "report", "debtors", "leads", "grades", "salary", "notifications", "support", "profile"];
+
+// Tab bar ko'rinmaydigan to'liq ekranli sahifalar (yozish maydoni pastda).
+export const FULLSCREEN_PATHS = ["/support"];
+
+// Chat xabari yuboruvchisi — o'zimniki (owner/hodim), admin yoki tizim.
+export const isMineSender = (m) => m?.sender?.kind === "client" || m?.sender?.kind === "staff";
+// Chatga yuklanadigan rasm (server: jpg/jpeg/png/webp, global limit 10 MB).
+export const CHAT_IMAGE_TYPES = "image/png,image/jpeg,image/webp";
+export const CHAT_IMAGE_MAX = 10 * 1024 * 1024;
+export const CHAT_PAGE = 30;
+export const CHAT_FIRST_PAGE = 50;
 
 // O'qituvchi rollari — moliyaviy ma'lumot va to'liq o'quvchi kartasi yo'q.
 export const TEACHING_ROLES = ["teacher", "assistant"];

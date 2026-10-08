@@ -65,6 +65,22 @@ export const setBackButton = (visible, onClick) => {
   }
 };
 
+// Hozirgi BackButton amali — ustma-ust ochiladigan ekran (masalan QR karta)
+// yopilgach sahifaning o'z "orqaga" amalini qaytarish uchun.
+export const getBackButtonHandler = () => backHandler;
+
+// QR karta kabi yuqori kontrastli ekran uchun Telegram sarlavha/fonini oq
+// qiladi; `applyTheme()` asl temani qaytaradi.
+export const setWhiteChrome = () => {
+  try {
+    const app = tg();
+    app?.setHeaderColor?.("#ffffff");
+    app?.setBackgroundColor?.("#ffffff");
+  } catch {
+    /* eski Telegram versiyalari */
+  }
+};
+
 export const openLink = (url) => {
   const app = tg();
   if (app?.openLink) app.openLink(url);

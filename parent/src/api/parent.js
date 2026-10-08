@@ -24,3 +24,10 @@ export const getHomework = (entryId, month) =>
 export const getBadges = (entryId) => request("get", `/parent/entries/${entryId}/badges`);
 // Dars rejasi — o'tilgan/bugungi/keyingi mavzular (docs/API_CONTRACT_parent_lesson_plan.md)
 export const getLessonPlan = (entryId) => request("get", `/parent/entries/${entryId}/lesson-plan`);
+// QR davomat kartasi (docs/API_CONTRACT_parent_qr_card.md §1)
+export const getQrCard = (entryId) => request("get", `/parent/entries/${entryId}/qr-card`);
+export const sendQrCard = (entryId, blob) => {
+  const fd = new FormData();
+  fd.append("card", new File([blob], `qr-${entryId}.png`, { type: "image/png" }));
+  return request("post", `/parent/entries/${entryId}/qr-card/send`, fd);
+};

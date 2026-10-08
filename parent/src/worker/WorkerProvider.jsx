@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { WorkerCtx } from "./workerContext";
 import { workerApi } from "./api";
 import { useSocketConnection, useSocketEvents } from "./useSocket";
-import { LIVE_DEBOUNCE_MS, LIVE_EVENTS, ROLE_COLORS } from "./constants";
+import { LIVE_DEBOUNCE_MS, LIVE_EVENTS, ROLE_COLORS, isMineSender } from "./constants";
 
 // Client panelidagi useFeature bilan bir xil: production'da vaqtincha
 // yopiq flaglar tarifda yoqilgan bo'lsa ham yopiq ko'rinadi.
@@ -14,6 +14,8 @@ export const WorkerProvider = ({ initial, children }) => {
   const [centerId, setCenterId] = useState("");
   const [tick, setTick] = useState(0);
   const [unread, setUnread] = useState(0);
+  // Yordam chatidagi o'qilmagan (admin/tizim) xabarlar — Menyu badge'i.
+  const [chatUnread, setChatUnread] = useState(0);
   // Markaziy amal oynasi: { type: "payment" | "attendance", payload }
   const [sheet, setSheet] = useState(null);
   // Sahifa darajasidagi Telegram BackButton amali (WorkerShell yozadi) —
@@ -38,13 +40,23 @@ export const WorkerProvider = ({ initial, children }) => {
     }
   }, []);
 
+  const loadChatUnread = useCallback(async () => {
+    try {
+      const d = await workerApi.chatConversation();
+      setChatUnread(d?.conversation?.clientUnreadCount || 0);
+    } catch {
+      /* badge ixtiyoriy */
+    }
+  }, []);
+
   useEffect(() => {
     const id = setTimeout(() => {
       reloadMe();
       loadUnread();
+      loadChatUnread();
     }, 0);
     return () => clearTimeout(id);
-  }, [reloadMe, loadUnread]);
+  }, [reloadMe, loadUnread, loadChatUnread]);
 
   // Jonli yangilanish: ketma-ket kelgan eventlar bitta qayta yuklashga
   // birlashtiriladi (≈800ms debounce, §4).
@@ -64,13 +76,26 @@ export const WorkerProvider = ({ initial, children }) => {
     else if (ev === "notification:new") setUnread((n) => n + 1);
   });
 
+  // Yordam chati: admin/tizim xabari → +1; o'zimiz o'qiganimiz (boshqa
+  // qurilmada ham) → 0. Ochiq /support sahifasi darhol o'qilgan deb belgilaydi.
+  useSocketEvents(["chat:message", "chat:read"], (ev, payload) => {
+    if (ev === "chat:read") {
+      if (payload?.readByClient) setChatUnread(0);
+    } else if (payload?.message && !isMineSender(payload.message)) {
+      setChatUnread((n) => n + 1);
+    }
+  });
+
   // Qayta ulanganda o'tkazib yuborilgan eventlar o'rniga bir marta yangilash.
   const everConnected = useRef(false);
   useEffect(() => {
     if (!connected) return;
-    if (everConnected.current) bump();
+    if (everConnected.current) {
+      bump();
+      loadChatUnread();
+    }
     everConnected.current = true;
-  }, [connected, bump]);
+  }, [connected, bump, loadChatUnread]);
 
   const value = useMemo(() => {
     const permissions = me?.permissions || [];
@@ -94,13 +119,15 @@ export const WorkerProvider = ({ initial, children }) => {
       refresh: bump,
       unread,
       setUnread,
+      chatUnread,
+      setChatUnread,
       connected,
       sheet,
       pageBackRef,
       openSheet: (type, payload = null) => setSheet({ type, payload }),
       closeSheet: () => setSheet(null),
     };
-  }, [me, reloadMe, centerId, tick, bump, unread, connected, sheet]);
+  }, [me, reloadMe, centerId, tick, bump, unread, chatUnread, connected, sheet]);
 
   return <WorkerCtx.Provider value={value}>{children}</WorkerCtx.Provider>;
 };

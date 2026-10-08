@@ -125,6 +125,14 @@ export const workerApi = {
     wreq("post", `/students/${studentId}/groups/${entryId}/payments`, { body }),
   revenue: (params) => wreq("get", "/students/revenue", { params, raw: true }),
   student: (id) => wreq("get", `/students/${id}`),
+  // O'quvchi rasmi (docs/API_CONTRACT_student_photo.md §3) — multipart `photo`.
+  // `raw` — toast uchun server `msg` kerak; `data`: { _id, photo }.
+  setStudentPhoto: (studentId, file) => {
+    const fd = new FormData();
+    fd.append("photo", file, file.name || "photo.jpg");
+    return wreq("put", `/students/${studentId}/photo`, { body: fd, raw: true });
+  },
+  removeStudentPhoto: (studentId) => wreq("delete", `/students/${studentId}/photo`, { raw: true }),
 
   // Guruhlar
   groups: (params) => wreq("get", "/groups", { params: { page: 1, ...params } }),
@@ -143,6 +151,15 @@ export const workerApi = {
     wreq("post", `/attendance/${groupId}/mark`, { body: { studentId, status, reason, date: date || undefined } }),
   // QR skan (tarif `attendance.qr`) — natija / `duplicate` / `needsGroup`.
   qrScan: (token, groupId) => wreq("post", "/attendance/qr/scan", { body: { token, groupId: groupId || undefined } }),
+  // QR karta ma'lumoti (token lazy yaratiladi) va kartani Telegramga yuborish
+  // (API_CONTRACT_qr_card_send_and_worker_chat.md §A.2) — PNG multipart `card`.
+  // Javob `data`: { student, parent } = "sent" | "failed" | "none".
+  qrCard: (studentId) => wreq("get", `/attendance/qr/${studentId}`),
+  sendQrCard: (studentId, blob) => {
+    const fd = new FormData();
+    fd.append("card", blob, `qr-${studentId}.png`);
+    return wreq("post", `/attendance/qr/${studentId}/send`, { body: fd });
+  },
 
   // Baholar
   grades: (groupId, month) => wreq("get", `/grades/${groupId}`, { params: { month } }),
@@ -173,6 +190,17 @@ export const workerApi = {
   unreadCount: () => wreq("get", "/notifications/unread-count"),
   readAll: () => wreq("patch", "/notifications/read-all"),
   readOne: (id) => wreq("patch", `/notifications/${id}/read`),
+
+  // Yordam chati (§B) — mavjud /api/chat/* (tenantAuth: owner yoki staff).
+  chatConversation: () => wreq("get", "/chat/conversation"),
+  chatMessages: (before, limit = 30) => wreq("get", "/chat/messages", { params: { before, limit } }),
+  chatSendText: (text) => wreq("post", "/chat/messages", { body: { text } }),
+  chatSendImage: (file) => {
+    const fd = new FormData();
+    fd.append("image", file);
+    return wreq("post", "/chat/messages/image", { body: fd });
+  },
+  chatRead: () => wreq("post", "/chat/read"),
 
   // Telegram xabarlari tili (Top til almashtirgichi)
   setLang: (lang) => wreq("patch", "/telegram/lang", { body: { lang } }),

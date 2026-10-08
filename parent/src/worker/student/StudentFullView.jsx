@@ -13,6 +13,8 @@ import { useGroupNames } from "../useGroupNames";
 import { workerApi } from "../api";
 import { asErr } from "../utils";
 import { ReadOnlyNote } from "../components/ReadOnlyNote";
+import { qrSendAllowed, qrSendEnabled } from "../constants";
+import { useSendQrCard } from "../qr/useSendQrCard";
 import { StudentProfileCard } from "./StudentProfileCard";
 import { MembershipCard } from "./MembershipCard";
 import { PaymentRow } from "./PaymentRow";
@@ -38,7 +40,9 @@ const payable = (e) => e.groupStatus !== "finished" && (e.status === "active" ||
 export const StudentFullView = ({ id }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { can, readOnly, openSheet } = useWorker();
+  const worker = useWorker();
+  const { can, readOnly, openSheet } = worker;
+  const { send: sendQr, busyId } = useSendQrCard();
 
   const load = useCallback(() => workerApi.student(id), [id]);
   const { data: s, loading, error, reload } = useScopedLive(load, [load], {
@@ -89,6 +93,9 @@ export const StudentFullView = ({ id }) => {
         canCall={can("student:contact") || can("student:view")}
         onPay={anyPayable ? () => pay(null) : undefined}
         payDisabled={readOnly}
+        onSendQr={qrSendAllowed(worker) ? () => sendQr(s) : undefined}
+        qrDisabled={!qrSendEnabled(s)}
+        qrBusy={busyId === s._id}
       />
 
       <SectionLabel>{t("worker.student.groups")}</SectionLabel>

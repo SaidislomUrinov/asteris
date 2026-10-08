@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { closeScanQr, haptic, offTgEvent, onTgEvent, qrScanSupport, showScanQr } from "../../lib/telegram";
+import { scanSound } from "../../lib/scanSound";
 import { workerApi } from "../api";
 import { QR_RESCAN_COOLDOWN } from "../constants";
 import { errText } from "../utils";
@@ -51,9 +52,12 @@ export const useQrScanner = ({ enabled = true } = {}) => {
       const kind = data?.duplicate ? "duplicate" : data?.late ? "late" : "present";
       if (kind === "duplicate") {
         haptic("warning");
+        scanSound.duplicate();
         toast.warning(name, { description: t("attendance.alreadyMarked") });
       } else {
         haptic("success");
+        if (kind === "late") scanSound.late();
+        else scanSound.success();
         toast.success(name, { description: t(kind === "late" ? "attendance.markedLate" : "attendance.marked") });
       }
       push({ kind, name, subject: data?.subject || "", groupId: data?.groupId || "" });
@@ -80,6 +84,7 @@ export const useQrScanner = ({ enabled = true } = {}) => {
             scanningRef.current = false;
             setScanning(false);
             haptic("warning");
+            scanSound.attention();
             setChoice({ token: item.token, student: data.student || null, groups: data.groups || [] });
             break;
           }
@@ -88,6 +93,7 @@ export const useQrScanner = ({ enabled = true } = {}) => {
           if (!mountedRef.current) break;
           const msg = errText(e);
           haptic("error");
+          scanSound.error();
           toast.error(msg);
           push({ kind: "error", name: msg });
         }

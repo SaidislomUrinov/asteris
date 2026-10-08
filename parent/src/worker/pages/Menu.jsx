@@ -11,13 +11,15 @@ import { WorkerPage } from "../components/WorkerPage";
 import { MenuItem } from "../components/MenuItem";
 import { ReadOnlyNote } from "../components/ReadOnlyNote";
 
+const badgeOf = (n) => (n > 0 ? (n > 99 ? "99+" : n) : null);
+
 // "Menyu" (details §1) — tab bar'ga sig'magan bo'limlar (ruxsat/tarifga
 // qarab): Lidlar, Xabarlar, Profil va rolga qarab Moliya/Hisobot/Qarzdorlar/
 // Baholar/Oylik. Ruxsatsiz band umuman ko'rinmaydi.
 export const Menu = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { role, can, hasFeature, readOnly, unread, openSheet } = useWorker();
+  const { role, can, hasFeature, readOnly, unread, chatUnread, openSheet } = useWorker();
   const layout = ROLE_LAYOUT[role] || ROLE_LAYOUT.teacher;
   const items = MENU_ORDER.filter((k) => !layout.includes(k) && defAllowed(TAB_DEFS[k], role, can, hasFeature, readOnly));
   // To'lov qabul qilish — FAB'i bo'lmagan rol uchun (Boshliq) menyuda.
@@ -54,7 +56,7 @@ export const Menu = () => {
               key={k}
               icon={def.off}
               label={t(def.key)}
-              badge={k === "notifications" && unread > 0 ? (unread > 99 ? "99+" : unread) : null}
+              badge={badgeOf(k === "notifications" ? unread : k === "support" ? chatUnread : 0)}
               onClick={() => {
                 haptic("light");
                 navigate(def.to);

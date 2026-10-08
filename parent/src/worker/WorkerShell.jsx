@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { setBackButton } from "../lib/telegram";
 import { useWorker } from "./useWorker";
-import { rootPathsOf } from "./constants";
+import { FULLSCREEN_PATHS, rootPathsOf } from "./constants";
 import { WorkerTabBar } from "./WorkerTabBar";
 import { PaymentSheet } from "./PaymentSheet";
 import { AttendanceSheet } from "./AttendanceSheet";
@@ -21,6 +21,7 @@ import { Grades } from "./pages/Grades";
 import { Notifications } from "./pages/Notifications";
 import { Profile } from "./pages/Profile";
 import { QrAttendance } from "./pages/QrAttendance";
+import { Support } from "./pages/Support";
 
 // Ishchi paneli qobig'i: sahifalar + rolga mos tab bar + markaziy amal oynalari.
 export const WorkerShell = () => {
@@ -71,9 +72,11 @@ export const WorkerShell = () => {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/qr" element={<QrAttendance />} />
+        <Route path="/support" element={<Support />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <WorkerTabBar />
+      {/* To'liq ekranli sahifalarda (yordam chati) tab bar yashirin — yozish maydoni pastda. */}
+      {!FULLSCREEN_PATHS.includes(pathname) && <WorkerTabBar />}
       {sheet?.type === "payment" && (
         <PaymentSheet
           open

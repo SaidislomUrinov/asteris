@@ -42,7 +42,18 @@ export const Pill = ({ tone = "mut", children, className }) => {
   );
 };
 
-export const Avatar = ({ text, tone = 0, className }) => {
+// `src` berilsa — rasm (bir xil o'lcham/shakl, object-cover), aks holda initsiallar.
+export const Avatar = ({ text, tone = 0, src, alt = "", className }) => {
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        className={cn("w-10 h-10 rounded-xl object-cover bg-ink/6 shrink-0", className)}
+      />
+    );
+  }
   const tones = [
     "bg-accent/10 text-accent",
     "bg-purple-500/10 text-purple-600 dark:text-purple-300",

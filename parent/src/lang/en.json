@@ -18,7 +18,8 @@
     "fileTypeNotAllowed": "This file type is not allowed",
     "invalidInput": "Invalid input",
     "notFound": "Not found",
-    "tooManyRequests": "Too many attempts. Please try again later"
+    "tooManyRequests": "Too many attempts. Please try again later",
+    "fileTooLarge": "File is too large (max 10 MB)"
   },
   "error": {
     "title": "Something went wrong",
@@ -51,7 +52,11 @@
     "authUnavailable": "Sign-in is temporarily unavailable. Try again later",
     "invalidSettings": "Invalid settings",
     "settingsUpdated": "Settings saved",
-    "unlinked": "Telegram account unlinked"
+    "unlinked": "Telegram account unlinked",
+    "qrUnavailable": "QR card is not available for this group",
+    "qrSendTooSoon": "The card was just sent — please wait a moment",
+    "qrSendFailed": "Could not send the card to Telegram. Make sure the bot is not blocked",
+    "qrCardSent": "The card was sent to your Telegram chat"
   },
   "notLinked": {
     "title": "Press /start in the bot",
@@ -120,7 +125,17 @@
     "rescheduled": "The lesson schedule was updated",
     "scheduleFinished": "A finished group's schedule cannot be changed",
     "teacherNotFound": "The selected teacher was not found",
-    "telegramUpdated": "Telegram group link updated"
+    "telegramUpdated": "Telegram group link updated",
+    "qrCard": {
+      "button": "QR card",
+      "title": "QR attendance card",
+      "hint": "Show it to the scanner at the entrance",
+      "download": "Download",
+      "sending": "Sending…",
+      "downloadHint": "The card arrives as an image in your Telegram chat",
+      "sent": "The card was sent to your Telegram chat",
+      "close": "Close"
+    }
   },
   "days": {
     "mon": "Mo",
@@ -352,7 +367,11 @@
     "transferNotActive": "Only an active membership can be transferred",
     "transferSameGroup": "The student is already in this group",
     "transferred": "The student was transferred to another group",
-    "updated": "Student details updated"
+    "updated": "Student details updated",
+    "photoUpdated": "Photo saved",
+    "photoRemoved": "Photo removed",
+    "photoRequired": "No photo selected",
+    "photoInvalid": "The file is not an image or can't be read"
   },
   "rankCard": {
     "title": "Place in group",
@@ -909,7 +928,14 @@
       "attendance": "Attendance",
       "gradeAvg": "Average grade",
       "gradesCount": "{{count}} grades",
-      "teacherScope": "Achievements and your groups only"
+      "teacherScope": "Achievements and your groups only",
+      "photoEdit": "Change photo",
+      "photoAdd": "Add photo",
+      "photoTitle": "Student photo",
+      "photoReplace": "Replace photo",
+      "photoRemove": "Remove photo",
+      "photoRemoveTitle": "Remove photo?",
+      "photoRemoveText": "{{name}}'s photo will be removed and initials shown instead."
     },
     "centerNotFound": "Branch not found",
     "qr": {
@@ -942,7 +968,38 @@
         "text": "The QR scanner needs a newer version of Telegram."
       },
       "pickTitle": "Select a group",
-      "pickHint": "There are lessons in several groups today. Which one should it go to?"
+      "pickHint": "There are lessons in several groups today. Which one should it go to?",
+      "card": {
+        "label": "Attendance card",
+        "student": "Student",
+        "groups": "Groups",
+        "footer": "Show this card to the scanner — attendance is marked automatically"
+      },
+      "sendAction": "Send QR card to Telegram",
+      "sendShort": "Send QR",
+      "sendBusy": "Sending…",
+      "sendNoTelegram": "No one is connected to Telegram",
+      "sendBoth": "Sent to the student and the parent",
+      "sendStudentOnly": "Sent to the student only",
+      "sendParentOnly": "Sent to the parent only",
+      "sendParentFailed": "Sent to the student, not delivered to the parent",
+      "sendStudentFailed": "Sent to the parent, not delivered to the student"
+    },
+    "support": {
+      "title": "Support",
+      "subtitle": "We usually reply in 30–60 minutes",
+      "offline": "No connection — reconnecting…",
+      "admin": "WENET support",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "emptyTitle": "Have a question?",
+      "emptyText": "Write or send a screenshot. You'll get the reply here.",
+      "loadingOlder": "Loading earlier messages…",
+      "placeholder": "Write a message…",
+      "attach": "Attach image",
+      "send": "Send",
+      "openImage": "Enlarge image",
+      "closeImage": "Close"
     }
   },
   "archive": {
@@ -969,7 +1026,12 @@
     "markedLate": "Marked as present (late)",
     "alreadyMarked": "This student has already been marked today",
     "chooseGroupTitle": "Select a group",
-    "chooseGroupHint": "{{name}} has lessons in several groups today. Which one should they be marked in?"
+    "chooseGroupHint": "{{name}} has lessons in several groups today. Which one should they be marked in?",
+    "qrCardSent": "QR card sent to Telegram",
+    "qrNoTelegram": "No one is connected to Telegram",
+    "qrSendTooSoon": "The QR card was just sent, please try again shortly",
+    "qrInvalidImage": "Invalid QR card image",
+    "qrSendFailed": "Could not send the QR card to Telegram"
   },
   "billing": {
     "invalidCycleMode": "Invalid billing cycle mode",
