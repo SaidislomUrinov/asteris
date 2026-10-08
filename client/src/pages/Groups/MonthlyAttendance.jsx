@@ -527,7 +527,7 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                       className={`w-11 min-w-11 px-1 py-1.5 border-b text-center cursor-pointer transition-colors ${
                         active
                           ? "border-blue-400 bg-blue-100 dark:bg-blue-500/20"
-                          : `border-slate-200 ${d.holiday ? "bg-violet-50 dark:bg-violet-500/15" : d.transferred ? "bg-slate-100/70 dark:bg-night-800/70" : today ? "bg-blue-50/70 dark:bg-blue-500/15" : "bg-slate-50 dark:bg-night-800"} hover:bg-slate-100`
+                          : `border-slate-200 dark:border-night-700 ${d.holiday ? "bg-violet-50 dark:bg-violet-500/15" : d.transferred ? "bg-slate-100/70 dark:bg-night-800/70" : today ? "bg-blue-50/70 dark:bg-blue-500/15" : "bg-slate-50 dark:bg-night-800"} hover:bg-slate-100 dark:hover:bg-night-700`
                       }`}
                     >
                       <span
@@ -568,7 +568,7 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                 const row = byStudent.get(s._id);
                 return (
                   <tr key={s._id} className="group/row">
-                    <td className="sticky left-0 z-10 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-white dark:bg-night-900 border-b border-r border-slate-100 dark:border-night-700 group-hover/row:bg-slate-50 dark:row:bg-night-800 transition-colors">
+                    <td className="sticky left-0 z-10 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-white dark:bg-night-900 border-b border-r border-slate-100 dark:border-night-700 group-hover/row:bg-slate-50 dark:group-hover/row:bg-night-800 dark:row:bg-night-800 transition-colors">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <RowNumber value={index + 1} />
                         <StudentPhotoAvatar student={s} onUpdated={onPhotoUpdated} size={32} rounded="rounded-full" />
@@ -652,7 +652,7 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
                       );
                     })}
 
-                    <td className="hidden sm:table-cell sticky right-0 z-10 w-24 min-w-24 px-2 py-2 bg-white dark:bg-night-900 border-b border-l border-slate-100 dark:border-night-700 group-hover/row:bg-slate-50 dark:row:bg-night-800 transition-colors">
+                    <td className="hidden sm:table-cell sticky right-0 z-10 w-24 min-w-24 px-2 py-2 bg-white dark:bg-night-900 border-b border-l border-slate-100 dark:border-night-700 group-hover/row:bg-slate-50 dark:group-hover/row:bg-night-800 dark:row:bg-night-800 transition-colors">
                       <PercentCell
                         percent={row?.percent || 0}
                         title={t("group.monthlyMarkedOf", {

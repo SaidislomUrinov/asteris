@@ -422,7 +422,7 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
                     key={s._id}
                     className={`group/row ${isAbsentDay(s._id, today) ? "opacity-50" : ""}`}
                   >
-                    <td className="sticky left-0 z-10 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-white dark:bg-night-900 border-b border-r border-slate-100 dark:border-night-700 group-hover/row:bg-slate-50 dark:row:bg-night-800 transition-colors">
+                    <td className="sticky left-0 z-10 w-40 min-w-40 sm:w-56 sm:min-w-56 px-2 sm:px-3 py-2 bg-white dark:bg-night-900 border-b border-r border-slate-100 dark:border-night-700 group-hover/row:bg-slate-50 dark:group-hover/row:bg-night-800 dark:row:bg-night-800 transition-colors">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <RowNumber value={index + 1} />
                         <Avatar user={{ _id: s._id, name: s.fullName, avatar: s.photo }} size={32} />
@@ -502,7 +502,7 @@ function GradesTab({ groupId, students, ranks = {}, canWrite, canDeleteAny, user
                       );
                     })}
 
-                    <td className="hidden sm:table-cell sticky right-0 z-10 w-20 min-w-20 px-2 py-2 bg-white dark:bg-night-900 border-b border-l border-slate-100 dark:border-night-700 group-hover/row:bg-slate-50 dark:row:bg-night-800 transition-colors text-center">
+                    <td className="hidden sm:table-cell sticky right-0 z-10 w-20 min-w-20 px-2 py-2 bg-white dark:bg-night-900 border-b border-l border-slate-100 dark:border-night-700 group-hover/row:bg-slate-50 dark:group-hover/row:bg-night-800 dark:row:bg-night-800 transition-colors text-center">
                       <span
                         className={`text-[13px] font-semibold tabular-nums ${
                           avg >= 8 ? "text-emerald-600 dark:text-emerald-400" : avg >= 6 ? "text-amber-600 dark:text-amber-400" : avg > 0 ? "text-red-500" : "text-slate-300 dark:text-slate-600"
