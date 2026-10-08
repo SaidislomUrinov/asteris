@@ -6,14 +6,19 @@ import Input from "../../ui/Input";
 import Select from "../../ui/Select";
 import FieldLabel from "./FieldLabel";
 import SegmentControl from "./SegmentControl";
-import { CLIENT_ROUTES } from "./clientRoutes";
+import { CLIENT_SECTIONS, clientGroupLabelKey } from "../../utils/clientSections";
 import { MAX_RESOURCES, RESOURCE_LABEL_MAX, localKey } from "./newsMeta";
 
 export default function ResourcesField({ resources, setResources, errors = {} }) {
   const { t } = useTranslation();
 
   const routeOptions = useMemo(
-    () => CLIENT_ROUTES.map((r) => ({ value: r.path, label: `${t(r.labelKey)} — ${r.path}` })),
+    // Client menyusi tuzilishi bo'yicha: "Moliya › Tushumlar — /revenue".
+    () =>
+      CLIENT_SECTIONS.map((r) => ({
+        value: r.path,
+        label: `${t(clientGroupLabelKey(r.group))} › ${t(r.labelKey)} — ${r.path}`,
+      })),
     [t],
   );
 

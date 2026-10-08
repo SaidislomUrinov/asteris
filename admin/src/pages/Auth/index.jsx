@@ -44,7 +44,7 @@ function Auth() {
       className="flex items-center flex-col justify-center w-full h-screen"
     >
       <p className="text-[52px] font-space font-semibold">
-        <span className="font-space text-emerald-500">A</span>steris
+        <span className="font-space text-emerald-500">WE</span>NET
       </p>
       <div className="flex flex-col items-start bg-white border border-slate-200 rounded-xl p-2 w-[calc(100%-32px)] sm:w-130 justify-start">
         <div className="flex items-center justify-between w-full">

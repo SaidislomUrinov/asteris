@@ -6,34 +6,8 @@ import { errorMsg, successMsg } from "../../utils/alert";
 import Button from "../../ui/Button";
 import Input from "../../ui/Input";
 import Loading from "../../ui/Loading";
+import { CLIENT_SECTION_GROUPS, CLIENT_SECTIONS, clientGroupLabelKey } from "../../utils/clientSections";
 
-// 22 ta bo'lim — sectionKey `client/src/utils/navSections.js` dagi
-// NAV_SECTIONS bilan bir xil manbaga tayanadi (docs/API_CONTRACT_tutorial_videos.md).
-// eslint-disable-next-line react-refresh/only-export-components -- katalog shu faylning o'zida (kontrakt talabi)
-export const SECTION_CATALOG = [
-  { key: "dashboard", labelKey: "tutorialVideo.sections.dashboard" },
-  { key: "centers", labelKey: "tutorialVideo.sections.centers" },
-  { key: "staff", labelKey: "tutorialVideo.sections.staff" },
-  { key: "subjects", labelKey: "tutorialVideo.sections.subjects" },
-  { key: "rooms", labelKey: "tutorialVideo.sections.rooms" },
-  { key: "groups", labelKey: "tutorialVideo.sections.groups" },
-  { key: "schedule", labelKey: "tutorialVideo.sections.schedule" },
-  { key: "calendar", labelKey: "tutorialVideo.sections.calendar" },
-  { key: "lesson", labelKey: "tutorialVideo.sections.lesson" },
-  { key: "students", labelKey: "tutorialVideo.sections.students" },
-  { key: "leads", labelKey: "tutorialVideo.sections.leads" },
-  { key: "qr-attendance", labelKey: "tutorialVideo.sections.qrAttendance" },
-  { key: "salary", labelKey: "tutorialVideo.sections.salary" },
-  { key: "expenses", labelKey: "tutorialVideo.sections.expenses" },
-  { key: "revenue", labelKey: "tutorialVideo.sections.revenue" },
-  { key: "subscription", labelKey: "tutorialVideo.sections.subscription" },
-  { key: "notifications", labelKey: "tutorialVideo.sections.notifications" },
-  { key: "profile", labelKey: "tutorialVideo.sections.profile" },
-  { key: "finance", labelKey: "tutorialVideo.sections.finance" },
-  { key: "reports/teacher-performance", labelKey: "tutorialVideo.sections.teacherPerformance" },
-  { key: "certificates", labelKey: "tutorialVideo.sections.certificates" },
-  { key: "archive", labelKey: "tutorialVideo.sections.archive" },
-];
 
 function VideoRow({ section, url, onSaved, onDeleted }) {
   const { t } = useTranslation();
@@ -80,10 +54,14 @@ function VideoRow({ section, url, onSaved, onDeleted }) {
 
   return (
     <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-      <div className="w-9 h-9 shrink-0 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center">
+      <div
+        className={`w-9 h-9 shrink-0 rounded-lg flex items-center justify-center ${
+          url ? "bg-rose-50 text-rose-600" : "bg-slate-100 text-slate-400"
+        }`}
+      >
         <HiPlayCircle />
       </div>
-      <div className="flex flex-col min-w-0 w-40 shrink-0">
+      <div className="flex flex-col min-w-0 w-56 shrink-0">
         <span className="font-medium text-slate-800 truncate">{t(section.labelKey)}</span>
         <span className="text-[12px] text-slate-400 truncate">/{section.key}</span>
       </div>
@@ -139,26 +117,53 @@ export default function TutorialVideos() {
       return next;
     });
 
+  const filled = CLIENT_SECTIONS.filter((section) => videos[section.key]).length;
+
   return (
     <div className="flex flex-col w-full gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2 w-full">
-        <p className="text-[18px] font-semibold text-slate-800">{t("tutorialVideo.title")}</p>
+        <div className="flex flex-col gap-0.5">
+          <p className="text-[18px] font-semibold text-slate-800">{t("tutorialVideo.title")}</p>
+          <p className="text-[13px] text-slate-400">{t("tutorialVideo.hint")}</p>
+        </div>
+        {!loading && (
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-[13px] font-semibold text-slate-600 tabular-nums">
+            {t("tutorialVideo.filled", { count: filled, total: CLIENT_SECTIONS.length })}
+          </span>
+        )}
       </div>
 
       {loading ? (
         <Loading height="40vh" />
       ) : (
-        <div className="flex flex-col divide-y divide-slate-100 bg-white border border-slate-200 rounded-xl overflow-x-auto">
-          {SECTION_CATALOG.map((section) => (
-            <VideoRow
-              key={section.key}
-              section={section}
-              url={videos[section.key]}
-              onSaved={handleSaved}
-              onDeleted={handleDeleted}
-            />
-          ))}
-        </div>
+        // Bo'limlar client menyusi tuzilishi bo'yicha guruhlangan (utils/clientSections.js).
+        CLIENT_SECTION_GROUPS.map(({ group }) => {
+          const sections = CLIENT_SECTIONS.filter((section) => section.group === group);
+          const groupFilled = sections.filter((section) => videos[section.key]).length;
+          return (
+            <section key={group} className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 px-1">
+                <span className="text-[12px] font-semibold uppercase tracking-wider text-slate-500">
+                  {t(clientGroupLabelKey(group))}
+                </span>
+                <span className="text-[12px] font-semibold text-slate-400 tabular-nums">
+                  {groupFilled}/{sections.length}
+                </span>
+              </div>
+              <div className="flex flex-col divide-y divide-slate-100 bg-white border border-slate-200 rounded-xl overflow-x-auto">
+                {sections.map((section) => (
+                  <VideoRow
+                    key={section.key}
+                    section={section}
+                    url={videos[section.key]}
+                    onSaved={handleSaved}
+                    onDeleted={handleDeleted}
+                  />
+                ))}
+              </div>
+            </section>
+          );
+        })
       )}
     </div>
   );
