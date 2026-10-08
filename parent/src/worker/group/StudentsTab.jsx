@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { HiOutlineUserGroup, HiOutlineLockClosed } from "react-icons/hi2";
+import { HiOutlineUserGroup, HiOutlineLockClosed, HiPlus } from "react-icons/hi2";
 import { Card } from "../../components/Card";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { RowsSkeleton } from "../components/WorkerSkeleton";
@@ -15,10 +15,11 @@ import { useSendQrCard } from "../qr/useSendQrCard";
 import { StudentRow } from "./StudentRow";
 import { StudentActionsSheet } from "./StudentActionsSheet";
 import { useStudentPhoto } from "../student/useStudentPhoto";
+import { AddStudentSheet } from "./AddStudentSheet";
 
 // "O'quvchilar" tabi (details §2). Ro'yxat: GET /students?group&status=active
 // &limit=1000, bugungi davomat: GET /attendance/:groupId (GroupDetail yuklaydi).
-export const StudentsTab = ({ group, students, state, todayMarks, perm }) => {
+export const StudentsTab = ({ group, students, state, todayMarks, perm, onAdded }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const worker = useWorker();
@@ -34,13 +35,45 @@ export const StudentsTab = ({ group, students, state, todayMarks, perm }) => {
   const [photoFor, setPhotoFor] = useState(null);
   const [removeFor, setRemoveFor] = useState(null);
   const photo = useStudentPhoto(photoFor?._id || removeFor?._id);
+  // "+ O'quvchi qo'shish" (docs/API_CONTRACT_enroll_with_photo.md) — ruxsat
+  // `student:create` va guruh yakunlanmagan (GroupDetail `perm.add`).
+  const [addOpen, setAddOpen] = useState(false);
+  const openAdd = () => {
+    if (readOnly) {
+      haptic("warning");
+      toast.info(t("worker.readOnly.fab"), { id: "ro-fab" });
+      return;
+    }
+    haptic("light");
+    setAddOpen(true);
+  };
+  const addSheet = addOpen && (
+    <AddStudentSheet open group={group} onClose={() => setAddOpen(false)} onAdded={onAdded} />
+  );
+  const addButton = perm.add ? (
+    <button
+      type="button"
+      onClick={openAdd}
+      className="inline-flex items-center gap-1 px-3 h-8 rounded-xl text-[13px] font-extrabold bg-accent text-accent-fg shrink-0 active:opacity-80"
+    >
+      <HiPlus className="w-4 h-4" />
+      {t("worker.addStudent")}
+    </button>
+  ) : null;
 
   if (!perm.list) {
     return <EmptyState icon={HiOutlineLockClosed} title={t("worker.group.noStudentAccess")} text={t("worker.group.noStudentAccessText")} />;
   }
   if (state.loading && !state.data) return <RowsSkeleton count={5} />;
   if (state.error && !state.data) return <ErrorState error={asErr(state.error)} onRetry={state.reload} />;
-  if (!students.length) return <EmptyState icon={HiOutlineUserGroup} title={t("worker.att.noStudents")} />;
+  if (!students.length)
+    return (
+      <>
+        <EmptyState icon={HiOutlineUserGroup} title={t("worker.att.noStudents")} />
+        {addButton && <div className="flex justify-center">{addButton}</div>}
+        {addSheet}
+      </>
+    );
 
   const open = (s) =>
     navigate(`/students/${s._id}`, {
@@ -87,7 +120,10 @@ export const StudentsTab = ({ group, students, state, todayMarks, perm }) => {
 
   return (
     <>
-      <div className="text-[13px] font-bold text-hint px-1">{t("worker.group.studentsCount", { count: students.length })}</div>
+      <div className="flex items-center justify-between gap-2 px-1">
+        <div className="text-[13px] font-bold text-hint">{t("worker.group.studentsCount", { count: students.length })}</div>
+        {addButton}
+      </div>
       <Card className="py-1 divide-y divide-line/70">
         {students.map((s, i) => (
           <StudentRow
@@ -130,6 +166,7 @@ export const StudentsTab = ({ group, students, state, todayMarks, perm }) => {
           onClose={() => setMenuFor(null)}
         />
       )}
+      {addSheet}
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
       {removeFor && (
         <ConfirmDialog

@@ -111,6 +111,7 @@ export const GroupDetail = () => {
     call: teaching ? can("student:contact") : can("student:contact") || can("student:view"),
     pay: !teaching && can("payment:create"),
     debt: !teaching && can("payment:view"),
+    add: can("student:create") && g?.status !== "finished",
   };
   const noList = (
     <EmptyState icon={HiOutlineLockClosed} title={t("worker.group.noStudentAccess")} text={t("worker.group.noStudentAccessText")} />
@@ -125,7 +126,17 @@ export const GroupDetail = () => {
     else if (needList && studentsReq.error && !studentsReq.data)
       body = <ErrorState error={asErr(studentsReq.error)} onRetry={studentsReq.reload} />;
     else if (active === "students")
-      body = <StudentsTab group={g} students={students} state={studentsReq} todayMarks={todayMarks} perm={perm} />;
+      body = (
+        <StudentsTab
+          group={g}
+          students={students}
+          state={studentsReq}
+          todayMarks={todayMarks}
+          perm={perm}
+          // `student:enrolled` socket ham yangilaydi; bu — ulanish uzilgan holat uchun.
+          onAdded={() => studentsReq.reload(true)}
+        />
+      );
     else if (active === "attendance")
       body = (
         <AttendanceTab

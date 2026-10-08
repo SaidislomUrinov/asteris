@@ -371,7 +371,11 @@
     "photoUpdated": "Photo saved",
     "photoRemoved": "Photo removed",
     "photoRequired": "No photo selected",
-    "photoInvalid": "The file is not an image or can't be read"
+    "photoInvalid": "The file is not an image or can't be read",
+    "photoTake": "Take photo",
+    "photoGallery": "From gallery",
+    "photoRetake": "Retake",
+    "photoSaveFailed": "Student added, but the photo was not saved. You can add it later from the student menu."
   },
   "rankCard": {
     "title": "Place in group",
@@ -1000,6 +1004,22 @@
       "send": "Send",
       "openImage": "Enlarge image",
       "closeImage": "Close"
+    },
+    "addStudent": "Add student",
+    "enroll": {
+      "submit": "Add",
+      "phone": "Phone number",
+      "phoneHint": "If the number is already in the system, you can pick the existing student",
+      "existingStudent": "Existing student: {{name}}",
+      "existingFound": "Existing student: {{name}}",
+      "chooseDifferent": "Change",
+      "matchesHint": "A student already uses this number — pick one:",
+      "newStudentHint": "If you don't pick one, a new student will be added",
+      "fullName": "Full name",
+      "fullNamePh": "Last name First name",
+      "parentPhone": "Parent's phone (optional)",
+      "parentPhoneHint": "The parent gets Telegram bot notifications with this number",
+      "priceHint": "If empty — the subject price is used"
     }
   },
   "archive": {

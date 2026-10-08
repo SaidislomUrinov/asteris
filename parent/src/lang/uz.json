@@ -371,7 +371,11 @@
     "photoUpdated": "Rasm saqlandi",
     "photoRemoved": "Rasm olib tashlandi",
     "photoRequired": "Rasm tanlanmadi",
-    "photoInvalid": "Fayl rasm emas yoki uni o'qib bo'lmadi"
+    "photoInvalid": "Fayl rasm emas yoki uni o'qib bo'lmadi",
+    "photoTake": "Suratga olish",
+    "photoGallery": "Galereyadan",
+    "photoRetake": "Qayta olish",
+    "photoSaveFailed": "O'quvchi qo'shildi, lekin rasm saqlanmadi. Rasmni keyinroq o'quvchi menyusidan qo'shishingiz mumkin."
   },
   "rankCard": {
     "title": "Guruhdagi o'rin",
@@ -996,6 +1000,22 @@
       "send": "Yuborish",
       "openImage": "Rasmni kattalashtirish",
       "closeImage": "Yopish"
+    },
+    "addStudent": "O'quvchi qo'shish",
+    "enroll": {
+      "submit": "Qo'shish",
+      "phone": "Telefon raqami",
+      "phoneHint": "Raqam bazada bo'lsa, mavjud o'quvchini tanlash taklif qilinadi",
+      "existingStudent": "Mavjud o'quvchi: {{name}}",
+      "existingFound": "Mavjud o'quvchi: {{name}}",
+      "chooseDifferent": "Boshqasi",
+      "matchesHint": "Bu raqamda o'quvchi bor — tanlang:",
+      "newStudentHint": "Tanlamasangiz, yangi o'quvchi sifatida qo'shiladi",
+      "fullName": "F.I.Sh.",
+      "fullNamePh": "Familiya Ism",
+      "parentPhone": "Ota-ona raqami (ixtiyoriy)",
+      "parentPhoneHint": "Ota-ona Telegram bot orqali xabarlarni shu raqam bilan oladi",
+      "priceHint": "Bo'sh qolsa — fan narxi qo'yiladi"
     }
   },
   "archive": {

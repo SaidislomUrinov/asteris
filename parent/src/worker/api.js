@@ -133,6 +133,13 @@ export const workerApi = {
     return wreq("put", `/students/${studentId}/photo`, { body: fd, raw: true });
   },
   removeStudentPhoto: (studentId) => wreq("delete", `/students/${studentId}/photo`, { raw: true }),
+  // Guruhdan o'quvchi qo'shish (docs/API_CONTRACT_enroll_with_photo.md).
+  // `lookupStudents` — bitta telefonda bir nechta bola bo'lishi mumkin (massiv).
+  lookupStudents: (phone) => wreq("get", "/students/lookup", { params: { phone } }),
+  // `raw` — toast uchun server `msg` ("student.created"); yangi id: `data._id`.
+  createStudent: (body) => wreq("post", "/students", { body, raw: true }),
+  // Fan narxi (forma default'i) — faqat `subject:view` bo'lsa chaqiriladi.
+  subject: (id) => wreq("get", `/subjects/${id}`),
 
   // Guruhlar
   groups: (params) => wreq("get", "/groups", { params: { page: 1, ...params } }),
