@@ -7,6 +7,7 @@ const Subject = require("../models/Subject");
 const Room = require("../models/Room");
 const studentService = require("./student.service");
 const dashboardCache = require("../utils/dashboardCache.util");
+const { photoFor } = require("../utils/studentPhoto.util");
 const { monthRolloverAdjustment } = require("../utils/rollover.util");
 const {
   currentMonthString,
@@ -44,7 +45,7 @@ module.exports = {
     // bazadan tortardi (API_CONTRACT_performance.md §2).
     const students = await Student.find(
       { ...entryFilter, isDeleted: false },
-      { fullName: 1, groups: 1 },
+      { fullName: 1, groups: 1, photos: 1 },
     );
 
     const [activeGroups, pendingGroups, staffCount, expenseAgg, billingTotals] = await Promise.all([
@@ -100,7 +101,7 @@ module.exports = {
           if (p.status !== "paid") continue;
           if ((p.forMonth || formatMonth(p.date)) === m) monthRevenue += p.amount;
           recentPayments.push({
-            student: { _id: student._id, fullName: student.fullName },
+            student: { _id: student._id, fullName: student.fullName, photo: photoFor(student, clientId) },
             amount: p.amount,
             type: p.type,
             forMonth: p.forMonth,

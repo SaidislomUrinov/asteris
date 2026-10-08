@@ -222,3 +222,45 @@ describe("migratsiya", () => {
     assert.deepEqual(await col.findOne({ _id: base._id }), doc);
   });
 });
+
+// Ota-ona paneli cross-tenant — `photo = latestPhoto(student)`
+// (API_CONTRACT_student_photo_everywhere.md §1).
+describe("ota-ona paneli", () => {
+  test("findChildren / children / allPayments latestPhoto qaytaradi", async () => {
+    const parentService = require("../src/services/parent.service");
+    const { normalizeTelegramPhone } = require("../src/utils/phone.util");
+    const phone = normalizeTelegramPhone("+998977770101");
+    const s = await seedShared("Ota-ona Rasm");
+    const old = "/uploads/students/parent-old.webp";
+    const fresh = "/uploads/students/parent-new.webp";
+    // Hook'larni chetlab o'tib to'g'ridan-to'g'ri yoziladi.
+    await Student.updateOne(
+      { _id: s._id },
+      {
+        $set: {
+          parentTelegramPhone: phone,
+          photos: [
+            { client: ctx.A.client._id, path: fresh, updatedAt: 200 },
+            { client: ctx.B.client._id, path: old, updatedAt: 100 },
+          ],
+        },
+      },
+    );
+    const parent = { phone, role: "parent" };
+
+    const kids = await parentService.findChildren(phone, "parent");
+    assert.equal(kids.length, 1);
+    assert.equal(kids[0].photo, fresh);
+
+    const tree = await parentService.children(parent);
+    assert.equal(tree[0].student.photo, fresh);
+
+    const pays = await parentService.allPayments(parent);
+    for (const d of pays.debts) assert.equal(d.student.photo, fresh);
+
+    // Rasm yo'q bo'lsa — "".
+    await Student.updateOne({ _id: s._id }, { $set: { photos: [] } });
+    assert.equal((await parentService.findChildren(phone, "parent"))[0].photo, "");
+    assert.equal((await parentService.children(parent))[0].student.photo, "");
+  });
+});

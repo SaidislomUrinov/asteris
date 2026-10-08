@@ -24,6 +24,7 @@ const { flattenLessons, getDoneDates } = require("../utils/syllabusProgress.util
 const { emitParentTelegramChanged } = require("../utils/parentTelegram.util");
 const { groupStudentsSummary, rankInSummary } = require("../utils/gradeScore.util");
 const { BADGE_FEATURE, GRADE_BADGES } = require("../utils/badge.util");
+const { latestPhoto } = require("../utils/studentPhoto.util");
 
 const TZ = "Asia/Tashkent";
 const RECEIPT_VERIFY_BASE = "https://wenet.uz/payment/verify";
@@ -86,7 +87,7 @@ const findChildren = async (rawPhone, role = "parent") => {
     isDeleted: false,
     ...roleMatch(role, phone),
   })
-    .select("fullName phone parentPhone groups.group groups.center groups.client groups.status")
+    .select("fullName phone parentPhone photos groups.group groups.center groups.client groups.status")
     .lean();
   if (!students.length) return [];
 
@@ -118,6 +119,8 @@ const findChildren = async (rawPhone, role = "parent") => {
       fullName: s.fullName,
       isSelf: role === "student",
       centers: [...byCenter.values()],
+      // Ota-ona cross-tenant — eng so'nggi rasm (API_CONTRACT_student_photo_everywhere.md §1).
+      photo: latestPhoto(s),
     };
   });
 };
@@ -513,7 +516,13 @@ const children = async (parent) => {
     todayList.sort((a, b) => (a.startTime < b.startTime ? -1 : 1));
 
     result.push({
-      student: { _id: student._id, fullName: student.fullName, phone: student.phone, isSelf: role === "student" },
+      student: {
+        _id: student._id,
+        fullName: student.fullName,
+        phone: student.phone,
+        isSelf: role === "student",
+        photo: latestPhoto(student),
+      },
       stats: {
         attendancePercent: marked ? Math.round((present / marked) * 100) : 0,
         avgGrade,
@@ -662,7 +671,7 @@ const allPayments = async (parent) => {
       for (const g of c.groups) {
         if (g.debt > 0)
           debts.push({
-            student: { _id: child.student._id, fullName: child.student.fullName },
+            student: { _id: child.student._id, fullName: child.student.fullName, photo: child.student.photo || "" },
             centerName: c.center.name,
             groupName: g.name,
             entryId: g.entryId,
@@ -675,7 +684,7 @@ const allPayments = async (parent) => {
           const month = moment.unix(p.date).tz(TZ).format("YYYY-MM");
           if (!monthMap.has(month)) monthMap.set(month, []);
           monthMap.get(month).push({
-            student: { _id: child.student._id, fullName: child.student.fullName },
+            student: { _id: child.student._id, fullName: child.student.fullName, photo: child.student.photo || "" },
             centerName: c.center.name,
             groupName: g.name,
             entryId: g.entryId,
