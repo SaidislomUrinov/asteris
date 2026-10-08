@@ -23,6 +23,7 @@ import Button from "../../ui/Button";
 import Select from "../../ui/Select";
 import Chip from "../../ui/Chip";
 import RowNumber from "../../ui/RowNumber";
+import RankChip from "../../ui/RankChip";
 import RankMedal from "../../ui/RankMedal";
 import RankPeriodLabel from "../../ui/RankPeriodLabel";
 import MiniBadges from "../../ui/MiniBadges";
@@ -46,6 +47,7 @@ import StudentDialog from "../Students/StudentDialog";
 import StudentContactDialog from "../Students/StudentContactDialog";
 import TelegramStatusBadges from "../../ui/TelegramStatusBadges";
 import useClosingValue from "../../hooks/useClosingValue";
+import useMediaQuery from "../../hooks/useMediaQuery";
 import { useLessonSchedule } from "../Groups/useLessonSchedule";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import useCan from "../../hooks/useCan";
@@ -83,6 +85,8 @@ const yesterdayString = () => {
 function Lesson() {
   const { t } = useTranslation();
   const can = useCan();
+  // Telefon (< sm) — o'quvchilar ro'yxati kartalar ko'rinishida (avatar biroz kichik).
+  const isPhone = useMediaQuery("(max-width: 639px)");
   const hasFeature = useFeature();
   const navigate = useNavigate();
   const { _id: userId, role } = useSelector((e) => e.user);
@@ -592,7 +596,8 @@ function Lesson() {
               </button>
             )}
           </div>
-          {isSortableTab(tab) && showStudentList && (
+          {/* Saralash — GroupDetail bilan bir xil: ruxsatga bog'liq emas. */}
+          {isSortableTab(tab) && (
             <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
               {Object.keys(ranks).length > 0 && <RankPeriodLabel />}
               <Select
@@ -627,7 +632,9 @@ function Lesson() {
                 {t("student.empty")}
               </div>
             ) : (
-              <div className="flex flex-col w-full overflow-hidden rounded-lg border border-slate-100">
+              // Telefonda (< sm) jadval emas — alohida kartalar ro'yxati (guruh
+              // detalidagi o'qituvchi ko'rinishi bilan bir xil).
+              <div className="flex flex-col w-full overflow-hidden rounded-lg border border-slate-100 max-sm:gap-2.5 max-sm:overflow-visible max-sm:rounded-none max-sm:border-0">
                 <div className="hidden sm:grid grid-cols-[1fr_140px_44px] gap-2 px-3 py-2 bg-slate-50 text-[11px] font-semibold uppercase text-slate-400">
                   <span>{t("student.fullName")}</span>
                   <span>{t("group.attendanceColumn")}</span>
@@ -639,25 +646,57 @@ function Lesson() {
                   return (
                     <div
                       key={s._id}
-                      className="relative grid grid-cols-1 sm:grid-cols-[1fr_140px_44px] items-center gap-2 px-3 py-2.5 border-t border-slate-100 hover:bg-slate-50 transition-colors"
+                      className="relative grid grid-cols-1 gap-2.5 px-2 py-3 border-t border-slate-100 hover:bg-slate-50 transition-colors max-sm:p-3 max-sm:rounded-2xl max-sm:border max-sm:border-slate-200/80 max-sm:bg-white max-sm:hover:bg-white sm:grid-cols-[1fr_140px_44px] sm:items-center sm:gap-2 sm:px-3 sm:py-2.5"
                     >
-                      <div className="flex items-center gap-3 min-w-0 pr-9 sm:pr-0">
+                      <div className="flex items-center gap-3 min-w-0 pr-11 sm:pr-0">
                         <RowNumber value={index + 1} />
-                        <Avatar user={{ _id: s._id, name: s.fullName }} size={38} />
+                        <Avatar user={{ _id: s._id, name: s.fullName }} size={isPhone ? 36 : 38} />
                         <div className="flex flex-col min-w-0">
                           <span className="flex items-center gap-1.5 min-w-0">
                             <span className="font-semibold text-slate-800 truncate">{s.fullName}</span>
-                            <RankMedal position={ranks[s._id]} size={21} />
-                            <MiniBadges types={groupBadges.items[s._id]} month={groupBadges.month} />
+                            {/* Telefonda medal va yutuq belgilari yashirin — o'rin pastki qatorda. */}
+                            <span className="contents max-sm:hidden">
+                              <RankMedal position={ranks[s._id]} size={21} />
+                              <MiniBadges types={groupBadges.items[s._id]} month={groupBadges.month} />
+                            </span>
                           </span>
                           <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 min-w-0">
+                            {/* Telefonda o'rin — telefon raqami oldida: ism qisqarmasin. */}
+                            <RankChip position={ranks[s._id]} />
                             <span className="text-xs text-slate-400 shrink-0">{s.phone}</span>
-                            <TelegramStatusBadges student={s.studentTelegram} parent={s.parentTelegram} />
+                            {/* Telefonda Telegram kartaning pastki qatorida. */}
+                            <span className="hidden sm:inline-flex">
+                              <TelegramStatusBadges student={s.studentTelegram} parent={s.parentTelegram} />
+                            </span>
                           </span>
                         </div>
                       </div>
 
-                      <div onClick={(e) => e.stopPropagation()} className="flex items-center">
+                      {/* ── Telefon (< sm): yorliqli ma'lumot bloklari — Davomat, Telegram. */}
+                      <div className="sm:hidden grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-2.5">
+                        <div onClick={(e) => e.stopPropagation()} className="col-span-2 flex flex-col gap-1 min-w-0">
+                          <span className="text-[11px] font-medium text-slate-400">{t("group.attendanceColumn")}</span>
+                          <AttendanceStatusCell
+                            status={attendanceMarks[s._id]}
+                            isToday={!!todayLesson}
+                            open={attendanceOpenId === s._id}
+                            onOpen={() => setAttendanceOpenId(s._id)}
+                            onMark={(mark) => markAttendance(s._id, mark)}
+                            onExcuse={() => openExcuse(s)}
+                          />
+                        </div>
+                        <div className="col-span-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="text-[11px] font-medium text-slate-400">{t("telegram.title")}</span>
+                          <TelegramStatusBadges
+                            className="flex-wrap"
+                            student={s.studentTelegram}
+                            parent={s.parentTelegram}
+                          />
+                        </div>
+                      </div>
+
+                      {/* ── Desktop jadval katagi (sm+). */}
+                      <div onClick={(e) => e.stopPropagation()} className="hidden sm:flex items-center">
                         <AttendanceStatusCell
                           status={attendanceMarks[s._id]}
                           isToday={!!todayLesson}
@@ -670,7 +709,8 @@ function Lesson() {
 
                       <div
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute top-2 right-2 sm:static sm:flex sm:justify-end"
+                        // Telefonda — kichikroq, kartaga singib ketgan yumshoq tugma (36px).
+                        className="absolute top-2.5 right-2 max-sm:top-3 max-sm:right-3 max-sm:[&_button]:min-w-9 max-sm:[&_button]:max-w-9 max-sm:[&_button]:min-h-9 max-sm:[&_button]:max-h-9 max-sm:[&_button]:rounded-lg max-sm:[&_button]:bg-slate-50 max-sm:[&_button]:text-slate-500 sm:static sm:flex sm:justify-end"
                       >
                         <DropMenu
                           items={[

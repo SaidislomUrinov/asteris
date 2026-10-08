@@ -40,6 +40,7 @@ import useMediaQuery from "../../hooks/useMediaQuery";
 import Dialog from "../../ui/Dialog";
 import Chip from "../../ui/Chip";
 import RowNumber from "../../ui/RowNumber";
+import RankChip from "../../ui/RankChip";
 import RankMedal from "../../ui/RankMedal";
 import RankPeriodLabel from "../../ui/RankPeriodLabel";
 import MiniBadges from "../../ui/MiniBadges";
@@ -132,13 +133,6 @@ const formatBatchTime = (unixSeconds) => {
   return `${d.toLocaleDateString(dateLocale(), { day: "2-digit", month: "2-digit" })} ${time}`;
 };
 
-
-// Telefondagi o'rin belgisi: 1–3 o'rin medal ranglarida, qolganlari neytral.
-const RANK_CHIP = {
-  1: "bg-amber-100 text-amber-800",
-  2: "bg-slate-200 text-slate-700",
-  3: "bg-orange-100 text-orange-800",
-};
 
 function GroupDetail() {
   const { t } = useTranslation();
@@ -1289,15 +1283,7 @@ function GroupDetail() {
                       </span>
                       <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 min-w-0">
                         {/* Telefonda o'rin — telefon raqami oldida: ism qisqarmasin. */}
-                        {ranks[s._id] && (
-                          <span
-                            className={`sm:hidden shrink-0 px-1.5 py-0.5 rounded-md text-[11px] font-bold tabular-nums leading-none whitespace-nowrap ${
-                              RANK_CHIP[ranks[s._id]] || "bg-slate-100 text-slate-600"
-                            }`}
-                          >
-                            {t("rank.medal", { position: ranks[s._id] })}
-                          </span>
-                        )}
+                        <RankChip position={ranks[s._id]} />
                         <span className="text-xs text-slate-400 shrink-0">{s.phone}</span>
                         {/* Mobilda Telegram alohida ustunda (pastda). */}
                         <span className={isTeacher ? "hidden sm:inline-flex" : "hidden xl:inline-flex"}>
