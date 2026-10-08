@@ -10,6 +10,10 @@ export default defineConfig({
     // Tunnel (cloudflared/ngrok) orqali ochilganda hostni tekshirmasin
     allowedHosts: true,
     // /api → lokal backend (VITE_API_URL=/api bo'lsa tunnel orqali ham ishlaydi)
-    proxy: { "/api": { target: "http://127.0.0.1:5000", changeOrigin: true } },
+    proxy: {
+      "/api": { target: "http://127.0.0.1:5000", changeOrigin: true },
+      // Ishchi paneli socket'i (VITE_API_URL=/api bo'lsa nisbiy ulanadi)
+      "/socket.io": { target: "http://127.0.0.1:5000", changeOrigin: true, ws: true },
+    },
   },
 });

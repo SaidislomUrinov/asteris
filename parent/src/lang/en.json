@@ -14,7 +14,11 @@
     "paid": "Paid",
     "debtShort": "Debt {{v}} UZS",
     "prevMonth": "Previous month",
-    "nextMonth": "Next month"
+    "nextMonth": "Next month",
+    "fileTypeNotAllowed": "This file type is not allowed",
+    "invalidInput": "Invalid input",
+    "notFound": "Not found",
+    "tooManyRequests": "Too many attempts. Please try again later"
   },
   "error": {
     "title": "Something went wrong",
@@ -26,7 +30,13 @@
     "500": "Server error"
   },
   "auth": {
-    "failed": "Session expired. Reopen the app."
+    "failed": "Session expired. Reopen the app.",
+    "fillTheRows": "Fill in all fields",
+    "forbidden": "You do not have permission for this action",
+    "introSeen": "Intro completed",
+    "notFound": "Incorrect credentials or password",
+    "signOut": "You have signed out successfully",
+    "success": "Signed in successfully"
   },
   "parent": {
     "notLinked": "Your Telegram is not linked",
@@ -89,7 +99,28 @@
     },
     "room": "Room {{r}}",
     "notFound": "Group not found",
-    "telegram": "Telegram group"
+    "telegram": "Telegram group",
+    "activated": "The group has been activated",
+    "activationIncomplete": "To activate, fill in the teacher, room, lesson days and time completely",
+    "alreadyActivated": "The group has already been activated",
+    "assistantNotFound": "Teaching assistant not found",
+    "created": "Group added successfully",
+    "fillTheRows": "Fill in all required fields",
+    "finished": "The group has been finished",
+    "holidayMarked": "The day off has been marked",
+    "holidayUnmarked": "The marker was removed",
+    "invalidDate": "Invalid date format",
+    "invalidDays": "Invalid lesson day selected",
+    "invalidMaxStudents": "Invalid value entered",
+    "invalidName": "Enter a group name",
+    "invalidStartDate": "Invalid start date format",
+    "invalidTelegramLink": "Invalid Telegram link. E.g. https://t.me/+AbCd or @group",
+    "notActive": "The group is not active",
+    "renamed": "Group name updated",
+    "rescheduled": "The lesson schedule was updated",
+    "scheduleFinished": "A finished group's schedule cannot be changed",
+    "teacherNotFound": "The selected teacher was not found",
+    "telegramUpdated": "Telegram group link updated"
   },
   "days": {
     "mon": "Mo",
@@ -283,7 +314,45 @@
       "notifHint": "Settings apply to all your groups. Types turned off by the center are not sent.",
       "childrenHint": "Can't see your group? The center needs to add this number to your student card.",
       "unlinkText": "Your Telegram will be disconnected and messages will stop. To reconnect, press /start in the bot."
-    }
+    },
+    "alreadyEnrolled": "This student is already enrolled in this group",
+    "alreadyLeft": "The student has already been removed from the group",
+    "created": "Student added successfully",
+    "fillTheRows": "Fill in all required fields",
+    "forMonthBeforeStart": "A payment cannot be taken for a month before the lessons start",
+    "groupEntryNotFound": "Record not found",
+    "groupFinished": "This group has finished, you cannot add a student",
+    "importDone": "Students imported",
+    "importEmptyRows": "No rows to import",
+    "importTooManyRows": "You can import at most 300 rows at once",
+    "invalidAmount": "Invalid payment amount",
+    "invalidCycle": "The amount for this month cannot be changed",
+    "invalidMonth": "Invalid month",
+    "invalidName": "Name must be at least 2 letters",
+    "invalidPaymentType": "Invalid payment type",
+    "invalidPhone": "Invalid phone number",
+    "invalidPrice": "Invalid price entered",
+    "left": "The student was removed from the group",
+    "limitReached": "You have reached the number of students allowed by your tariff",
+    "notFound": "Student not found",
+    "notInGroup": "The student isn't in this group",
+    "openingDebtsSaved": "Debt details saved",
+    "openingMonthDuplicate": "This month has already been added",
+    "openingMonthFuture": "A future month cannot be selected",
+    "openingMonthInvalid": "Invalid month",
+    "openingTooMany": "You can add at most 36 months",
+    "paymentAdded": "Payment added successfully",
+    "paymentCancelled": "Payment cancelled",
+    "paymentMonthMoved": "Payment month changed",
+    "paymentNotCancellable": "This payment cannot be cancelled",
+    "paymentNotFound": "Payment not found",
+    "paymentNotMovable": "Only a paid payment can be moved to another month",
+    "paymentSameMonth": "The payment is already for this month",
+    "sharedContactLocked": "This student also studies at another center — phone, parent's number and Telegram can't be changed",
+    "transferNotActive": "Only an active membership can be transferred",
+    "transferSameGroup": "The student is already in this group",
+    "transferred": "The student was transferred to another group",
+    "updated": "Student details updated"
   },
   "rankCard": {
     "title": "Place in group",
@@ -391,5 +460,697 @@
     "finished": "Program completed",
     "empty": "No lesson plan yet",
     "emptyText": "Topics will appear here once the teacher fills in the program."
+  },
+  "client": {
+    "blocked": "Your account is blocked. Please contact WENET support.",
+    "alreadySubscribed": "You already have an active subscription",
+    "fillTheRows": "Fill in all fields",
+    "noActiveSubscription": "No active subscription found",
+    "notFound": "Client not found",
+    "phoneTaken": "This phone number is already taken",
+    "profileUpdated": "Profile updated",
+    "subscriptionExpired": "The subscription has expired — editing actions are blocked. Renew the subscription to continue"
+  },
+  "center": {
+    "blocked": "Your branch is blocked. Please contact your manager.",
+    "created": "Center added successfully",
+    "deleted": "Center deleted successfully",
+    "fillTheRows": "Enter the center name",
+    "keepCountMismatch": "Select exactly as many branches as the plan allows",
+    "limitReached": "You have reached the number of centers allowed by your tariff",
+    "noOverflow": "No branches over the plan limit",
+    "notFound": "Center not found",
+    "overflowPending": "You have more active centers than your plan allows. First choose which centers stay active",
+    "overflowResolved": "Branch selection saved",
+    "parentNotifInvalid": "Invalid parent notification settings",
+    "unblocked": "Branch unblocked",
+    "updated": "Center updated successfully"
+  },
+  "worker": {
+    "live": "Live",
+    "offline": "Offline",
+    "allCenters": "All branches",
+    "unit": {
+      "k": "K",
+      "mln": "M",
+      "bln": "B"
+    },
+    "role": {
+      "owner": "Owner",
+      "reception": "Reception",
+      "teacher": "Teacher",
+      "assistant": "Assistant",
+      "manager": "Manager",
+      "staff": "Staff"
+    },
+    "tab": {
+      "today": "Today",
+      "finance": "Finance",
+      "debtors": "Debtors",
+      "leads": "Leads",
+      "groups": "Groups",
+      "salary": "Salary",
+      "grades": "Grades",
+      "notifications": "Inbox",
+      "profile": "Profile",
+      "menu": "Menu"
+    },
+    "fab": {
+      "report": "Report",
+      "payment": "Payment",
+      "attendance": "Attendance"
+    },
+    "readOnly": {
+      "title": "View-only mode",
+      "text": "Your subscription has expired. You can view data; changes will be available after payment.",
+      "fab": "Subscription expired — new actions are temporarily disabled."
+    },
+    "kpi": {
+      "revenueToday": "Revenue",
+      "attendanceRate": "Attendance",
+      "debtTotal": "Debt",
+      "cashToday": "Cash desk",
+      "paymentsCount": "Payments",
+      "debtorsCount": "Debtors",
+      "lessonsToday": "Lessons",
+      "studentsToday": "Students",
+      "salaryMonth": "Salary",
+      "gradesPending": "To grade"
+    },
+    "today": {
+      "title": "Today, {{date}}",
+      "now": "Now",
+      "feed": {
+        "reception": "{{center}}",
+        "teacher": "My lessons",
+        "assistant": "Groups I assist",
+        "owner": "All branches"
+      },
+      "empty": "No events today",
+      "emptyText": "Lessons, payments and other events will appear here in time order.",
+      "students": "{{count}} students",
+      "lessonNow": "In progress",
+      "payment": "Payment",
+      "dueToday": "Payment due today · {{count}} people",
+      "dueTodaySum": "Total {{amount}} UZS",
+      "list": "List",
+      "lead": "Lead: {{name}}",
+      "expense": "Expense",
+      "gradesPending": "{{count}} students not graded",
+      "rate": "Grade now",
+      "homeworkMissing": "Homework not added",
+      "eveningReport": "Evening report",
+      "eveningReportSub": "Day summary will be sent to Telegram"
+    },
+    "att": {
+      "title": "Attendance",
+      "count": {
+        "present": "{{count}} present",
+        "absent": "{{count}} absent",
+        "late": "{{count}} late",
+        "excused": "{{count}} excused",
+        "unmarked": "{{count}} unmarked"
+      },
+      "status": {
+        "present": "Present",
+        "absent": "Absent",
+        "excused": "Excused"
+      },
+      "late": "Late",
+      "markRest": "Mark the rest present ({{count}})",
+      "allMarked": "Everyone is marked",
+      "noLesson": "No lesson right now",
+      "noLessonText": "Attendance opens during the lesson time.",
+      "noStudents": "No students in this group"
+    },
+    "payType": {
+      "cash": "Cash",
+      "card": "Card",
+      "mixed": "Mixed",
+      "previousMonth": "Previous month"
+    },
+    "pay": {
+      "title": "Accept payment",
+      "student": "Student",
+      "change": "Another student",
+      "searchPh": "Name or phone number",
+      "searchHint": "Type at least 2 characters to find a student.",
+      "notFound": "Student not found",
+      "notFoundText": "Check the name or number and try again.",
+      "noEntries": "No group to pay for",
+      "noEntriesText": "The student is not in an active group or has no debt.",
+      "group": "Group",
+      "groupMonth": "Group · month",
+      "debt": "Debt",
+      "noDebt": "No debt",
+      "amount": "Amount",
+      "notePh": "Note (optional)",
+      "submit": "Accept {{amount}}",
+      "success": "{{name}}: {{amount}} UZS accepted"
+    },
+    "finance": {
+      "title": "Finance",
+      "revenue": "Monthly revenue",
+      "expenses": "Expenses",
+      "debt": "Debt",
+      "net": "Net balance",
+      "students": "Active students",
+      "groups": "Active groups",
+      "openReport": "Detailed report",
+      "recent": "Recent payments",
+      "noPayments": "No payments yet"
+    },
+    "report": {
+      "title": "Report",
+      "period": {
+        "today": "Today",
+        "week": "7 days",
+        "month": "This month"
+      },
+      "total": "Total revenue",
+      "count": "{{count}} payments",
+      "byCollector": "Collected by",
+      "empty": "No payments in this period",
+      "unknownCollector": "Unknown"
+    },
+    "debtors": {
+      "title": "Debtors",
+      "summary": "{{count}} people · {{amount}} UZS",
+      "searchPh": "Name or phone",
+      "empty": "No debtors",
+      "emptyText": "All students have paid on time."
+    },
+    "leads": {
+      "title": "Leads",
+      "total": "{{count}} total",
+      "filter": {
+        "open": "Open",
+        "new": "New",
+        "contacted": "Contacted"
+      },
+      "status": {
+        "new": "New",
+        "contacted": "Contacted",
+        "enrolled": "Enrolled",
+        "rejected": "Rejected"
+      },
+      "source": {
+        "walkIn": "Walk-in",
+        "phone": "Phone",
+        "instagram": "Instagram",
+        "telegram": "Telegram",
+        "friend": "Referral",
+        "banner": "Banner",
+        "website": "Website",
+        "other": "Other"
+      },
+      "empty": "No leads",
+      "emptyText": "New inquiries will appear here."
+    },
+    "groups": {
+      "title": "My groups",
+      "count": "{{count}} active groups",
+      "empty": "No active groups",
+      "titleAll": "Groups",
+      "countAny": "{{count}} groups",
+      "emptyAny": "No groups"
+    },
+    "salary": {
+      "title": "Salary",
+      "final": "Take-home",
+      "base": "Accrued",
+      "advance": "Paid out",
+      "bonus": "Bonus",
+      "penalty": "Penalty",
+      "history": "Transactions",
+      "noTx": "No transactions this month",
+      "type": {
+        "fixed": "Fixed salary",
+        "percentage": "Percentage salary"
+      },
+      "tx": {
+        "advance": "Advance",
+        "withdrawal": "Early withdrawal",
+        "bonus": "Bonus",
+        "penalty": "Penalty"
+      }
+    },
+    "grades": {
+      "title": "Grades",
+      "subtitle": "Today's lesson, 1–10 points",
+      "avg": "Monthly average: {{v}}",
+      "noAvg": "No grades this month",
+      "pending": "Not graded"
+    },
+    "notif": {
+      "title": "Inbox",
+      "readAll": "Mark all read",
+      "empty": "No notifications",
+      "emptyText": "Notifications will appear here."
+    },
+    "profile": {
+      "title": "Profile",
+      "organization": "Organization",
+      "access": "Access",
+      "fullAccess": "Full",
+      "permsCount": "{{count}} permissions",
+      "realtime": "Live updates",
+      "centers": "Branches",
+      "center": "Branch",
+      "hint": "This panel opens through your Telegram account. Change the language with the buttons at the top.",
+      "close": "Close app"
+    },
+    "errors": {
+      "auth": {
+        "failed": "Session ended. Please reopen the app.",
+        "forbidden": "You don't have permission for this action."
+      },
+      "worker": {
+        "centerNotFound": "Branch not found."
+      },
+      "client": {
+        "subscriptionExpired": "Subscription expired — changes are temporarily disabled.",
+        "blocked": "Account is blocked."
+      },
+      "center": {
+        "blocked": "Branch is blocked.",
+        "overflowPending": "More branches than the plan allows — choose a branch in the web panel first."
+      },
+      "tariff": {
+        "featureNotAvailable": "This feature is not included in your plan."
+      },
+      "lesson": {
+        "none": "No lesson right now."
+      },
+      "student": {
+        "invalidAmount": "Enter a valid amount.",
+        "invalidMonth": "Invalid month.",
+        "invalidPaymentType": "Invalid payment type.",
+        "notFound": "Student not found.",
+        "groupEntryNotFound": "Group membership not found.",
+        "groupFinished": "The group has finished — payments are not accepted.",
+        "forMonthBeforeStart": "You can't pay for a month before the course started.",
+        "notInGroup": "The student is not in this group."
+      },
+      "attendance": {
+        "invalidStatus": "Invalid attendance status.",
+        "notLessonDay": "This group has no lesson today.",
+        "teacherDateLimit": "You can only mark today and yesterday.",
+        "conflict": "Attendance was changed elsewhere, please try again.",
+        "invalidMonth": "Invalid month.",
+        "futureMonthNotAllowed": "No data for a future month."
+      },
+      "calendar": {
+        "centerHoliday": "Today is a day off at this branch."
+      },
+      "grade": {
+        "invalidValue": "Grade must be between 1 and 10.",
+        "studentAbsent": "You can't grade an absent student.",
+        "studentExcused": "You can't grade an excused student.",
+        "futureNotAllowed": "You can't grade a future date.",
+        "notFound": "Grade not found."
+      },
+      "group": {
+        "notFound": "Group not found.",
+        "invalidDate": "Invalid date."
+      },
+      "staff": {
+        "notFound": "Staff member not found."
+      },
+      "homework": {
+        "groupFinished": "Homework can't be added to a finished group.",
+        "invalidDate": "Invalid date.",
+        "tooLong": "Homework text must not exceed 2000 characters.",
+        "invalidText": "Invalid homework text."
+      }
+    },
+    "back": "Back",
+    "menu": {
+      "title": "Menu",
+      "sections": "Sections",
+      "empty": "No sections yet",
+      "emptyText": "Sections available to you will appear here."
+    },
+    "group": {
+      "title": "Group",
+      "status": {
+        "active": "Active",
+        "pending": "Not started",
+        "finished": "Finished"
+      },
+      "tab": {
+        "students": "Students",
+        "attendance": "Attendance",
+        "grades": "Grades",
+        "homework": "Homework",
+        "plan": "Plan"
+      },
+      "noTeacher": "No teacher assigned",
+      "assistant": "Assistant",
+      "studentsLabel": "students",
+      "telegram": "Telegram group",
+      "actions": "Actions",
+      "studentsCount": "{{count}} students",
+      "noStudentAccess": "Student list is closed",
+      "noStudentAccessText": "The \"View students\" permission is required to see the list.",
+      "noTabs": "No permission to view this group",
+      "att": {
+        "noDays": "No lesson days this month",
+        "noDaysText": "The group hasn't started yet or had no lessons this month.",
+        "excuseTitle": "Excused",
+        "excuseSave": "Save",
+        "reasonPh": "Reason (optional)"
+      },
+      "lock": {
+        "holiday": "Day off — no attendance or grades.",
+        "future": "This lesson hasn't happened yet.",
+        "transferred": "Record from another group — view only.",
+        "teacherLimit": "Teachers can only mark today and yesterday.",
+        "readOnly": "Subscription expired — view-only mode.",
+        "groupFinished": "Group is finished — homework can't be added.",
+        "noDay": "No lesson day selected."
+      },
+      "grades": {
+        "remove": "Remove grade",
+        "removed": "Grade removed"
+      },
+      "plan": {
+        "current": "Current",
+        "homework": "Homework",
+        "module": "Module {{n}} · {{title}}",
+        "noLessons": "No lessons",
+        "progress": "Done: {{done}} / {{total}} lessons",
+        "finished": "Program completed",
+        "empty": "No course program yet",
+        "emptyText": "The program is built in the web panel."
+      }
+    },
+    "homework": {
+      "forDate": "Homework for {{date}}",
+      "placeholder": "Write the homework…",
+      "send": "Send",
+      "delete": "Delete",
+      "none": "No homework given",
+      "hint": "After saving it's sent to students via Telegram (in about 2 minutes).",
+      "saved": "Homework saved — students will get it via Telegram",
+      "deleted": "Homework deleted",
+      "deleteTitle": "Delete homework?",
+      "deleteText": "The text is empty — homework for this day will be deleted.",
+      "history": "Recent homework",
+      "empty": "No homework this month"
+    },
+    "search": {
+      "title": "Search",
+      "ph": "Student, phone or group",
+      "phGroups": "Group name or subject",
+      "hintTitle": "What are we looking for?",
+      "hint": "Type at least 2 characters.",
+      "students": "Students",
+      "groups": "Groups",
+      "noStudents": "No students found",
+      "noGroups": "No groups found",
+      "empty": "Nothing found",
+      "emptyText": "Check your query and try again."
+    },
+    "student": {
+      "title": "Student",
+      "parentPhone": "Parent's phone",
+      "callStudent": "Call student",
+      "callParent": "Call parent",
+      "callStudentShort": "Student",
+      "callParentShort": "Parent",
+      "pay": "Payment",
+      "open": "Open profile",
+      "tg": {
+        "student": "Student",
+        "parent": "Parent",
+        "linked": "linked",
+        "none": "not linked"
+      },
+      "groups": "Groups",
+      "noGroups": "No active groups",
+      "entry": {
+        "active": "Active",
+        "left": "Left",
+        "finished": "Finished",
+        "archived": "Archived"
+      },
+      "price": "Monthly price",
+      "opening": "Previous debt",
+      "moreMonths": "{{count}} more months",
+      "payments": "Payment history",
+      "noPayments": "No payments",
+      "forMonth": "for {{month}}",
+      "payStatus": {
+        "cancelled": "Cancelled",
+        "refunded": "Refunded"
+      },
+      "summary": "Attendance and grades",
+      "attendance": "Attendance",
+      "gradeAvg": "Average grade",
+      "gradesCount": "{{count}} grades",
+      "teacherScope": "Achievements and your groups only"
+    },
+    "centerNotFound": "Branch not found",
+    "qr": {
+      "title": "QR attendance",
+      "popupText": "Point the camera at the student's QR card",
+      "hint": "Scan cards one after another — the scanner stays open.",
+      "start": "Start scanning",
+      "stop": "Close scanner",
+      "scanner": "QR scanner",
+      "sending": "Sending…",
+      "session": "Session",
+      "total": "Total: {{count}}",
+      "recent": "Recent scans",
+      "empty": "Nothing scanned yet",
+      "emptyText": "Open the scanner and hold the student's card to the camera.",
+      "noAccess": "QR attendance is off",
+      "noAccessText": "You need the attendance permission and QR attendance in your plan.",
+      "status": {
+        "present": "Present",
+        "late": "Late",
+        "duplicate": "Repeat",
+        "error": "Error"
+      },
+      "noTelegram": {
+        "title": "Telegram only",
+        "text": "The QR scanner works only inside Telegram. Open the panel through Telegram."
+      },
+      "oldVersion": {
+        "title": "Update Telegram",
+        "text": "The QR scanner needs a newer version of Telegram."
+      },
+      "pickTitle": "Select a group",
+      "pickHint": "There are lessons in several groups today. Which one should it go to?"
+    }
+  },
+  "archive": {
+    "alreadyArchived": "Already archived",
+    "archived": "Archived",
+    "groupStillArchived": "Restore the group first",
+    "notArchived": "This record is not archived",
+    "notFound": "Not found in the archive",
+    "restored": "Restored from the archive"
+  },
+  "attendance": {
+    "conflict": "Attendance was changed at the same time. Please try again",
+    "futureMonthNotAllowed": "Statistics for a future month are not available",
+    "invalidMonth": "Invalid month format",
+    "invalidQr": "The QR code is invalid or was not recognized",
+    "invalidStatus": "Invalid attendance status",
+    "marked": "Attendance marked",
+    "noLessonToday": "This student has no lesson in any group today",
+    "notLessonDay": "Today is not a lesson day for this group",
+    "settingsUpdated": "Attendance settings updated",
+    "studentNotInCenter": "This student is not assigned to your center",
+    "studentNotInGroup": "This student is not in the selected group",
+    "teacherDateLimit": "A teacher can only mark attendance for today and yesterday",
+    "markedLate": "Marked as present (late)",
+    "alreadyMarked": "This student has already been marked today",
+    "chooseGroupTitle": "Select a group",
+    "chooseGroupHint": "{{name}} has lessons in several groups today. Which one should they be marked in?"
+  },
+  "billing": {
+    "invalidCycleMode": "Invalid billing cycle mode",
+    "settingsUpdated": "Payment setting updated"
+  },
+  "calendar": {
+    "centerHoliday": "This day is a branch holiday — attendance can't be marked",
+    "datesRequired": "Select at least one date",
+    "invalidDate": "Invalid date",
+    "invalidMonth": "Invalid month",
+    "invalidNote": "Note is too long",
+    "marked": "Holiday marked",
+    "unmarked": "Mark removed"
+  },
+  "certificate": {
+    "issued": "Certificate issued",
+    "issuedBulk": "Issued to {{count}} students",
+    "noActiveStudents": "No active students in this group",
+    "notFound": "Certificate not found"
+  },
+  "certificateTemplate": {
+    "backgroundRequired": "Upload a background image",
+    "created": "Template created",
+    "deleted": "Template deleted",
+    "fillTheRows": "Fill in all fields",
+    "invalidFields": "Fields are in an invalid format",
+    "limitReached": "You've reached the 10-template limit for this branch",
+    "notFound": "Template not found",
+    "updated": "Template updated"
+  },
+  "chat": {
+    "imageRequired": "Please select an image",
+    "invalidLang": "Invalid language selected",
+    "notFound": "Conversation not found",
+    "textRequired": "Please enter a message"
+  },
+  "expense": {
+    "alreadyCancelled": "This expense has already been cancelled",
+    "cancelled": "This expense has been cancelled and cannot be edited",
+    "created": "Expense added successfully",
+    "fillTheRows": "Fill in all required fields",
+    "invalidCategory": "Invalid category",
+    "invalidValue": "Invalid amount entered",
+    "notFound": "Expense not found",
+    "updated": "Expense updated successfully"
+  },
+  "grade": {
+    "futureNotAllowed": "A grade cannot be given for a future date",
+    "invalidValue": "The grade must be between 1 and 10",
+    "notFound": "Grade not found",
+    "removed": "Grade removed",
+    "saved": "Grade saved",
+    "studentAbsent": "This student was absent on {{date}}",
+    "studentExcused": "This student had an excused absence on {{date}} — no grade can be set"
+  },
+  "homework": {
+    "groupFinished": "Homework can't be added to a finished group",
+    "invalidDate": "Invalid date format",
+    "invalidText": "Invalid homework text",
+    "tooLong": "Homework text must not exceed 2000 characters"
+  },
+  "import": {
+    "batchAlreadyUndone": "This import was already undone",
+    "batchHasAttendance": "Imported students have attendance records — cannot undo",
+    "batchHasPayments": "Imported students have payments — cannot undo",
+    "batchNotYours": "Only the person who made this import or the owner can undo it",
+    "batchTooOld": "An import older than 24 hours cannot be undone",
+    "undone": "Import undone"
+  },
+  "inpay": {
+    "createFailed": "Could not create the payment, please try again",
+    "invalidAmount": "Invalid payment amount",
+    "missingOrderId": "Order number not found",
+    "notConfigured": "The payment system is not configured yet, please try later",
+    "tokenMissing": "The payment system did not grant access"
+  },
+  "lead": {
+    "alreadyEnrolled": "Some selected leads are already enrolled or declined",
+    "created": "Lead added",
+    "deleted": "Lead deleted",
+    "enrolled": "Added to the group",
+    "fillTheRows": "Enter name, phone, branch and subject",
+    "invalidPhone": "Invalid phone number",
+    "invalidTime": "End time must be after start time",
+    "invalidValue": "Invalid value",
+    "mixedSelection": "Select leads of one subject and branch",
+    "noneSelected": "Nobody selected",
+    "notFound": "Lead not found",
+    "updated": "Lead updated"
+  },
+  "news": {
+    "notFound": "News not found"
+  },
+  "notification": {
+    "allRead": "All notifications marked as read",
+    "lessonReminderBody": "The lesson starts at {{startTime}} — group #{{activeId}}",
+    "lessonReminderTitle": "Your lesson starts in 1 hour",
+    "notFound": "Notification not found"
+  },
+  "payment": {
+    "notFound": "Payment not found"
+  },
+  "report": {
+    "invalidRange": "Invalid date range"
+  },
+  "room": {
+    "busyAtThisTime": "Room \"{{room}}\" is busy on {{day}} from {{start}} to {{end}} (group \"{{label}}\")",
+    "created": "Room added successfully",
+    "fillTheRows": "Fill in all required fields",
+    "notFound": "Room not found",
+    "updated": "Room updated successfully"
+  },
+  "salary": {
+    "advanceNotCancellable": "An advance that has been paid out cannot be cancelled",
+    "alreadyCancelled": "This transaction has already been cancelled",
+    "invalidAmount": "Invalid amount entered",
+    "invalidType": "Invalid transaction type",
+    "txCancelled": "Transaction cancelled",
+    "txCreated": "Transaction added",
+    "txNotFound": "Transaction not found"
+  },
+  "shortCode": {
+    "generationFailed": "Couldn't generate a code, please try again"
+  },
+  "staff": {
+    "blocked": "The staff member is blocked, you cannot sign in",
+    "blockedSuccess": "Staff member blocked",
+    "created": "Staff member added successfully",
+    "fillTheRows": "Fill in all fields",
+    "invalidRole": "Invalid role selected",
+    "invalidSalaryValue": "Invalid value entered",
+    "loginTaken": "This login is already taken",
+    "notFound": "Staff member not found",
+    "profileUpdated": "Profile updated successfully",
+    "salaryTypeNotInTariff": "The selected salary type is not available in your current plan",
+    "unblocked": "Staff member unblocked",
+    "updated": "Staff member updated successfully"
+  },
+  "subject": {
+    "created": "Subject added successfully",
+    "fillTheRows": "Fill in all fields",
+    "invalidValue": "Invalid value entered",
+    "notFound": "Subject not found",
+    "updated": "Subject updated successfully"
+  },
+  "subscription": {
+    "invalidDuration": "Invalid subscription duration selected",
+    "transactionNotFound": "Payment transaction not found"
+  },
+  "syllabus": {
+    "imported": "The plan was imported",
+    "invalidCurrentLesson": "Invalid current lesson number",
+    "invalidModules": "Invalid module list",
+    "invalidOffset": "Invalid starting point",
+    "offsetUpdated": "The starting point was saved",
+    "saved": "The course plan was saved",
+    "sourceEmpty": "The selected group has no plan",
+    "subjectMismatch": "The source group belongs to another subject",
+    "titleRequired": "A topic name is required",
+    "tooManyLessons": "Too many topics in a single module (maximum 200)",
+    "tooManyModules": "Too many modules (maximum 50)"
+  },
+  "tariff": {
+    "featureNotAvailable": "This feature is not available in your tariff. Please upgrade.",
+    "notFound": "Plan not found"
+  },
+  "teachingPlan": {
+    "created": "Plan created",
+    "deleted": "Plan archived",
+    "duplicated": "Plan duplicated",
+    "notFound": "Plan not found",
+    "saved": "Plan saved",
+    "subjectNotAllowed": "This subject is not assigned to you",
+    "titleRequired": "Enter the plan name"
+  },
+  "telegram": {
+    "invalidLang": "Invalid language",
+    "langUpdated": "Message language updated",
+    "unlinked": "Telegram disconnected"
+  },
+  "validation": {
+    "month": "Invalid month format (YYYY-MM)"
   }
 }

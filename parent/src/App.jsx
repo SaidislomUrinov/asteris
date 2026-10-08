@@ -19,6 +19,8 @@ const Group = lazyPage(() => import("./pages/Group"), "Group");
 const Payments = lazyPage(() => import("./pages/Payments"), "Payments");
 const Notifications = lazyPage(() => import("./pages/Notifications"), "Notifications");
 const Settings = lazyPage(() => import("./pages/Settings"), "Settings");
+// Ishchi paneli (Boshliq/Hodim) — alohida chunk, ota-ona bundle'iga tushmaydi.
+const WorkerApp = lazyPage(() => import("./worker/WorkerApp"), "WorkerApp");
 
 const Shell = () => {
   useBackButton();
@@ -47,7 +49,7 @@ const Shell = () => {
 };
 
 export default function App() {
-  const { status, error, login } = useAuth();
+  const { status, error, login, isWorker, worker } = useAuth();
   let body;
   if (status === "loading")
     body = (
@@ -63,6 +65,12 @@ export default function App() {
       <div className="min-h-[70dvh] flex items-center justify-center">
         <ErrorState error={error} onRetry={login} />
       </div>
+    );
+  else if (isWorker)
+    body = (
+      <Suspense fallback={<Page><ListSkeleton count={4} /></Page>}>
+        <WorkerApp initial={worker} />
+      </Suspense>
     );
   else body = <Shell />;
   return (

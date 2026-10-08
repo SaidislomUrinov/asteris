@@ -5,6 +5,7 @@ import { cn } from "../utils/cn";
 import { useAuth } from "../contexts/auth";
 import { patchSettings } from "../api/parent";
 import { haptic } from "../lib/telegram";
+import { workerApi } from "../worker/api";
 
 const LANGS = ["uz", "ru", "en"];
 
@@ -12,7 +13,7 @@ const LANGS = ["uz", "ru", "en"];
 // (yuklanish, ulanmagan, asosiy) ko'rinadi.
 export const Top = () => {
   const { t, i18n } = useTranslation();
-  const { parent, setParent } = useAuth();
+  const { parent, setParent, isWorker } = useAuth();
   const [busy, setBusy] = useState(false);
   const cur = (i18n.language || "uz").slice(0, 2);
 
@@ -20,6 +21,12 @@ export const Top = () => {
     if (lang === cur || busy) return;
     haptic("light");
     i18n.changeLanguage(lang);
+    if (isWorker) {
+      // Ishchi: bot xabarlari tili ham shu (mavjud PATCH /telegram/lang).
+      // Xato bo'lsa ham UI tili lokal o'zgargan holda qoladi.
+      workerApi.setLang(lang).catch(() => {});
+      return;
+    }
     if (!parent) return; // hali kirmagan — faqat lokal
     setBusy(true);
     try {

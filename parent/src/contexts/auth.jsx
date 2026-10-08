@@ -4,14 +4,30 @@ import i18n from "../i18n";
 import { authTelegram, getMe } from "../api/parent";
 import { getToken, setToken, ROLE_MISMATCH_EVENT } from "../api/http";
 import { getInitData } from "../lib/telegram";
+import {
+  workerApi, getWorkerToken, setWorkerSession, clearWorkerSession, isWorkerKind, WORKER_SESSION_LOST,
+} from "../worker/api";
 
 const AuthCtx = createContext(null);
 
 // status: "loading" | "ready" | "notLinked" | "error"
+// mode: "parent" (ota-ona/o'quvchi — eski Shell) | "worker" (Boshliq/Hodim —
+// WorkerApp, docs/API_CONTRACT_worker_webapp.md §1, §5)
 export const AuthProvider = ({ children }) => {
   const [status, setStatus] = useState("loading");
   const [parent, setParent] = useState(null);
   const [error, setError] = useState(null);
+  const [mode, setMode] = useState("parent");
+  const [worker, setWorker] = useState(null);
+
+  const enterWorker = useCallback((w) => {
+    setToken(null);
+    setParent(null);
+    setWorker(w);
+    if (w?.lang && w.lang !== i18n.language) i18n.changeLanguage(w.lang);
+    setMode("worker");
+    setStatus("ready");
+  }, []);
 
   const applyParent = useCallback((p) => {
     setParent(p);
@@ -24,6 +40,15 @@ export const AuthProvider = ({ children }) => {
     try {
       const initData = getInitData();
       let p;
+      // Brauzer sinovi: sessiyada ishchi tokeni bor — /worker/me bilan tiklaymiz.
+      if (getWorkerToken() && !initData) {
+        try {
+          enterWorker(await workerApi.me());
+          return;
+        } catch {
+          clearWorkerSession();
+        }
+      }
       if (getToken() && !initData) {
         // Brauzer sinovi: sessiyada token bor — qayta login shart emas
         try {
@@ -35,20 +60,31 @@ export const AuthProvider = ({ children }) => {
       if (!p) {
         if (!initData) throw Object.assign(new Error("parent.noTelegram"), { code: "parent.noTelegram" });
         const res = await authTelegram(initData);
+        // Ustuvorlik serverda: Client > Staff > Ota-ona (§0). `kind` yo'q —
+        // eski server, ota-ona oqimi o'zgarishsiz.
+        if (isWorkerKind(res?.kind)) {
+          setWorkerSession(res.access, res.kind);
+          enterWorker(res.worker || (await workerApi.me()));
+          return;
+        }
+        clearWorkerSession();
         setToken(res.access);
         p = res.parent;
       }
       applyParent(p);
+      setMode("parent");
       setStatus("ready");
     } catch (e) {
       setToken(null);
+      clearWorkerSession();
+      setWorker(null);
       if (e.code === "parent.notLinked" || e.code === "parent.noTelegram") setStatus("notLinked");
       else {
         setError(e);
         setStatus("error");
       }
     }
-  }, [applyParent]);
+  }, [applyParent, enterWorker]);
 
   useEffect(() => {
     const id = setTimeout(login, 0);
@@ -71,9 +107,25 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener(ROLE_MISMATCH_EVENT, onMismatch);
   }, [applyParent]);
 
+  // Ishchi sessiyasi qayta kirish bilan ham tiklanmadi — xato ekrani
+  // ("Qayta urinish" → login).
+  useEffect(() => {
+    const onLost = () => {
+      clearWorkerSession();
+      setWorker(null);
+      setError(Object.assign(new Error("auth.failed"), { code: "auth.failed" }));
+      setStatus("error");
+    };
+    window.addEventListener(WORKER_SESSION_LOST, onLost);
+    return () => window.removeEventListener(WORKER_SESSION_LOST, onLost);
+  }, []);
+
   const logout = useCallback(() => {
     setToken(null);
+    clearWorkerSession();
     setParent(null);
+    setWorker(null);
+    setMode("parent");
     setStatus("notLinked");
   }, []);
 
@@ -88,8 +140,9 @@ export const AuthProvider = ({ children }) => {
     () => ({
       status, parent, error, login, logout, setParent: applyParent,
       role, isStudent: role === "student", availableRoles,
+      mode, worker, isWorker: mode === "worker",
     }),
-    [status, parent, error, login, logout, applyParent, role, availableRoles],
+    [status, parent, error, login, logout, applyParent, role, availableRoles, mode, worker],
   );
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 };

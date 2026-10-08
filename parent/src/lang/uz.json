@@ -14,7 +14,11 @@
     "paid": "To'langan",
     "debtShort": "Qarz {{v}} so'm",
     "prevMonth": "Oldingi oy",
-    "nextMonth": "Keyingi oy"
+    "nextMonth": "Keyingi oy",
+    "fileTypeNotAllowed": "Bu turdagi faylni yuklab bo'lmaydi",
+    "invalidInput": "Ma'lumot noto'g'ri kiritilgan",
+    "notFound": "Topilmadi",
+    "tooManyRequests": "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring"
   },
   "error": {
     "title": "Xatolik yuz berdi",
@@ -26,7 +30,13 @@
     "500": "Server xatosi"
   },
   "auth": {
-    "failed": "Sessiya tugadi. Ilovani qayta oching."
+    "failed": "Sessiya tugadi. Ilovani qayta oching.",
+    "fillTheRows": "Barcha maydonlarni to'ldiring",
+    "forbidden": "Bu amal uchun ruxsatingiz yo'q",
+    "introSeen": "Tanishuv yakunlandi",
+    "notFound": "Kirish ma'lumotlari yoki parol noto'g'ri",
+    "signOut": "Tizimdan muvaffaqiyatli chiqdingiz",
+    "success": "Muvaffaqiyatli kirdingiz"
   },
   "parent": {
     "notLinked": "Telegram hisobingiz ulanmagan",
@@ -89,7 +99,28 @@
     },
     "room": "{{r}}-xona",
     "notFound": "Guruh topilmadi",
-    "telegram": "Telegram guruh"
+    "telegram": "Telegram guruh",
+    "activated": "Guruh faollashtirildi",
+    "activationIncomplete": "Faollashtirish uchun o'qituvchi, xona, dars kunlari va vaqtini to'liq kiriting",
+    "alreadyActivated": "Guruh allaqachon faollashtirilgan",
+    "assistantNotFound": "Yordamchi o‘qituvchi topilmadi",
+    "created": "Guruh muvaffaqiyatli qo'shildi",
+    "fillTheRows": "Barcha majburiy maydonlarni to'ldiring",
+    "finished": "Guruh yakunlandi",
+    "holidayMarked": "Dam olish kuni belgilandi",
+    "holidayUnmarked": "Belgi olib tashlandi",
+    "invalidDate": "Noto'g'ri sana formati",
+    "invalidDays": "Noto'g'ri dars kuni tanlandi",
+    "invalidMaxStudents": "Kiritilgan qiymat noto'g'ri",
+    "invalidName": "Guruh nomini kiriting",
+    "invalidStartDate": "Boshlanish sanasi noto'g'ri formatda",
+    "invalidTelegramLink": "Telegram havolasi noto'g'ri. Masalan: https://t.me/+AbCd yoki @guruh",
+    "notActive": "Guruh faol holatda emas",
+    "renamed": "Guruh nomi yangilandi",
+    "rescheduled": "Dars jadvali yangilandi",
+    "scheduleFinished": "Yakunlangan guruh jadvali o'zgartirilmaydi",
+    "teacherNotFound": "Tanlangan o'qituvchi topilmadi",
+    "telegramUpdated": "Telegram guruh manzili yangilandi"
   },
   "days": {
     "mon": "Du",
@@ -283,7 +314,45 @@
       "notifHint": "Xabarlar barcha guruhlaringiz uchun bir xil. Markazning o'zi o'chirgan turlar kelmaydi.",
       "childrenHint": "Guruhingiz ko'rinmayaptimi? Markaz o'quvchi kartasiga shu raqamni kiritishi kerak.",
       "unlinkText": "Telegram hisobingiz uziladi va xabarlar kelmaydi. Qayta ulash uchun botda /start bosasiz."
-    }
+    },
+    "alreadyEnrolled": "Bu o'quvchi allaqachon shu guruhga yozilgan",
+    "alreadyLeft": "O'quvchi allaqachon guruhdan chiqarilgan",
+    "created": "O'quvchi muvaffaqiyatli qo'shildi",
+    "fillTheRows": "Barcha majburiy maydonlarni to'ldiring",
+    "forMonthBeforeStart": "Darslar boshlanishidan oldingi oy uchun to'lov olib bo'lmaydi",
+    "groupEntryNotFound": "Yozuv topilmadi",
+    "groupFinished": "Bu guruh yakunlangan, o'quvchi qo'sha olmaysiz",
+    "importDone": "O'quvchilar import qilindi",
+    "importEmptyRows": "Import uchun qator topilmadi",
+    "importTooManyRows": "Bir martada 300 tadan ko'p qator import qilib bo'lmaydi",
+    "invalidAmount": "To'lov summasi noto'g'ri",
+    "invalidCycle": "Bu oy uchun summani o'zgartirib bo'lmaydi",
+    "invalidMonth": "Oy noto'g'ri tanlangan",
+    "invalidName": "Ism kamida 2 ta harfdan iborat bo'lsin",
+    "invalidPaymentType": "To'lov turi noto'g'ri",
+    "invalidPhone": "Telefon raqami noto'g'ri",
+    "invalidPrice": "Narx noto'g'ri kiritilgan",
+    "left": "O'quvchi guruhdan chiqarildi",
+    "limitReached": "Tarifingiz bo'yicha ruxsat etilgan o'quvchilar soni tugagan",
+    "notFound": "O'quvchi topilmadi",
+    "notInGroup": "O'quvchi bu guruhda emas",
+    "openingDebtsSaved": "Qarz ma'lumotlari saqlandi",
+    "openingMonthDuplicate": "Bu oy allaqachon qo'shilgan",
+    "openingMonthFuture": "Kelajak oyni tanlab bo'lmaydi",
+    "openingMonthInvalid": "Oy noto'g'ri kiritilgan",
+    "openingTooMany": "Ko'pi bilan 36 ta oy qo'shish mumkin",
+    "paymentAdded": "To'lov muvaffaqiyatli qo'shildi",
+    "paymentCancelled": "To'lov bekor qilindi",
+    "paymentMonthMoved": "To'lov oyi o'zgartirildi",
+    "paymentNotCancellable": "Bu to'lovni bekor qilib bo'lmaydi",
+    "paymentNotFound": "To'lov topilmadi",
+    "paymentNotMovable": "Faqat to'langan to'lov oyini o'zgartirish mumkin",
+    "paymentSameMonth": "Bu allaqachon shu oy uchun",
+    "sharedContactLocked": "Bu o'quvchi boshqa markazda ham o'qiydi — telefon, ota-ona raqami va Telegram raqamlarini o'zgartirib bo'lmaydi",
+    "transferNotActive": "Faqat faol a'zolikni o'tkazish mumkin",
+    "transferSameGroup": "O'quvchi allaqachon shu guruhda",
+    "transferred": "O'quvchi boshqa guruhga o'tkazildi",
+    "updated": "O'quvchi ma'lumotlari yangilandi"
   },
   "rankCard": {
     "title": "Guruhdagi o'rin",
@@ -387,5 +456,697 @@
     "finished": "Dastur yakunlandi",
     "empty": "Dars rejasi hali tuzilmagan",
     "emptyText": "O'qituvchi dasturni kiritgach, mavzular shu yerda ko'rinadi."
+  },
+  "client": {
+    "blocked": "Hisobingiz bloklangan. WENET qo'llab-quvvatlash xizmatiga murojaat qiling.",
+    "alreadySubscribed": "Sizda allaqachon faol obuna mavjud",
+    "fillTheRows": "Barcha maydonlarni to'ldiring",
+    "noActiveSubscription": "Faol obuna topilmadi",
+    "notFound": "Mijoz topilmadi",
+    "phoneTaken": "Bu telefon raqam band",
+    "profileUpdated": "Profil yangilandi",
+    "subscriptionExpired": "Obuna muddati tugagan — o'zgartirish amallar bloklangan. Davom etish uchun obunani yangilang"
+  },
+  "center": {
+    "blocked": "Filialingiz bloklangan. Rahbaringizga murojaat qiling.",
+    "created": "Filial muvaffaqiyatli qo'shildi",
+    "deleted": "Filial muvaffaqiyatli o'chirildi",
+    "fillTheRows": "Filial nomini kiriting",
+    "keepCountMismatch": "Tarif limitiga teng miqdorda filial tanlang",
+    "limitReached": "Tarifingiz bo'yicha ruxsat etilgan filiallar soni tugagan",
+    "noOverflow": "Tarif limitidan ortiq filial yo'q",
+    "notFound": "Filial topilmadi",
+    "overflowPending": "Tarif limitidan ortiq faol filiallar bor. Avval qaysi filiallar faol qolishini tanlang",
+    "overflowResolved": "Filiallar tanlovi saqlandi",
+    "parentNotifInvalid": "Ota-ona bildirishnoma sozlamalari noto'g'ri",
+    "unblocked": "Filial qayta yoqildi",
+    "updated": "Filial muvaffaqiyatli yangilandi"
+  },
+  "worker": {
+    "live": "Jonli",
+    "offline": "Oflayn",
+    "allCenters": "Barcha filiallar",
+    "unit": {
+      "k": "ming",
+      "mln": "mln",
+      "bln": "mlrd"
+    },
+    "role": {
+      "owner": "Boshliq",
+      "reception": "Resepshn",
+      "teacher": "O'qituvchi",
+      "assistant": "Yordamchi",
+      "manager": "Menejer",
+      "staff": "Hodim"
+    },
+    "tab": {
+      "today": "Bugun",
+      "finance": "Moliya",
+      "debtors": "Qarzdorlar",
+      "leads": "Lidlar",
+      "groups": "Guruhlar",
+      "salary": "Oylik",
+      "grades": "Baholar",
+      "notifications": "Xabarlar",
+      "profile": "Profil",
+      "menu": "Menyu"
+    },
+    "fab": {
+      "report": "Hisobot",
+      "payment": "To'lov",
+      "attendance": "Davomat"
+    },
+    "readOnly": {
+      "title": "Faqat ko'rish rejimi",
+      "text": "Obuna muddati tugagan. Ma'lumotlarni ko'rish mumkin, o'zgartirish esa to'lovdan keyin ochiladi.",
+      "fab": "Obuna tugagan — yangi amallar vaqtincha yopiq."
+    },
+    "kpi": {
+      "revenueToday": "Tushum",
+      "attendanceRate": "Davomat",
+      "debtTotal": "Qarzdorlik",
+      "cashToday": "Kassa",
+      "paymentsCount": "To'lovlar",
+      "debtorsCount": "Qarzdor",
+      "lessonsToday": "Darslar",
+      "studentsToday": "O'quvchi",
+      "salaryMonth": "Oylik",
+      "gradesPending": "Baho kutadi"
+    },
+    "today": {
+      "title": "Bugun, {{date}}",
+      "now": "Hozir",
+      "feed": {
+        "reception": "{{center}}",
+        "teacher": "Darslarim",
+        "assistant": "Yordam beradigan guruhlarim",
+        "owner": "Barcha filiallar"
+      },
+      "empty": "Bugun voqealar yo'q",
+      "emptyText": "Darslar, to'lovlar va boshqa voqealar shu yerda vaqt bo'yicha paydo bo'ladi.",
+      "students": "{{count}} o'quvchi",
+      "lessonNow": "Hozir davom etmoqda",
+      "payment": "To'lov",
+      "dueToday": "Bugun to'lov kuni · {{count}} kishi",
+      "dueTodaySum": "Jami {{amount}} so'm",
+      "list": "Ro'yxat",
+      "lead": "Lid: {{name}}",
+      "expense": "Xarajat",
+      "gradesPending": "{{count}} o'quvchiga baho qo'yilmagan",
+      "rate": "Baho qo'yish",
+      "homeworkMissing": "Uyga vazifa kiritilmagan",
+      "eveningReport": "Kechki hisobot",
+      "eveningReportSub": "Kun yakuni Telegramga yuboriladi"
+    },
+    "att": {
+      "title": "Davomat",
+      "count": {
+        "present": "{{count}} keldi",
+        "absent": "{{count}} kelmadi",
+        "late": "{{count}} kechikdi",
+        "excused": "{{count}} sababli",
+        "unmarked": "{{count}} belgilanmagan"
+      },
+      "status": {
+        "present": "Keldi",
+        "absent": "Kelmadi",
+        "excused": "Sababli"
+      },
+      "late": "Kechikdi",
+      "markRest": "Qolganlarini \"keldi\" qilish ({{count}})",
+      "allMarked": "Hammasi belgilandi",
+      "noLesson": "Hozir dars yo'q",
+      "noLessonText": "Davomat oynasi dars vaqtida ochiladi.",
+      "noStudents": "Guruhda o'quvchi yo'q"
+    },
+    "payType": {
+      "cash": "Naqd",
+      "card": "Karta",
+      "mixed": "Aralash",
+      "previousMonth": "O'tgan oy"
+    },
+    "pay": {
+      "title": "To'lov qabul qilish",
+      "student": "O'quvchi",
+      "change": "Boshqa o'quvchi",
+      "searchPh": "Ism yoki telefon raqami",
+      "searchHint": "O'quvchini topish uchun kamida 2 ta belgi yozing.",
+      "notFound": "O'quvchi topilmadi",
+      "notFoundText": "Ism yoki raqamni tekshirib qayta urinib ko'ring.",
+      "noEntries": "To'lov uchun guruh yo'q",
+      "noEntriesText": "O'quvchi faol guruhda emas yoki qarzi yo'q.",
+      "group": "Guruh",
+      "groupMonth": "Guruh · oy",
+      "debt": "Qarzi",
+      "noDebt": "Qarzi yo'q",
+      "amount": "Summa",
+      "notePh": "Izoh (ixtiyoriy)",
+      "submit": "Qabul qilish {{amount}}",
+      "success": "{{name}}: {{amount}} so'm qabul qilindi"
+    },
+    "finance": {
+      "title": "Moliya",
+      "revenue": "Oylik tushum",
+      "expenses": "Xarajatlar",
+      "debt": "Qarzdorlik",
+      "net": "Sof qoldiq",
+      "students": "Faol o'quvchi",
+      "groups": "Faol guruh",
+      "openReport": "Batafsil hisobot",
+      "recent": "Oxirgi to'lovlar",
+      "noPayments": "Hali to'lov yo'q"
+    },
+    "report": {
+      "title": "Hisobot",
+      "period": {
+        "today": "Bugun",
+        "week": "7 kun",
+        "month": "Shu oy"
+      },
+      "total": "Jami tushum",
+      "count": "{{count}} ta to'lov",
+      "byCollector": "Kim qabul qildi",
+      "empty": "Bu davrda to'lov yo'q",
+      "unknownCollector": "Noma'lum"
+    },
+    "debtors": {
+      "title": "Qarzdorlar",
+      "summary": "{{count}} kishi · {{amount}} so'm",
+      "searchPh": "Ism yoki telefon",
+      "empty": "Qarzdor yo'q",
+      "emptyText": "Barcha o'quvchilar to'lovni vaqtida qilgan."
+    },
+    "leads": {
+      "title": "Lidlar",
+      "total": "Jami {{count}} ta",
+      "filter": {
+        "open": "Ochiq",
+        "new": "Yangi",
+        "contacted": "Bog'lanilgan"
+      },
+      "status": {
+        "new": "Yangi",
+        "contacted": "Bog'lanilgan",
+        "enrolled": "Yozildi",
+        "rejected": "Rad etildi"
+      },
+      "source": {
+        "walkIn": "O'zi keldi",
+        "phone": "Telefon",
+        "instagram": "Instagram",
+        "telegram": "Telegram",
+        "friend": "Tavsiya",
+        "banner": "Banner",
+        "website": "Sayt",
+        "other": "Boshqa"
+      },
+      "empty": "Lid yo'q",
+      "emptyText": "Yangi murojaatlar shu yerda ko'rinadi."
+    },
+    "groups": {
+      "title": "Guruhlarim",
+      "count": "{{count}} ta faol guruh",
+      "empty": "Faol guruh yo'q",
+      "titleAll": "Guruhlar",
+      "countAny": "{{count}} ta guruh",
+      "emptyAny": "Guruh yo'q"
+    },
+    "salary": {
+      "title": "Oylik",
+      "final": "Qo'lga tegadi",
+      "base": "Hisoblangan",
+      "advance": "Berilgan",
+      "bonus": "Bonus",
+      "penalty": "Jarima",
+      "history": "Tranzaksiyalar",
+      "noTx": "Bu oyda tranzaksiya yo'q",
+      "type": {
+        "fixed": "Belgilangan oylik",
+        "percentage": "Foizli oylik"
+      },
+      "tx": {
+        "advance": "Avans",
+        "withdrawal": "Oldindan olish",
+        "bonus": "Bonus",
+        "penalty": "Jarima"
+      }
+    },
+    "grades": {
+      "title": "Baholar",
+      "subtitle": "Bugungi dars uchun 1–10 ball",
+      "avg": "Oy o'rtachasi: {{v}}",
+      "noAvg": "Bu oyda baho yo'q",
+      "pending": "Baho yo'q"
+    },
+    "notif": {
+      "title": "Xabarlar",
+      "readAll": "Hammasini o'qish",
+      "empty": "Xabarlar yo'q",
+      "emptyText": "Bildirishnomalar shu yerda ko'rinadi."
+    },
+    "profile": {
+      "title": "Profil",
+      "organization": "Tashkilot",
+      "access": "Ruxsatlar",
+      "fullAccess": "To'liq",
+      "permsCount": "{{count}} ta ruxsat",
+      "realtime": "Jonli yangilanish",
+      "centers": "Filiallar",
+      "center": "Filial",
+      "hint": "Panel Telegram hisobingiz orqali ochiladi. Tilni yuqoridagi tugmalar bilan almashtiring.",
+      "close": "Ilovani yopish"
+    },
+    "errors": {
+      "auth": {
+        "failed": "Sessiya tugadi. Ilovani qayta oching.",
+        "forbidden": "Bu amal uchun ruxsatingiz yo'q."
+      },
+      "worker": {
+        "centerNotFound": "Filial topilmadi."
+      },
+      "client": {
+        "subscriptionExpired": "Obuna muddati tugagan — o'zgartirish vaqtincha yopiq.",
+        "blocked": "Hisob bloklangan."
+      },
+      "center": {
+        "blocked": "Filial bloklangan.",
+        "overflowPending": "Tarif limitidan ortiq filial bor — avval veb-panelda filial tanlang."
+      },
+      "tariff": {
+        "featureNotAvailable": "Bu imkoniyat tarifingizda yo'q."
+      },
+      "lesson": {
+        "none": "Hozir dars yo'q."
+      },
+      "student": {
+        "invalidAmount": "Summani to'g'ri kiriting.",
+        "invalidMonth": "Oy noto'g'ri.",
+        "invalidPaymentType": "To'lov turi noto'g'ri.",
+        "notFound": "O'quvchi topilmadi.",
+        "groupEntryNotFound": "Guruh a'zoligi topilmadi.",
+        "groupFinished": "Guruh yakunlangan — to'lov qabul qilinmaydi.",
+        "forMonthBeforeStart": "Kurs boshlanishidan oldingi oyga to'lov yozib bo'lmaydi.",
+        "notInGroup": "O'quvchi bu guruhda emas."
+      },
+      "attendance": {
+        "invalidStatus": "Davomat holati noto'g'ri.",
+        "notLessonDay": "Bugun bu guruhda dars kuni emas.",
+        "teacherDateLimit": "Faqat bugun va kecha uchun belgilash mumkin.",
+        "conflict": "Davomat boshqa joyda o'zgartirildi, qayta urinib ko'ring.",
+        "invalidMonth": "Oy noto'g'ri.",
+        "futureMonthNotAllowed": "Kelajak oy uchun ma'lumot yo'q."
+      },
+      "calendar": {
+        "centerHoliday": "Bugun filialda dam olish kuni."
+      },
+      "grade": {
+        "invalidValue": "Baho 1 dan 10 gacha bo'lishi kerak.",
+        "studentAbsent": "Kelmagan o'quvchiga baho qo'yib bo'lmaydi.",
+        "studentExcused": "Sababli kelmagan o'quvchiga baho qo'yib bo'lmaydi.",
+        "futureNotAllowed": "Kelajak sanaga baho qo'yib bo'lmaydi.",
+        "notFound": "Baho topilmadi."
+      },
+      "group": {
+        "notFound": "Guruh topilmadi.",
+        "invalidDate": "Sana noto'g'ri."
+      },
+      "staff": {
+        "notFound": "Hodim topilmadi."
+      },
+      "homework": {
+        "groupFinished": "Yakunlangan guruhga vazifa yozib bo'lmaydi.",
+        "invalidDate": "Sana noto'g'ri.",
+        "tooLong": "Vazifa matni 2000 belgidan oshmasligi kerak.",
+        "invalidText": "Vazifa matni noto'g'ri."
+      }
+    },
+    "back": "Orqaga",
+    "menu": {
+      "title": "Menyu",
+      "sections": "Bo'limlar",
+      "empty": "Bo'limlar yo'q",
+      "emptyText": "Sizga ochiq bo'limlar bu yerda ko'rinadi."
+    },
+    "group": {
+      "title": "Guruh",
+      "status": {
+        "active": "Faol",
+        "pending": "Boshlanmagan",
+        "finished": "Yakunlangan"
+      },
+      "tab": {
+        "students": "O'quvchilar",
+        "attendance": "Davomat",
+        "grades": "Baholar",
+        "homework": "Uyga vazifa",
+        "plan": "Reja"
+      },
+      "noTeacher": "O'qituvchi biriktirilmagan",
+      "assistant": "Yordamchi",
+      "studentsLabel": "o'quvchi",
+      "telegram": "Telegram guruh",
+      "actions": "Amallar",
+      "studentsCount": "{{count}} ta o'quvchi",
+      "noStudentAccess": "O'quvchilar ro'yxati yopiq",
+      "noStudentAccessText": "Ro'yxatni ko'rish uchun \"O'quvchilarni ko'rish\" ruxsati kerak.",
+      "noTabs": "Bu guruh bo'yicha ko'rish uchun ruxsat yo'q",
+      "att": {
+        "noDays": "Bu oyda dars kunlari yo'q",
+        "noDaysText": "Guruh hali boshlanmagan yoki bu oyda dars bo'lmagan.",
+        "excuseTitle": "Sababli",
+        "excuseSave": "Saqlash",
+        "reasonPh": "Sabab (ixtiyoriy)"
+      },
+      "lock": {
+        "holiday": "Bu kun dam olish — davomat va baho qo'yilmaydi.",
+        "future": "Bu dars hali bo'lmagan.",
+        "transferred": "Boshqa guruhdan o'tgan yozuv — faqat ko'rish uchun.",
+        "teacherLimit": "O'qituvchi faqat bugun va kecha uchun belgilay oladi.",
+        "readOnly": "Obuna tugagan — faqat ko'rish rejimi.",
+        "groupFinished": "Guruh yakunlangan — vazifa yozib bo'lmaydi.",
+        "noDay": "Dars kuni tanlanmagan."
+      },
+      "grades": {
+        "remove": "Bahoni o'chirish",
+        "removed": "Baho o'chirildi"
+      },
+      "plan": {
+        "current": "Joriy",
+        "homework": "Vazifa",
+        "module": "{{n}}-modul · {{title}}",
+        "noLessons": "Darslar yo'q",
+        "progress": "O'tildi: {{done}} / {{total}} dars",
+        "finished": "Dastur tugagan",
+        "empty": "Kurs dasturi tuzilmagan",
+        "emptyText": "Dastur veb-panelda tuziladi."
+      }
+    },
+    "homework": {
+      "forDate": "{{date}} uchun vazifa",
+      "placeholder": "Vazifa matnini yozing…",
+      "send": "Yuborish",
+      "delete": "O'chirish",
+      "none": "Vazifa berilmagan",
+      "hint": "Saqlangach o'quvchilarga Telegram orqali yuboriladi (taxminan 2 daqiqada).",
+      "saved": "Vazifa saqlandi — o'quvchilarga Telegram orqali yuboriladi",
+      "deleted": "Vazifa o'chirildi",
+      "deleteTitle": "Vazifani o'chirasizmi?",
+      "deleteText": "Matn bo'sh — shu kundagi vazifa o'chiriladi.",
+      "history": "Oxirgi vazifalar",
+      "empty": "Bu oyda vazifa yo'q"
+    },
+    "search": {
+      "title": "Qidiruv",
+      "ph": "O'quvchi, telefon yoki guruh",
+      "phGroups": "Guruh nomi yoki fan",
+      "hintTitle": "Nimani qidiramiz?",
+      "hint": "Kamida 2 ta belgi yozing.",
+      "students": "O'quvchilar",
+      "groups": "Guruhlar",
+      "noStudents": "O'quvchi topilmadi",
+      "noGroups": "Guruh topilmadi",
+      "empty": "Hech narsa topilmadi",
+      "emptyText": "So'rovni tekshirib qayta urinib ko'ring."
+    },
+    "student": {
+      "title": "O'quvchi",
+      "parentPhone": "Ota-ona raqami",
+      "callStudent": "O'quvchiga qo'ng'iroq",
+      "callParent": "Ota-onaga qo'ng'iroq",
+      "callStudentShort": "O'quvchi",
+      "callParentShort": "Ota-ona",
+      "pay": "To'lov",
+      "open": "Profilni ochish",
+      "tg": {
+        "student": "O'quvchi",
+        "parent": "Ota-ona",
+        "linked": "ulangan",
+        "none": "ulanmagan"
+      },
+      "groups": "Guruhlari",
+      "noGroups": "Faol guruh yo'q",
+      "entry": {
+        "active": "Faol",
+        "left": "Chiqqan",
+        "finished": "Yakunlangan",
+        "archived": "Arxivda"
+      },
+      "price": "Oylik narx",
+      "opening": "Oldingi qarz",
+      "moreMonths": "yana {{count}} oy",
+      "payments": "To'lovlar tarixi",
+      "noPayments": "To'lov yo'q",
+      "forMonth": "{{month}} uchun",
+      "payStatus": {
+        "cancelled": "Bekor qilingan",
+        "refunded": "Qaytarilgan"
+      },
+      "summary": "Davomat va baholar",
+      "attendance": "Davomat",
+      "gradeAvg": "O'rtacha baho",
+      "gradesCount": "{{count}} ta baho",
+      "teacherScope": "Faqat yutuqlar va o'z guruhlaringiz"
+    },
+    "centerNotFound": "Filial topilmadi",
+    "qr": {
+      "title": "QR davomat",
+      "popupText": "O'quvchi QR kartasini kameraga tuting",
+      "hint": "Kartalarni ketma-ket o'qiting — skaner yopilmaydi.",
+      "start": "Skanerlashni boshlash",
+      "stop": "Skanerni yopish",
+      "scanner": "QR skaner",
+      "sending": "Yuborilmoqda…",
+      "session": "Sessiya",
+      "total": "Jami: {{count}}",
+      "recent": "Oxirgi skanerlar",
+      "empty": "Hali skanerlanmagan",
+      "emptyText": "Skanerni oching va o'quvchi kartasini kameraga tuting.",
+      "noAccess": "QR davomat yopiq",
+      "noAccessText": "Buning uchun davomat belgilash ruxsati va tarifda QR davomat bo'lishi kerak.",
+      "status": {
+        "present": "Keldi",
+        "late": "Kechikdi",
+        "duplicate": "Takroriy",
+        "error": "Xato"
+      },
+      "noTelegram": {
+        "title": "Faqat Telegram'da",
+        "text": "QR skaner faqat Telegram ilovasida ishlaydi. Paneldan Telegram orqali kiring."
+      },
+      "oldVersion": {
+        "title": "Telegram'ni yangilang",
+        "text": "QR skaner uchun Telegram ilovasining yangi versiyasi kerak."
+      },
+      "pickTitle": "Guruhni tanlang",
+      "pickHint": "Bugun bir nechta guruhda dars bor. Qaysi biriga yozilsin?"
+    }
+  },
+  "archive": {
+    "alreadyArchived": "Allaqachon arxivlangan",
+    "archived": "Arxivlandi",
+    "groupStillArchived": "Avval guruhni arxivdan qaytaring",
+    "notArchived": "Bu yozuv arxivda emas",
+    "notFound": "Arxivda topilmadi",
+    "restored": "Arxivdan qaytarildi"
+  },
+  "attendance": {
+    "conflict": "Davomat bir vaqtda o'zgartirildi. Iltimos, qayta urinib ko'ring",
+    "futureMonthNotAllowed": "Kelajak oy uchun statistika mavjud emas",
+    "invalidMonth": "Noto'g'ri oy formati",
+    "invalidQr": "QR kod yaroqsiz yoki tanilmadi",
+    "invalidStatus": "Noto'g'ri davomat holati",
+    "marked": "Davomat belgilandi",
+    "noLessonToday": "Bu o‘quvchining bugun hech bir guruhda darsi yo‘q",
+    "notLessonDay": "Bugun bu guruh uchun dars kuni emas",
+    "settingsUpdated": "Davomat sozlamalari yangilandi",
+    "studentNotInCenter": "Bu o'quvchi sizning markazingizga biriktirilmagan",
+    "studentNotInGroup": "Bu o'quvchi tanlangan guruhda emas",
+    "teacherDateLimit": "O‘qituvchi faqat bugungi va kechagi davomatni belgilay oladi",
+    "markedLate": "Kelgan (kechikkan) deb belgilandi",
+    "alreadyMarked": "Bu o'quvchi bugun allaqachon belgilangan",
+    "chooseGroupTitle": "Guruhni tanlang",
+    "chooseGroupHint": "{{name}} bugun bir nechta guruhda darsga ega. Qaysi biriga yozilsin?"
+  },
+  "billing": {
+    "invalidCycleMode": "Noto'g'ri to'lov sikli rejimi",
+    "settingsUpdated": "To'lov sozlamasi yangilandi"
+  },
+  "calendar": {
+    "centerHoliday": "Bu kun filial uchun dam olish kuni — davomat belgilanmaydi",
+    "datesRequired": "Kamida bitta sanani tanlang",
+    "invalidDate": "Sana noto'g'ri",
+    "invalidMonth": "Oy noto'g'ri",
+    "invalidNote": "Izoh juda uzun",
+    "marked": "Dam olish kuni belgilandi",
+    "unmarked": "Belgi olib tashlandi"
+  },
+  "certificate": {
+    "issued": "Sertifikat berildi",
+    "issuedBulk": "{{count}} o'quvchiga sertifikat berildi",
+    "noActiveStudents": "Guruhda faol o'quvchi yo'q",
+    "notFound": "Sertifikat topilmadi"
+  },
+  "certificateTemplate": {
+    "backgroundRequired": "Fon rasmini yuklang",
+    "created": "Shablon yaratildi",
+    "deleted": "Shablon o'chirildi",
+    "fillTheRows": "Barcha maydonlarni to'ldiring",
+    "invalidFields": "Maydonlar noto'g'ri formatda",
+    "limitReached": "Bu filial uchun shablon chegarasiga (10 ta) yetdingiz",
+    "notFound": "Shablon topilmadi",
+    "updated": "Shablon yangilandi"
+  },
+  "chat": {
+    "imageRequired": "Rasm tanlang",
+    "invalidLang": "Til noto'g'ri tanlangan",
+    "notFound": "Suhbat topilmadi",
+    "textRequired": "Xabar matnini kiriting"
+  },
+  "expense": {
+    "alreadyCancelled": "Bu xarajat allaqachon bekor qilingan",
+    "cancelled": "Bu xarajat bekor qilingan, tahrirlab bo'lmaydi",
+    "created": "Xarajat muvaffaqiyatli qo'shildi",
+    "fillTheRows": "Barcha majburiy maydonlarni to'ldiring",
+    "invalidCategory": "Noto'g'ri kategoriya",
+    "invalidValue": "Kiritilgan summa noto'g'ri",
+    "notFound": "Xarajat topilmadi",
+    "updated": "Xarajat muvaffaqiyatli yangilandi"
+  },
+  "grade": {
+    "futureNotAllowed": "Kelajakdagi sanaga baho qo‘yib bo‘lmaydi",
+    "invalidValue": "Baho 1 dan 10 gacha bo‘lishi kerak",
+    "notFound": "Baho topilmadi",
+    "removed": "Baho o‘chirildi",
+    "saved": "Baho saqlandi",
+    "studentAbsent": "Ushbu o'quvchi {{date}} sana uchun darsga kelmagan",
+    "studentExcused": "Ushbu o'quvchi {{date}} sana uchun darsga sababli kelmagan — baho qo‘yilmaydi"
+  },
+  "homework": {
+    "groupFinished": "Yakunlangan guruhga vazifa yozib bo'lmaydi",
+    "invalidDate": "Sana noto'g'ri formatda",
+    "invalidText": "Vazifa matni noto'g'ri",
+    "tooLong": "Vazifa matni 2000 belgidan oshmasligi kerak"
+  },
+  "import": {
+    "batchAlreadyUndone": "Bu import allaqachon bekor qilingan",
+    "batchHasAttendance": "Import qilingan o'quvchilarda davomat bor — bekor qilib bo'lmaydi",
+    "batchHasPayments": "Import qilingan o'quvchilarda to'lov bor — bekor qilib bo'lmaydi",
+    "batchNotYours": "Bu importni faqat uni qilgan hodim yoki rahbar bekor qila oladi",
+    "batchTooOld": "24 soatdan eski importni bekor qilib bo'lmaydi",
+    "undone": "Import bekor qilindi"
+  },
+  "inpay": {
+    "createFailed": "To'lov yaratib bo'lmadi, qaytadan urinib ko'ring",
+    "invalidAmount": "To'lov summasi noto'g'ri",
+    "missingOrderId": "Buyurtma raqami topilmadi",
+    "notConfigured": "To'lov tizimi hozircha sozlanmagan, keyinroq urinib ko'ring",
+    "tokenMissing": "To'lov tizimidan ruxsat olinmadi"
+  },
+  "lead": {
+    "alreadyEnrolled": "Tanlanganlar orasida allaqachon guruhga qo'shilgan yoki rad etgan lid bor",
+    "created": "Lid qo'shildi",
+    "deleted": "Lid o'chirildi",
+    "enrolled": "Guruhga qo'shildi",
+    "fillTheRows": "Ism, telefon, filial va fanni kiriting",
+    "invalidPhone": "Telefon raqami noto'g'ri",
+    "invalidTime": "Tugash vaqti boshlanishdan keyin bo'lishi kerak",
+    "invalidValue": "Noto'g'ri qiymat",
+    "mixedSelection": "Faqat bitta fan va filialdagi lidlarni tanlang",
+    "noneSelected": "Hech kim tanlanmagan",
+    "notFound": "Lid topilmadi",
+    "updated": "Lid yangilandi"
+  },
+  "news": {
+    "notFound": "Yangilik topilmadi"
+  },
+  "notification": {
+    "allRead": "Barcha bildirishnomalar o'qildi",
+    "lessonReminderBody": "Dars {{startTime}} da boshlanadi — guruh #{{activeId}}",
+    "lessonReminderTitle": "Darsingizga 1 soat qoldi",
+    "notFound": "Bildirishnoma topilmadi"
+  },
+  "payment": {
+    "notFound": "To'lov topilmadi"
+  },
+  "report": {
+    "invalidRange": "Sana oralig'i noto'g'ri"
+  },
+  "room": {
+    "busyAtThisTime": "\"{{room}}\" xonasi {{day}} kuni soat {{start}}–{{end}} oralig'ida band (\"{{label}}\" guruhi)",
+    "created": "Xona muvaffaqiyatli qo'shildi",
+    "fillTheRows": "Barcha majburiy maydonlarni to'ldiring",
+    "notFound": "Xona topilmadi",
+    "updated": "Xona muvaffaqiyatli yangilandi"
+  },
+  "salary": {
+    "advanceNotCancellable": "Berilgan avansni bekor qilib bo'lmaydi",
+    "alreadyCancelled": "Bu tranzaksiya allaqachon bekor qilingan",
+    "invalidAmount": "Summa noto'g'ri kiritilgan",
+    "invalidType": "Noto'g'ri tranzaksiya turi",
+    "txCancelled": "Tranzaksiya bekor qilindi",
+    "txCreated": "Tranzaksiya qo'shildi",
+    "txNotFound": "Tranzaksiya topilmadi"
+  },
+  "shortCode": {
+    "generationFailed": "Kod yaratib bo'lmadi, qaytadan urinib ko'ring"
+  },
+  "staff": {
+    "blocked": "Hodim bloklangan, tizimga kira olmaysiz",
+    "blockedSuccess": "Hodim bloklandi",
+    "created": "Hodim muvaffaqiyatli qo'shildi",
+    "fillTheRows": "Barcha maydonlarni to'ldiring",
+    "invalidRole": "Noto'g'ri rol tanlandi",
+    "invalidSalaryValue": "Kiritilgan qiymat noto'g'ri",
+    "loginTaken": "Bu login band",
+    "notFound": "Hodim topilmadi",
+    "profileUpdated": "Profil muvaffaqiyatli yangilandi",
+    "salaryTypeNotInTariff": "Tanlangan oylik turi joriy tarifingizda mavjud emas",
+    "unblocked": "Hodim blokdan chiqarildi",
+    "updated": "Hodim muvaffaqiyatli yangilandi"
+  },
+  "subject": {
+    "created": "Fan muvaffaqiyatli qo'shildi",
+    "fillTheRows": "Barcha maydonlarni to'ldiring",
+    "invalidValue": "Kiritilgan qiymat noto'g'ri",
+    "notFound": "Fan topilmadi",
+    "updated": "Fan muvaffaqiyatli yangilandi"
+  },
+  "subscription": {
+    "invalidDuration": "Noto'g'ri obuna muddati tanlandi",
+    "transactionNotFound": "To'lov tranzaksiyasi topilmadi"
+  },
+  "syllabus": {
+    "imported": "Dastur import qilindi",
+    "invalidCurrentLesson": "Joriy dars raqami noto‘g‘ri",
+    "invalidModules": "Modul ro‘yxati noto‘g‘ri",
+    "invalidOffset": "Boshlanish nuqtasi noto‘g‘ri",
+    "offsetUpdated": "Boshlanish nuqtasi saqlandi",
+    "saved": "Kurs dasturi saqlandi",
+    "sourceEmpty": "Tanlangan guruhda dastur yo‘q",
+    "subjectMismatch": "Manba guruh boshqa fanga tegishli",
+    "titleRequired": "Mavzu nomi kerak",
+    "tooManyLessons": "Bitta modulda mavzular soni juda ko‘p (maksimum 200)",
+    "tooManyModules": "Modullar soni juda ko‘p (maksimum 50)"
+  },
+  "tariff": {
+    "featureNotAvailable": "Bu funksiya sizning tarifingizda mavjud emas. Tarifni yangilang.",
+    "notFound": "Tarif topilmadi"
+  },
+  "teachingPlan": {
+    "created": "Reja yaratildi",
+    "deleted": "Reja arxivlandi",
+    "duplicated": "Rejadan nusxa olindi",
+    "notFound": "Reja topilmadi",
+    "saved": "Reja saqlandi",
+    "subjectNotAllowed": "Bu fan sizga biriktirilmagan",
+    "titleRequired": "Reja nomini kiriting"
+  },
+  "telegram": {
+    "invalidLang": "Til noto'g'ri tanlangan",
+    "langUpdated": "Xabarlar tili yangilandi",
+    "unlinked": "Telegram bog'lanishi uzildi"
+  },
+  "validation": {
+    "month": "Oy noto'g'ri formatda (YYYY-MM)"
   }
 }

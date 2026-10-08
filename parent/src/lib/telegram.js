@@ -88,3 +88,51 @@ export const haptic = (type = "light") => {
 };
 
 export const closeApp = () => tg()?.close?.();
+
+// ── QR skaner (WebApp API 6.4+) ──────────────────────────────────────────
+// "ok" | "noTelegram" (oddiy brauzer — skript bo'lsa ham platforma
+// "unknown") | "oldVersion" (Telegram ilovasi eski).
+export const qrScanSupport = () => {
+  const app = tg();
+  if (!app || !app.platform || app.platform === "unknown") return "noTelegram";
+  try {
+    if (!app.isVersionAtLeast?.("6.4") || typeof app.showScanQrPopup !== "function") return "oldVersion";
+  } catch {
+    return "oldVersion";
+  }
+  return "ok";
+};
+
+// Callback `true` qaytarsa popup yopiladi, `false` — ochiq qoladi.
+export const showScanQr = (text, onText) => {
+  try {
+    tg()?.showScanQrPopup?.({ text }, onText);
+    return true;
+  } catch {
+    // Masalan popup allaqachon ochiq (WebAppScanQrPopupOpened).
+    return false;
+  }
+};
+
+export const closeScanQr = () => {
+  try {
+    tg()?.closeScanQrPopup?.();
+  } catch {
+    /* no-op */
+  }
+};
+
+export const onTgEvent = (name, fn) => {
+  try {
+    tg()?.onEvent?.(name, fn);
+  } catch {
+    /* no-op */
+  }
+};
+export const offTgEvent = (name, fn) => {
+  try {
+    tg()?.offEvent?.(name, fn);
+  } catch {
+    /* no-op */
+  }
+};
