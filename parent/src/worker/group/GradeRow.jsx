@@ -1,13 +1,15 @@
 import { useTranslation } from "react-i18next";
 import { HiOutlineTrash } from "react-icons/hi2";
-import { Pill } from "../../components/Card";
+import { Avatar, Pill } from "../../components/Card";
+import { initials } from "../../utils/format";
+import { photoSrc } from "../../lib/studentPhoto";
 import { cn } from "../../utils/cn";
 
 const VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 // Baholar tabidagi o'quvchi qatori: kelmagan bo'lsa pill (baho yo'q), aks
 // holda qiymat; ochilsa 1–10 tez tanlash va (ruxsat bo'lsa) o'chirish.
-export const GradeRow = ({ name, avg, value, blocked, open, editable, deletable, busy, onToggle, onRate, onRemove }) => {
+export const GradeRow = ({ name, photo, tone = 0, avg, value, blocked, open, editable, deletable, busy, onToggle, onRate, onRemove }) => {
   const { t } = useTranslation();
   const interactive = !blocked && (editable || (deletable && value));
   return (
@@ -18,6 +20,7 @@ export const GradeRow = ({ name, avg, value, blocked, open, editable, deletable,
         onClick={onToggle}
         className="w-full flex items-center justify-between gap-3 text-left disabled:cursor-default active:opacity-80"
       >
+        <Avatar text={initials(name)} tone={tone} src={photoSrc(photo)} alt={name} className="w-9 h-9 text-[12px]" />
         <div className="min-w-0 flex-1">
           <div className="font-bold text-[14.5px] leading-tight truncate">{name}</div>
           <div className="text-[12px] text-hint mt-0.5 tabular">{avg ? t("worker.grades.avg", { v: avg }) : t("worker.grades.noAvg")}</div>

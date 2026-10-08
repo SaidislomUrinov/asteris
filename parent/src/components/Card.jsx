@@ -1,4 +1,4 @@
-import { createElement } from "react";
+import { createElement, useState } from "react";
 import { cn } from "../utils/cn";
 
 export const Card = ({ className, children, onClick, as = "div", ...rest }) => {
@@ -43,13 +43,17 @@ export const Pill = ({ tone = "mut", children, className }) => {
 };
 
 // `src` berilsa — rasm (bir xil o'lcham/shakl, object-cover), aks holda initsiallar.
+// Rasm yuklanmasa (404/tarmoq) — shu `src` uchun initsiallarga qaytadi; `src`
+// o'zgarsa (yangi rasm) qayta urinadi.
 export const Avatar = ({ text, tone = 0, src, alt = "", className }) => {
-  if (src) {
+  const [failedSrc, setFailedSrc] = useState("");
+  if (src && failedSrc !== src) {
     return (
       <img
         src={src}
         alt={alt}
         loading="lazy"
+        onError={() => setFailedSrc(src)}
         className={cn("w-10 h-10 rounded-xl object-cover bg-ink/6 shrink-0", className)}
       />
     );

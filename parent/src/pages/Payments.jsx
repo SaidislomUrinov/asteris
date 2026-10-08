@@ -9,6 +9,7 @@ import { useRequest } from "../hooks/useRequest";
 import { getPayments } from "../api/parent";
 import { fmtDate, fmtDateFull, fmtMonth, initials, money } from "../utils/format";
 import { cn } from "../utils/cn";
+import { photoSrc } from "../lib/studentPhoto";
 
 export const Payments = () => {
   const { t } = useTranslation();
@@ -51,7 +52,7 @@ export const Payments = () => {
               <div className="space-y-2.5">
                 {data.debts.map((d) => (
                   <Card as="button" key={d.entryId} onClick={() => navigate(`/child/${d.student._id}/group/${d.entryId}/payments`)} className="flex items-center gap-3">
-                    <Avatar text={initials(d.student.fullName)} tone={idx(d.student._id)} />
+                    <Avatar text={initials(d.student.fullName)} tone={idx(d.student._id)} src={photoSrc(d.student.photo)} alt={d.student.fullName} />
                     <div className="flex-1 min-w-0">
                       <div className="font-bold text-sm break-words">{d.student.fullName.split(" ")[0]} · {d.groupName}</div>
                       <div className="text-xs text-hint break-words">{d.centerName}{d.nextDueDate && ` · ${t("payments.dueShort", { d: fmtDate(d.nextDueDate) })}`}</div>
@@ -75,7 +76,7 @@ export const Payments = () => {
                     <div key={`${p.code || i}`}>
                       {i > 0 && <Divider className="my-2" />}
                       <div className="flex items-center gap-3">
-                        <Avatar text={initials(p.student.fullName)} tone={idx(p.student._id)} className="w-9 h-9" />
+                        <Avatar text={initials(p.student.fullName)} tone={idx(p.student._id)} src={photoSrc(p.student.photo)} alt={p.student.fullName} className="w-9 h-9" />
                         <div className="flex-1 min-w-0">
                           <div className="font-bold text-sm break-words">{p.student.fullName.split(" ")[0]} · {p.groupName}</div>
                           <div className="text-xs text-hint break-words">{[fmtDate(p.date), t(`payments.type.${p.type}`, { defaultValue: p.type }), p.centerName].filter(Boolean).join(" · ")}</div>

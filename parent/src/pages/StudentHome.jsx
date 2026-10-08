@@ -12,6 +12,7 @@ import { EmptyState, ErrorState } from "../components/States";
 import { useAuth } from "../contexts/auth";
 import { useChildren } from "../contexts/children";
 import { initials } from "../utils/format";
+import { photoSrc } from "../lib/studentPhoto";
 
 const greet = (t) => {
   const h = new Date().getHours();
@@ -48,6 +49,8 @@ export const StudentHome = () => {
   }, [list]);
 
   const name = list[0]?.student?.fullName || parent?.name || "";
+  // O'quvchining o'z rasmi — `name` bilan bir xil manba (/parent/children → list[0].student).
+  const photo = list[0]?.student?.photo || "";
   const open = (row) => navigate(`/child/${row.sid}/group/${row.group.entryId}/homework`);
 
   return (
@@ -57,7 +60,7 @@ export const StudentHome = () => {
           <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-hint">{greet(t)}</div>
           <h1 className="text-[22px] font-extrabold leading-tight tracking-tight break-words">{name}</h1>
         </div>
-        <Avatar text={initials(name)} className="w-11 h-11 rounded-full text-[15px]" />
+        <Avatar text={initials(name)} src={photoSrc(photo)} alt={name} className="w-11 h-11 rounded-full text-[15px]" />
       </header>
 
       {loading ? (

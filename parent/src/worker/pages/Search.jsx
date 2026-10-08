@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { HiMagnifyingGlass, HiOutlineMagnifyingGlass, HiXMark } from "react-icons/hi2";
-import { Card, SectionLabel } from "../../components/Card";
+import { Avatar, Card, SectionLabel } from "../../components/Card";
+import { initials } from "../../utils/format";
+import { photoSrc } from "../../lib/studentPhoto";
 import { RowsSkeleton } from "../components/WorkerSkeleton";
 import { EmptyState, ErrorState } from "../../components/States";
 import { useRequest } from "../../hooks/useRequest";
@@ -104,8 +106,14 @@ export const Search = () => {
                 <div className="text-[13px] text-hint px-1 pb-1">{t("worker.search.noStudents")}</div>
               ) : (
                 <Card className="py-1 px-3.5 divide-y divide-line/70">
-                  {students.data.slice(0, MAX_STUDENTS).map((s) => (
-                    <ListRow key={s._id} title={s.fullName} sub={s.phone} onClick={() => navigate(`/students/${s._id}`)} />
+                  {students.data.slice(0, MAX_STUDENTS).map((s, i) => (
+                    <ListRow
+                      key={s._id}
+                      leading={<Avatar text={initials(s.fullName)} tone={i} src={photoSrc(s.photo)} alt={s.fullName} className="w-9 h-9 text-[12px]" />}
+                      title={s.fullName}
+                      sub={s.phone}
+                      onClick={() => navigate(`/students/${s._id}`)}
+                    />
                   ))}
                 </Card>
               )}

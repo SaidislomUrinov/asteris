@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { HiChevronRight } from "react-icons/hi2";
 import { Avatar, Card, Pill } from "./Card";
 import { initials, money } from "../utils/format";
+import { photoSrc } from "../lib/studentPhoto";
 
 export const ChildCard = ({ child, index, onClick }) => {
   const { t } = useTranslation();
@@ -11,7 +12,7 @@ export const ChildCard = ({ child, index, onClick }) => {
   const centerNames = centers.map((c) => c.center.name).join(" · ");
   return (
     <Card as="button" onClick={onClick} className="flex items-center gap-3">
-      <Avatar text={initials(student.fullName)} tone={index} className="w-11 h-11 text-[15px]" />
+      <Avatar text={initials(student.fullName)} tone={index} src={photoSrc(student.photo)} alt={student.fullName} className="w-11 h-11 text-[15px]" />
       <div className="flex-1 min-w-0">
         <div className="font-extrabold text-[15px] break-words leading-tight">
           {student.fullName}

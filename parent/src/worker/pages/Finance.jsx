@@ -3,11 +3,12 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { HiOutlineBanknotes, HiChevronRight } from "react-icons/hi2";
 import { WorkerPage } from "../components/WorkerPage";
-import { Card, SectionLabel } from "../../components/Card";
+import { Avatar, Card, SectionLabel } from "../../components/Card";
 import { EmptyState, ErrorState } from "../../components/States";
 import { ListSkeleton } from "../../components/Skeleton";
 import { KpiSkeleton } from "../components/WorkerSkeleton";
-import { fmtMonth, money } from "../../utils/format";
+import { fmtMonth, initials, money } from "../../utils/format";
+import { photoSrc } from "../../lib/studentPhoto";
 import { useWorker } from "../useWorker";
 import { useLive } from "../useLive";
 import { workerApi } from "../api";
@@ -59,6 +60,9 @@ export const Finance = () => {
               {data.recentPayments.map((p, i) => (
                 <ListRow
                   key={`${p.student?._id}-${i}`}
+                  leading={
+                    <Avatar text={initials(p.student?.fullName)} tone={i} src={photoSrc(p.student?.photo)} alt={p.student?.fullName || ""} className="w-9 h-9 text-[12px]" />
+                  }
                   title={p.student?.fullName || "—"}
                   sub={[String(p.date || "").replace(" | ", " · "), t(`worker.payType.${p.type}`, { defaultValue: p.type })]
                     .filter(Boolean)

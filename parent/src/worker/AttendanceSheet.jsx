@@ -147,10 +147,12 @@ export const AttendanceSheet = ({ open, onClose }) => {
         <EmptyState title={t("worker.att.noStudents")} />
       ) : (
         <div className="flex flex-col divide-y divide-line/70">
-          {state.students.map((s) => (
+          {state.students.map((s, i) => (
             <AttendanceRow
               key={s._id}
               name={s.fullName}
+              photo={s.photo}
+              tone={i}
               mark={marks[s._id]}
               saving={!!saving[s._id] || bulk}
               disabled={readOnly}

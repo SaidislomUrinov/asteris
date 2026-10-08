@@ -149,12 +149,14 @@ export const AttendanceTab = ({ group, students, canMark, minDate }) => {
             <EmptyState title={t("worker.att.noStudents")} />
           ) : (
             <Card className="py-1 divide-y divide-line/70">
-              {students.map((s) => {
+              {students.map((s, i) => {
                 const rec = recordOf(s._id);
                 return (
                   <AttendanceRow
                     key={s._id}
                     name={s.fullName}
+                    photo={s.photo}
+                    tone={i}
                     sub={rec?.status === "excused" && rec.reason ? rec.reason : null}
                     mark={rec}
                     saving={!!saving[s._id] || bulk}

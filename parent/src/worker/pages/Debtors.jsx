@@ -3,10 +3,11 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { HiMagnifyingGlass, HiOutlineCheckCircle } from "react-icons/hi2";
 import { WorkerPage } from "../components/WorkerPage";
-import { Card } from "../../components/Card";
+import { Avatar, Card } from "../../components/Card";
 import { EmptyState, ErrorState } from "../../components/States";
 import { ListSkeleton } from "../../components/Skeleton";
-import { money } from "../../utils/format";
+import { initials, money } from "../../utils/format";
+import { photoSrc } from "../../lib/studentPhoto";
 import { useWorker } from "../useWorker";
 import { useLive } from "../useLive";
 import { useGroupNames } from "../useGroupNames";
@@ -58,9 +59,10 @@ export const Debtors = () => {
         <EmptyState icon={HiOutlineCheckCircle} title={t("worker.debtors.empty")} text={q ? null : t("worker.debtors.emptyText")} />
       ) : (
         <Card className="py-1 divide-y divide-line/70">
-          {rows.map(({ s, debt }) => (
+          {rows.map(({ s, debt }, i) => (
             <ListRow
               key={s._id}
+              leading={<Avatar text={initials(s.fullName)} tone={i} src={photoSrc(s.photo)} alt={s.fullName} className="w-9 h-9 text-[12px]" />}
               title={s.fullName}
               sub={[
                 s.phone,

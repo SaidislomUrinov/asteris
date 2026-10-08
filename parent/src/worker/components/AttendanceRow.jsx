@@ -1,7 +1,9 @@
 import { createElement } from "react";
 import { useTranslation } from "react-i18next";
 import { HiCheck, HiXMark, HiDocumentCheck } from "react-icons/hi2";
-import { Pill } from "../../components/Card";
+import { Avatar, Pill } from "../../components/Card";
+import { initials } from "../../utils/format";
+import { photoSrc } from "../../lib/studentPhoto";
 import { cn } from "../../utils/cn";
 
 // Server qabul qiladigan 3 holat (attendance.service mark()):
@@ -14,10 +16,12 @@ const BUTTONS = [
 ];
 
 // `sub` — ixtiyoriy izoh qatori (masalan sababli kelmaganlik sababi).
-export const AttendanceRow = ({ name, sub, mark, saving, disabled, onMark }) => {
+// `photo`/`tone` — chapdagi kichik avatar (rasm yo'q bo'lsa initsiallar).
+export const AttendanceRow = ({ name, photo, tone = 0, sub, mark, saving, disabled, onMark }) => {
   const { t } = useTranslation();
   return (
     <div className="flex items-center gap-2 py-2">
+      <Avatar text={initials(name)} tone={tone} src={photoSrc(photo)} alt={name} className="w-8 h-8 text-[11px] mr-1" />
       <div className="flex-1 min-w-0">
         <div className="font-bold text-[14px] truncate">{name}</div>
         {sub && <div className="text-[12px] text-hint break-words">{sub}</div>}

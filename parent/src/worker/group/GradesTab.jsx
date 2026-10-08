@@ -139,7 +139,7 @@ export const GradesTab = ({ group, students, canWrite, canDeleteAny }) => {
             <EmptyState title={t("worker.att.noStudents")} />
           ) : (
             <Card className="py-1 divide-y divide-line/70">
-              {students.map((s) => {
+              {students.map((s, i) => {
                 const st = statusOf(s._id);
                 const blocked = st === "absent" || st === "excused" ? st : null;
                 const rec = recOf(s._id);
@@ -151,6 +151,8 @@ export const GradesTab = ({ group, students, canWrite, canDeleteAny }) => {
                   <GradeRow
                     key={s._id}
                     name={s.fullName}
+                    photo={s.photo}
+                    tone={i}
                     avg={data.averages[s._id]}
                     value={rec?.value || null}
                     blocked={blocked}

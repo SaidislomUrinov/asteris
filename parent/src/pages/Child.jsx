@@ -10,6 +10,8 @@ import { ListSkeleton, Skeleton } from "../components/Skeleton";
 import { EmptyState, ErrorState } from "../components/States";
 import { useChildren } from "../contexts/children";
 import { initials, money } from "../utils/format";
+import { photoSrc } from "../lib/studentPhoto";
+import { cn } from "../utils/cn";
 
 export const Child = () => {
   const { sid } = useParams();
@@ -46,7 +48,7 @@ export const Child = () => {
     <Page>
       <Card className="bg-hero text-hero-fg border-transparent p-4">
         <div className="flex items-center gap-3">
-          <Avatar text={initials(student.fullName)} className="w-12 h-12 rounded-full bg-white/12 text-hero-fg text-base" />
+          <Avatar text={initials(student.fullName)} src={photoSrc(student.photo)} alt={student.fullName} className={cn("w-12 h-12 rounded-full bg-white/12 text-hero-fg text-base", student.photo && "ring-2 ring-white/30")} />
           <div className="min-w-0 flex-1">
             <h1 className="text-[20px] font-extrabold leading-tight tracking-tight break-words">{student.fullName}</h1>
             <div className="text-[13px] text-hero-fg-mut mt-0.5 break-words tabular">{student.isSelf ? t("child.self") : student.phone}</div>
