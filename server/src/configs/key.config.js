@@ -7,9 +7,21 @@ module.exports = {
 
   client: (objectId) => `${REDIS_KEY_PREFIX}client:${objectId}`,
   clientAccess: (objectId) => `${REDIS_KEY_PREFIX}client_access:${objectId}`,
+  // Telegram WebApp sessiyasi — brauzer sessiyasidan ALOHIDA slot
+  // (API_CONTRACT_worker_webapp.md §1.1): bitta-qurilma qoidasi kanal ichida
+  // ishlaydi, WebApp'ga kirish brauzerdagi sessiyani uzmaydi.
+  clientAccessTg: (objectId) => `${REDIS_KEY_PREFIX}client_access_tg:${objectId}`,
 
   staff: (objectId) => `${REDIS_KEY_PREFIX}staff:${objectId}`,
   staffAccess: (objectId) => `${REDIS_KEY_PREFIX}staff_access:${objectId}`,
+  staffAccessTg: (objectId) => `${REDIS_KEY_PREFIX}staff_access_tg:${objectId}`,
+  // Kanalga mos access kaliti — `kind`: "client" | "staff", `channel`: "web" | "tg"
+  // (auth middleware, socket auth va sessiyani bekor qilish joylari shu bitta funksiyadan).
+  accessFor: (kind, objectId, channel = "web") => {
+    const k = module.exports;
+    if (kind === "client") return channel === "tg" ? k.clientAccessTg(objectId) : k.clientAccess(objectId);
+    return channel === "tg" ? k.staffAccessTg(objectId) : k.staffAccess(objectId);
+  },
 
   inpayToken: () => `${REDIS_KEY_PREFIX}inpay_token`,
 

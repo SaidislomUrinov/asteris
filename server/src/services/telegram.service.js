@@ -12,6 +12,12 @@ const LINK_TTL = 600; // 10 daqiqa — havola shuncha vaqt amal qiladi
 
 const Model = (kind) => (kind === "client" ? Client : Staff);
 
+// Telegram WebApp sessiyasini yopish (API_CONTRACT_worker_webapp.md §1.1) —
+// Telegram uzilganda yoki boshqa chatga qayta ulanganda eski chatdagi WebApp
+// tokeni yaroqsiz bo'lishi kerak. Brauzer sessiyasi (`*Access`) tegilmaydi.
+const dropTelegramSession = (kind, id) =>
+  redis.del(keyConfig.accessFor(kind === "client" ? "client" : "staff", String(id), "tg"));
+
 // Rolga qarab tasdiqlash matni tanlanadi ("Ro'liga qarab ushbu amal nima
 // vazifa bajarilishini aytadi" — API_CONTRACT.md "Telegram bog'lash").
 const confirmKeyFor = (kind, role) => {
@@ -48,8 +54,11 @@ module.exports = {
     const doc = await Model(kind).findOne({ _id: id, isDeleted: false });
     if (!doc) return { ok: false, message: t("uz", "linkExpired") };
 
+    const prevChatId = doc.telegram?.chatId ? String(doc.telegram.chatId) : null;
     doc.telegram = { ...(doc.telegram || {}), chatId: String(chatId), linkedAt: getNow() };
     await doc.save();
+    // Boshqa chatga ko'chdi — eski chatdagi WebApp sessiyasi yopiladi.
+    if (prevChatId && prevChatId !== String(chatId)) await dropTelegramSession(kind, id);
 
     const lang = doc.telegram?.lang || "uz";
     const message = t(lang, confirmKeyFor(kind, doc.role));
@@ -72,6 +81,7 @@ module.exports = {
 
   unlink: async (kind, id) => {
     await Model(kind).updateOne({ _id: id }, { $set: { "telegram.chatId": null, "telegram.linkedAt": null } });
+    await dropTelegramSession(kind, id);
     return { ok: true };
   },
 

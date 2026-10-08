@@ -18,6 +18,10 @@ const { getNow } = require("../utils/date.util");
 // O'qituvchi `teacher`, yordamchi o'qituvchi `assistant` bo'yicha bog'lanadi.
 const GROUP_SCOPE_FIELD = { teacher: "teacher", assistant: "assistant" };
 
+// Sessiya kanali: Telegram WebApp orqali berilgan token payloadida `ch: "tg"`
+// bor (client/staff.service `signInTelegram`), brauzer tokenida yo'q.
+const authChannelOf = (payload) => (payload?.ch === "tg" ? "tg" : "web");
+
 module.exports = {
   adminAuth: async (req, res, next) => {
     try {
@@ -106,16 +110,20 @@ module.exports = {
 
       if (!payload || !payload?._id) throw new Error("auth.failed");
 
-      const accessKey = keyConfig.clientAccess(payload._id);
+      // Kanal: Telegram WebApp tokeni (`ch: "tg"`) alohida Redis slot'ida
+      // (API_CONTRACT_worker_webapp.md §1.1) — brauzer va WebApp bir-birini uzmaydi.
+      const channel = authChannelOf(payload);
+      const accessKey = keyConfig.accessFor("client", payload._id, channel);
       const cachedAccess = await redisUtil.get(accessKey);
 
       // Productionda faqat SO'NGGI login qilingan qurilma ishlaydi (bitta
-      // qurilmadan sessiya). Development'da bu tekshiruv o'chiq — bir nechta
+      // qurilmadan sessiya) — kanal ICHIDA. Development'da bu tekshiruv o'chiq — bir nechta
       // tab/curl bilan bir vaqtda ishlash uchun (envConfig.ENFORCE_SINGLE_DEVICE_SESSION).
       if (!cachedAccess || (envConfig.ENFORCE_SINGLE_DEVICE_SESSION && cachedAccess !== access))
         throw new Error("auth.failed");
 
       req.client = { _id: payload?._id };
+      req.authChannel = channel;
       next();
     } catch (error) {
       next(error);
@@ -126,7 +134,7 @@ module.exports = {
       const clientId = req?.client?._id;
       if (!clientId) throw new Error("auth.failed");
 
-      const accessKey = keyConfig.clientAccess(clientId);
+      const accessKey = keyConfig.accessFor("client", clientId, req.authChannel);
       const key = keyConfig.client(clientId);
       const cached = await redisUtil.get(key);
 
@@ -173,16 +181,18 @@ module.exports = {
 
       if (!payload || !payload?._id) throw new Error("auth.failed");
 
-      const accessKey = keyConfig.staffAccess(payload._id);
+      const channel = authChannelOf(payload);
+      const accessKey = keyConfig.accessFor("staff", payload._id, channel);
       const cachedAccess = await redisUtil.get(accessKey);
 
       // Productionda faqat SO'NGGI login qilingan qurilma ishlaydi (bitta
-      // qurilmadan sessiya). Development'da bu tekshiruv o'chiq — bir nechta
+      // qurilmadan sessiya) — kanal ICHIDA. Development'da bu tekshiruv o'chiq — bir nechta
       // tab/curl bilan bir vaqtda ishlash uchun (envConfig.ENFORCE_SINGLE_DEVICE_SESSION).
       if (!cachedAccess || (envConfig.ENFORCE_SINGLE_DEVICE_SESSION && cachedAccess !== access))
         throw new Error("auth.failed");
 
       req.staff = { _id: payload?._id };
+      req.authChannel = channel;
       next();
     } catch (error) {
       next(error);
@@ -193,7 +203,7 @@ module.exports = {
       const staffId = req?.staff?._id;
       if (!staffId) throw new Error("auth.failed");
 
-      const accessKey = keyConfig.staffAccess(staffId);
+      const accessKey = keyConfig.accessFor("staff", staffId, req.authChannel);
       const key = keyConfig.staff(staffId);
       const cached = await redisUtil.get(key);
 

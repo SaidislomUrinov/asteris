@@ -37,6 +37,23 @@ const emitSubscriptionUpdated = async (clientId) => {
 // login qilganda almashtirilganda tugaydi.
 const issueAccessToken = (clientId) => jwtUtil.sign({ _id: clientId }, envConfig.CLIENT_JWT_SECRET);
 
+// Telegram WebApp sessiyasi uchun token — payloadda `ch: "tg"` (auth middleware
+// shunga qarab `clientAccessTg` slot'ini tekshiradi, API_CONTRACT_worker_webapp.md §1.1).
+// Muddat brauzer access bilan bir xil (muddatsiz, Redis TTL hal qiladi).
+const issueTelegramAccessToken = (clientId) =>
+  jwtUtil.sign({ _id: String(clientId), ch: "tg" }, envConfig.CLIENT_JWT_SECRET);
+
+// Owner sessiyalarini bekor qilish. Majburiy chiqarishda (bloklash, o'chirish,
+// parolni boshqa birov o'zgartirishi) — ikkala kanal ham; Telegram uzilganda —
+// faqat "tg". Sessiya keshi (`client:{id}`) ham tashlanadi — keyingi so'rov
+// bazadan qayta quradi.
+const revokeSessions = async (clientId, channels = ["web", "tg"]) => {
+  await Promise.all([
+    redisUtil.del(keyConfig.client(clientId)),
+    ...channels.map((ch) => redisUtil.del(keyConfig.accessFor("client", clientId, ch))),
+  ]);
+};
+
 const PAGE_SIZE = 50;
 // Boshlanish sanasi kiritilsa, tugash sanasi default "keyingi oy, o'sha kun"
 // bo'lib avtomatik hisoblanadi — admin buni keyin qo'lda o'zgartira oladi.
@@ -105,6 +122,7 @@ const snapshotTariff = (tariff) => ({
 module.exports = {
   DTO,
   snapshotTariff,
+  revokeSessions,
 
   create: async (body) => {
     const { name, phone, password } = body;
@@ -286,6 +304,8 @@ module.exports = {
     if (body.password) client.password = await getHash(body.password.trim());
 
     await client.save();
+    // Parolni admin almashtirdi — barcha sessiyalar (brauzer + Telegram) majburan yopiladi.
+    if (body.password) await revokeSessions(client._id);
     await client.populate({ path: "subscription", populate: { path: "tariff" } });
     return DTO(client);
   },
@@ -299,7 +319,8 @@ module.exports = {
     await client.save();
     // Sessiya keshi tashlanmasa o'chirilgan mijoz kesh TTL'i davomida
     // ishlashda davom etardi (fullClientAuth faqat kesh bo'sh bo'lsa o'qiydi).
-    await redisUtil.del(keyConfig.client(client._id));
+    // Access kalitlari ham (brauzer + Telegram) — majburiy chiqarish.
+    await revokeSessions(client._id);
 
     return true;
   },
@@ -312,7 +333,9 @@ module.exports = {
     await client.save();
     // Bloklash darhol kuchga kirsin — keyingi so'rov `client.blocked`ni
     // bazadan o'qiydi (avval kesh tugaguncha owner ishlayverardi).
-    await redisUtil.del(keyConfig.client(client._id));
+    // Bloklashda access kalitlari ham (brauzer + Telegram) o'chiriladi.
+    if (blocked) await revokeSessions(client._id);
+    else await redisUtil.del(keyConfig.client(client._id));
     await client.populate({ path: "subscription", populate: { path: "tariff" } });
     return DTO(client);
   },
@@ -548,6 +571,9 @@ module.exports = {
 
     if (name) client.name = name.trim();
     await client.save();
+    // Parol o'zgardi — Telegram WebApp sessiyasi yopiladi (joriy brauzer
+    // sessiyasi qoladi; WebApp keyingi ochilishda initData bilan qayta kiradi).
+    if (wantsPasswordChange) await redisUtil.del(keyConfig.clientAccessTg(client._id));
 
     const data = DTO(client);
     // Redis'dagi sessiya keshi ham yangilanadi — aks holda `fullClientAuth`
@@ -577,11 +603,30 @@ module.exports = {
     return true;
   },
 
-  signOutSession: async (client) => {
-    const key = keyConfig.client(client._id);
-    const accessKey = keyConfig.clientAccess(client._id);
+  // Telegram WebApp orqali kirish (API_CONTRACT_worker_webapp.md §1) — `signIn`
+  // bilan bir xil DTO/kesh shakli, lekin token alohida slot'da (`clientAccessTg`):
+  // brauzerdagi sessiya (va `Client.access`) tegilmaydi.
+  signInTelegram: async (client) => {
+    if (client.blocked) throw new Error("client.blocked");
+    if (!client.populated?.("subscription")) {
+      await client.populate({ path: "subscription", populate: { path: "tariff" } });
+    }
+    const data = DTO(client);
+    const access = issueTelegramAccessToken(client._id);
     await Promise.all([
-      Client.updateOne({ _id: client._id }, { $set: { access: "" } }),
+      redisUtil.set(keyConfig.client(client._id), data, envConfig.CLIENT_SESSION_TTL),
+      redisUtil.set(keyConfig.clientAccessTg(client._id), access, envConfig.CLIENT_SESSION_TTL),
+    ]);
+    return { data, access };
+  },
+
+  // Oddiy "Chiqish" — faqat SHU kanal sessiyasi (brauzerdan chiqish WebApp'ni,
+  // WebApp'dan chiqish brauzerni uzmaydi). `Client.access` — brauzer tokeni.
+  signOutSession: async (client, channel = "web") => {
+    const key = keyConfig.client(client._id);
+    const accessKey = keyConfig.accessFor("client", client._id, channel);
+    await Promise.all([
+      channel === "web" ? Client.updateOne({ _id: client._id }, { $set: { access: "" } }) : null,
       redisUtil.del(key),
       redisUtil.del(accessKey),
     ]);

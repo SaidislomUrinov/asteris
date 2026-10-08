@@ -23,7 +23,8 @@ const BillingSetting = require("../models/BillingSetting");
 const Notification = require("../models/Notification");
 const Homework = require("../models/Homework");
 const notificationService = require("./notification.service");
-const { sendToChat, parentWebAppMarkup } = require("../bot/notify");
+const { sendToChat, sendDocumentToChat, parentWebAppMarkup } = require("../bot/notify");
+const { buildPaymentReceiptPdf, receiptFileName } = require("../utils/receiptPdf.util");
 const Student = require("../models/Student");
 const redis = require("../configs/redis.config");
 const keyConfig = require("../configs/key.config");
@@ -45,7 +46,10 @@ const HOMEWORK_DEBOUNCE_MS = 2 * 60 * 1000;
 // Qaysi tur qaysi rolga yuboriladi (§5 jadvali).
 const TYPE_ROLES = {
   attendance: ["parent"],
-  payment: ["parent"],
+  // Chek PDF o'quvchining o'ziga ham boradi (API_CONTRACT_receipt_pdf.md §2).
+  // WebApp xabarlar ro'yxati baribir rol bo'yicha filtrlanadi
+  // (parent.service ROLE_NOTIF_TYPES) — o'quvchida to'lov yozuvi ko'rinmaydi.
+  payment: ["parent", "student"],
   lessonFinished: ["parent", "student"],
   homework: ["student"],
   lessonReminder: ["student"],
@@ -281,6 +285,37 @@ const markBlockedIfNeeded = async (parent, res) => {
   }
 };
 
+// To'lov cheki PDF (API_CONTRACT_receipt_pdf.md) — har til uchun bir marta
+// yasaladi (`cache`), bir xil tildagi oluvchilar bitta buferni oladi. Diskka
+// yozilmaydi. Yasab bo'lmasa `null` — chaqiruvchi oddiy matnga qaytadi.
+const receiptPdfFor = async (lang, cache, { student, ctx, payment }) => {
+  if (!cache.has(lang)) {
+    cache.set(
+      lang,
+      buildPaymentReceiptPdf(
+        {
+          centerName: ctx.center.name,
+          groupLabel: ctx.groupLabel,
+          studentName: student.fullName,
+          phone: student.phone,
+          amount: payment.amount,
+          remainingDebt: ctx.billing?.debt || 0,
+          debtBreakdown: ctx.billing?.debtBreakdown || [],
+          forMonth: payment.forMonth,
+          code: payment.code,
+          paidAt: payment.date,
+        },
+        { lang, t: (key) => t(lang, key), monthNames: t(lang, "pnMonths").split("|") },
+      ).catch((error) => {
+        console.error("parentNotification receipt pdf:", error?.message || error);
+        return null;
+      }),
+    );
+  }
+  return await cache.get(lang);
+};
+const CAPTION_MAX = 1024;
+
 // Umumiy yuborish: har ota-ona uchun o'z tilida matn, Notification + Telegram.
 const notify = async (type, { student, entry, dedupSuffix, data = {}, ...rest }) => {
   const recipients = await findParents(student, TYPE_ROLES[type] || ["parent"]);
@@ -288,6 +323,9 @@ const notify = async (type, { student, entry, dedupSuffix, data = {}, ...rest })
 
   const ctx = await loadContext(entry);
   if (!ctx || !centerAllows(ctx.center, type)) return;
+
+  const withReceipt = type === "payment" && !rest.cancelled && !!rest.payment;
+  const pdfCache = new Map();
 
   for (const { parent, role } of recipients) {
     if (parent.mute?.[type]) continue;
@@ -308,7 +346,28 @@ const notify = async (type, { student, entry, dedupSuffix, data = {}, ...rest })
     if (!created) continue; // allaqachon yuborilgan
 
     const reply_markup = await parentWebAppMarkup(t(lang, "parentOpenApp"), APP_PATH[type]?.({ student, entry }) || "");
-    const res = await sendToChat(parent.telegram.chatId, text, reply_markup ? { reply_markup } : {});
+    const extra = reply_markup ? { reply_markup } : {};
+
+    // To'lov: matn PDF chekka caption bo'lib bitta xabarda boradi. Caption
+    // sig'masa — avval matn, keyin PDF. PDF yasalmasa yoki yuborilmasa —
+    // oddiy matnli xabar (avvalgi xatti-harakat).
+    const pdf = withReceipt ? await receiptPdfFor(lang, pdfCache, { student, ctx, ...rest }) : null;
+    let res;
+    if (pdf) {
+      const filename = receiptFileName(t(lang, "receiptFileName"), student.fullName, rest.payment.date);
+      if (text.length <= CAPTION_MAX) {
+        res = await sendDocumentToChat(parent.telegram.chatId, pdf, filename, { caption: text, ...extra });
+      } else {
+        res = await sendToChat(parent.telegram.chatId, text, extra);
+        if (res.ok) await sendDocumentToChat(parent.telegram.chatId, pdf, filename);
+      }
+      if (!res.ok && !/blocked|deactivated|chat not found/i.test(res.error || "")) {
+        console.error("parentNotification receipt send:", res.error);
+        res = await sendToChat(parent.telegram.chatId, text, extra);
+      }
+    } else {
+      res = await sendToChat(parent.telegram.chatId, text, extra);
+    }
     await markBlockedIfNeeded(parent, res);
   }
 };

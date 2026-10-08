@@ -245,18 +245,50 @@ const signAccess = (parent) =>
 // POST /parent-auth/telegram — faqat `{ initData }`; kirish yagona yo'l — Telegram
 // HMAC imzosi (dev/chatId bypass yo'q).
 const authTelegram = async ({ initData }) => {
-  if (!envConfig.PARENT_JWT_SECRET) throw new Error("parent.authUnavailable");
   const botToken = (await require("./systemSetting.service").getRaw())?.telegram?.botToken || envConfig.TELEGRAM_BOT_TOKEN;
   const user = verifyInitData(initData, botToken);
   if (!user?.id) throw new Error("parent.invalidInitData");
   const uid = String(user.id);
+
+  // ISHCHI (API_CONTRACT_worker_webapp.md §1) — rol so'ralmaydi, ustuvorlik:
+  // Client (Boshliq) > Staff > Ota-ona/O'quvchi. Shaxsiy chatda userId === chatId.
+  // Token va Redis sessiyasi mavjud Client/Staff zanjirining o'zida (alohida
+  // "tg" slot'i), shuning uchun WebApp mavjud endpointlarni o'zgarishsiz chaqiradi.
+  const workerService = require("./worker.service");
+  const client = await Client.findOne({ "telegram.chatId": uid, isDeleted: false });
+  if (client) {
+    if (client.blocked) throw new Error("client.blocked");
+    const { data, access } = await require("./client.service").signInTelegram(client);
+    return { kind: "owner", access, worker: await workerService.me({ client: data, staff: null }) };
+  }
+
+  const [staff] = await Staff.find({ "telegram.chatId": uid, isDeleted: false, blocked: false })
+    .sort({ "telegram.linkedAt": -1 })
+    .limit(1);
+  if (staff) {
+    const center = await Center.findById(staff.center).select("status");
+    if (center?.status === "blocked") throw new Error("center.blocked");
+    // Egasi (Client) bloklangan/o'chirilgan bo'lsa — `tenantAuth` bilan bir xil qoida.
+    const owner = await Client.findOne({ _id: staff.client, isDeleted: false }).select("blocked");
+    if (!owner) throw new Error("auth.failed");
+    if (owner.blocked) throw new Error("client.blocked");
+    const { data, access } = await require("./staff.service").signInTelegram(staff);
+    return {
+      kind: "staff",
+      access,
+      worker: await workerService.me({ client: { _id: staff.client }, staff: data }),
+    };
+  }
+
+  // OTA-ONA / O'QUVCHI — eski oqim o'zgarishsiz, faqat `kind` qo'shildi.
+  if (!envConfig.PARENT_JWT_SECRET) throw new Error("parent.authUnavailable");
   // Shaxsiy chatda userId === chatId — eski hujjatlarda userId bo'lmasa chatId bo'yicha.
   const parent = await Parent.findOne({ $or: [{ "telegram.userId": uid }, { "telegram.chatId": uid }] });
   if (!parent) throw new Error("parent.notLinked");
   // `me()` — aniq rol (effectiveRole) bilan. Avval saqlangan `role` (null
   // bo'lishi mumkin) qaytarilardi va o'quvchi rolida WebApp birinchi
   // ochilishda "ota-ona" deb hisoblab, "To'lovlar" tabini ko'rsatib qo'yardi.
-  return { access: signAccess(parent), parent: await me(parent) };
+  return { kind: "parent", access: signAccess(parent), parent: await me(parent) };
 };
 
 // Ota-onaga tegishli (o'chirilmagan) o'quvchilar — Mongoose hujjatlari
@@ -710,8 +742,9 @@ const updateSettings = async (parent, { lang, mute } = {}) => {
   }
   if (mute !== undefined) {
     if (!mute || typeof mute !== "object") throw new Error("parent.invalidSettings");
-    // O'quvchi roli uchun `debt`/`payment` e'tiborsiz (§3.4) — ular unga
-    // umuman yuborilmaydi.
+    // O'quvchi roli uchun `debt`/`payment` e'tiborsiz (§3.4): qarz xabari unga
+    // yuborilmaydi, to'lov esa faqat PDF chek sifatida keladi va o'chirilmaydi
+    // (API_CONTRACT_receipt_pdf.md §2).
     const ignored = (await effectiveRole(parent)) === "student" ? STUDENT_IGNORED_MUTE : [];
     for (const k of MUTE_KEYS) {
       if (mute[k] === undefined || ignored.includes(k)) continue;

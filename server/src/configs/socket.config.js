@@ -47,7 +47,9 @@ const authenticateClientSocket = async (socket, next) => {
     if (!payload?._id) return next(new Error("Unauthorized"));
 
     if (role === "owner") {
-      const accessKey = keyConfig.clientAccess(payload._id);
+      // Telegram WebApp tokeni (`ch: "tg"`) o'z slot'i bilan solishtiriladi
+      // (API_CONTRACT_worker_webapp.md §1.1) — REST clientAuth bilan bir xil.
+      const accessKey = keyConfig.accessFor("client", payload._id, payload.ch === "tg" ? "tg" : "web");
       const cachedAccess = await redisUtil.get(accessKey);
       // REST clientAuth (authenticator.middleware.js) bitta-qurilma tekshiruvini
       // ENFORCE_SINGLE_DEVICE_SESSION bilan gate qiladi (dev'da o'chiq) — socket
@@ -64,7 +66,7 @@ const authenticateClientSocket = async (socket, next) => {
       socket.data.userId = payload._id;
       socket.data.clientId = payload._id;
     } else {
-      const accessKey = keyConfig.staffAccess(payload._id);
+      const accessKey = keyConfig.accessFor("staff", payload._id, payload.ch === "tg" ? "tg" : "web");
       const cachedAccess = await redisUtil.get(accessKey);
       if (
         !cachedAccess ||

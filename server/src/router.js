@@ -72,6 +72,8 @@ router.use("/notifications", require("./routes/notification.routes"));
 // Yangiliklar (Client Owner + Staff) — API_CONTRACT_news.md §3.
 router.use("/news", require("./routes/news.routes"));
 router.use("/teacher", require("./routes/teacher.routes"));
+// Ishchi Telegram WebApp paneli — faqat o'qish (API_CONTRACT_worker_webapp.md §3).
+router.use("/worker", require("./routes/worker.routes"));
 router.use("/telegram", require("./routes/telegram.routes"));
 router.use("/inpay", require("./routes/inpayWebhook.routes"));
 router.use("/certificate-templates", require("./routes/certificateTemplate.routes"));

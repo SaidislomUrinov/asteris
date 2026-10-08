@@ -222,6 +222,8 @@ const rawTotals = async (clientId, center, entries, fromUnix, toUnix, fromDay, t
 
 module.exports = {
   resolvePeriod,
+  // Ishchi WebApp "Bugun" KPI'si ham AYNAN shu formuladan (worker.service).
+  attendanceRateOf,
 
   summary: async (clientId, query = {}) => {
     const cacheKey = { scope: "summary", ...query };

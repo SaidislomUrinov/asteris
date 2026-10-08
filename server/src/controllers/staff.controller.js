@@ -147,7 +147,7 @@ module.exports = {
 
   signOutSession: async (req, res, next) => {
     try {
-      await staffService.signOutSession(req.staff);
+      await staffService.signOutSession(req.staff, req.authChannel);
       return res.send({ ok: true, msg: "auth.signOut" });
     } catch (error) {
       next(error);

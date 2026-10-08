@@ -132,7 +132,7 @@ module.exports = {
 
   signOutSession: async (req, res, next) => {
     try {
-      await clientService.signOutSession(req.client);
+      await clientService.signOutSession(req.client, req.authChannel);
       return res.send({ ok: true, msg: "auth.signOut" });
     } catch (error) {
       next(error);

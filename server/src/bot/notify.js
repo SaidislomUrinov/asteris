@@ -1,3 +1,4 @@
+const { InputFile } = require("grammy");
 const { getApiBot } = require("./index");
 const { escapeHtml } = require("./escapeHtml");
 const { resolveParentWebAppUrl } = require("../utils/parentWebAppUrl.util");
@@ -13,6 +14,21 @@ const sendToChat = async (chatId, text, extra = {}) => {
     const bot = await getApiBot();
     if (!bot) return { ok: false, error: "notify.botUnavailable" };
     await bot.api.sendMessage(chatId, text, { parse_mode: "HTML", disable_web_page_preview: true, ...extra });
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error?.message || "notify.failed" };
+  }
+};
+
+// Hujjat (masalan PDF chek) — `buffer` xotiradan yuboriladi, diskka hech narsa
+// yozilmaydi (API_CONTRACT_receipt_pdf.md §5). `caption` — HTML, ≤1024 belgi.
+// Xato otilmaydi, `sendToChat` kabi `{ ok:false, error }` qaytadi.
+const sendDocumentToChat = async (chatId, buffer, filename, extra = {}) => {
+  if (!chatId) return { ok: false, error: "notify.noChat" };
+  try {
+    const bot = await getApiBot();
+    if (!bot) return { ok: false, error: "notify.botUnavailable" };
+    await bot.api.sendDocument(chatId, new InputFile(buffer, filename), { parse_mode: "HTML", ...extra });
     return { ok: true };
   } catch (error) {
     return { ok: false, error: error?.message || "notify.failed" };
@@ -39,4 +55,4 @@ const parentWebAppMarkup = async (label, path = "") => {
   }
 };
 
-module.exports = { sendToChat, escapeHtml, parentWebAppMarkup };
+module.exports = { sendToChat, sendDocumentToChat, escapeHtml, parentWebAppMarkup };

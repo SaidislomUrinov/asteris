@@ -87,6 +87,20 @@ const getStaffLimits = async (clientId) => {
 // login qilganda almashtirilganda tugaydi.
 const issueAccessToken = (staffId) => jwtUtil.sign({ _id: staffId }, envConfig.STAFF_JWT_SECRET);
 
+// Telegram WebApp sessiyasi uchun token — payloadda `ch: "tg"`, alohida Redis
+// slot'i `staffAccessTg` (API_CONTRACT_worker_webapp.md §1.1).
+const issueTelegramAccessToken = (staffId) =>
+  jwtUtil.sign({ _id: String(staffId), ch: "tg" }, envConfig.STAFF_JWT_SECRET);
+
+// Hodim sessiyalarini bekor qilish. Majburiy chiqarishda (bloklash, arxivlash,
+// parolni Owner o'zgartirishi) — ikkala kanal; Telegram uzilganda — faqat "tg".
+const revokeSessions = async (staffId, channels = ["web", "tg"]) => {
+  await Promise.all([
+    dropSessionCache(staffId),
+    ...channels.map((ch) => redisUtil.del(keyConfig.accessFor("staff", staffId, ch))),
+  ]);
+};
+
 // Hodimga beriladigan OYLIK TURI tarifda ochiq bo'lishi shart (tarif flagi
 // `staff.salary.*`). Tarif pasaygandan keyin hodimda allaqachon turgan tur
 // (o'zgartirilmasa) saqlanib qoladi — aks holda boshqa maydonni tahrirlash
@@ -100,6 +114,7 @@ const assertSalaryTypeAllowed = async (clientId, nextPermissions, prevPermission
 
 module.exports = {
   dropSessionCache,
+  revokeSessions,
   DTO,
 
   // ---- CRUD (Client Owner tomonidan boshqariladi, clientId bo'yicha tenant isolation) ----
@@ -306,7 +321,10 @@ module.exports = {
     staff.subjects = await resolveSubjects(clientId, staff.center, staff.role, body.subjects);
 
     await staff.save();
-    await dropSessionCache(staff._id);
+    // Parolni Owner almashtirdi — hodimning barcha sessiyalari (brauzer +
+    // Telegram) majburan yopiladi; aks holda faqat sessiya keshi tashlanadi.
+    if (body.password) await revokeSessions(staff._id);
+    else await dropSessionCache(staff._id);
 
     const changes = audit.diff(before, {
       name: staff.name,
@@ -341,7 +359,7 @@ module.exports = {
     staff.isDeleted = true;
     staff.deletedAt = getNow();
     await staff.save();
-    await dropSessionCache(staff._id);
+    await revokeSessions(staff._id);
 
     emitArchiveChanged(clientId, staff.center, "staff", staff._id, "archived");
     void audit.log({
@@ -361,7 +379,8 @@ module.exports = {
 
     staff.blocked = blocked;
     await staff.save();
-    await dropSessionCache(staff._id);
+    if (blocked) await revokeSessions(staff._id);
+    else await dropSessionCache(staff._id);
     void audit.log({
       actor,
       client: clientId,
@@ -421,6 +440,9 @@ module.exports = {
 
     if (name) staff.name = name.trim();
     await staff.save();
+    // Parol o'zgardi — Telegram WebApp sessiyasi yopiladi (joriy brauzer
+    // sessiyasi qoladi; WebApp keyingi ochilishda initData bilan qayta kiradi).
+    if (wantsPasswordChange) await redisUtil.del(keyConfig.staffAccessTg(staff._id));
 
     const data = DTO(staff);
     // Redis'dagi sessiya keshi ham yangilanadi — aks holda `fullStaffAuth`
@@ -448,11 +470,26 @@ module.exports = {
     return true;
   },
 
-  signOutSession: async (staff) => {
-    const key = keyConfig.staff(staff._id);
-    const accessKey = keyConfig.staffAccess(staff._id);
+  // Telegram WebApp orqali kirish (API_CONTRACT_worker_webapp.md §1) — `signIn`
+  // bilan bir xil DTO/kesh shakli, token esa alohida slot'da (`staffAccessTg`):
+  // brauzerdagi sessiya (va `Staff.access`) tegilmaydi.
+  signInTelegram: async (staff) => {
+    if (staff.blocked) throw new Error("staff.blocked");
+    const data = DTO(staff);
+    const access = issueTelegramAccessToken(staff._id);
     await Promise.all([
-      Staff.updateOne({ _id: staff._id }, { $set: { access: "" } }),
+      redisUtil.set(keyConfig.staff(staff._id), data, envConfig.STAFF_SESSION_TTL),
+      redisUtil.set(keyConfig.staffAccessTg(staff._id), access, envConfig.STAFF_SESSION_TTL),
+    ]);
+    return { data, access };
+  },
+
+  // Oddiy "Chiqish" — faqat SHU kanal sessiyasi. `Staff.access` — brauzer tokeni.
+  signOutSession: async (staff, channel = "web") => {
+    const key = keyConfig.staff(staff._id);
+    const accessKey = keyConfig.accessFor("staff", staff._id, channel);
+    await Promise.all([
+      channel === "web" ? Staff.updateOne({ _id: staff._id }, { $set: { access: "" } }) : null,
       redisUtil.del(key),
       redisUtil.del(accessKey),
     ]);
