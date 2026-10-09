@@ -10,6 +10,7 @@ import { homeworkWhen, nearestHomework } from "../utils/homework";
 import { daysLabel } from "../utils/days";
 import { LinkifiedText } from "./LinkifiedText";
 import { cn } from "../utils/cn";
+import { Num } from "./Num";
 
 // Top-3 o'rin uchun nozik oltin/kumush/bronza tint; qolganlarda neytral fon.
 const MEDAL_BG = {
@@ -20,12 +21,12 @@ const MEDAL_BG = {
 
 // Guruh kartasidagi ixcham 3 ustunli ko'rsatkich: o'rin, o'rtacha baho, davomat.
 const Metric = ({ value, label, className, medal }) => (
-  <div className={cn("rounded-xl px-1.5 py-2 text-center min-w-0 bg-ink/4", className)}>
-    <div className="flex items-center justify-center gap-1 font-extrabold text-[15px] tabular leading-tight min-w-0">
+  <div className={cn("rounded-xl px-1 min-[380px]:px-1.5 py-2 text-center min-w-0 bg-ink/4", className)}>
+    <div className="flex items-center justify-center gap-1 font-extrabold text-[14px] min-[380px]:text-[15px] tabular leading-tight min-w-0">
       {medal}
       <span className="truncate">{value}</span>
     </div>
-    <div className="text-[10px] text-hint leading-tight mt-0.5 truncate">{label}</div>
+    <div className="text-[10px] text-hint leading-tight mt-0.5 truncate font-sans">{label}</div>
   </div>
 );
 
@@ -48,8 +49,8 @@ export const StudentGroupCard = ({ group, centerName, onClick, muted }) => {
       <div className="flex items-center gap-3">
         <IconBox Icon={muted ? HiOutlineCheckBadge : HiOutlineAcademicCap} tone={muted ? "mut" : "acc"} />
         <div className="flex-1 min-w-0">
-          <div className="font-extrabold text-[15px] break-words leading-tight">{group.name}</div>
-          {meta && <div className="text-xs text-hint mt-1 break-words leading-snug">{meta}</div>}
+          <div className="font-title font-bold text-[15px] break-words leading-tight">{group.name}</div>
+          {meta && <div className="text-xs text-hint mt-1 break-words leading-snug"><Num text={meta} v={time} /></div>}
         </div>
         <HiChevronRight className="w-5 h-5 text-hint/70 shrink-0" />
       </div>

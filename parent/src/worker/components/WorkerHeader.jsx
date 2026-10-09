@@ -17,7 +17,7 @@ export const WorkerHeader = ({ title }) => {
           {t(`worker.role.${role}`)}
           {centerName ? ` · ${centerName}` : ""}
         </RoleBadge>
-        <h1 className="text-[22px] font-extrabold leading-tight tracking-tight text-ink break-words">{title}</h1>
+        <h1 className="text-[20px] min-[380px]:text-[22px] font-extrabold leading-tight tracking-tight text-ink break-words">{title}</h1>
       </div>
       <HeaderActions />
     </header>

@@ -66,7 +66,7 @@ const TodayCard = ({ item }) => {
       </div>
       {item.lesson ? (
         <>
-          <div className="text-[17px] font-extrabold mt-1 break-words">{item.lesson.title}</div>
+          <div className="font-title text-[17px] font-bold mt-1 break-words">{item.lesson.title}</div>
           <LessonMeta lesson={item.lesson} />
           {item.lesson.description ? (
             <div className="text-sm text-ink/80 mt-1.5 whitespace-pre-wrap break-words">{item.lesson.description}</div>
@@ -124,7 +124,7 @@ const ModuleBlock = ({ module, defaultOpen }) => {
         className="w-full flex items-center gap-2 p-3.5 text-left"
       >
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-sm break-words">{module.title}</div>
+          <div className="font-title font-bold text-sm break-words">{module.title}</div>
           <div className="text-[11px] text-hint tabular">
             {t("plan.moduleProgress", { done, total: module.lessons.length })}
           </div>

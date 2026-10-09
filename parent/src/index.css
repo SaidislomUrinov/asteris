@@ -74,9 +74,18 @@
   to { opacity: 1; }
 }
 
-* {
+/* Shrift tizimi: matn — SN Pro (meros orqali, `*` emas — aks holda ota
+   elementdagi font-space/tabular bolalarga o'tmaydi), sarlavhalar — Space
+   Grotesk, raqamlar — JetBrains Mono (`.tabular`). */
+html {
   font-family: var(--font-sans);
+}
+* {
   -webkit-tap-highlight-color: transparent;
+}
+h1, h2, h3, h4, .font-title {
+  font-family: var(--font-space);
+  letter-spacing: -0.015em;
 }
 html, body {
   background: var(--tg-bg);

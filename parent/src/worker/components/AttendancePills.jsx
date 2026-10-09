@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Pill } from "../../components/Card";
+import { Num } from "../../components/Num";
 
 // Lenta kartasidagi davomat holati: keldi / kelmadi / kechikdi / sababli / belgilanmagan.
 const ORDER = [
@@ -18,7 +19,7 @@ export const AttendancePills = ({ attendance }) => {
   return (
     <div className="flex flex-wrap gap-1 mt-1.5">
       {items.map(([k, tone]) => (
-        <Pill key={k} tone={tone}>{t(`worker.att.count.${k}`, { count: attendance[k] })}</Pill>
+        <Pill key={k} tone={tone}><Num text={t(`worker.att.count.${k}`, { count: attendance[k] })} v={String(attendance[k])} /></Pill>
       ))}
     </div>
   );

@@ -8,7 +8,7 @@ export const SegmentTabs = ({ items, value, onChange, className }) => (
         type="button"
         onClick={() => onChange(it.value)}
         className={cn(
-          "flex-1 min-w-0 px-2 py-1.5 rounded-lg text-[13px] font-bold transition-colors break-words",
+          "flex-1 min-w-0 px-1.5 min-[380px]:px-2 py-1.5 rounded-lg text-[12px] min-[380px]:text-[13px] font-bold transition-colors whitespace-nowrap truncate",
           value === it.value ? "bg-card text-ink shadow-[0_1px_3px_rgba(15,23,42,0.10)]" : "text-hint",
         )}
       >

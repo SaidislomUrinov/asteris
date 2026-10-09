@@ -54,7 +54,7 @@ export const GradesTab = ({ entryId }) => {
                       </div>
                       {it.note && <div className="text-xs text-hint mt-0.5 break-words">{it.note}</div>}
                     </div>
-                    <span className={cn("w-8 h-8 rounded-lg grid place-items-center font-extrabold text-sm shrink-0", gradeTone(it.value))}>{it.value}</span>
+                    <span className={cn("w-8 h-8 rounded-lg grid place-items-center font-extrabold text-sm shrink-0 tabular", gradeTone(it.value))}>{it.value}</span>
                   </div>
                 </div>
               ))}

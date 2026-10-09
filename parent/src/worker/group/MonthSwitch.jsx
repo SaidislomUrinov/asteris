@@ -15,7 +15,7 @@ export const MonthSwitch = ({ month, onChange }) => {
       <button type="button" className={ARROW} onClick={() => onChange(shiftMonth(month, -1))} aria-label={t("common.prevMonth")}>
         <HiChevronLeft className="w-5 h-5" />
       </button>
-      <span className="font-extrabold text-[15px]">{fmtMonth(month)}</span>
+      <span className="font-title font-bold text-[15px]">{fmtMonth(month)}</span>
       <button
         type="button"
         className={ARROW}

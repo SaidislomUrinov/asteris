@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Page } from "../components/Page";
 import { Avatar, Card, Divider, SectionLabel } from "../components/Card";
+import { cn } from "../utils/cn";
 import { Switch } from "../components/Switch";
 import { SegmentTabs } from "../components/SegmentTabs";
 import { Button } from "../components/Button";
@@ -14,6 +15,7 @@ import { patchSettings, setRole, unlink } from "../api/parent";
 import { useRoleT } from "../hooks/useRoleT";
 import { initials } from "../utils/format";
 import { haptic } from "../lib/telegram";
+import { photoSrc } from "../lib/studentPhoto";
 
 const MUTE_KEYS = ["attendance", "lessonFinished", "payment", "debt", "badge"];
 // O'quvchiga davomat/to'lov/qarz xabarlari yuborilmaydi (kontrakt §5)
@@ -84,10 +86,16 @@ export const Settings = () => {
   return (
     <Page title={t("tab.settings")}>
       <Card className="flex items-center gap-3 p-4">
-        <Avatar text={initials(parent?.name)} className="w-12 h-12 rounded-full text-base" />
+        {/* O'quvchi rejimida — o'z rasmi (bosh sahifadagi kabi latestPhoto) */}
+        <Avatar
+          text={initials(parent?.name)}
+          src={isStudent ? photoSrc(list[0]?.student?.photo) : ""}
+          alt={parent?.name || ""}
+          className={cn("w-12 h-12 rounded-full text-base", isStudent && list[0]?.student?.photo && "ring-2 ring-line")}
+        />
         <div className="min-w-0">
-          <div className="font-extrabold text-[15px] break-words">{parent?.name}</div>
-          <div className="text-xs text-hint mt-0.5 tabular">{parent?.phone} · Telegram</div>
+          <div className="font-title font-bold text-[15px] break-words">{parent?.name}</div>
+          <div className="text-xs text-hint mt-0.5 break-words"><span className="tabular">{parent?.phone}</span> · Telegram</div>
         </div>
       </Card>
 

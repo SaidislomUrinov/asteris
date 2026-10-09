@@ -62,7 +62,7 @@ const EarnedCard = ({ item, index }) => {
   return (
     <Card className="flex flex-col items-center text-center px-2.5 py-4">
       <BadgeIcon type={item.type} size={60} count={item.count} label={name} delay={index * 0.08} />
-      <div className="font-extrabold text-[13px] leading-tight mt-2.5 break-words">{name}</div>
+      <div className="font-title font-bold text-[13px] leading-tight mt-2.5 break-words">{name}</div>
       <div className="text-[11px] text-hint leading-snug mt-1 break-words">{t(`badge.types.${item.type}.desc`)}</div>
       <div className="mt-2 flex flex-col items-center gap-0.5">
         {months.slice(0, MAX_MONTHS).map((m) => (
@@ -88,7 +88,7 @@ const MedalRow = ({ item }) => {
         <Medal position={item.position} size={22} animated={false} label={t(`rankCard.tier${item.position}`)} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="font-extrabold text-[14px] leading-tight break-words">{fmtMonth(item.month)}</div>
+        <div className="font-title font-bold text-[14px] leading-tight break-words">{fmtMonth(item.month)}</div>
         <div className="text-xs text-hint mt-0.5 leading-snug">
           <span className={`rank-tier-${item.position} font-bold`}>{t(`rankCard.tier${item.position}`)}</span>
           {item.total > 0 && <> · {t("student.rank.badge", { position: item.position, total: item.total })}</>}

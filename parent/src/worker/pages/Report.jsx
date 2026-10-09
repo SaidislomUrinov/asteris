@@ -57,8 +57,8 @@ export const Report = () => {
         <>
           <Card className="flex flex-col gap-0.5">
             <span className="text-[12px] font-bold text-hint">{t("worker.report.total")}</span>
-            <span className="tabular font-bold text-[28px] leading-tight text-ok">
-              {money(data?.totalAmount)} <span className="text-[15px] text-hint">{t("common.sum")}</span>
+            <span className="tabular font-bold text-[24px] min-[380px]:text-[28px] leading-tight text-ok break-words">
+              {money(data?.totalAmount)} <span className="font-sans text-[15px] text-hint">{t("common.sum")}</span>
             </span>
             <span className="text-[13px] text-hint">{t("worker.report.count", { count: data?.meta?.total || 0 })}</span>
           </Card>

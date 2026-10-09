@@ -33,8 +33,8 @@ export const Payments = () => {
                 {t("payments.totalDebt")}
               </div>
             </div>
-            <div className={cn("text-[28px] font-extrabold tabular mt-2 leading-none", data.totalDebt > 0 && "text-[#ff6b6b]")}>
-              {money(data.totalDebt)} <span className="text-base font-bold opacity-80">{t("common.sum")}</span>
+            <div className={cn("text-[24px] min-[380px]:text-[28px] font-extrabold tabular mt-2 break-words leading-none", data.totalDebt > 0 && "text-[#ff6b6b]")}>
+              {money(data.totalDebt)} <span className="font-sans text-base font-bold opacity-80">{t("common.sum")}</span>
             </div>
             {data.totalDebt > 0 ? (
               <div className="text-sm text-hero-fg-mut mt-2">
@@ -57,7 +57,10 @@ export const Payments = () => {
                       <div className="font-bold text-sm break-words">{d.student.fullName.split(" ")[0]} · {d.groupName}</div>
                       <div className="text-xs text-hint break-words">{d.centerName}{d.nextDueDate && ` · ${t("payments.dueShort", { d: fmtDate(d.nextDueDate) })}`}</div>
                     </div>
-                    <div className="font-extrabold text-bad tabular shrink-0 text-right leading-tight">{money(d.debt)} <span className="text-[11px] font-bold">{t("common.sum")}</span></div>
+                    <div className="font-extrabold text-bad shrink-0 text-right leading-tight">
+                      <div className="tabular text-[14px] min-[380px]:text-[15px]">{money(d.debt)}</div>
+                      <div className="text-[11px] font-bold">{t("common.sum")}</div>
+                    </div>
                     <HiChevronRight className="w-4 h-4 text-hint/70 shrink-0" />
                   </Card>
                 ))}
@@ -81,7 +84,10 @@ export const Payments = () => {
                           <div className="font-bold text-sm break-words">{p.student.fullName.split(" ")[0]} · {p.groupName}</div>
                           <div className="text-xs text-hint break-words">{[fmtDate(p.date), t(`payments.type.${p.type}`, { defaultValue: p.type }), p.centerName].filter(Boolean).join(" · ")}</div>
                         </div>
-                        <div className="font-extrabold tabular shrink-0 text-right leading-tight">{money(p.amount)} <span className="text-[11px] font-bold text-hint">{t("common.sum")}</span></div>
+                        <div className="font-extrabold shrink-0 text-right leading-tight">
+                          <div className="tabular text-[14px] min-[380px]:text-[15px]">{money(p.amount)}</div>
+                          <div className="text-[11px] font-bold text-hint">{t("common.sum")}</div>
+                        </div>
                       </div>
                     </div>
                   ))}

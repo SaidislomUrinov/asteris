@@ -61,7 +61,7 @@ export const NotificationItem = ({ n, showTime = true, clickable = true }) => {
         {bodyLines.length > 0 && (
           <div className="text-xs text-hint mt-0.5 whitespace-pre-line break-words line-clamp-3">{bodyLines.join("\n")}</div>
         )}
-        {meta && <div className="text-[11px] text-hint/80 mt-0.5">{meta}</div>}
+        {meta && <div className="text-[11px] text-hint/80 mt-0.5 break-words">{meta}</div>}
       </div>
     </Tag>
   );

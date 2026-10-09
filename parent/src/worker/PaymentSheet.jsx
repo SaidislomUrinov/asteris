@@ -231,7 +231,7 @@ export const PaymentSheet = ({ open, initialStudent, initialEntryId = null, onCl
           {(entry.debt || 0) > 0 ? (
             <div className="flex items-center justify-between gap-3 rounded-2xl bg-bad-bg text-bad px-3.5 py-2.5">
               <span className="text-[13px] font-bold">{t("worker.pay.debt")}</span>
-              <span className="tabular font-bold">{money(entry.debt)} {t("common.sum")}</span>
+              <span className="tabular font-bold">{money(entry.debt)} <span className="font-sans">{t("common.sum")}</span></span>
             </div>
           ) : (
             <div className="rounded-2xl bg-ok-bg text-ok px-3.5 py-2.5 text-[13px] font-bold">{t("worker.pay.noDebt")}</div>

@@ -13,6 +13,14 @@ const ICON_TONE = {
   default: "bg-accent/10 text-accent",
 };
 
+// Kichik telefonda (320–360px) uzun summa kartadan chiqmasin.
+const valueSize = (v) => {
+  const n = String(v ?? "").length;
+  if (n > 8) return "text-[13px] min-[380px]:text-[15px]";
+  if (n > 6) return "text-[14px] min-[380px]:text-[15px]";
+  return "text-[17px]";
+};
+
 export const StatRow = ({ items, className, dark }) => (
   <div className={cn("grid grid-cols-3 gap-2", className)}>
     {items.map((it, i) => {
@@ -30,9 +38,9 @@ export const StatRow = ({ items, className, dark }) => (
               <Ic className="w-4 h-4" />
             </span>
           )}
-          <div className={cn("font-extrabold tabular leading-tight whitespace-nowrap", String(it.value).length > 6 ? "text-[15px]" : "text-[17px]", !dark && TONE[it.tone])}>
-            {it.value}
-            {it.suffix && <span className="font-sans font-bold text-[10px] ml-0.5 opacity-80">{it.suffix}</span>}
+          <div className={cn("flex flex-wrap items-baseline gap-x-0.5 font-extrabold leading-tight min-w-0", !dark && TONE[it.tone])}>
+            <span className={cn("tabular whitespace-nowrap", valueSize(it.value))}>{it.value}</span>
+            {it.suffix && <span className="font-sans font-bold text-[10px] opacity-80">{it.suffix}</span>}
           </div>
           <div className={cn("text-[11px] leading-tight -mt-1", dark ? "text-hero-fg-mut" : "text-hint")}>{it.label}</div>
         </div>

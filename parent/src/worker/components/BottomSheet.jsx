@@ -48,7 +48,7 @@ export const BottomSheet = ({ open, onClose, title, subtitle, right, children, f
         </div>
         <header className="flex items-start justify-between gap-3 px-4 pb-2 shrink-0">
           <div className="min-w-0">
-            <div className="text-lg font-extrabold leading-tight break-words">{title}</div>
+            <div className="font-title text-lg font-bold leading-tight break-words">{title}</div>
             {subtitle && <div className="text-[13px] text-hint mt-0.5 break-words">{subtitle}</div>}
           </div>
           <div className="flex items-center gap-2 shrink-0">

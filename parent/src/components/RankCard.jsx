@@ -30,7 +30,7 @@ const TIER = {
 const Stat = ({ value, label }) => (
   <div className="min-w-0">
     <div className="font-extrabold text-[15px] tabular leading-tight">{value}</div>
-    <div className="text-[10px] text-hint leading-tight mt-0.5 truncate">{label}</div>
+    <div className="text-[10px] text-hint leading-tight mt-0.5 truncate font-sans">{label}</div>
   </div>
 );
 
@@ -53,7 +53,7 @@ export const RankCard = ({ entryId }) => {
   ) : null;
 
   const stats = (
-    <div className="grid grid-cols-2 gap-3 text-right shrink-0">
+    <div className="grid grid-cols-2 gap-2.5 min-[380px]:gap-3 text-right shrink-0">
       <Stat value={r.gradeAverage ?? "—"} label={t("grades.avg")} />
       <Stat value={r.attendanceRate != null ? `${r.attendanceRate}%` : "—"} label={t("att.rate")} />
     </div>
@@ -66,7 +66,7 @@ export const RankCard = ({ entryId }) => {
           <HiOutlineTrophy className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-extrabold text-[15px] leading-tight">{t("rankCard.title")}</div>
+          <div className="font-title font-bold text-[15px] leading-tight">{t("rankCard.title")}</div>
           <div className="text-xs text-hint mt-0.5 leading-snug">{t("student.rank.none")}</div>
           {period}
         </div>
@@ -81,7 +81,7 @@ export const RankCard = ({ entryId }) => {
           {r.position}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-extrabold text-[15px] leading-tight">
+          <div className="font-title font-bold text-[15px] leading-tight">
             {t("student.rank.badge", { position: r.position, total: r.total })}
           </div>
           <div className="text-xs text-hint mt-0.5 leading-snug">
@@ -94,7 +94,7 @@ export const RankCard = ({ entryId }) => {
     );
 
   return (
-    <Card className={cn("relative isolate overflow-hidden flex items-center gap-3.5 py-4", tier.card)}>
+    <Card className={cn("relative isolate overflow-hidden flex items-center gap-2.5 min-[380px]:gap-3.5 py-4", tier.card)}>
       {/* Karta bo'ylab sekin o'tadigan yaltiroq chiziq */}
       <span
         aria-hidden
@@ -108,7 +108,7 @@ export const RankCard = ({ entryId }) => {
         <div className={cn("text-[11px] font-bold tracking-[0.08em] uppercase", tier.title)}>
           {t(`rankCard.tier${r.position}`)}
         </div>
-        <div className="font-extrabold text-[17px] leading-tight mt-0.5">
+        <div className="font-title font-bold text-[17px] leading-tight mt-0.5">
           {t("student.rank.badge", { position: r.position, total: r.total })}
         </div>
         {period}

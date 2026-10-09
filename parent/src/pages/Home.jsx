@@ -47,7 +47,7 @@ export const Home = () => {
       <header className="flex items-center gap-3">
         <div className="flex-1 min-w-0">
           <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-hint">{greet(t)}</div>
-          <h1 className="text-[22px] font-extrabold leading-tight tracking-tight break-words">{parent?.name || ""}</h1>
+          <h1 className="text-[20px] min-[380px]:text-[22px] font-extrabold leading-tight tracking-tight break-words">{parent?.name || ""}</h1>
         </div>
         <Avatar text={initials(parent?.name)} className="w-11 h-11 rounded-full text-[15px]" />
       </header>

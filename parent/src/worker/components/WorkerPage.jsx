@@ -18,7 +18,7 @@ export const WorkerPage = ({ title, subtitle, right, children, className }) => {
         <div className="flex items-center gap-1 min-w-0">
           {back && <PageBack />}
           <div className="min-w-0">
-            {title && <h1 className="text-[22px] font-extrabold text-ink leading-tight tracking-tight break-words">{title}</h1>}
+            {title && <h1 className="text-[20px] min-[380px]:text-[22px] font-extrabold text-ink leading-tight tracking-tight break-words">{title}</h1>}
             {subtitle && <div className="text-[13px] text-hint mt-0.5 break-words">{subtitle}</div>}
           </div>
         </div>

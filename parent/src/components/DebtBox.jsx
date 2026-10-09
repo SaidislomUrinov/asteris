@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Card, Divider, KV } from "./Card";
+import { Num } from "./Num";
 import { fmtDate, fmtDateFull, fmtMonth, money } from "../utils/format";
 
 // Sikl oralig'i ("20-oktabr – 25-oktabr") — bir oyda ikki qator bo'lsa ajratadi.
@@ -13,7 +14,7 @@ export const DebtBox = ({ debt, breakdown = [], nextDueDate, price }) => {
     return (
       <Card className="border-[1.5px] border-ok/50">
         <div className="text-[11px] font-bold uppercase tracking-wider text-ok">{t("payments.noDebt")}</div>
-        {price != null && <div className="text-sm text-hint mt-1">{t("payments.pricePerMonth", { v: money(price) })}</div>}
+        {price != null && <div className="text-sm text-hint mt-1"><Num text={t("payments.pricePerMonth", { v: money(price) })} v={money(price)} /></div>}
         {nextDueDate && <div className="text-sm text-hint">{t("payments.nextDue", { d: fmtDateFull(nextDueDate) })}</div>}
       </Card>
     );
@@ -28,16 +29,16 @@ export const DebtBox = ({ debt, breakdown = [], nextDueDate, price }) => {
             label={
               <>
                 {fmtMonth(b.month)}
-                {rangeOf(b) && <span className="block text-[11px] text-hint">{rangeOf(b)}</span>}
+                {rangeOf(b) && <span className="block text-[11px] text-hint font-sans">{rangeOf(b)}</span>}
               </>
             }
-            value={`${money(b.debt)} ${t("common.sum")}`}
-            valueClassName="text-bad"
+            value={<>{money(b.debt)} <span className="font-sans">{t("common.sum")}</span></>}
+            valueClassName="tabular text-bad"
           />
         ))}
       </div>
       <Divider className="my-1.5" />
-      <KV label={t("common.total")} value={`${money(debt)} ${t("common.sum")}`} valueClassName="text-bad text-base" />
+      <KV label={t("common.total")} value={<>{money(debt)} <span className="font-sans">{t("common.sum")}</span></>} valueClassName="tabular text-bad text-base" />
       {nextDueDate && <div className="text-sm text-hint mt-1">{t("payments.nextDue", { d: fmtDateFull(nextDueDate) })}</div>}
     </Card>
   );

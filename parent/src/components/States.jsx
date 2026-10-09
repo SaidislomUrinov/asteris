@@ -9,7 +9,7 @@ export const EmptyState = ({ icon, title, text, action }) => {
     <div className="w-14 h-14 rounded-2xl bg-ink/6 grid place-items-center text-hint">
       <Icon className="w-7 h-7" />
     </div>
-    <div className="font-bold text-ink mt-1">{title}</div>
+    <div className="font-title font-bold text-ink mt-1 break-words">{title}</div>
     {text && <div className="text-sm text-hint max-w-[28ch]">{text}</div>}
     {action}
   </div>
@@ -25,7 +25,7 @@ export const ErrorState = ({ error, onRetry }) => {
       <div className="w-14 h-14 rounded-2xl bg-bad-bg grid place-items-center text-bad">
         <HiOutlineExclamationTriangle className="w-7 h-7" />
       </div>
-      <div className="font-bold text-ink mt-1">{t("error.title")}</div>
+      <div className="font-title font-bold text-ink mt-1">{t("error.title")}</div>
       <div className="text-sm text-hint max-w-[30ch] break-words">{msg}</div>
       {onRetry && (
         <Button variant="soft" className="w-auto mt-2 py-2.5" onClick={() => onRetry()}>

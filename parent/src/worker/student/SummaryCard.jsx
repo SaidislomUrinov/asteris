@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Card, Pill } from "../../components/Card";
 import { cn } from "../../utils/cn";
+import { Num } from "../../components/Num";
 
 // Bitta guruh bo'yicha davomat va baho xulosasi.
 export const SummaryCard = ({ name, att, grade }) => {
@@ -9,7 +10,7 @@ export const SummaryCard = ({ name, att, grade }) => {
   const rate = marked ? Math.round((att.present / marked) * 100) : null;
   return (
     <Card className="flex flex-col gap-2">
-      <div className="font-extrabold text-[15px] leading-tight break-words">{name}</div>
+      <div className="font-title font-bold text-[15px] leading-tight break-words">{name}</div>
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-xl bg-ink/6 px-3 py-2 min-w-0">
           <div className="text-[11px] font-bold text-hint truncate">{t("worker.student.attendance")}</div>
@@ -30,12 +31,12 @@ export const SummaryCard = ({ name, att, grade }) => {
           {["present", "absent", "excused"].map((k) =>
             att[k] > 0 ? (
               <Pill key={k} tone={{ present: "ok", absent: "bad", excused: "warn" }[k]}>
-                {t(`worker.att.count.${k}`, { count: att[k] })}
+                <Num text={t(`worker.att.count.${k}`, { count: att[k] })} v={String(att[k])} />
               </Pill>
             ) : null,
           )}
-          {att.late > 0 && <Pill tone="warn">{t("worker.att.count.late", { count: att.late })}</Pill>}
-          {grade?.count > 0 && <Pill tone="acc">{t("worker.student.gradesCount", { count: grade.count })}</Pill>}
+          {att.late > 0 && <Pill tone="warn"><Num text={t("worker.att.count.late", { count: att.late })} v={String(att.late)} /></Pill>}
+          {grade?.count > 0 && <Pill tone="acc"><Num text={t("worker.student.gradesCount", { count: grade.count })} v={String(grade.count)} /></Pill>}
         </div>
       )}
     </Card>

@@ -9,7 +9,7 @@ export const MonthNav = ({ month, onChange }) => {
   return (
     <Card className="flex items-center justify-between py-2.5">
       <button type="button" onClick={() => onChange(shiftMonth(month, -1))} className="p-1.5 -m-1.5 text-hint" aria-label={t("common.prevMonth")}><HiChevronLeft className="w-5 h-5" /></button>
-      <div className="font-extrabold">{fmtMonth(month)}</div>
+      <div className="font-title font-bold">{fmtMonth(month)}</div>
       <button type="button" onClick={() => onChange(shiftMonth(month, 1))} className="p-1.5 -m-1.5 text-hint" aria-label={t("common.nextMonth")}><HiChevronRight className="w-5 h-5" /></button>
     </Card>
   );

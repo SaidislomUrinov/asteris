@@ -18,7 +18,7 @@ export const TodayCard = ({ lessons, showStudent = true, tab = "attendance" }) =
         {lessons.length > 0 && <span className="ml-auto text-[11px] font-bold bg-white/12 rounded-full px-2 py-0.5 tabular">{lessons.length}</span>}
       </div>
       {lessons.length === 0 ? (
-        <div className="font-bold mt-2.5 text-[15px]">{t("home.noLessonsToday")}</div>
+        <div className="font-title font-bold mt-2.5 text-[15px]">{t("home.noLessonsToday")}</div>
       ) : (
         <div className="mt-2.5 divide-y divide-white/10">
           {lessons.map((l) => (
@@ -28,7 +28,7 @@ export const TodayCard = ({ lessons, showStudent = true, tab = "attendance" }) =
               onClick={() => navigate(`/child/${l.student._id}/group/${l.entryId}/${tab}`)}
               className="w-full text-left flex items-center gap-3 tabular py-2 first:pt-0 last:pb-0 active:opacity-70"
             >
-              <span className="font-extrabold shrink-0 w-12 text-[15px]">{l.startTime}</span>
+              <span className="font-extrabold shrink-0 w-[3.25rem] text-[15px]">{l.startTime}</span>
               <span className="min-w-0 flex-1 break-words">
                 <span className="block text-sm font-semibold leading-tight font-sans">{l.name}</span>
                 {showStudent ? (

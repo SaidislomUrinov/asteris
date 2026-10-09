@@ -27,7 +27,7 @@ export const Profile = () => {
           {initials(me?.name)}
         </div>
         <div className="min-w-0">
-          <div className="font-extrabold text-[17px] break-words">{me?.name || "—"}</div>
+          <div className="font-title font-bold text-[17px] break-words">{me?.name || "—"}</div>
           <RoleBadge color={roleColor}>{t(`worker.role.${role}`)}</RoleBadge>
         </div>
       </Card>

@@ -120,7 +120,7 @@ export const QrCardSheet = ({ onClose, entryId, initial }) => {
       style={{ ...LIGHT_VARS, paddingTop: "env(safe-area-inset-top)" }}
     >
       <header className="flex items-center justify-between gap-3 px-5 pt-3 pb-2 shrink-0">
-        <div className="text-lg font-extrabold leading-tight min-w-0 truncate">{t("group.qrCard.title")}</div>
+        <div className="font-title text-lg font-bold leading-tight min-w-0 truncate">{t("group.qrCard.title")}</div>
         <button
           type="button"
           onClick={close}

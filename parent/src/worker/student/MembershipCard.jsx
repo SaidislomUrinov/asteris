@@ -24,7 +24,7 @@ export const MembershipCard = ({ entry: e, name, showMoney, onOpenGroup, onPay }
           type="button"
           disabled={!onOpenGroup}
           onClick={onOpenGroup}
-          className="min-w-0 text-left flex items-center gap-1 font-extrabold text-[15px] break-words disabled:cursor-default"
+          className="min-w-0 text-left flex items-center gap-1 font-title font-bold text-[15px] break-words disabled:cursor-default"
         >
           <span className="min-w-0 break-words">{name}</span>
           {onOpenGroup && <HiChevronRight className="w-4 h-4 text-hint shrink-0" />}
@@ -35,13 +35,13 @@ export const MembershipCard = ({ entry: e, name, showMoney, onOpenGroup, onPay }
         <>
           <div className="flex items-center justify-between gap-2 text-[13px] pt-2 border-t border-line/70">
             <span className="text-hint">{t("worker.student.price")}</span>
-            <span className="tabular font-bold">{money(e.price)} {t("common.sum")}</span>
+            <span className="tabular font-bold">{money(e.price)} <span className="font-sans">{t("common.sum")}</span></span>
           </div>
           {e.debt > 0 ? (
             <div className="rounded-xl bg-bad-bg text-bad px-3 py-2.5 flex flex-col gap-1">
               <div className="flex items-center justify-between gap-2 text-[14px] font-bold">
                 <span>{t("worker.pay.debt")}</span>
-                <span className="tabular">{money(e.debt)} {t("common.sum")}</span>
+                <span className="tabular">{money(e.debt)} <span className="font-sans">{t("common.sum")}</span></span>
               </div>
               {rows.slice(0, MAX_ROWS).map((r, i) => (
                 <div key={`${r.month}-${r.from || i}`} className="flex items-center justify-between gap-2 text-[12.5px] opacity-90 pt-1 border-t border-bad/15">

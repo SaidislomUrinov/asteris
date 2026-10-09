@@ -22,6 +22,9 @@ import { QrCardSheet } from "./QrCardSheet";
 import { cn } from "../../utils/cn";
 import { Button } from "../../components/Button";
 import { openTelegramLink } from "../../lib/telegram";
+import { Avatar } from "../../components/Card";
+import { photoSrc } from "../../lib/studentPhoto";
+import { initials } from "../../utils/format";
 
 const TABS = ["attendance", "grades", "payments"];
 // O'quvchi: Vazifalar (default) · Baholar · Davomat — to'lov yo'q
@@ -72,7 +75,9 @@ export const Group = () => {
 
   if (loading)
     return (
-      <Page title={<Skeleton className="h-6 w-44" />} subtitle={<Skeleton className="h-3.5 w-56 mt-1" />}>
+      <Page title={<Skeleton className="h-6 w-44" />} subtitle={<Skeleton className="h-3.5 w-56 mt-1" />}
+        right={<Skeleton className="w-12 h-12 rounded-full shrink-0" />}
+      >
         <Skeleton className="h-10 rounded-xl" />
         <Skeleton className="h-72 rounded-2xl" />
         <StatSkeleton />
@@ -81,24 +86,48 @@ export const Group = () => {
   if (error) return <Page><ErrorState error={error} onRetry={reload} /></Page>;
   if (!found) return <Page><EmptyState icon={HiOutlineAcademicCap} title={t("group.notFound")} /></Page>;
 
-  const { group, center } = found;
-  const sub = [center.center.name, group.teacherName, group.roomName || null].filter(Boolean).join(" · ");
+  const { child, group, center } = found;
+  const subParts = [center.center.name, group.teacherName, group.roomName ? <span key="room" className="whitespace-nowrap">{group.roomName}</span> : null].filter(Boolean);
 
   return (
-    <Page title={group.name} subtitle={sub}>
+    <Page
+      title={group.name}
+      subtitle={
+        <>
+          {/* Ota-ona bir nechta farzand ko'rishi mumkin — qaysi bola ekani ko'rinsin */}
+          {!isStudent && <div className="font-bold text-ink break-words">{child.student.fullName}</div>}
+          <div className="break-words">
+            {subParts.map((p, i) => (
+              <span key={i}>
+                {i > 0 && " · "}
+                {p}
+              </span>
+            ))}
+          </div>
+        </>
+      }
+      right={
+        <Avatar
+          text={initials(child.student.fullName)}
+          src={photoSrc(group.photo)}
+          alt={child.student.fullName}
+          className={cn("w-12 h-12 rounded-full text-base", group.photo && "ring-2 ring-line")}
+        />
+      }
+    >
       {/* Reyting faqat faol a'zolikda — tugagan guruhda so'rov yuborilmaydi */}
       {group.status === "active" && <RankCard entryId={eid} />}
       {/* Telegram guruh — faqat faol a'zolikda va markaz havola qo'ygan bo'lsa */}
       {group.status === "active" && (qr.data || group.telegramLink) && (
         <div className={cn("grid gap-2.5", qr.data && group.telegramLink && "grid-cols-2")}>
           {qr.data && (
-            <Button variant="soft" onClick={() => setQrOpen(true)}>
+            <Button variant="soft" className="px-2" onClick={() => setQrOpen(true)}>
               <HiOutlineQrCode className="w-5 h-5 shrink-0" />
               {t("group.qrCard.button")}
             </Button>
           )}
           {group.telegramLink && (
-            <Button variant="soft" onClick={() => openTelegramLink(group.telegramLink)}>
+            <Button variant="soft" className="px-2" onClick={() => openTelegramLink(group.telegramLink)}>
               <FaTelegram className="w-5 h-5 shrink-0" />
               {t("group.telegram")}
             </Button>

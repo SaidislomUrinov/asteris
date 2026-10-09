@@ -9,7 +9,7 @@ export const Page = ({ title, subtitle, right, children, className, withTabBar =
     {(title || right) && (
       <header className="flex items-start justify-between gap-3 mb-0.5">
         <div className="min-w-0">
-          {title && <h1 className="text-[22px] font-extrabold text-ink leading-tight tracking-tight break-words">{title}</h1>}
+          {title && <h1 className="text-[20px] min-[380px]:text-[22px] font-extrabold text-ink leading-tight tracking-tight break-words">{title}</h1>}
           {subtitle && <div className="text-[13px] text-hint mt-1 break-words">{subtitle}</div>}
         </div>
         {right}

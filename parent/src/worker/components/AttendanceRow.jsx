@@ -21,13 +21,13 @@ export const AttendanceRow = ({ name, photo, tone = 0, sub, mark, saving, disabl
   const { t } = useTranslation();
   return (
     <div className="flex items-center gap-2 py-2">
-      <Avatar text={initials(name)} tone={tone} src={photoSrc(photo)} alt={name} className="w-8 h-8 text-[11px] mr-1" />
+      <Avatar text={initials(name)} tone={tone} src={photoSrc(photo)} alt={name} className="w-8 h-8 text-[11px] min-[380px]:mr-1" />
       <div className="flex-1 min-w-0">
-        <div className="font-bold text-[14px] truncate">{name}</div>
+        <div className="font-bold text-[13px] min-[380px]:text-[14px] leading-snug line-clamp-2 break-words">{name}</div>
         {sub && <div className="text-[12px] text-hint break-words">{sub}</div>}
         {mark?.late && mark.status === "present" && <Pill tone="warn" className="mt-0.5">{t("worker.att.late")}</Pill>}
       </div>
-      <div className={cn("flex gap-1.5 shrink-0", saving && "opacity-60")}>
+      <div className={cn("flex gap-1 min-[380px]:gap-1.5 shrink-0", saving && "opacity-60")}>
         {BUTTONS.map((b) => {
           const active = mark?.status === b.status;
           return (
@@ -40,7 +40,7 @@ export const AttendanceRow = ({ name, photo, tone = 0, sub, mark, saving, disabl
               aria-label={t(`worker.att.status.${b.status}`)}
               title={t(`worker.att.status.${b.status}`)}
               className={cn(
-                "w-10 h-10 rounded-xl grid place-items-center transition-colors disabled:cursor-not-allowed",
+                "w-9 h-9 min-[380px]:w-10 min-[380px]:h-10 rounded-xl grid place-items-center transition-colors disabled:cursor-not-allowed",
                 active ? b.on : "bg-ink/6 text-hint",
               )}
             >

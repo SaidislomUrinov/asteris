@@ -32,9 +32,9 @@ export const PaymentsTab = ({ entryId }) => {
               <div className={cn("flex items-center gap-3", p.status !== "active" && "opacity-60")}>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-bold tabular">
-                    {money(p.amount)} {t("common.sum")}
-                    {p.status === "refunded" && <Pill tone="warn" className="ml-2">{t("payments.refunded")}</Pill>}
-                    {p.status === "cancelled" && <Pill tone="mut" className="ml-2">{t("payments.cancelled")}</Pill>}
+                    {money(p.amount)} <span className="font-sans">{t("common.sum")}</span>
+                    {p.status === "refunded" && <Pill tone="warn" className="ml-2 font-sans">{t("payments.refunded")}</Pill>}
+                    {p.status === "cancelled" && <Pill tone="mut" className="ml-2 font-sans">{t("payments.cancelled")}</Pill>}
                   </div>
                   <div className="text-xs text-hint mt-0.5 break-words">
                     {[fmtDate(p.date), t(`payments.type.${p.type}`, { defaultValue: p.type }), p.forMonth ? fmtMonth(p.forMonth) : null, p.collectedByName].filter(Boolean).join(" · ")}

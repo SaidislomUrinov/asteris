@@ -49,7 +49,7 @@ export const AttendanceCalendar = ({ month, days = [], lessonDays = [], onMonthC
         <button type="button" onClick={() => onMonthChange(-1)} className="p-1.5 -m-1.5 text-hint active:opacity-60" aria-label={t("common.prevMonth")}>
           <HiChevronLeft className="w-5 h-5" />
         </button>
-        <div className="font-extrabold">{fmtMonth(month)}</div>
+        <div className="font-title font-bold">{fmtMonth(month)}</div>
         <button type="button" onClick={() => onMonthChange(1)} className="p-1.5 -m-1.5 text-hint active:opacity-60" aria-label={t("common.nextMonth")}>
           <HiChevronRight className="w-5 h-5" />
         </button>
@@ -57,7 +57,7 @@ export const AttendanceCalendar = ({ month, days = [], lessonDays = [], onMonthC
       <Divider />
       <div className={cn("grid grid-cols-7 gap-1 text-center", loading && "opacity-50")}>
         {WEEK.map((w) => (
-          <div key={w} className="text-[10px] font-bold text-hint uppercase py-1">{t(`days.${w}`)}</div>
+          <div key={w} className="text-[10px] font-bold text-hint uppercase py-1 truncate">{t(`days.${w}`)}</div>
         ))}
         {cells.map((c, i) =>
           c ? (

@@ -88,7 +88,7 @@ export const IconBox = ({ Icon, tone = "acc", className }) => {
 };
 
 export const KV = ({ label, value, className, valueClassName }) => (
-  <div className={cn("flex justify-between items-start gap-3 py-1.5 tabular", className)}>
+  <div className={cn("flex justify-between items-start gap-3 py-1.5", className)}>
     <span className="text-hint text-sm min-w-0 break-words">{label}</span>
     <span className={cn("font-bold text-sm text-right shrink-0", valueClassName)}>{value}</span>
   </div>

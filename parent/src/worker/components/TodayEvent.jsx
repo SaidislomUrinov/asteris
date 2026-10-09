@@ -35,6 +35,7 @@ export const TodayEvent = ({ ev, nowHHmm }) => {
               ev.studentsCount != null && t("worker.today.students", { count: ev.studentsCount }),
               state === "now" && t("worker.today.lessonNow"),
             )}
+            subNum={ev.endTime ? `${ev.time}–${ev.endTime}` : undefined}
           />
           <AttendancePills attendance={a} />
           {canMark && (
@@ -64,6 +65,7 @@ export const TodayEvent = ({ ev, nowHHmm }) => {
           <EventTitle
             title={t("worker.today.dueToday", { count: ev.count })}
             sub={t("worker.today.dueTodaySum", { amount: money(ev.amount) })}
+            subNum={money(ev.amount)}
           />
           {can("student:view") && (
             <MiniAction onClick={() => navigate("/debtors")}>{t("worker.today.list")}</MiniAction>

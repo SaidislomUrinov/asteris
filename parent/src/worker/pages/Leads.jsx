@@ -51,7 +51,7 @@ export const Leads = () => {
               sub={[l.phone, l.source && t(`worker.leads.source.${l.source}`, { defaultValue: l.source }), fmtDate(l.date || l.createdAt)]
                 .filter(Boolean)
                 .join(" · ")}
-              right={<Pill tone={STATUS_TONE[l.status] || "mut"}>{t(`worker.leads.status.${l.status}`, { defaultValue: l.status })}</Pill>}
+              right={<Pill tone={STATUS_TONE[l.status] || "mut"} className="font-sans">{t(`worker.leads.status.${l.status}`, { defaultValue: l.status })}</Pill>}
               onClick={l.phone ? () => { window.location.href = `tel:${l.phone}`; } : undefined}
             />
           ))}

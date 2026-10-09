@@ -19,7 +19,7 @@ export const StudentProfileCard = ({ student: s, canCall, onPay, payDisabled, on
       <div className="flex items-center gap-3 min-w-0">
         <StudentPhotoAvatar student={s} className="w-14 h-14 text-lg" />
         <div className="min-w-0">
-          <div className="font-extrabold text-[18px] leading-tight tracking-tight break-words">{s.fullName}</div>
+          <div className="font-title font-bold text-[17px] min-[380px]:text-[18px] leading-tight tracking-tight break-words">{s.fullName}</div>
           {canCall && s.phone && <div className="tabular text-[13px] text-hint mt-0.5">{s.phone}</div>}
         </div>
       </div>

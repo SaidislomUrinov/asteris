@@ -73,7 +73,7 @@ export const StudentAchievementsView = ({ id }) => {
             className="w-12 h-12 text-base"
           />
           <div className="min-w-0">
-            <div className="font-extrabold text-[17px] leading-tight break-words">{student?.fullName || "—"}</div>
+            <div className="font-title font-bold text-[17px] leading-tight break-words">{student?.fullName || "—"}</div>
             <div className="flex items-center gap-1 text-[12px] text-hint">
               <HiOutlineTrophy className="w-4 h-4 text-warn shrink-0" />
               {t("worker.student.teacherScope")}

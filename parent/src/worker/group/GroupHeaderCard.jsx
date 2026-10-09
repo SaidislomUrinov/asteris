@@ -19,7 +19,7 @@ export const GroupHeaderCard = ({ group: g, teacherName, assistantName, students
   return (
     <Card className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
-        <h2 className="text-[20px] font-extrabold leading-tight tracking-tight break-words min-w-0">{groupLabel(g)}</h2>
+        <h2 className="text-[18px] min-[380px]:text-[20px] font-extrabold leading-tight tracking-tight break-words min-w-0">{groupLabel(g)}</h2>
         <Pill tone={STATUS_TONE[g.status] || "mut"} className="shrink-0 mt-0.5">{t(`worker.group.status.${g.status}`)}</Pill>
       </div>
       {(g.days?.length > 0 || g.startTime) && (
@@ -34,7 +34,7 @@ export const GroupHeaderCard = ({ group: g, teacherName, assistantName, students
         </div>
       )}
       <div className="flex flex-col gap-1.5 pt-3 border-t border-line/70">
-        {g.roomName && <Meta icon={HiOutlineMapPin}>{g.roomName}</Meta>}
+        {g.roomName && <Meta icon={HiOutlineMapPin}><span className="whitespace-nowrap">{g.roomName}</span></Meta>}
         <Meta icon={HiOutlineUser}>
           <span className={teacherName ? "font-bold" : "text-hint"}>{teacherName || t("worker.group.noTeacher")}</span>
         </Meta>

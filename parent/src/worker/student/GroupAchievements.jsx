@@ -17,7 +17,7 @@ export const GroupAchievements = ({ item, month }) => {
   return (
     <div className="flex flex-col gap-2.5">
       <Card className="flex items-center justify-between gap-2 py-2.5">
-        <span className="font-extrabold text-[15px] min-w-0 break-words">{item.groupName || item.subjectName || "—"}</span>
+        <span className="font-title font-bold text-[15px] min-w-0 break-words">{item.groupName || item.subjectName || "—"}</span>
         <Pill tone={TONE[item.state] || "mut"} className="shrink-0">{t(`worker.student.entry.${item.state}`)}</Pill>
       </Card>
       <BadgesTab state={state} />

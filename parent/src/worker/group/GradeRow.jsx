@@ -4,6 +4,7 @@ import { Avatar, Pill } from "../../components/Card";
 import { initials } from "../../utils/format";
 import { photoSrc } from "../../lib/studentPhoto";
 import { cn } from "../../utils/cn";
+import { Num } from "../../components/Num";
 
 const VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
@@ -23,7 +24,7 @@ export const GradeRow = ({ name, photo, tone = 0, avg, value, blocked, open, edi
         <Avatar text={initials(name)} tone={tone} src={photoSrc(photo)} alt={name} className="w-9 h-9 text-[12px]" />
         <div className="min-w-0 flex-1">
           <div className="font-bold text-[14.5px] leading-tight truncate">{name}</div>
-          <div className="text-[12px] text-hint mt-0.5 tabular">{avg ? t("worker.grades.avg", { v: avg }) : t("worker.grades.noAvg")}</div>
+          <div className="text-[12px] text-hint mt-0.5">{avg ? <Num text={t("worker.grades.avg", { v: avg })} v={String(avg)} /> : t("worker.grades.noAvg")}</div>
         </div>
         {blocked ? (
           <Pill tone={blocked === "excused" ? "warn" : "bad"}>{t(`worker.att.status.${blocked}`)}</Pill>

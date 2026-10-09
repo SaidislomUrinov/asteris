@@ -39,8 +39,8 @@ export const Salary = () => {
         <>
           <Card className="flex flex-col gap-0.5">
             <span className="text-[12px] font-bold text-hint">{t("worker.salary.final")}</span>
-            <span className="tabular font-bold text-[28px] leading-tight">
-              {money(data?.final)} <span className="text-[15px] text-hint">{t("common.sum")}</span>
+            <span className="tabular font-bold text-[24px] min-[380px]:text-[28px] leading-tight break-words">
+              {money(data?.final)} <span className="font-sans text-[15px] text-hint">{t("common.sum")}</span>
             </span>
             {data?.salaryType && (
               <span className="text-[13px] text-hint">{t(`worker.salary.type.${data.salaryType}`, { defaultValue: data.salaryType })}</span>

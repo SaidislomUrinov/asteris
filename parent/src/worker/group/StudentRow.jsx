@@ -3,6 +3,7 @@ import { HiEllipsisVertical } from "react-icons/hi2";
 import { Avatar, Pill } from "../../components/Card";
 import { initials, money } from "../../utils/format";
 import { cn } from "../../utils/cn";
+import { Num } from "../../components/Num";
 import { photoSrc } from "../../lib/studentPhoto";
 
 const MARK_TONE = { present: "ok", absent: "bad", excused: "warn" };
@@ -30,7 +31,7 @@ export const StudentRow = ({ index, student: s, entry, mark, showDebt, sub, onOp
             <span className="flex flex-wrap items-center gap-1 mt-1">
               {mark?.status && <Pill tone={MARK_TONE[mark.status] || "mut"}>{t(`worker.att.status.${mark.status}`)}</Pill>}
               {mark?.late && mark.status === "present" && <Pill tone="warn">{t("worker.att.late")}</Pill>}
-              {debt > 0 && <Pill tone="bad" className="tabular">{t("common.debtShort", { v: money(debt) })}</Pill>}
+              {debt > 0 && <Pill tone="bad"><Num text={t("common.debtShort", { v: money(debt) })} v={money(debt)} /></Pill>}
             </span>
           )}
         </span>

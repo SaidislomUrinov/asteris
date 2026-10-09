@@ -17,7 +17,7 @@ export const ConfirmDialog = ({ open, title, text, confirmText, cancelText, dang
         className="relative w-full max-w-md bg-card text-ink rounded-t-3xl sm:rounded-3xl p-5 animate-dialog-in"
         style={{ paddingBottom: "calc(20px + env(safe-area-inset-bottom))" }}
       >
-        <div className="text-lg font-extrabold">{title}</div>
+        <div className="font-title text-lg font-bold">{title}</div>
         {text && <div className="text-sm text-hint mt-1.5">{text}</div>}
         <div className="flex gap-2.5 mt-5">
           <Button variant="soft" onClick={onClose} disabled={loading}>{cancelText}</Button>
