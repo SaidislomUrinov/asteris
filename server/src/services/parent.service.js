@@ -24,7 +24,7 @@ const { flattenLessons, getDoneDates } = require("../utils/syllabusProgress.util
 const { emitParentTelegramChanged } = require("../utils/parentTelegram.util");
 const { groupStudentsSummary, rankInSummary } = require("../utils/gradeScore.util");
 const { BADGE_FEATURE, GRADE_BADGES } = require("../utils/badge.util");
-const { latestPhoto } = require("../utils/studentPhoto.util");
+const { latestPhoto, photoFor } = require("../utils/studentPhoto.util");
 
 const TZ = "Asia/Tashkent";
 const RECEIPT_VERIFY_BASE = "https://wenet.uz/payment/verify";
@@ -501,6 +501,8 @@ const children = async (parent) => {
         nextDueDate: hideMoney ? null : billing.nextDueDate || null,
         todayStatus: rec?.status || null,
         late: !!rec?.late,
+        // Guruh filialidagi (Client) rasm — API_CONTRACT_parent_group_photo.md
+        photo: photoFor(student, entry.client || center.client),
       });
       if (status === "active" && ownActiveGroups.has(String(group._id)) && (group.days || []).includes(todayCode) && group.status === "active") {
         todayList.push({
