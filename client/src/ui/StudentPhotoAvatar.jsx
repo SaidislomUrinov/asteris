@@ -39,7 +39,8 @@ function StudentPhotoAvatar({ student, onUpdated, size = 44, rounded = "rounded-
       role="button"
       tabIndex={0}
       aria-label={t("student.photoEdit")}
-      title={t("student.photoEdit")}
+      // Rasm bor — hover'da preview chiqadi, native tooltip uni yopmasin.
+      title={src ? undefined : t("student.photoEdit")}
       aria-busy={busy || undefined}
       style={{ width: size, height: size }}
       className={`relative block shrink-0 ${rounded} select-none ${
