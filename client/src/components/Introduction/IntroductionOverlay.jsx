@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HiBookOpen, HiChatBubbleLeftRight, HiPlayCircle, HiQuestionMarkCircle } from "react-icons/hi2";
+import { HiChatBubbleLeftRight, HiPlayCircle, HiQuestionMarkCircle } from "react-icons/hi2";
 import Button from "../../ui/Button";
 
 const MAX_TOOLTIP_WIDTH = 384; // px — w-96 (kattaroq, o'qishga qulay)
@@ -157,10 +157,10 @@ function IntroductionOverlay({ step, index, total, isFirst, isLast, onNext, onBa
 
 // "?" menyusining kichik namunasi (components/HelpMenu.jsx bilan bir xil
 // bandlar, ikonka va ranglar) — shu bosqichga tegishli band ajratiladi.
+// `group` — shu bosqichda ajratiladigan band.
 const PREVIEW_ITEMS = [
-  { key: "guide", icon: HiBookOpen, labelKey: "help.guide", iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400" },
-  { key: "video", icon: HiPlayCircle, labelKey: "help.video", iconClass: "bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400" },
-  { key: "chat", icon: HiChatBubbleLeftRight, labelKey: "help.chat", iconClass: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
+  { key: "currentVideo", group: "video", icon: HiPlayCircle, labelKey: "help.currentVideo", iconClass: "bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400" },
+  { key: "chat", group: "chat", icon: HiChatBubbleLeftRight, labelKey: "help.chat", iconClass: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
 ];
 
 function HelpMenuPreview({ active }) {
@@ -172,7 +172,7 @@ function HelpMenuPreview({ active }) {
         {t("help.title")}
       </span>
       {PREVIEW_ITEMS.map((item) => {
-        const on = item.key === active;
+        const on = item.group === active;
         return (
           <div
             key={item.key}

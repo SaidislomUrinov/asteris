@@ -14,9 +14,18 @@ module.exports = {
     try {
       const data = await tutorialVideoService.upsert(
         req.params.sectionKey,
-        req.body?.youtubeUrl,
+        { youtubeUrl: req.body?.youtubeUrl, title: req.body?.title },
       );
       return res.send({ ok: true, data, msg: "tutorialVideo.saved" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  reorder: async (req, res, next) => {
+    try {
+      const data = await tutorialVideoService.reorder(req.body?.keys);
+      return res.send({ ok: true, data, msg: "tutorialVideo.reordered" });
     } catch (error) {
       next(error);
     }

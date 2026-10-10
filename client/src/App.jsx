@@ -57,6 +57,7 @@ import NotFound from "./pages/NotFound";
 import UiLab from "./pages/UiLab";
 import Calendar from "./pages/Calendar";
 import Archive from "./pages/Archive";
+import VideoLessons from "./pages/VideoLessons";
 import useCan from "./hooks/useCan";
 import useFeature from "./hooks/useFeature";
 
@@ -110,7 +111,7 @@ function App() {
       try {
         const res = await api.get("/tutorial-videos");
         const { ok, data } = res.data;
-        if (ok) dp(setTutorialVideos(data || {}));
+        if (ok && Array.isArray(data)) dp(setTutorialVideos(data));
       } catch {
         // sahifa ochilishida yuklanmasa ham sahifalar bo'sh holatni ko'rsatadi
       }
@@ -265,6 +266,8 @@ function App() {
               {authType === "staff" && <Route path="/profile" element={<StaffProfile />} />}
               {authType === "owner" && <Route path="/profile" element={<OwnerProfile />} />}
               <Route path="/notifications" element={<Notifications />} />
+              {/* Video qo'llanmalar — barcha rollar, "?" menyusidan ochiladi. */}
+              <Route path="/video-lessons" element={<VideoLessons />} />
               {can("certificate:view") && hasFeature("certificate.manage") && (
                 <Route path="/certificates" element={<Certificates />} />
               )}

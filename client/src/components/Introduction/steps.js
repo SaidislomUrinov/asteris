@@ -32,7 +32,9 @@ export const INTRO_STEPS = [
 // Tur dizayn o'zgarganda qayta ko'rsatiladi: server `introSeen` bayrog'i
 // eski turni ko'rganlarda ham `true`, shuning uchun versiya shu brauzerda
 // alohida saqlanadi (2 — 2026-10-08 menyu soddalashtirilgan dizayn).
-export const INTRO_VERSION = 2;
+// 3 — 2026-10-10: "Sahifa qo'llanmasi" olib tashlandi, "Joriy sahifa videosi"
+// + "Video qo'llanmalar" sahifasi qo'shildi.
+export const INTRO_VERSION = 3;
 export const INTRO_VERSION_KEY = "wenet:introVersion";
 
 export const readIntroVersion = () => {

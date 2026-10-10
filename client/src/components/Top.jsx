@@ -36,7 +36,7 @@ export default function Top() {
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <ThemeToggle />
-        <HelpMenu titleKey={resolvedKey} />
+        <HelpMenu />
         <NotificationBell />
         <UpdateLang dark />
       </div>

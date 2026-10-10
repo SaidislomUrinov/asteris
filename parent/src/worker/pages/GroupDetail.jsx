@@ -8,7 +8,7 @@ import { useRequest } from "../../hooks/useRequest";
 import { useWorker } from "../useWorker";
 import { useScopedLive } from "../useScopedLive";
 import { workerApi } from "../api";
-import { activeEntryOf, asErr, byName, tashkentDateShift } from "../utils";
+import { activeEntryOf, asErr, byName, mergeStudentUpdate, tashkentDateShift } from "../utils";
 import { BADGE_FEATURE, TEACHING_ROLES } from "../constants";
 import { WorkerPage } from "../components/WorkerPage";
 import { ReadOnlyNote } from "../components/ReadOnlyNote";
@@ -71,6 +71,14 @@ export const GroupDetail = () => {
     enabled: listAllowed,
     events: STUDENT_EVENTS,
     match: (_ev, p) => p?.groupId === id || (!!p?.studentId && idsRef.current.has(String(p.studentId))),
+    // Rasm/kontakt o'zgarishi — ro'yxat qayta yuklanmaydi, qator joyida yangilanadi.
+    patch: (ev, p) =>
+      ev === "student:updated"
+        ? (data) => {
+            const merge = (list) => list.map((st) => (String(st._id) === String(p.studentId) ? mergeStudentUpdate(st, p) : st));
+            return Array.isArray(data) ? merge(data) : { ...data, data: merge(data?.data || []) };
+          }
+        : null,
   });
   const students = useMemo(
     () => (studentsReq.data?.data || studentsReq.data || []).filter((s) => activeEntryOf(s, id)).sort(byName),

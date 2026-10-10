@@ -6,6 +6,7 @@ import IconButton from "../../ui/IconButton";
 import Button from "../../ui/Button";
 import Avatar from "../../ui/Avatar";
 import StudentBadges from "./StudentBadges";
+import { useSocketEvent } from "../../hooks/useSocketEvent";
 
 /**
  * O'qituvchi / yordamchi uchun o'quvchi sahifasi — FAQAT yutuqlar va medallar
@@ -26,6 +27,20 @@ function StudentAchievements() {
     setLoadedFor(id);
     setStudent(undefined);
   }
+
+  // Rasm/ism boshqa joyda o'zgarsa — refetchsiz sarlavhaga qo'llanadi.
+  useSocketEvent("student:updated", (payload) => {
+    if (payload?.studentId !== id) return;
+    setStudent((prev) =>
+      prev
+        ? {
+            ...prev,
+            fullName: payload.fullName ?? prev.fullName,
+            photo: "photo" in payload ? payload.photo || "" : prev.photo,
+          }
+        : prev,
+    );
+  });
 
   if (student === null) {
     return (

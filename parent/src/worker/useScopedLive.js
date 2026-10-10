@@ -8,10 +8,13 @@ import { LIVE_DEBOUNCE_MS } from "./constants";
 // `match(event, payload)` true bo'lsa ≈800ms debounce bilan skeleton'siz
 // qayta yuklanadi. Qayta ulanganda ham bir marta yangilanadi (o'tkazib
 // yuborilgan eventlar o'rniga).
-export const useScopedLive = (fn, deps = [], { events = [], match, enabled = true } = {}) => {
+// `patch(event, payload)` — updater `(data) => data` qaytarsa, event refetchsiz
+// joyida qo'llanadi (masalan `student:updated` — rasm/kontakt); `null` qaytarsa
+// odatdagidek qayta yuklanadi.
+export const useScopedLive = (fn, deps = [], { events = [], match, patch, enabled = true } = {}) => {
   const { connected } = useWorker();
   const req = useRequest(fn, deps, { enabled });
-  const { reload } = req;
+  const { reload, mutate } = req;
   const timer = useRef(null);
 
   const schedule = () => {
@@ -21,7 +24,10 @@ export const useScopedLive = (fn, deps = [], { events = [], match, enabled = tru
 
   useSocketEvents(events, (ev, payload) => {
     if (!enabled) return;
-    if (!match || match(ev, payload)) schedule();
+    if (match && !match(ev, payload)) return;
+    const updater = patch?.(ev, payload);
+    if (updater) mutate(updater);
+    else schedule();
   });
 
   const wasConnected = useRef(connected);

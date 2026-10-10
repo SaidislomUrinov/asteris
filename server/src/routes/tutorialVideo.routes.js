@@ -13,6 +13,13 @@ const router = Router();
 // yuklashi kerak (video maxfiy emas, `font.routes.js`dagi mantiq bilan bir xil).
 // Faqat yuklash/o'chirish Platform Admin uchun cheklanadi.
 router.get("/", tutorialVideoController.list);
+router.patch(
+  "/order",
+  adminAuth,
+  fullAdminAuth,
+  requirePermission("settings:manage"),
+  tutorialVideoController.reorder,
+);
 router.put(
   "/:sectionKey",
   adminAuth,

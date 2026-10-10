@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const initialState = {};
+// Massiv, admin belgilagan tartibda: [{ sectionKey, youtubeUrl, title, order }]
+const initialState = [];
 
 const tutorialVideos = createSlice({
   name: "tutorialVideos",

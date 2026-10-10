@@ -12,6 +12,7 @@ import {
   HiUser,
   HiUserGroup,
   HiUsers,
+  HiVideoCamera,
   HiViewfinderCircle,
   HiWallet,
 } from "react-icons/hi2";
@@ -76,6 +77,8 @@ export default function useNavItems() {
       icon: HiCog6Tooth,
       labelKey: "nav.settings",
     },
+    // Video qo'llanmalar — barcha rollar (docs/API_CONTRACT_tutorial_videos_v2.md § 4).
+    { key: "videoLessons", to: "/video-lessons", icon: HiVideoCamera, labelKey: "nav.videoLessons" },
     // Tariflar — Sozlamalar ostida alohida band (obuna holati tez-tez
     // tekshiriladi, tab ichida yashirinib qolmasin).
     isOwner && { key: "subscription", to: "/subscription", icon: HiCreditCard, labelKey: "nav.subscription" },

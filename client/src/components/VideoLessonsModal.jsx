@@ -1,35 +1,33 @@
 import { useTranslation } from "react-i18next";
 import { HiVideoCamera } from "react-icons/hi2";
 import Dialog from "../ui/Dialog";
-import useTutorialVideo from "../hooks/useTutorialVideo";
 import { extractYouTubeId } from "../utils/youtube";
 
 /**
- * Video darslik modali — Top panel Yordam menyusi (`HelpMenu`) ochadi
- * (docs/API_CONTRACT_floating_video_lessons.md § 3.1). Avval
- * `TutorialVideoButton.jsx` ichida yashiringan Dialog+iframe/bo'sh-holat
- * logikasi shu yerga ko'chirildi, mustaqil komponent sifatida.
+ * Video darslik modali — Yordam menyusi ("Joriy sahifa videosi") va
+ * Video qo'llanmalar sahifasi ochadi. Ochilganda video o'zi ijro etiladi
+ * (autoplay); yopilganda Dialog kontentni olib tashlaydi — ovoz to'xtaydi.
  *
  * @param {Object} props
  * @param {boolean} props.open
  * @param {() => void} props.onClose
- * @param {string} props.sectionKey - qaysi bo'lim uchun video (TutorialVideo.sectionKey)
- * @param {string} [props.label] - bo'lim nomi, berilsa modal sarlavhasida ko'rinadi
+ * @param {{ youtubeUrl: string, title?: string } | undefined} props.video
+ * @param {string} [props.title] - modal sarlavhasi
+ * @param {string} [props.eyebrow] - sarlavha tepasidagi mayda yorliq (masalan "#3")
  */
-function VideoLessonsModal({ open, onClose, sectionKey, label }) {
+function VideoLessonsModal({ open, onClose, video, title, eyebrow }) {
   const { t } = useTranslation();
-  const url = useTutorialVideo(sectionKey);
-  const videoId = extractYouTubeId(url);
-  const title = label ? `${label} — ${t("common.videoLessons")}` : t("common.videoLessons");
+  const videoId = extractYouTubeId(video?.youtubeUrl);
+  const heading = title || video?.title || t("common.videoLessons");
 
   return (
-    <Dialog open={open} onClose={onClose} title={title}>
+    <Dialog open={open} onClose={onClose} title={heading} eyebrow={eyebrow} widthClass="md:w-215">
       {videoId ? (
-        <div className="w-full aspect-video rounded-lg overflow-hidden bg-black">
+        <div className="w-full aspect-video rounded-2xl overflow-hidden bg-black">
           <iframe
             className="w-full h-full"
-            src={`https://www.youtube.com/embed/${videoId}`}
-            title={title}
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
+            title={heading}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />

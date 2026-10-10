@@ -11,7 +11,7 @@ import { useWorker } from "../useWorker";
 import { useScopedLive } from "../useScopedLive";
 import { useGroupNames } from "../useGroupNames";
 import { workerApi } from "../api";
-import { asErr } from "../utils";
+import { asErr, mergeStudentUpdate } from "../utils";
 import { ReadOnlyNote } from "../components/ReadOnlyNote";
 import { qrSendAllowed, qrSendEnabled } from "../constants";
 import { useSendQrCard } from "../qr/useSendQrCard";
@@ -48,6 +48,8 @@ export const StudentFullView = ({ id }) => {
   const { data: s, loading, error, reload } = useScopedLive(load, [load], {
     events: EVENTS,
     match: (_ev, p) => p?.studentId === id || p?.student?._id === id,
+    // Rasm/kontakt o'zgarishi — sahifa qayta yuklanmaydi (socket payload yetarli).
+    patch: (ev, p) => (ev === "student:updated" ? (data) => mergeStudentUpdate(data, p) : null),
   });
 
   const entries = useMemo(() => s?.groups || [], [s]);

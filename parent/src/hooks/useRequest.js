@@ -22,5 +22,10 @@ export const useRequest = (fn, deps = [], { enabled = true } = {}) => {
     if (enabled) run();
   }, [run, enabled]);
 
-  return { ...state, reload: run };
+  // Socket payload'ini refetchsiz joyida qo'llash (`useScopedLive` `patch`).
+  const mutate = useCallback((updater) => {
+    setState((s) => (s.data == null ? s : { ...s, data: updater(s.data) }));
+  }, []);
+
+  return { ...state, reload: run, mutate };
 };

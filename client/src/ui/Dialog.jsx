@@ -13,6 +13,7 @@ import { dialogClosed, dialogOpened } from "../utils/dialogState";
  *
  * @param {string} [props.eyebrow] - Sarlavha tepasidagi mayda brend yorlig'i (ixtiyoriy)
  * @param {string} [props.description] - Sarlavha ostidagi izoh matni (ixtiyoriy)
+ * @param {string} [props.widthClass] - md+ kenglik klassi (default `md:w-150`), masalan video uchun `md:w-215`
  */
 function Dialog({
   children,
@@ -24,6 +25,7 @@ function Dialog({
   className = "",
   actions,
   zIndex = "z-30",
+  widthClass = "md:w-150",
 }) {
   const { t } = useTranslation();
   // phase: "closed" -> hech narsa render qilinmaydi, "open" -> kirish animatsiyasi,
@@ -60,7 +62,7 @@ function Dialog({
         className={`fixed inset-0 flex items-center justify-center ${zIndex} p-4`}
       >
         <div
-          className={`bg-white dark:bg-night-900 rounded-3xl shadow-[0_24px_60px_-12px_rgba(15,23,42,0.25)] dark:shadow-none w-full md:w-150 relative isolate ${
+          className={`bg-white dark:bg-night-900 rounded-3xl shadow-[0_24px_60px_-12px_rgba(15,23,42,0.25)] dark:shadow-none w-full ${widthClass} relative isolate ${
             closing ? "animate-dialog-out" : "animate-dialog-in"
           } ${className}`}
           onClick={(e) => e.stopPropagation()}

@@ -6,7 +6,7 @@ import Input from "../../ui/Input";
 import Select from "../../ui/Select";
 import FieldLabel from "./FieldLabel";
 import SegmentControl from "./SegmentControl";
-import { CLIENT_SECTIONS, clientGroupLabelKey } from "../../utils/clientSections";
+import { CLIENT_PAGE_SECTIONS, clientGroupLabelKey } from "../../utils/clientSections";
 import { MAX_RESOURCES, RESOURCE_LABEL_MAX, localKey } from "./newsMeta";
 
 export default function ResourcesField({ resources, setResources, errors = {} }) {
@@ -15,7 +15,7 @@ export default function ResourcesField({ resources, setResources, errors = {} })
   const routeOptions = useMemo(
     // Client menyusi tuzilishi bo'yicha: "Moliya › Tushumlar — /revenue".
     () =>
-      CLIENT_SECTIONS.map((r) => ({
+      CLIENT_PAGE_SECTIONS.map((r) => ({
         value: r.path,
         label: `${t(clientGroupLabelKey(r.group))} › ${t(r.labelKey)} — ${r.path}`,
       })),

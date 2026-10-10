@@ -1,49 +1,36 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
 import {
-  HiBookOpen,
   HiChatBubbleLeftRight,
   HiPlayCircle,
   HiQuestionMarkCircle,
 } from "react-icons/hi2";
 import DropMenu from "../ui/DropMenu";
 import ChatWidget from "./ChatWidget";
-import KnowledgeBaseModal from "./knowledge/KnowledgeBaseModal";
 import VideoLessonsModal from "./VideoLessonsModal";
 import useChat from "../hooks/useChat";
 import useTutorialVideo from "../hooks/useTutorialVideo";
-import { resolveKnowledgeKey } from "../knowledge";
-import { resolveSectionKey } from "../utils/navSections";
+import { resolveSectionKey, videoSectionLabelKey } from "../utils/navSections";
 
-// Top panel "?" — yordamning YAGONA kirish nuqtasi: joriy sahifa qo'llanmasi
-// (Bilimlar bazasi), video darslik va qo'llab-quvvatlash chati. Avval bular
-// uchta alohida joyda edi (header "?", suriladigan video tugma, o'ng-past
-// chat tugmasi). Qo'llanma/video joriy sahifada bo'lmasa band ko'rinmaydi;
-// chat doim bor. O'qilmagan chat xabari "?" ustida qizil nuqta bo'ladi.
-export default function HelpMenu({ titleKey }) {
+// Top panel "?" — joriy sahifa videosi va qo'llab-quvvatlash chati. Barcha
+// videolar sahifasi (/video-lessons) Sidebar'da, Sozlamalar ostida
+// (docs/API_CONTRACT_tutorial_videos_v2.md § 4). Joriy sahifaga video
+// bo'lmasa birinchi band ko'rinmaydi. O'qilmagan chat xabari "?" ustida
+// qizil nuqta bo'ladi.
+export default function HelpMenu() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { authType, role } = useSelector((e) => e.user);
-  const [modal, setModal] = useState(null); // "guide" | "video" | "chat" | null
+  const [modal, setModal] = useState(null); // "video" | "chat" | null
   const chat = useChat(true);
 
-  const articleKey = resolveKnowledgeKey(pathname, { authType, role });
   const sectionKey = resolveSectionKey(pathname);
-  const videoUrl = useTutorialVideo(sectionKey);
-  const label = titleKey ? t(titleKey) : "";
+  const video = useTutorialVideo(sectionKey);
   const unread = chat.unreadCount;
 
   const items = [
-    articleKey && {
-      label: t("help.guide"),
-      icon: HiBookOpen,
-      iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
-      onClick: () => setModal("guide"),
-    },
-    videoUrl && {
-      label: t("help.video"),
+    video && {
+      label: t("help.currentVideo"),
       icon: HiPlayCircle,
       iconClass: "bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400",
       onClick: () => setModal("video"),
@@ -76,15 +63,12 @@ export default function HelpMenu({ titleKey }) {
           </span>
         }
       />
-      {articleKey && (
-        <KnowledgeBaseModal
-          open={modal === "guide"}
-          onClose={close}
-          articleKey={articleKey}
-          titleKey={titleKey}
-        />
-      )}
-      <VideoLessonsModal open={modal === "video"} onClose={close} sectionKey={sectionKey} label={label} />
+      <VideoLessonsModal
+        open={modal === "video"}
+        onClose={close}
+        video={video}
+        eyebrow={sectionKey ? t(videoSectionLabelKey(sectionKey)) : undefined}
+      />
       <ChatWidget open={modal === "chat"} onClose={close} chat={chat} />
     </>
   );

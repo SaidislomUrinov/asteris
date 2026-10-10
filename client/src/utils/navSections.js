@@ -37,6 +37,7 @@ export const NAV_SECTIONS = [
   { path: "/archive", titleKey: "nav.settings" },
   { path: "/audit-log", titleKey: "nav.settings" },
   { path: "/reports", titleKey: "nav.financeSection" },
+  { path: "/video-lessons", titleKey: "nav.videoLessons" },
 ];
 
 // Bo'lim aktivmi — o'zi yoki uning ichki (detail) sahifasi ochiqmi.
@@ -49,11 +50,37 @@ export const isSectionActive = (pathname, path) =>
 export const resolveSectionTitleKey = (pathname) =>
   NAV_SECTIONS.find((s) => isSectionActive(pathname, s.path))?.titleKey || null;
 
+// Detail sahifalar o'z videosiga ega (videolar qisqa bo'lishi uchun ro'yxat
+// va detail alohida) — docs/API_CONTRACT_tutorial_videos_v2.md § 1.
+// Ota bo'lim videosiga fallback YO'Q.
+const VIDEO_DETAIL_SECTIONS = [
+  { re: /^\/groups\/[^/]+\/?$/, key: "groups/detail" },
+  { re: /^\/rooms\/[^/]+\/?$/, key: "rooms/detail" },
+  { re: /^\/students\/[^/]+\/?$/, key: "students/detail" },
+];
+
 // Video darslik (TutorialVideo.sectionKey) — `path`dan boshlang'ich "/"
 // olib tashlangan holi (masalan "/reports/teacher-performance" ->
 // "reports/teacher-performance"), docs/API_CONTRACT_tutorial_videos.md.
-// Detail sahifalarda ham ota bo'limning kaliti qaytadi (`isSectionActive`
-// bilan bir xil moslik) — /groups/:id ochiq bo'lsa ham "groups" video
-// ko'rsatiladi, chunki foydalanuvchi hamon shu bo'lim ichida.
+// Detail naqshlari avval tekshiriladi; boshqa ichki sahifalarda ota
+// bo'limning kaliti qaytadi (`isSectionActive` bilan bir xil moslik).
 export const resolveSectionKey = (pathname) =>
-  NAV_SECTIONS.find((s) => isSectionActive(pathname, s.path))?.path.slice(1) || null;
+  VIDEO_DETAIL_SECTIONS.find((s) => s.re.test(pathname))?.key ||
+  NAV_SECTIONS.find((s) => isSectionActive(pathname, s.path))?.path.slice(1) ||
+  null;
+
+// Video bo'limining nomi (Video qo'llanmalar sahifasida sarlavha ostida).
+// Sozlamalar/Moliya tablari NAV_SECTIONS'da umumiy sarlavha oladi, bu
+// yerda esa aniq sahifa nomi kerak — shuning uchun alohida xarita.
+const VIDEO_SECTION_LABEL_KEYS = {
+  "groups/detail": "videoLessons.sections.groupDetail",
+  "rooms/detail": "videoLessons.sections.roomDetail",
+  "students/detail": "videoLessons.sections.studentDetail",
+  "qr-attendance": "nav.qrAttendance",
+  "my-plans": "nav.myPlans",
+  "audit-log": "nav.auditLog",
+  "reports/teacher-performance": "nav.teacherPerformance",
+  finance: "nav.myFinance",
+};
+
+export const videoSectionLabelKey = (key) => VIDEO_SECTION_LABEL_KEYS[key] || `nav.${key}`;
