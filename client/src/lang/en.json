@@ -1324,7 +1324,6 @@
     "telegramRemove": "Disconnect",
     "invalidTelegramLink": "Invalid Telegram link. E.g. https://t.me/+AbCd or @group",
     "telegramUpdated": "Telegram group link updated",
-    "billingPeriod": "Billing period",
     "notIndividual": "This is not an individual group"
   },
   "notification": {

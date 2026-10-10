@@ -1324,7 +1324,6 @@
     "telegramRemove": "Uzish",
     "invalidTelegramLink": "Telegram havolasi noto'g'ri. Masalan: https://t.me/+AbCd yoki @guruh",
     "telegramUpdated": "Telegram guruh manzili yangilandi",
-    "billingPeriod": "To'lov davri",
     "notIndividual": "Bu individual guruh emas"
   },
   "notification": {

@@ -1262,7 +1262,6 @@
     "telegramRemove": "Узиш",
     "invalidTelegramLink": "Telegram ҳаволаси нотўғри. Масалан: https://t.me/+AbCd ёки @guruh",
     "telegramUpdated": "Telegram гуруҳ манзили янгиланди",
-    "billingPeriod": "Тўлов даври",
     "notIndividual": "Бу индивидуал гуруҳ эмас"
   },
   "notification": {

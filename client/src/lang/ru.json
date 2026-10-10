@@ -1324,7 +1324,6 @@
     "telegramRemove": "Отключить",
     "invalidTelegramLink": "Неверная ссылка Telegram. Например: https://t.me/+AbCd или @group",
     "telegramUpdated": "Ссылка на Telegram-группу обновлена",
-    "billingPeriod": "Период оплаты",
     "notIndividual": "Это не индивидуальная группа"
   },
   "notification": {

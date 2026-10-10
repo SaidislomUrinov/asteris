@@ -121,9 +121,6 @@ const tashkentMonthOf = (unixSeconds) =>
     .format(new Date(unixSeconds * 1000))
     .slice(0, 7);
 
-// Oy qatoridagi to'lov davri (`25.09 – 24.10`, kontrakt §C) — kichik kulrang.
-const PERIOD_TEXT_CLASS = "text-[11px] font-normal leading-none tracking-tight text-slate-400 dark:text-slate-500 tabular-nums whitespace-nowrap";
-
 // Guruh detali butun guruhni bitta so'rovda oladi (server chegarasi 1000).
 const GROUP_STUDENTS_LIMIT = 1000;
 
@@ -1411,8 +1408,6 @@ function GroupDetail({ groupId, live = false }) {
               const bill = monthBilling(entry, selectedMonth, currentMonth);
               const noBill = entry.groupStatus === "pending" || !bill;
               const hasDebt = !noBill && bill.debt > 0;
-              // Davr matni (§C) — faqat kalendar oyiga to'g'ri kelmasa.
-              const period = noBill ? null : bill.period;
               return (
                 <div
                   key={s._id}
@@ -1496,7 +1491,6 @@ function GroupDetail({ groupId, live = false }) {
                         ) : (
                           <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{t("student.noDebt")}</span>
                         )}
-                        {period && <span title={t("group.billingPeriod")} className={PERIOD_TEXT_CLASS}>{period}</span>}
                       </div>
                     )}
 
@@ -1547,7 +1541,6 @@ function GroupDetail({ groupId, live = false }) {
                         ) : (
                           <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 truncate">{t("student.noDebt")}</span>
                         )}
-                        {period && <span title={t("group.billingPeriod")} className={PERIOD_TEXT_CLASS}>{period}</span>}
                       </div>
                     )}
 
@@ -1597,12 +1590,9 @@ function GroupDetail({ groupId, live = false }) {
                         ) : !bill ? (
                           <span title={t("group.noMembershipInMonth")} className="text-slate-300 dark:text-slate-600 cursor-default">—</span>
                         ) : (
-                          <span className="flex flex-col">
-                            <span>
-                              {maskMoney(bill.paid, hideFinance)} /{" "}
-                              {maskMoney(bill.due, hideFinance)} {t("student.somSuffix")}
-                            </span>
-                            {period && <span title={t("group.billingPeriod")} className={PERIOD_TEXT_CLASS}>{period}</span>}
+                          <span>
+                            {maskMoney(bill.paid, hideFinance)} /{" "}
+                            {maskMoney(bill.due, hideFinance)} {t("student.somSuffix")}
                           </span>
                         )}
                       </div>
