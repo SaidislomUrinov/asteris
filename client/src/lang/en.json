@@ -76,6 +76,7 @@
       "student:restored": "Student restored",
       "student:importUndone": "Import undone",
       "student:openingDebtsUpdated": "Opening debts updated",
+      "student:startDate": "Study start date changed",
       "student:paymentMonthMoved": "Payment month moved",
       "student:transfer": "Student transferred",
       "subject:archived": "Subject archived",
@@ -121,6 +122,7 @@
       "slogan": "Slogan",
       "parentNotifications": "Parent notifications",
       "openingDebts": "Opening debts",
+      "startDate": "Study start date",
       "openingBalance": "Opening balance",
       "activeCenters": "Active centers",
       "status": "Status",
@@ -183,7 +185,8 @@
     "calendar": "Calendar",
     "archive": "Archive",
     "leads": "Leads",
-    "myPlans": "My lesson plans"
+    "myPlans": "My lesson plans",
+    "videoLessons": "Video guides"
   },
   "report": {
     "revenue": "Revenue",
@@ -938,7 +941,14 @@
     "callWho": "Who should we call?",
     "callStudent": "Student",
     "callParent": "Parent",
-    "transferMenu": "Move to group"
+    "transferMenu": "Move to group",
+    "startDate": "Study start date",
+    "startDateHint": "If the student started at the center earlier, pick that date — payment is counted from that day",
+    "startDateInvalid": "Invalid date",
+    "startDateFuture": "Study start date cannot be later than today",
+    "startDateBeforeGroup": "Date cannot be earlier than the group's start day",
+    "startDateUnavailable": "Study start date can only be changed in an active group",
+    "entryNotActive": "Student is not active in this group"
   },
   "import": {
     "buttonLabel": "Import from Excel",
@@ -998,7 +1008,9 @@
     "oldXlsFormat": "The old .xls format is not supported. Save the file as .xlsx in Excel.",
     "studentTelegramCol": "Student Telegram",
     "parentTelegramCol": "Parent Telegram",
-    "telegramColumnsHint": "Optional columns: \"Student Telegram\" and \"Parent Telegram\" — fill them only if the Telegram number differs from the phone"
+    "telegramColumnsHint": "Optional columns: \"Student Telegram\" and \"Parent Telegram\" — fill them only if the Telegram number differs from the phone",
+    "startDateCol": "Start date",
+    "startDateRowHint": "If a row has no date, this date is used"
   },
   "room": {
     "title": "Rooms",
@@ -1092,6 +1104,9 @@
     "attendanceTitle": "Overall attendance",
     "attendanceDesc": "Students' attendance rate",
     "attendanceColumn": "Attendance",
+    "paymentFractionOfMonth": "Paid / Total · {{month}}",
+    "backToCurrentMonth": "Back to current month",
+    "noMembershipInMonth": "The student was not in the group this month",
     "attendanceButton": "Attendance",
     "attendanceNotToday": "Today is not a lesson day",
     "attendancePresent": "Present",
@@ -1306,7 +1321,8 @@
     "telegramRemoved": "Telegram group disconnected",
     "telegramRemove": "Disconnect",
     "invalidTelegramLink": "Invalid Telegram link. E.g. https://t.me/+AbCd or @group",
-    "telegramUpdated": "Telegram group link updated"
+    "telegramUpdated": "Telegram group link updated",
+    "billingPeriod": "Billing period"
   },
   "notification": {
     "title": "Notifications",
@@ -1786,8 +1802,8 @@
       "description": "All sections are here. Finance, Schedule and Settings have tabs inside — for example Revenue, Expenses, Salary and Reports live under one «Finance» item."
     },
     "video": {
-      "title": "Video tutorials",
-      "description": "A video showing how each page works is in this «?» menu. The video for the open page is picked automatically."
+      "title": "Video guides",
+      "description": "«This page's video» in the «?» menu plays a short video for the open page. All videos, in order, are in the «Video guides» section of the left menu."
     },
     "chat": {
       "title": "Support chat",
@@ -2096,15 +2112,6 @@
     "readError": "Couldn't mark the news as read",
     "notFound": "News not found"
   },
-  "kb": {
-    "title": "Knowledge base",
-    "open": "Help: how this section works",
-    "tip": "Tip",
-    "warn": "Note",
-    "error": "Couldn't load the article",
-    "retry": "Try again",
-    "empty": "No article for this section yet"
-  },
   "validation": {
     "month": "Invalid month format (YYYY-MM)"
   },
@@ -2148,12 +2155,23 @@
   },
   "help": {
     "title": "Help",
-    "guide": "Page guide",
-    "video": "Video tutorial",
+    "currentVideo": "This page's video",
     "chat": "Support chat"
   },
   "theme": {
     "toDark": "Dark mode",
     "toLight": "Light mode"
+  },
+  "videoLessons": {
+    "subtitle": "Learn the platform through short videos",
+    "watch": "Watch",
+    "empty": "No video guides yet",
+    "emptyHint": "Short videos for every section are coming soon",
+    "count": "{{count}} videos",
+    "sections": {
+      "groupDetail": "Group page",
+      "roomDetail": "Room page",
+      "studentDetail": "Student page"
+    }
   }
 }

@@ -91,3 +91,74 @@ export const activeEntryOf = (student, groupId) =>
 
 // Ism bo'yicha tartib (o'quvchilar ro'yxatlari).
 export const byName = (a, b) => (a.fullName || "").localeCompare(b.fullName || "");
+
+// Oy filtri (docs/API_CONTRACT_group_month_filter_and_start_date.md §D):
+// unix soniya → Toshkent "YYYY-MM-DD".
+const ymdOfUnix = (u) => tashkentDate(new Date(u * 1000));
+export const tashkentMonthOfUnix = (u) => (u ? ymdOfUnix(u).slice(0, 7) : null);
+
+// "YYYY-MM" ni [min, max] oralig'iga siqadi; noto'g'ri format → max.
+export const clampMonth = (month, min, max) => {
+  if (!/^\d{4}-\d{2}$/.test(month || "")) return max;
+  if (max && month > max) return max;
+  if (min && month < min) return min;
+  return month;
+};
+
+// Sikl davri `25.09 – 24.10` (§C) — FAQAT kalendar oyiga to'g'ri kelmasa
+// (from oy 1-kuni emas yoki to keyingi oy 1-kuni emas). `to` eksklyuziv —
+// ko'rsatishda bir kun oldingi sana. Aks holda null.
+export const cyclePeriodLabel = (from, to) => {
+  if (from == null || to == null) return null;
+  const a = ymdOfUnix(from);
+  const b = ymdOfUnix(to);
+  const [ay, am] = a.split("-").map(Number);
+  const next = am === 12 ? `${ay + 1}-01` : `${ay}-${String(am + 1).padStart(2, "0")}`;
+  if (a.endsWith("-01") && b === `${next}-01`) return null;
+  const last = ymdOfUnix(to - 86400);
+  const dm = (ymd) => `${ymd.slice(8, 10)}.${ymd.slice(5, 7)}`;
+  return `${dm(a)} – ${dm(last)}`;
+};
+
+// Guruh "O'quvchilar" tabidagi tanlangan oy bo'yicha qator holati (§D).
+// Joriy oy — avvalgi xatti-harakat: umumiy `entry.debt` (o'zgarmaydi), davr
+// joriy sikldan (`priceCycles` → `isCurrent`). O'tgan oy — `billingMonths[M]`;
+// shu oyda a'zolik bo'lmasa null (pill yo'q).
+export const monthRowOf = (entry, month, currentMonth) => {
+  if (!entry) return null;
+  if (!month || month === currentMonth) {
+    const cur = (entry.priceCycles || []).find((c) => c.isCurrent);
+    return {
+      isCurrent: true,
+      debt: Math.max(0, entry.debt || 0),
+      due: null,
+      period: cur ? cyclePeriodLabel(cur.from, cur.to) : null,
+    };
+  }
+  const row = (entry.billingMonths || []).find((m) => m.month === month);
+  if (!row) return null;
+  const due = row.due || 0;
+  return {
+    isCurrent: false,
+    debt: row.debt ?? Math.max(0, due - (row.paid || 0)),
+    due,
+    period: cyclePeriodLabel(row.from, row.to),
+  };
+};
+
+// `student:updated` payload'i (server `emitStudentUpdated`) — o'zgarishi
+// mumkin bo'lgan BARCHA maydonlar shu yerda keladi, shuning uchun refetchsiz
+// birlashtirish yetarli. Rasm olib tashlanganda `photo: ""` — `in` bilan.
+const STUDENT_PATCH_FIELDS = [
+  "fullName", "phone", "parentPhone", "telegramSame", "telegramPhone",
+  "parentTelegramSame", "parentTelegramPhone", "parentTelegram", "studentTelegram",
+];
+export const mergeStudentUpdate = (student, payload) => {
+  if (!student || !payload) return student;
+  const next = { ...student };
+  STUDENT_PATCH_FIELDS.forEach((k) => {
+    if (payload[k] !== undefined) next[k] = payload[k];
+  });
+  if ("photo" in payload) next.photo = payload.photo || "";
+  return next;
+};

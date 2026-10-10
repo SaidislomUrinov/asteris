@@ -268,6 +268,23 @@ module.exports = {
     }
   },
 
+  // "O'qishni boshlagan sana"ni tahrirlash
+  // (API_CONTRACT_group_month_filter_and_start_date.md §B.3). Validatsiya servisda.
+  updateStartDate: async (req, res, next) => {
+    try {
+      const data = await studentService.updateStartDate(
+        req.client._id,
+        req.params.id,
+        req.params.groupEntryId,
+        req.body || {},
+        buildActor(req),
+      );
+      return res.send({ ok: true, data, msg: "student.updated" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   archiveGroupEntry: async (req, res, next) => {
     try {
       const data = await studentService.archiveGroupEntry(

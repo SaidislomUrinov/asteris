@@ -23,6 +23,8 @@ const {
   daysInMonth,
   dayOfMonth,
   calendarMonthsBetween,
+  formatDay,
+  todayString,
 } = require("../utils/date.util");
 const { countLessonDays, listLessonDates } = require("../utils/lessonDays.util");
 const billingSettingService = require("./billingSetting.service");
@@ -296,12 +298,91 @@ const currentCycleStartOf = (group, cycleMode, effectiveNow) => {
 // Sikl o'rtasida guruhga qo'shilish — shu sikldan hozirgacha o'tgan HAR BIR
 // dars kuni uchun bitta kredit (computeBilling joriy sikl to'lovidan shu
 // kunlarni ayiradi). `create` va `transferGroup` ikkalasi ishlatadi.
-const joinCreditsOf = async (group, cycleMode) => {
+const joinCreditsOf = async (group, cycleMode) => joinCreditsFor(group, cycleMode, getNow());
+
+// `startUnix` tushgan siklning boshidan `startUnix` gacha (kun bo'yicha,
+// `startUnix` kuni KIRMAYDI) o'tgan har bir dars kuni uchun bitta kredit —
+// o'quvchi shu sanadan o'qiyapti, undan oldingi kunlar uchun to'lamaydi
+// (API_CONTRACT_group_month_filter_and_start_date.md §B.1). Bayram
+// (to'lanmaydigan) kunlar kredit bo'lmaydi — ular buildCycles'da allaqachon
+// hisobdan chiqadi.
+const joinCreditsFor = async (group, cycleMode, startUnix) => {
   if (group.status !== "active" || !group.activatedAt) return [];
-  const now = getNow();
+  const cycleStart = currentCycleStartOf(group, cycleMode, startUnix);
+  if (startUnix <= cycleStart) return [];
   const holidayDates = await groupHolidayService.getNonChargeableDates(group._id);
-  const currentCycleStart = currentCycleStartOf(group, cycleMode, now);
-  return listLessonDates(group.days, currentCycleStart, now, holidayDates).map((date) => ({ date }));
+  return listLessonDates(group.days, cycleStart, startUnix, holidayDates).map((date) => ({ date }));
+};
+
+const START_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// "O'qishni boshlagan sana" (`"YYYY-MM-DD"`, Asia/Tashkent) → a'zolikning
+// `joinedAt` unix vaqti (§B.1). Guruh `active` bo'lishi shart.
+// Sikl chegarasi aynan shu KUNGA tushsa (guruh `activatedAt` vaqti kun
+// o'rtasida bo'lishi mumkin — masalan 10:00), `joinedAt` sikl boshiga
+// suriladi: aks holda 00:00 oldingi siklga tushib, to'liq kreditlangan
+// (0 so'mlik) ortiqcha sikl qatori paydo bo'lardi.
+const resolveStartDate = (startDate, group, cycleMode) => {
+  if (typeof startDate !== "string" || !START_DATE_RE.test(startDate)) {
+    throw new Error("student.startDateInvalid");
+  }
+  const startUnix = dateStringToUnix(startDate);
+  if (!Number.isFinite(startUnix) || formatDay(startUnix) !== startDate) {
+    throw new Error("student.startDateInvalid");
+  }
+  if (group?.status !== "active" || !group.activatedAt) throw new Error("student.startDateUnavailable");
+  if (startDate > todayString()) throw new Error("student.startDateFuture");
+  if (startDate < formatDay(group.activatedAt)) throw new Error("student.startDateBeforeGroup");
+
+  const dayEnd = addDays(startUnix, 1) - 1;
+  const cycleStart = currentCycleStartOf(group, cycleMode, dayEnd);
+  return cycleStart > startUnix ? cycleStart : startUnix;
+};
+
+// PATCH .../start-date kreditlari (§B.3): eski qo'shilish kreditlari (eski
+// `joinedAt` kunidan oldingi) va yangi sanadan oldingi kreditlar tushadi,
+// keyingi davomat/bayram kreditlari qoladi; ustiga yangi qo'shilish
+// kreditlari, sana bo'yicha dublikatsiz. Sof funksiya.
+const mergeStartCredits = (credits, oldDay, newDay, joinCredits) => {
+  const keepFrom = oldDay > newDay ? oldDay : newDay;
+  const byDate = new Map();
+  for (const c of credits || []) if (c?.date && c.date >= keepFrom) byDate.set(c.date, { date: c.date });
+  for (const c of joinCredits || []) byDate.set(c.date, { date: c.date });
+  return [...byDate.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+};
+
+// computeBilling taqsimot natijasidan oy kesimidagi jadval (§A.1): sikllar +
+// oyi ma'lum opening qarz qatorlari, bir oyga tushgan qatorlar yig'iladi.
+// Sof funksiya.
+const billingMonthsOf = (allocated) => {
+  const byMonth = new Map();
+  for (const item of allocated || []) {
+    if (!item.month) continue; // oyi noma'lum opening — umumiy `debt`da qoladi
+    if (item.kind !== "cycle" && item.kind !== "opening") continue;
+    const row = byMonth.get(item.month) || {
+      month: item.month,
+      due: 0,
+      paid: 0,
+      debt: 0,
+      isCurrent: false,
+      from: null,
+      to: null,
+    };
+    row.due += item.fullDue || 0;
+    row.paid += item.paid || 0;
+    if (item.kind === "cycle") {
+      if (item.isCurrent) row.isCurrent = true;
+      // Haqiqiy davr (2-bosqich C): "sanadan-sanaga" rejimida oy yorlig'i
+      // kalendar oyiga to'g'ri kelmaydi — UI shu oraliqni ko'rsatadi.
+      const from = item.billedFrom ?? item.cycleStart;
+      if (row.from === null || from < row.from) row.from = from;
+      if (row.to === null || item.cycleEnd > row.to) row.to = item.cycleEnd;
+    }
+    byMonth.set(item.month, row);
+  }
+  return [...byMonth.values()]
+    .map((r) => ({ ...r, debt: Math.max(0, r.due - r.paid) }))
+    .sort((a, b) => (a.month < b.month ? -1 : a.month > b.month ? 1 : 0));
 };
 
 // Ko'chirishdan oldingi qarz (API_CONTRACT_opening_debts.md §1) — chegaralar.
@@ -522,7 +603,8 @@ const computeBilling = (entry, group, cycleMode = "anchor") => {
   // boshlanadi): qarz faqat opening qoldig'i, lekin opening itemlar HAM
   // to'lovlar (havza) bilan taqsimlanadi.
   const withoutCycles = (extra) => {
-    const openingRows = openingRowsOf(allocatePayments([], payments, openingItems, advance));
+    const allocatedOpening = allocatePayments([], payments, openingItems, advance);
+    const openingRows = openingRowsOf(allocatedOpening);
     return {
       paidAmount,
       ...openingFields(openingRows),
@@ -531,6 +613,8 @@ const computeBilling = (entry, group, cycleMode = "anchor") => {
       paidForCurrentCycle: 0,
       debtBreakdown: openingRows.filter((r) => r.debt > 0),
       priceCycles: [],
+      // Faqat oyi ma'lum opening qatorlari (§A.1).
+      billingMonths: billingMonthsOf(allocatedOpening),
       ...extra,
     };
   };
@@ -550,6 +634,7 @@ const computeBilling = (entry, group, cycleMode = "anchor") => {
       paidForCurrentCycle: 0,
       debtBreakdown: [],
       priceCycles: [],
+      billingMonths: [],
       currentCyclePrice: 0,
       courseStartMonth: group?.activatedAt ? formatMonth(group.activatedAt) : null,
       currentCycleMonth: null,
@@ -646,6 +731,8 @@ const computeBilling = (entry, group, cycleMode = "anchor") => {
       paid: c.paid,
       isCurrent: c.isCurrent,
     })),
+    // Oy kesimida due/paid/debt — Guruh detali oy filtri (§A.1).
+    billingMonths: billingMonthsOf(allocated),
     courseStartMonth: formatMonth(group.activatedAt),
     currentCycleMonth: current.month,
     // A'zolik tugagan — keyingi to'lov sanasi yo'q.
@@ -1102,7 +1189,7 @@ module.exports = {
   // Sof `forMonth` qoidasi — node sinov skriptlari uchun ham eksport qilinadi.
   checkPayableMonth,
   // Faqat regressiya testlari uchun (server/test/billing.test.js) — xatti-harakat o'zgarmaydi.
-  _internal: { buildCycles },
+  _internal: { buildCycles, billingMonthsOf, joinCreditsFor, resolveStartDate, mergeStartCredits },
 
   // Telefon raqam bo'yicha global directory qidiruvi — Student hujjati
   // tenant'lararo yagona bo'lgani uchun (CLAUDE.md "telefon asosida yagona
@@ -1144,7 +1231,7 @@ module.exports = {
   // allaqachon mavjud bo'lsa) mavjud hujjatga yangi guruh bog'lanishini
   // qo'shadi — CLAUDE.md "O'quvchi — telefon raqam asosida yagona hujjat".
   create: async (clientId, body, actor = null) => {
-    const { fullName, phone, parentPhone, centerId, groupId, price, existingStudentId } = body;
+    const { fullName, phone, parentPhone, centerId, groupId, price, existingStudentId, startDate } = body;
     if (!phone || !centerId || !groupId) throw new Error("student.fillTheRows");
 
     // Ko'chirishdan oldingi qarz/avans (API_CONTRACT_opening_debts.md §3.1) —
@@ -1244,9 +1331,24 @@ module.exports = {
     // socket payload'ini groupEntryDTO orqali to'liq (currentCyclePrice/
     // paidForCurrentCycle) qurish uchun kerak.
     const billingSetting = await billingSettingService.getOrCreate(group.center);
-    const credits = await joinCreditsOf(group, billingSetting.cycleMode);
+    // Ixtiyoriy "o'qishni boshlagan sana" (§B.2) — faqat faol guruhda;
+    // pending guruhda e'tiborsiz (sikllar hali boshlanmagan).
+    // Darslar kelajakda boshlanadigan (activatedAt > hozir) guruh ham shu
+    // toifada — sikl hali yo'q, `startDate` ma'nosiz.
+    const hasStartDate =
+      startDate != null &&
+      startDate !== "" &&
+      group.status === "active" &&
+      !!group.activatedAt &&
+      group.activatedAt <= getNow();
+    const startUnix = hasStartDate ? resolveStartDate(startDate, group, billingSetting.cycleMode) : null;
+    const credits =
+      startUnix != null
+        ? await joinCreditsFor(group, billingSetting.cycleMode, startUnix)
+        : await joinCreditsOf(group, billingSetting.cycleMode);
 
     student.groups.push({
+      ...(startUnix != null ? { joinedAt: startUnix } : {}),
       group: group._id,
       center: center._id,
       client: clientId,
@@ -1353,7 +1455,7 @@ module.exports = {
   // joriy faol o'quvchilar sonini qayta o'qiydi), parallel bajarilsa limitdan
   // oshib ketishi mumkin.
   importBulk: async (clientId, body, actor = null) => {
-    const { centerId, groupId, rows } = body;
+    const { centerId, groupId, rows, startDate } = body;
     if (!Array.isArray(rows) || !rows.length) throw new Error("student.importEmptyRows");
     if (rows.length > 300) throw new Error("student.importTooManyRows");
 
@@ -1431,6 +1533,9 @@ module.exports = {
           centerId,
           groupId,
           price: row.price,
+          // O'qishni boshlagan sana (2-bosqich E): qator qiymati ustun, aks
+          // holda butun import uchun umumiy sana; validatsiya create()'da.
+          startDate: row.startDate || startDate || undefined,
           existingStudentId: row.existingStudentId || null,
           openingDebts:
             openingRaw < 0 ? [{ month: row.openingDebtMonth || null, amount: -openingRaw }] : [],
@@ -2165,6 +2270,57 @@ module.exports = {
     });
 
     return await DTO(student, clientId);
+  },
+
+  // PATCH /students/:id/groups/:groupEntryId/start-date — "o'qishni
+  // boshlagan sana"ni tahrirlash (API_CONTRACT_group_month_filter_and_start_date.md
+  // §B.3). `joinedAt` va qo'shilish kreditlari qayta yoziladi; to'lovlar,
+  // opening va narx tarixi tegilmaydi. Javob — yangilangan groupEntryDTO.
+  updateStartDate: async (clientId, id, groupEntryId, body = {}, actor = null) => {
+    const startDate = body?.startDate;
+    if (typeof startDate !== "string" || !START_DATE_RE.test(startDate)) {
+      throw new Error("student.startDateInvalid");
+    }
+
+    const student = await Student.findOne({ _id: id, isDeleted: false });
+    if (!student) throw new Error("student.notFound");
+
+    const entry = findClientGroupEntry(student, clientId, groupEntryId);
+    if (!entry) throw new Error("student.groupEntryNotFound");
+    if (entry.status !== "active") throw new Error("student.entryNotActive");
+
+    const group = await Group.findById(entry.group);
+    if (!group) throw new Error("group.notFound");
+    const billingSetting = await billingSettingService.getOrCreate(group.center);
+    const cycleMode = billingSetting?.cycleMode || "anchor";
+
+    const startUnix = resolveStartDate(startDate, group, cycleMode);
+    const oldDay = formatDay(entry.joinedAt || 0);
+    const newDay = formatDay(startUnix);
+
+    const joinCredits = await joinCreditsFor(group, cycleMode, startUnix);
+    entry.credits = mergeStartCredits(entry.credits, oldDay, newDay, joinCredits);
+    entry.joinedAt = startUnix;
+    await student.save();
+
+    void audit.log({
+      actor,
+      client: clientId,
+      center: entry.center,
+      action: "student:startDate",
+      entity: { type: "student", id: student._id, label: student.fullName },
+      changes: [{ field: "startDate", from: oldDay, to: newDay }],
+      meta: { groupEntryId: String(groupEntryId), group: String(entry.group) },
+    });
+
+    const dto = groupEntryDTO(entry, group, cycleMode);
+    // GroupDetail narx/opening tahriridagi kabi shu event bilan `entry`ni
+    // refetchsiz almashtiradi. Owner `client:*`, Staff `center:*` xonasida.
+    const payload = { groupId: String(entry.group), studentId: String(id), entry: dto };
+    emit(`client:${clientId}`, "student:priceUpdated", payload);
+    emit(`center:${String(entry.center)}`, "student:priceUpdated", payload);
+
+    return dto;
   },
 
   // Bitta A'ZOLIKNI arxivlash (o'quvchi HUJJATI emas) —

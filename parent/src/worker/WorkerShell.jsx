@@ -82,6 +82,8 @@ export const WorkerShell = () => {
           open
           initialStudent={sheet.payload?.student || null}
           initialEntryId={sheet.payload?.entryId || null}
+          initialMonth={sheet.payload?.month || null}
+          initialAmount={sheet.payload?.amount}
           onClose={closeSheet}
         />
       )}

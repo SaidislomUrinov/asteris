@@ -26,8 +26,10 @@ export const isSortableTab = (tab) => SORTABLE_TABS.includes(tab);
  * (0-100), `gradeAverage` (1-10 yoki `null`) va `gradeScore` (baho SONI
  * hisobga olingan Bayes o'rtachasi — saralash shunga tayanadi) oladi — faqat saralash
  * ko'rinadigan tab (SORTABLE_TABS) ochiq va guruh tanlanganda so'raladi.
+ * `month` ("YYYY-MM") — ixtiyoriy; berilmasa server joriy oyni oladi
+ * (Guruh detali "Umumiy" tabidagi oy filtri, API_CONTRACT_group_month_filter_and_start_date.md §A.2).
  */
-export function useStudentsSummary(groupId, enabled) {
+export function useStudentsSummary(groupId, enabled, month) {
   const [summary, setSummary] = useState({});
   // Baho/davomat o'zgarsa (shu yoki boshqa qurilmadan) reyting medallari
   // qayta hisoblanishi uchun xulosa jimgina qayta so'raladi. Ketma-ket
@@ -49,7 +51,7 @@ export function useStudentsSummary(groupId, enabled) {
     if (!enabled || !groupId) return;
     let cancelled = false;
     api
-      .get(`/attendance/${groupId}/summary`)
+      .get(`/attendance/${groupId}/summary`, { params: month ? { month } : undefined })
       .then((res) => {
         if (!cancelled && res.data.ok) setSummary(res.data.data);
       })
@@ -60,7 +62,7 @@ export function useStudentsSummary(groupId, enabled) {
     return () => {
       cancelled = true;
     };
-  }, [groupId, enabled, tick]);
+  }, [groupId, enabled, tick, month]);
 
   return summary;
 }

@@ -40,7 +40,10 @@ const initialEntry = (student, entryId) => {
 // PaymentDialog bilan bir xil: POST /students/:id/groups/:entryId/payments
 // { amount, type, note, forMonth }. `initialEntryId` — guruh/o'quvchi
 // detalidan ochilganda a'zolik oldindan tanlanadi (details §2, §3.1).
-export const PaymentSheet = ({ open, initialStudent, initialEntryId = null, onClose }) => {
+// `initialMonth`/`initialAmount` (ixtiyoriy, guruh oy filtridan — §D): to'lov
+// shu oyga yoziladi va summa shu oy qarzi (0 bo'lsa bo'sh). Faqat boshlang'ich
+// a'zolikka tegishli — boshqa a'zolik tanlansa odatiy qoida.
+export const PaymentSheet = ({ open, initialStudent, initialEntryId = null, initialMonth = null, initialAmount, onClose }) => {
   const { t } = useTranslation();
   const { centerId, refresh } = useWorker();
   const [query, setQuery] = useState("");
@@ -50,7 +53,11 @@ export const PaymentSheet = ({ open, initialStudent, initialEntryId = null, onCl
   // sahifalari) — a'zolik darhol tanlanadi. Sheet har ochilishda qayta mount bo'ladi.
   const [entryId, setEntryId] = useState(() => initialEntry(initialStudent, initialEntryId)?._id || null);
   const [amount, setAmount] = useState(() => {
-    const d = defaultAmount(initialEntry(initialStudent, initialEntryId));
+    const first = initialEntry(initialStudent, initialEntryId);
+    const d =
+      initialMonth && initialAmount !== undefined && first && first._id === initialEntryId
+        ? Math.max(0, Number(initialAmount) || 0)
+        : defaultAmount(first);
     return d > 0 ? String(d) : "";
   });
   const [type, setType] = useState("cash");
@@ -94,7 +101,10 @@ export const PaymentSheet = ({ open, initialStudent, initialEntryId = null, onCl
   }, [query, student, centerId]);
 
   const minMonth = entry?.earliestPayableMonth || entry?.courseStartMonth || "";
-  const forMonth = minMonth && entry?.currentCycleMonth ? entry.currentCycleMonth : undefined;
+  // Oldindan berilgan oy — faqat boshlang'ich a'zolikda va min oydan kech bo'lmasa.
+  const presetMonth =
+    initialMonth && entry && entry._id === initialEntryId && minMonth && initialMonth >= minMonth ? initialMonth : null;
+  const forMonth = presetMonth || (minMonth && entry?.currentCycleMonth ? entry.currentCycleMonth : undefined);
   const value = Number(digitsOnly(amount)) || 0;
 
   const submit = async () => {

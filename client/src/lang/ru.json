@@ -76,6 +76,7 @@
       "student:restored": "Ученик восстановлен из архива",
       "student:importUndone": "Импорт отменён",
       "student:openingDebtsUpdated": "Изменён начальный долг",
+      "student:startDate": "Изменена дата начала обучения",
       "student:paymentMonthMoved": "Изменён месяц оплаты",
       "student:transfer": "Ученик переведён в другую группу",
       "subject:archived": "Предмет архивирован",
@@ -121,6 +122,7 @@
       "slogan": "Слоган",
       "parentNotifications": "Уведомления родителям",
       "openingDebts": "Начальный долг",
+      "startDate": "Дата начала обучения",
       "openingBalance": "Начальный баланс",
       "activeCenters": "Активные филиалы",
       "status": "Статус",
@@ -183,7 +185,8 @@
     "calendar": "Календарь",
     "archive": "Архив",
     "leads": "Лиды",
-    "myPlans": "Мои планы уроков"
+    "myPlans": "Мои планы уроков",
+    "videoLessons": "Видеоуроки"
   },
   "report": {
     "revenue": "Выручка",
@@ -938,7 +941,14 @@
     "callWho": "Кому позвонить?",
     "callStudent": "Ученик",
     "callParent": "Родитель",
-    "transferMenu": "В другую группу"
+    "transferMenu": "В другую группу",
+    "startDate": "Дата начала обучения",
+    "startDateHint": "Если ученик начал заниматься в центре раньше — выберите эту дату, оплата считается с этого дня",
+    "startDateInvalid": "Неверная дата",
+    "startDateFuture": "Дата начала обучения не может быть позже сегодняшнего дня",
+    "startDateBeforeGroup": "Дата не может быть раньше дня запуска группы",
+    "startDateUnavailable": "Дату начала обучения можно изменить только в активной группе",
+    "entryNotActive": "Ученик не активен в этой группе"
   },
   "import": {
     "buttonLabel": "Импорт из Excel",
@@ -998,7 +1008,9 @@
     "oldXlsFormat": "Старый формат .xls не поддерживается. Сохраните файл в Excel как .xlsx.",
     "studentTelegramCol": "Telegram ученика",
     "parentTelegramCol": "Telegram родителя",
-    "telegramColumnsHint": "Необязательные столбцы: «Telegram ученика» и «Telegram родителя» — заполняйте, только если номер Telegram отличается от телефона"
+    "telegramColumnsHint": "Необязательные столбцы: «Telegram ученика» и «Telegram родителя» — заполняйте, только если номер Telegram отличается от телефона",
+    "startDateCol": "Дата начала",
+    "startDateRowHint": "Если в строке дата пустая — берётся эта дата"
   },
   "room": {
     "title": "Кабинеты",
@@ -1092,6 +1104,9 @@
     "attendanceTitle": "Общая посещаемость",
     "attendanceDesc": "Процент посещаемости учеников",
     "attendanceColumn": "Посещаемость",
+    "paymentFractionOfMonth": "Оплачено / Всего · {{month}}",
+    "backToCurrentMonth": "Вернуться к текущему месяцу",
+    "noMembershipInMonth": "В этом месяце ученика не было в группе",
     "attendanceButton": "Посещаемость",
     "attendanceNotToday": "Сегодня не учебный день",
     "attendancePresent": "Пришёл",
@@ -1306,7 +1321,8 @@
     "telegramRemoved": "Telegram-группа отключена",
     "telegramRemove": "Отключить",
     "invalidTelegramLink": "Неверная ссылка Telegram. Например: https://t.me/+AbCd или @group",
-    "telegramUpdated": "Ссылка на Telegram-группу обновлена"
+    "telegramUpdated": "Ссылка на Telegram-группу обновлена",
+    "billingPeriod": "Период оплаты"
   },
   "notification": {
     "title": "Уведомления",
@@ -1787,7 +1803,7 @@
     },
     "video": {
       "title": "Видеоуроки",
-      "description": "Видеоурок о том, как работает каждая страница, — в меню «?». Видео для открытой страницы выбирается автоматически."
+      "description": "Пункт «Видео этой страницы» в меню «?» — короткое видео для открытой страницы. Все видео по порядку — в разделе «Видеоуроки» в левом меню."
     },
     "chat": {
       "title": "Чат поддержки",
@@ -2096,15 +2112,6 @@
     "readError": "Не удалось отметить новость как прочитанную",
     "notFound": "Новость не найдена"
   },
-  "kb": {
-    "title": "База знаний",
-    "open": "Справка: как работает этот раздел",
-    "tip": "Совет",
-    "warn": "Внимание",
-    "error": "Не удалось загрузить статью",
-    "retry": "Повторить",
-    "empty": "Статья для этого раздела пока не готова"
-  },
   "validation": {
     "month": "Неверный формат месяца (YYYY-MM)"
   },
@@ -2148,12 +2155,23 @@
   },
   "help": {
     "title": "Помощь",
-    "guide": "Руководство по странице",
-    "video": "Видеоурок",
+    "currentVideo": "Видео этой страницы",
     "chat": "Чат поддержки"
   },
   "theme": {
     "toDark": "Тёмная тема",
     "toLight": "Светлая тема"
+  },
+  "videoLessons": {
+    "subtitle": "Изучите работу с платформой по коротким видео",
+    "watch": "Смотреть",
+    "empty": "Видеоуроков пока нет",
+    "emptyHint": "Скоро для каждого раздела появятся короткие видео",
+    "count": "{{count}} видео",
+    "sections": {
+      "groupDetail": "Страница группы",
+      "roomDetail": "Страница кабинета",
+      "studentDetail": "Страница ученика"
+    }
   }
 }

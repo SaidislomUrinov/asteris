@@ -862,6 +862,9 @@
         "finished": "Dastur tugagan",
         "empty": "Kurs dasturi tuzilmagan",
         "emptyText": "Dastur veb-panelda tuziladi."
+      },
+      "month": {
+        "paid": "To'langan"
       }
     },
     "homework": {

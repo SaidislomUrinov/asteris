@@ -242,6 +242,15 @@ router.put(
   requireTenantPermission("student:update"),
   studentController.updateOpening,
 );
+// "O'qishni boshlagan sana" — a'zolik `joinedAt`i va qo'shilish kreditlari
+// (API_CONTRACT_group_month_filter_and_start_date.md §B.3). Billingga ta'sir
+// qiladi — boshqa `.../groups/:groupEntryId/...` PATCH'lari bilan bir xil himoya.
+router.patch(
+  "/:id/groups/:groupEntryId/start-date",
+  blockTeachingRoles,
+  requireTenantPermission("student:update"),
+  studentController.updateStartDate,
+);
 // O'quvchini guruhdan chiqarish — Resepshin/Boshliq ishi. O'qituvchi va
 // yordamchi o'qituvchi uchun ROL darajasida yopiq (ruxsat ro'yxati ham
 // `student:update` ni ularga bermaydi, bu ikkinchi qatlam).

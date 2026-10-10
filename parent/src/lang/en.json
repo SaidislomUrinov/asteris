@@ -866,6 +866,9 @@
         "finished": "Program completed",
         "empty": "No course program yet",
         "emptyText": "The program is built in the web panel."
+      },
+      "month": {
+        "paid": "Paid"
       }
     },
     "homework": {

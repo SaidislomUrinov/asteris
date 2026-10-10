@@ -20,6 +20,8 @@ const FINANCIAL_FIELDS = [
   "priceHistory",
   // Sikllar bo'yicha narx/qarz (API_CONTRACT_past_cycle_price.md)
   "priceCycles",
+  // Oy kesimida due/paid/debt (API_CONTRACT_group_month_filter_and_start_date.md §A.1)
+  "billingMonths",
   // Ko'chirishdan oldingi qarz/avans (API_CONTRACT_opening_debts.md)
   "openingBalance",
   "openingDebts",

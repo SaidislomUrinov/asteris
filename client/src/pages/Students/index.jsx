@@ -97,6 +97,10 @@ function Students() {
     () => groups.map((g) => ({ ...g, label: groupLabel(g), filterLabel: groupFilterLabel(g) })),
     [groups, groupLabel, groupFilterLabel],
   );
+  const groupActivatedAtMap = useMemo(
+    () => Object.fromEntries(groups.map((g) => [g._id, g.activatedAt])),
+    [groups],
+  );
   const groupLabelMap = useMemo(
     () => Object.fromEntries(groupOptions.map((g) => [g._id, g.label])),
     [groupOptions],
@@ -763,6 +767,9 @@ function Students() {
             label: groupLabelMap[g.group],
             price: g.price,
             cycles: g.priceCycles,
+            joinedAt: g.joinedAt,
+            groupStatus: g.groupStatus,
+            activatedAt: groupActivatedAtMap[g.group],
           }))}
           onClose={() => setEditRow(null)}
           onSaved={fetchStudents}

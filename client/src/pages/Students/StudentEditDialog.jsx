@@ -13,6 +13,9 @@ import {
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 import { maskMoney } from "../../utils/moneyFormat";
+import useCan from "../../hooks/useCan";
+import StartDateField from "./StartDateField";
+import { assertStartDate, tashkentDay } from "./startDate.util";
 
 const PHONE_PREFIX = "+998";
 
@@ -37,13 +40,20 @@ const phoneSuffix = (raw) => {
 // guruh-yozuvlari. Berilmasa (yoki bo'sh bo'lsa) summa bo'limi ko'rsatilmaydi.
 // `cycles` — entry.priceCycles (API_CONTRACT_past_cycle_price.md): o'tgan
 // oylar summasini FAQAT shu oy uchun o'zgartirish (`{ price, cycleStart }`).
+// `joinedAt`/`groupStatus`/`activatedAt` — ixtiyoriy: berilsa va guruh faol
+// bo'lsa "O'qishni boshlagan sana" maydoni chiqadi
+// (API_CONTRACT_group_month_filter_and_start_date.md §B.3/§B.5).
 
 const cycleKey = (entryId, cycleStart) => `${entryId}:${cycleStart}`;
 // O'tgan (yopilgan) sikllar — yangisi tepada.
 const pastCyclesOf = (en) => (en.cycles || []).filter((c) => !c.isCurrent).reverse();
+const canEditStartDate = (en) => en.groupStatus === "active" && !!en.joinedAt;
+const startMinOf = (en) => (en.activatedAt ? tashkentDay(en.activatedAt) : undefined);
 
 function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
   const { t } = useTranslation();
+  const can = useCan();
+  const showStartDate = can("student:update");
   const [form, setForm] = useState(() => ({
     fullName: student?.fullName || "",
     phone: phoneSuffix(student?.phone),
@@ -58,6 +68,12 @@ function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
       entries.flatMap((en) => pastCyclesOf(en).map((c) => [cycleKey(en._id, c.cycleStart), String(c.price)])),
     ),
   );
+  // Boshlang'ich qiymat — a'zolikning hozirgi `joinedAt` kuni; faqat
+  // o'zgargan sana PATCH qilinadi.
+  const initialStartDates = Object.fromEntries(
+    entries.filter(canEditStartDate).map((en) => [en._id, tashkentDay(en.joinedAt)]),
+  );
+  const [startDates, setStartDates] = useState(initialStartDates);
   const [openPast, setOpenPast] = useState({}); // { [entryId]: true } — "O'tgan oylar" ochiq
   const [disabled, setDisabled] = useState(false);
   const monthNames = t("common.monthNames", { returnObjects: true });
@@ -89,6 +105,15 @@ function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
           .map((c) => ({ entryId: en._id, cycleStart: c.cycleStart, price: Number(cyclePrices[cycleKey(en._id, c.cycleStart)]) })),
       );
 
+      const changedStartDates = showStartDate
+        ? entries.filter(canEditStartDate).filter((en) => {
+            const next = startDates[en._id];
+            if (!next || next === initialStartDates[en._id]) return false;
+            assertStartDate(next, startMinOf(en));
+            return true;
+          })
+        : [];
+
       setDisabled(true);
 
       const body = {
@@ -116,6 +141,14 @@ function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
           cycleStart: c.cycleStart,
         });
         if (!cycleRes.data.ok) throw new Error(cycleRes.data.msg);
+      }
+
+      // O'qishni boshlagan sana — kreditlar va qarz serverda qayta hisoblanadi.
+      for (const en of changedStartDates) {
+        const startRes = await api.patch(`/students/${student._id}/groups/${en._id}/start-date`, {
+          startDate: startDates[en._id],
+        });
+        if (!startRes.data.ok) throw new Error(startRes.data.msg);
       }
 
       successMsg(msg);
@@ -220,6 +253,15 @@ function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
                       setPrices((prev) => ({ ...prev, [en._id]: e.target.value }))
                     }
                   />
+
+                  {showStartDate && canEditStartDate(en) && (
+                    <StartDateField
+                      label={en.label ? `${t("student.startDate")} — ${en.label}` : undefined}
+                      value={startDates[en._id] ?? ""}
+                      min={startMinOf(en)}
+                      onChange={(v) => setStartDates((prev) => ({ ...prev, [en._id]: v }))}
+                    />
+                  )}
 
                   {past.length > 0 && (
                     <div className="flex flex-col rounded-xl border border-slate-200 dark:border-night-700 bg-slate-50/60 dark:bg-night-800/60">

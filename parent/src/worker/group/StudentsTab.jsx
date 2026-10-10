@@ -9,13 +9,14 @@ import { RowsSkeleton } from "../components/WorkerSkeleton";
 import { EmptyState, ErrorState } from "../../components/States";
 import { haptic } from "../../lib/telegram";
 import { useWorker } from "../useWorker";
-import { activeEntryOf, asErr } from "../utils";
+import { activeEntryOf, asErr, clampMonth, monthRowOf, tashkentMonth, tashkentMonthOfUnix } from "../utils";
 import { qrSendAllowed, qrSendEnabled } from "../constants";
 import { useSendQrCard } from "../qr/useSendQrCard";
 import { StudentRow } from "./StudentRow";
 import { StudentActionsSheet } from "./StudentActionsSheet";
 import { useStudentPhoto } from "../student/useStudentPhoto";
 import { AddStudentSheet } from "./AddStudentSheet";
+import { MonthSwitch } from "./MonthSwitch";
 
 // "O'quvchilar" tabi (details §2). Ro'yxat: GET /students?group&status=active
 // &limit=1000, bugungi davomat: GET /attendance/:groupId (GroupDetail yuklaydi).
@@ -38,6 +39,21 @@ export const StudentsTab = ({ group, students, state, todayMarks, perm, onAdded 
   // "+ O'quvchi qo'shish" (docs/API_CONTRACT_enroll_with_photo.md) — ruxsat
   // `student:create` va guruh yakunlanmagan (GroupDetail `perm.add`).
   const [addOpen, setAddOpen] = useState(false);
+  // Oy filtri (docs/API_CONTRACT_group_month_filter_and_start_date.md §D) —
+  // faqat moliya ko'radigan rolda (`perm.debt`) va faollashgan guruhda.
+  // Oraliq: guruh faollashgan oy (yoki o'quvchilardagi eng eski to'lanadigan
+  // oy) → joriy oy (Toshkent). O'qituvchida hech narsa o'zgarmaydi.
+  const currentMonth = tashkentMonth();
+  const [monthPick, setMonthPick] = useState(currentMonth);
+  const monthFilterOn = !!perm.debt && !!group.activatedAt;
+  const monthMin = monthFilterOn
+    ? students
+        .map((s) => activeEntryOf(s, group._id)?.earliestPayableMonth)
+        .filter(Boolean)
+        .reduce((min, m) => (m < min ? m : min), tashkentMonthOfUnix(group.activatedAt))
+    : currentMonth;
+  const month = monthFilterOn ? clampMonth(monthPick, monthMin, currentMonth) : currentMonth;
+  const isPastMonth = month !== currentMonth;
   const openAdd = () => {
     if (readOnly) {
       haptic("warning");
@@ -100,7 +116,14 @@ export const StudentsTab = ({ group, students, state, todayMarks, perm, onAdded 
       toast.info(t("worker.readOnly.fab"), { id: "ro-fab" });
       return;
     }
-    openSheet("payment", { student: s, entryId: activeEntryOf(s, group._id)?._id });
+    const entry = activeEntryOf(s, group._id);
+    // O'tgan oy tanlangan bo'lsa — to'lov aynan o'sha oyga, summa shu oy qarzi.
+    const row = isPastMonth ? monthRowOf(entry, month, currentMonth) : null;
+    openSheet("payment", {
+      student: s,
+      entryId: entry?._id,
+      ...(isPastMonth ? { month, amount: row?.debt || 0 } : {}),
+    });
   };
   const pickPhoto = (s) => {
     setMenuFor(null);
@@ -120,8 +143,13 @@ export const StudentsTab = ({ group, students, state, todayMarks, perm, onAdded 
 
   return (
     <>
+      {monthFilterOn && (
+        <Card className="px-1.5 py-1">
+          <MonthSwitch month={month} min={monthMin} onChange={setMonthPick} />
+        </Card>
+      )}
       <div className="flex items-center justify-between gap-2 px-1">
-        <div className="text-[13px] font-bold text-hint">{t("worker.group.studentsCount", { count: students.length })}</div>
+        <div className="min-w-0 truncate text-[13px] font-bold text-hint">{t("worker.group.studentsCount", { count: students.length })}</div>
         {addButton}
       </div>
       <Card className="py-1 divide-y divide-line/70">
@@ -130,9 +158,8 @@ export const StudentsTab = ({ group, students, state, todayMarks, perm, onAdded 
             key={s._id}
             index={i}
             student={s}
-            entry={activeEntryOf(s, group._id)}
+            billing={perm.debt ? monthRowOf(activeEntryOf(s, group._id), month, currentMonth) : null}
             mark={todayMarks[s._id]}
-            showDebt={perm.debt}
             sub={perm.call ? s.phone : null}
             onOpen={perm.open ? () => open(s) : undefined}
             onMenu={() => setMenuFor(s)}

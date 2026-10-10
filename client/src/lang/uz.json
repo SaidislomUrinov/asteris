@@ -76,6 +76,7 @@
       "student:restored": "O'quvchi arxivdan qaytarildi",
       "student:importUndone": "Import bekor qilindi",
       "student:openingDebtsUpdated": "Boshlang'ich qarzdorlik o'zgartirildi",
+      "student:startDate": "O'qishni boshlagan sana o'zgartirildi",
       "student:paymentMonthMoved": "To'lov oyi o'zgartirildi",
       "student:transfer": "O'quvchi boshqa guruhga ko'chirildi",
       "subject:archived": "Fan arxivlandi",
@@ -121,6 +122,7 @@
       "slogan": "Shior",
       "parentNotifications": "Ota-ona bildirishnomalari",
       "openingDebts": "Boshlang'ich qarzdorlik",
+      "startDate": "O'qishni boshlagan sana",
       "openingBalance": "Boshlang'ich balans",
       "activeCenters": "Faol filiallar",
       "status": "Holat",
@@ -183,7 +185,8 @@
     "calendar": "Kalendar",
     "archive": "Arxiv",
     "leads": "Lidlar",
-    "myPlans": "Dars rejalarim"
+    "myPlans": "Dars rejalarim",
+    "videoLessons": "Video qo'llanmalar"
   },
   "report": {
     "revenue": "Tushum",
@@ -938,7 +941,14 @@
     "callWho": "Kimga qo'ng'iroq qilamiz?",
     "callStudent": "O'quvchi",
     "callParent": "Ota-ona",
-    "transferMenu": "Boshqa guruhga"
+    "transferMenu": "Boshqa guruhga",
+    "startDate": "O'qishni boshlagan sana",
+    "startDateHint": "Markazda oldinroq o'qishni boshlagan bo'lsa — shu sanani tanlang, to'lov shu kundan hisoblanadi",
+    "startDateInvalid": "Sana noto'g'ri kiritilgan",
+    "startDateFuture": "O'qishni boshlagan sana bugundan keyin bo'lishi mumkin emas",
+    "startDateBeforeGroup": "Sana guruh boshlangan kundan oldin bo'lishi mumkin emas",
+    "startDateUnavailable": "O'qishni boshlagan sanani faqat faol guruhda o'zgartirish mumkin",
+    "entryNotActive": "O'quvchi bu guruhda faol emas"
   },
   "import": {
     "buttonLabel": "Excel'dan import",
@@ -998,7 +1008,9 @@
     "oldXlsFormat": "Eski .xls formati qo'llab-quvvatlanmaydi. Faylni Excel'da \"Farqli saqlash\" orqali .xlsx qilib saqlang.",
     "studentTelegramCol": "O'quvchi Telegram",
     "parentTelegramCol": "Ota-ona Telegram",
-    "telegramColumnsHint": "Ixtiyoriy ustunlar: «O'quvchi Telegram» va «Ota-ona Telegram» — faqat Telegram raqami telefondan farq qilsa to'ldiring"
+    "telegramColumnsHint": "Ixtiyoriy ustunlar: «O'quvchi Telegram» va «Ota-ona Telegram» — faqat Telegram raqami telefondan farq qilsa to'ldiring",
+    "startDateCol": "Boshlagan sana",
+    "startDateRowHint": "Qatorda sana bo'sh bo'lsa — shu sana olinadi"
   },
   "room": {
     "title": "Xonalar",
@@ -1092,6 +1104,9 @@
     "attendanceTitle": "Umumiy davomat",
     "attendanceDesc": "O'quvchilarning davomat foizi",
     "attendanceColumn": "Davomat",
+    "paymentFractionOfMonth": "To'langan / Jami · {{month}}",
+    "backToCurrentMonth": "Joriy oyga qaytish",
+    "noMembershipInMonth": "Bu oyda o'quvchi guruhda bo'lmagan",
     "attendanceButton": "Davomat",
     "attendanceNotToday": "Bugun dars kuni emas",
     "attendancePresent": "Keldi",
@@ -1306,7 +1321,8 @@
     "telegramRemoved": "Telegram guruh uzildi",
     "telegramRemove": "Uzish",
     "invalidTelegramLink": "Telegram havolasi noto'g'ri. Masalan: https://t.me/+AbCd yoki @guruh",
-    "telegramUpdated": "Telegram guruh manzili yangilandi"
+    "telegramUpdated": "Telegram guruh manzili yangilandi",
+    "billingPeriod": "To'lov davri"
   },
   "notification": {
     "title": "Bildirishnomalar",
@@ -1786,8 +1802,8 @@
       "description": "Barcha bo'limlar shu yerda. Moliya, Jadval va Sozlamalar ichida tablar bor — masalan Tushumlar, Xarajatlar, Ish haqi va Hisobotlar bitta «Moliya» bandida."
     },
     "video": {
-      "title": "Video darsliklar",
-      "description": "Har bir sahifa qanday ishlashini ko'rsatuvchi video darslik shu «?» menyusida. Ochiq sahifaga mos video o'zi tanlanadi."
+      "title": "Video qo'llanmalar",
+      "description": "«?» menyusidagi «Joriy sahifa videosi» — ochiq sahifaga mos qisqa video. Barcha videolar esa chap menyudagi «Video qo'llanmalar» bo'limida tartib bilan turadi."
     },
     "chat": {
       "title": "Yordam chati",
@@ -2096,15 +2112,6 @@
     "readError": "Yangilikni o‘qilgan deb belgilab bo‘lmadi",
     "notFound": "Yangilik topilmadi"
   },
-  "kb": {
-    "title": "Bilimlar bazasi",
-    "open": "Yordam: bu bo'lim qanday ishlaydi",
-    "tip": "Maslahat",
-    "warn": "Diqqat",
-    "error": "Maqolani yuklab bo'lmadi",
-    "retry": "Qayta urinish",
-    "empty": "Bu bo'lim uchun maqola hali tayyorlanmagan"
-  },
   "validation": {
     "month": "Oy noto'g'ri formatda (YYYY-MM)"
   },
@@ -2148,12 +2155,23 @@
   },
   "help": {
     "title": "Yordam",
-    "guide": "Sahifa qo'llanmasi",
-    "video": "Video darslik",
+    "currentVideo": "Joriy sahifa videosi",
     "chat": "Yordam chati"
   },
   "theme": {
     "toDark": "Tungi rejim",
     "toLight": "Kunduzgi rejim"
+  },
+  "videoLessons": {
+    "subtitle": "Platformadan foydalanishni qisqa videolar orqali o'rganing",
+    "watch": "Ko'rish",
+    "empty": "Hozircha video qo'llanmalar yo'q",
+    "emptyHint": "Tez orada har bir bo'lim uchun qisqa videolar qo'shiladi",
+    "count": "{{count}} ta video",
+    "sections": {
+      "groupDetail": "Guruh sahifasi",
+      "roomDetail": "Xona sahifasi",
+      "studentDetail": "O'quvchi sahifasi"
+    }
   }
 }

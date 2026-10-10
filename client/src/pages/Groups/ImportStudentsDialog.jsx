@@ -7,6 +7,7 @@ import {
   HiArrowUpTray,
   HiArrowUturnLeft,
   HiBanknotes,
+  HiCalendarDays,
   HiCheck,
   HiCheckCircle,
   HiChevronDown,
@@ -25,6 +26,8 @@ import Dialog from "../../ui/Dialog";
 import Button from "../../ui/Button";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
+import StartDateField from "../Students/StartDateField";
+import { assertStartDate, tashkentDay } from "../Students/startDate.util";
 import {
   cleanTelegramValue,
   isValidTelegramPhone,
@@ -41,13 +44,16 @@ const FIELD_KEYWORDS = {
   parentPhone: ["ota-ona", "qo'shimcha", "родител", "parent"],
   price: ["narx", "цена", "price", "narxi"],
   openingBalance: ["qarz", "долг", "balance", "qoldiq"],
+  startDate: ["sana", "boshla", "дата", "start", "date"],
 };
 // DIQQAT: tartib muhim — `guessColumn` birinchi mos kelganida to'xtaydi.
 // `parentPhone` `phone` dan OLDIN turishi shart: "Ota-ona raqami" sarlavhasi
 // ham `phone` ning "raqam" kalit so'ziga mos keladi va oldin tekshirilsa
 // ota-ona ustuni o'quvchining telefoni deb topilardi (ikki ustun bitta
 // maydonga tushib, ma'lumot yo'qolardi).
-const FIELD_KEYS = ["fullName", "parentPhone", "phone", "price", "openingBalance"];
+// `startDate` OXIRIDA: "Boshlang'ich qarz" sarlavhasi "boshla" ga ham mos
+// keladi — avval `openingBalance` ("qarz") tekshirilishi kerak.
+const FIELD_KEYS = ["fullName", "parentPhone", "phone", "price", "openingBalance", "startDate"];
 
 const PHONE_REGEX = /^\d{9}$/;
 
@@ -59,7 +65,9 @@ const PARENT_KEYWORDS = ["ota-ona", "ota ona", "родител", "parent"];
 
 // Ustun moslash dropdownidagi bandlar. Maydonlar ro'yxati O'ZGARMADI —
 // faqat har biriga ikonka qo'shildi (dizayn talabi).
-const FIELD_OPTIONS = (t) => [
+// `withStartDate` — guruh faol bo'lsagina "Boshlagan sana" maydoni bor
+// (pending guruhda server sanani e'tiborsiz qoldiradi).
+const FIELD_OPTIONS = (t, withStartDate) => [
   { value: "", label: t("import.ignoreColumn"), icon: <HiMinusCircle /> },
   { value: "fullName", label: t("student.fullName"), icon: <HiUser /> },
   { value: "phone", label: t("student.phone"), icon: <HiPhone /> },
@@ -68,6 +76,7 @@ const FIELD_OPTIONS = (t) => [
   { value: "parentTelegramPhone", label: t("telegramPhone.parentLabel"), icon: <HiPaperAirplane /> },
   { value: "price", label: t("student.price"), icon: <HiTag /> },
   { value: "openingBalance", label: t("import.openingDebt"), icon: <HiBanknotes /> },
+  ...(withStartDate ? [{ value: "startDate", label: t("import.startDateCol"), icon: <HiCalendarDays /> }] : []),
 ];
 
 // Ustunni maydonga moslash uchun dropdown. `ui/Select` o'rniga alohida
@@ -185,6 +194,9 @@ const emptyRow = () => ({
   parentTelegramPhone: "",
   price: "",
   openingBalance: "",
+  // "YYYY-MM-DD" yoki (o'qib bo'lmagan bo'lsa) xom matn — validatsiyada qizil.
+  // Bo'sh — dialogdagi umumiy sana.
+  startDate: "",
   existingStudentId: null,
   existingName: "",
 });
@@ -241,6 +253,56 @@ const telegramImportFields = (tgRaw, phoneRaw, sameKey, phoneKey) => {
   return { [sameKey]: false, [phoneKey]: tg };
 };
 
+const pad2 = (n) => String(n).padStart(2, "0");
+
+// Haqiqiy kalendar sanasimi (31.02 kabi qiymatlar rad etiladi)?
+const ymd = (y, m, d) => {
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) return null;
+  return `${y}-${pad2(m)}-${pad2(d)}`;
+};
+
+// UTC kun komponentlari: read-excel-file sana katagini UTC yarim tunidagi
+// `Date` qilib qaytaradi — mahalliy `getDate()` UTC dan g'arbdagi zonada bir
+// kun orqaga siljitardi. Excel kasr xatosi (23:59:59.999) uchun eng yaqin
+// kunga yaxlitlanadi.
+const DAY_MS = 86400000;
+const fromUtcDate = (date) => {
+  const rounded = new Date(Math.round(date.getTime() / DAY_MS) * DAY_MS);
+  return ymd(rounded.getUTCFullYear(), rounded.getUTCMonth() + 1, rounded.getUTCDate());
+};
+
+// Excel/CSV/joylashtirilgan matndagi sanani "YYYY-MM-DD" ga keltiradi:
+// `Date`, Excel seriya raqami, `YYYY-MM-DD`, `DD.MM.YYYY`, `DD/MM/YYYY`,
+// `DD-MM-YYYY`. O'qib bo'lmasa xom matn qaytadi (jadvalda xato bo'lib
+// ko'rinadi), bo'sh bo'lsa — "".
+const parseStartDate = (val) => {
+  if (val === null || val === undefined || val === "") return "";
+  if (val instanceof Date) return Number.isNaN(val.getTime()) ? "" : fromUtcDate(val) || "";
+  // Sana formatisiz katak — Excel seriya raqami (1970-01-01 = 25569).
+  if (typeof val === "number") {
+    if (val > 20000 && val < 80000) return fromUtcDate(new Date((val - 25569) * DAY_MS)) || String(val);
+    return String(val);
+  }
+  const text = String(val).trim();
+  if (!text) return "";
+  let m = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return ymd(Number(m[1]), Number(m[2]), Number(m[3])) || text;
+  m = text.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+  if (m) return ymd(Number(m[3]), Number(m[2]), Number(m[1])) || text;
+  return text;
+};
+
+// Qator sanasini tekshiradi — xato bo'lsa i18n kaliti, aks holda `null`.
+const startDateErrorKey = (value, min) => {
+  try {
+    assertStartDate(value, min);
+    return null;
+  } catch (error) {
+    return error.message;
+  }
+};
+
 // `read-excel-file` IKKI XIL shakl qaytaradi va bu oldindan bilinmaydi:
 // ba'zan to'g'ridan-to'g'ri qatorlar (`[[...], [...]]`), ba'zan varaqlar
 // ro'yxati (`[{ sheet, data: [[...]] }]`). Ilgari faqat birinchisi kutilgan
@@ -291,6 +353,12 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
 
   const defaultPrice = subjects.find((s) => s._id === group?.subject)?.price ?? "";
 
+  // "O'qishni boshlagan sana" (kontrakt §E) — faqat faol guruhda.
+  const startDateOn = group?.status === "active";
+  const startDateMin = group?.activatedAt ? tashkentDay(group.activatedAt) : undefined;
+  const [startDate, setStartDate] = useState(() => tashkentDay());
+  const startDateErrKey = startDateOn ? startDateErrorKey(startDate, startDateMin) : null;
+
   const reset = () => {
     setStep("input");
     setRawTable([]);
@@ -303,6 +371,7 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
     setUndone(false);
     setInputTab("paste");
     setDragging(false);
+    setStartDate(tashkentDay());
   };
 
   const handleClose = () => {
@@ -414,6 +483,7 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
           parentTelegramPhone: sanitizeTelegramInput(get("parentTelegramPhone")),
           price: cleanNumber(get("price")),
           openingBalance: cleanNumber(get("openingBalance")),
+          startDate: startDateOn ? parseStartDate(get("startDate")) : "",
         };
       });
 
@@ -456,6 +526,8 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
     }, 400);
   };
 
+  const groupStatus = group?.status;
+  const groupActivatedAt = group?.activatedAt;
   const rowErrors = useMemo(() => {
     const phoneCounts = {};
     rows.forEach((r) => {
@@ -472,16 +544,25 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
       if (!isValidTelegramPhone(r.telegramPhone)) errs.telegramPhone = t("telegramPhone.invalidShort");
       if (!isValidTelegramPhone(r.parentTelegramPhone))
         errs.parentTelegramPhone = t("telegramPhone.invalidShort");
+      if (groupStatus === "active" && r.startDate) {
+        const min = groupActivatedAt ? tashkentDay(groupActivatedAt) : undefined;
+        const key = startDateErrorKey(r.startDate, min);
+        if (key) errs.startDate = t(key);
+      }
       map[r._key] = errs;
     });
     return map;
-  }, [rows, t]);
+  }, [rows, t, groupStatus, groupActivatedAt]);
 
   // Telegram ustunlari jadvalda faqat moslashda tanlangan yoki qatorlarda
   // qiymat bo'lsa ko'rinadi — aks holda jadval keraksiz kengayib ketardi.
   const showTelegramCols =
     Object.values(mapping).some((v) => v === "telegramPhone" || v === "parentTelegramPhone") ||
     rows.some((r) => r.telegramPhone || r.parentTelegramPhone);
+
+  // Sana ustuni — moslashda tanlangan yoki qatorlarda qiymat bo'lsa.
+  const showStartDateCol =
+    startDateOn && (Object.values(mapping).includes("startDate") || rows.some((r) => r.startDate));
 
   const validRows = rows.filter((r) => Object.keys(rowErrors[r._key] || {}).length === 0);
   const invalidCount = rows.length - validRows.length;
@@ -491,11 +572,21 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
       errorMsg("import.noValidRows");
       return;
     }
+    if (startDateErrKey) {
+      errorMsg(startDateErrKey);
+      return;
+    }
+    // Faqat bugundan farqli sanalar yuboriladi. Qator sanasi umumiy sanadan
+    // ustun: umumiy sana boshqa kun bo'lsa, qatordagi "bugun" ham yuboriladi.
+    const today = tashkentDay();
+    const commonStartDate = startDateOn && startDate && startDate !== today ? startDate : undefined;
+    const effectiveCommon = commonStartDate || today;
     try {
       setSubmitting(true);
       const body = {
         centerId: group.center,
         groupId: group._id,
+        ...(commonStartDate ? { startDate: commonStartDate } : {}),
         rows: validRows.map((r) => {
           const full = PHONE_PREFIX + r.phone.trim();
           const match = lookupCache[full];
@@ -515,6 +606,7 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
             price: r.price === "" ? null : Number(r.price),
             openingBalance: opening ? -Math.abs(opening) : 0,
             existingStudentId: r.existingStudentId || match?._id || null,
+            ...(startDateOn && r.startDate && r.startDate !== effectiveCommon ? { startDate: r.startDate } : {}),
           };
         }),
       };
@@ -586,7 +678,8 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
           </span>
         </span>
       }
-      className="md:w-[95vw] md:max-w-4xl"
+      // Qo'shimcha ustunlar (Telegram / boshlagan sana) bo'lsa jadval kesilmasin.
+      className={`md:w-[95vw] ${showTelegramCols || showStartDateCol ? "md:max-w-6xl" : "md:max-w-4xl"}`}
       actions={
         result ? (
           <>
@@ -845,7 +938,7 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
                   <FieldSelect
                     value={mapping[idx] || ""}
                     onChange={(v) => setMapping((prev) => ({ ...prev, [idx]: v }))}
-                    options={FIELD_OPTIONS(t)}
+                    options={FIELD_OPTIONS(t, startDateOn)}
                   />
                 </div>
               );
@@ -871,6 +964,20 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
         </div>
       ) : (
         <div className="flex flex-col gap-3">
+          {startDateOn && (
+            <div className="flex flex-col gap-1 w-full sm:max-w-xs">
+              <StartDateField
+                value={startDate}
+                onChange={setStartDate}
+                min={startDateMin}
+                error={startDateErrKey ? t(startDateErrKey) : undefined}
+              />
+              {showStartDateCol && (
+                <p className="pl-2 text-[11px] leading-snug text-slate-400 dark:text-slate-500">{t("import.startDateRowHint")}</p>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 flex-wrap gap-1">
             <span>{t("import.rowsCount", { count: rows.length })}</span>
             {invalidCount > 0 && (
@@ -881,7 +988,11 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
           </div>
 
           <div className="w-full overflow-x-auto rounded-lg border border-slate-200 dark:border-night-700">
-            <table className={`${showTelegramCols ? "min-w-[1120px]" : "min-w-[820px]"} w-full text-[13px]`}>
+            {/* Kenglik ko'rinadigan ixtiyoriy ustunlarga qarab (Telegram +300, sana +160). */}
+            <table
+              className="w-full text-[13px]"
+              style={{ minWidth: 820 + (showTelegramCols ? 300 : 0) + (showStartDateCol ? 176 : 0) }}
+            >
               <thead>
                 <tr className="bg-slate-50 dark:bg-night-800 text-slate-500 dark:text-slate-400 text-xs">
                   <th className="text-left px-2 py-2 font-medium">{t("student.fullName")}</th>
@@ -895,6 +1006,9 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
                   )}
                   <th className="text-left px-2 py-2 font-medium w-28">{t("student.price")}</th>
                   <th className="text-left px-2 py-2 font-medium w-32">{t("import.openingDebt")}</th>
+                  {showStartDateCol && (
+                    <th className="text-left px-2 py-2 font-medium w-44">{t("import.startDateCol")}</th>
+                  )}
                   <th className="w-10" />
                 </tr>
               </thead>
@@ -983,6 +1097,28 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
                           className="w-full min-w-[100px] h-9 px-2 rounded-md border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/30"
                         />
                       </td>
+                      {showStartDateCol && (
+                        <td className="p-1.5">
+                          {/* Bo'sh — umumiy sana. O'qib bo'lmagan xom matn
+                              date input'da ko'rinmaydi — xato ostida chiqadi. */}
+                          <input
+                            type="date"
+                            value={/^\d{4}-\d{2}-\d{2}$/.test(r.startDate) ? r.startDate : ""}
+                            min={startDateMin}
+                            max={tashkentDay()}
+                            onChange={(e) => updateRow(r._key, "startDate", e.target.value)}
+                            className={`w-full min-w-[140px] h-9 px-2 rounded-md border bg-white dark:bg-night-900 outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/30 ${
+                              errs.startDate ? "border-red-400 bg-red-50 dark:bg-red-500/10" : "border-slate-200 dark:border-night-700"
+                            }`}
+                          />
+                          {errs.startDate && (
+                            <p className="text-[11px] text-red-500 mt-0.5">
+                              {errs.startDate}
+                              {!/^\d{4}-\d{2}-\d{2}$/.test(r.startDate) && ` (${r.startDate})`}
+                            </p>
+                          )}
+                        </td>
+                      )}
                       <td className="p-1.5 text-center">
                         <button
                           type="button"

@@ -22,6 +22,8 @@ import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 import OpeningDebtsEditor from "./OpeningDebtsEditor";
 import StudentPhotoCapture from "./StudentPhotoCapture";
+import StartDateField from "./StartDateField";
+import { assertStartDate, tashkentDay } from "./startDate.util";
 import { uploadStudentPhoto } from "../../utils/studentPhoto";
 import { EMPTY_OPENING, buildOpeningPayload, openingTotal } from "./openingDebts.util";
 import {
@@ -96,6 +98,13 @@ function StudentDialog({
   // Guruh detalidan qo'shishda olingan/tanlangan rasm
   // (docs/API_CONTRACT_enroll_with_photo.md) — saqlashdan keyin yuboriladi.
   const [photoFile, setPhotoFile] = useState(null);
+  // "O'qishni boshlagan sana" — faqat FAOL guruhga qo'shishda
+  // (API_CONTRACT_group_month_filter_and_start_date.md §B.5). Kech kiritilgan
+  // o'quvchi uchun to'lov shu sanadan hisoblanadi; default — bugun.
+  const [startDate, setStartDate] = useState(() => tashkentDay());
+  const selectedGroup = fixedGroup || groups.find((g) => g._id === form.group) || null;
+  const showStartDate = selectedGroup?.status === "active";
+  const startDateMin = selectedGroup?.activatedAt ? tashkentDay(selectedGroup.activatedAt) : undefined;
 
   useEffect(() => {
     const suffix = form.phone.trim();
@@ -144,6 +153,9 @@ function StudentDialog({
         throw new Error("student.fillTheRows");
       assertTelegramForm(form);
       const openingPayload = buildOpeningPayload(opening);
+      if (showStartDate) assertStartDate(startDate, startDateMin);
+      // Bugun (yoki bo'sh) bo'lsa yuborilmaydi — server avvalgidek "hozir"ni oladi.
+      const sendStartDate = showStartDate && startDate && startDate !== tashkentDay();
       setDisabled(true);
 
       const body = {
@@ -157,6 +169,7 @@ function StudentDialog({
         ...buildTelegramPayload(form),
         openingDebts: openingPayload.openingDebts,
         openingBalance: openingPayload.openingBalance,
+        startDate: sendStartDate ? startDate : undefined,
       };
 
       const res = await api.post("/students", body);
@@ -357,6 +370,8 @@ function StudentDialog({
           value={form.price}
           onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
         />
+
+        {showStartDate && <StartDateField value={startDate} onChange={setStartDate} min={startDateMin} />}
 
         <div className="flex flex-col">
           <button

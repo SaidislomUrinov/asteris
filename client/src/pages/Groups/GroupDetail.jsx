@@ -42,7 +42,8 @@ import Chip from "../../ui/Chip";
 import RowNumber from "../../ui/RowNumber";
 import RankChip from "../../ui/RankChip";
 import RankMedal from "../../ui/RankMedal";
-import RankPeriodLabel from "../../ui/RankPeriodLabel";
+import MonthNav from "../../ui/MonthNav";
+import useQueryState from "../../hooks/useQueryState";
 import MiniBadges from "../../ui/MiniBadges";
 import useGroupBadges from "../../hooks/useGroupBadges";
 import Loading from "../../ui/Loading";
@@ -78,7 +79,8 @@ import useFeature from "../../hooks/useFeature";
 import useSendQrCard from "../../hooks/useSendQrCard";
 import StudentPhotoAvatar from "../../ui/StudentPhotoAvatar";
 import CallChooserDialog from "./CallChooserDialog";
-import { BADGE_FEATURE } from "../../utils/badges";
+import { BADGE_FEATURE, currentMonthTashkent } from "../../utils/badges";
+import { clampMonth, monthBilling } from "./monthBilling";
 import useHideFinance from "../../hooks/useHideFinance";
 import useClosingValue from "../../hooks/useClosingValue";
 import TransferStudentDialog from "./TransferStudentDialog";
@@ -107,6 +109,15 @@ const RISKY_ICON_CLASS = {
   orange: "bg-orange-50 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400",
   red: "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400",
 };
+
+// Unix SONIYA → "YYYY-MM" (Asia/Tashkent) — oy filtri chegarasi uchun.
+const tashkentMonthOf = (unixSeconds) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tashkent", year: "numeric", month: "2-digit" })
+    .format(new Date(unixSeconds * 1000))
+    .slice(0, 7);
+
+// Oy qatoridagi to'lov davri (`25.09 – 24.10`, kontrakt §C) — kichik kulrang.
+const PERIOD_TEXT_CLASS = "text-[11px] font-normal leading-none tracking-tight text-slate-400 dark:text-slate-500 tabular-nums whitespace-nowrap";
 
 // Guruh detali butun guruhni bitta so'rovda oladi (server chegarasi 1000).
 const GROUP_STUDENTS_LIMIT = 1000;
@@ -248,12 +259,40 @@ function GroupDetail({ groupId, live = false }) {
   // O'qituvchi/yordamchida "Umumiy" tab yo'q — ular uchun boshlang'ich
   // ko'rinish darhol "Davomat" bo'ladi.
   const [studentTab, setStudentTab] = useState(isTeacher ? "monthly" : "general");
+  // "Umumiy" — o'quvchilar ro'yxati; ichidagi to'lov/o'tkazish/chiqarish
+  // amallari hamon RESEPSHIN va BOSHLIQ ishi bo'lib qoladi (DropMenu ichida
+  // `!isTeacher` bilan yopiq). Lekin O'qituvchi/Yordamchiga `student:create`
+  // ruxsati berilgan bo'lsa, ular ham shu tab orqali o'quvchi qo'sha olishi
+  // kerak. `student:contact` — ro'yxat kontaktni tahrirlash uchun ham ochiladi
+  // (avval faqat /lesson'da edi, API_CONTRACT_student_contact_telegram.md §5).
+  const hasGeneralTab = !isTeacher || can("student:create") || can("student:contact");
   const [excuseTarget, setExcuseTarget] = useState(null);
   // O'quvchilar ro'yxatini A-Z/Baholar/Davomat bo'yicha saralash —
   // docs/API_CONTRACT_group_students_sort.md. "Umumiy", "Davomat" va
   // "Baholar" tablarida bir xil tartib qo'llanadi.
   const [sortKey, setSortKey] = useSortKey();
-  const studentsSummary = useStudentsSummary(id, isSortableTab(studentTab));
+  // "Umumiy" tabidagi oy filtri (API_CONTRACT_group_month_filter_and_start_date.md
+  // §A.3): moliya ustunlari va reyting tanlangan oy bo'yicha. URL'da (`?month=`)
+  // — sahifa yangilansa yo'qolmaydi. Oraliq: kurs boshlangan oy (yoki
+  // o'quvchilardagi eng eski boshlang'ich qarz oyi) → joriy oy. Guruh
+  // faollashmagan bo'lsa filtr yo'q — doim joriy oy.
+  const currentMonth = currentMonthTashkent();
+  const monthNames = t("common.monthNames", { returnObjects: true });
+  const [monthParam, setMonthParam] = useQueryState("month", currentMonth);
+  const monthFilterOn = !!group?.activatedAt;
+  const monthMin = monthFilterOn
+    ? students
+        .flatMap((s) => s.groups.filter((g) => g.group === id && g.status === "active"))
+        .map((g) => g.earliestPayableMonth)
+        .filter(Boolean)
+        .reduce((min, m) => (m < min ? m : min), tashkentMonthOf(group.activatedAt))
+    : currentMonth;
+  const selectedMonth = monthFilterOn ? clampMonth(monthParam, monthMin, currentMonth) : currentMonth;
+  const isPastMonth = selectedMonth !== currentMonth;
+  // Baholar/Oylik davomat tablari o'zgarmaydi — ularda reyting doim joriy oy.
+  const summaryMonth =
+    hasGeneralTab && studentTab === "general" && selectedMonth !== currentMonth ? selectedMonth : undefined;
+  const studentsSummary = useStudentsSummary(id, isSortableTab(studentTab), summaryMonth);
   // O'tgan oy nishonlari — ism yonidagi mini ikonkalar (API_CONTRACT_badges_monthly_rank.md §D.3).
   const groupBadges = useGroupBadges(id);
   const [excuseReason, setExcuseReason] = useState("");
@@ -905,14 +944,7 @@ function GroupDetail({ groupId, live = false }) {
   // yo'qolsa, uning kontenti "yetim" bo'lib qolmasligi uchun birinchi mavjud
   // tabga qaytiladi.
   const studentTabs = [
-    // "Umumiy" — o'quvchilar ro'yxati; ichidagi to'lov/o'tkazish/
-    // chiqarish amallari hamon RESEPSHIN va BOSHLIQ ishi bo'lib
-    // qoladi (DropMenu ichida `!isTeacher` bilan yopiq). Lekin
-    // O'qituvchi/Yordamchiga `student:create` ruxsati berilgan
-    // bo'lsa, ular ham shu tab orqali o'quvchi qo'sha olishi kerak.
-    // `student:contact` — ro'yxat kontaktni tahrirlash uchun ham ochiladi
-    // (avval faqat /lesson'da edi, API_CONTRACT_student_contact_telegram.md §5).
-    ...(!isTeacher || can("student:create") || can("student:contact")
+    ...(hasGeneralTab
       ? [{ key: "general", label: t("group.tabStudentsSection") }]
       : []),
     { key: "monthly", label: t("group.tabMonthly") },
@@ -1125,9 +1157,32 @@ function GroupDetail({ groupId, live = false }) {
       {activeTab !== "stats" && (
       <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
         {isSortableTab(activeTab) && (
-        <div className="flex items-center justify-end gap-2 flex-wrap pb-3 border-b border-slate-100 dark:border-night-700">
+        <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-slate-100 dark:border-night-700">
             <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-              {Object.keys(ranks).length > 0 && <RankPeriodLabel />}
+              {activeTab === "general" && monthFilterOn && (
+                <>
+                  <MonthNav
+                    month={selectedMonth}
+                    label={`${monthNames[Number(selectedMonth.slice(5, 7)) - 1] || ""} ${selectedMonth.slice(0, 4)}`}
+                    onChange={setMonthParam}
+                    min={monthMin}
+                    max={currentMonth}
+                    className={`w-full justify-between sm:w-auto sm:justify-start ${
+                      isPastMonth ? "ring-1 ring-blue-200 dark:ring-blue-500/40 bg-blue-50/60 dark:bg-blue-500/10" : ""
+                    }`}
+                  />
+                  {isPastMonth && (
+                    <button
+                      type="button"
+                      onClick={() => setMonthParam(currentMonth)}
+                      className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 cursor-pointer transition-colors"
+                    >
+                      <HiArrowUturnLeft className="shrink-0" />
+                      {t("group.backToCurrentMonth")}
+                    </button>
+                  )}
+                </>
+              )}
               <Select
                 variant="slate"
                 icon={<HiArrowsUpDown className="text-base" />}
@@ -1136,31 +1191,41 @@ function GroupDetail({ groupId, live = false }) {
                 className="w-full sm:w-auto sm:min-w-[220px]"
                 options={SORT_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
               />
-              {activeTab === "general" && group.status !== "finished" && can("student:create") && (
-                <>
+            </div>
+            {activeTab === "general" && group.status !== "finished" && can("student:create") && (
+              <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto sm:ml-auto">
+                <div className="max-sm:flex-1 max-sm:min-w-[140px]">
+                  {/* 390px da ikki tugma yonma-yon ~158px dan oladi, tarkib
+                      (px-5 + ikonka + matn) esa ~167px — `whitespace-nowrap`
+                      matn qisqarmaydi, shuning uchun flex SVG ikonkani 0 gacha
+                      siqib yuborardi (320px da tugmalar alohida qatorga
+                      tushib, joy yetgani uchun ko'rinardi). Ikonka `shrink-0`,
+                      telefonda ichki chekinish kichikroq. */}
                   <Button
                     variant="outlined"
                     color="slate"
-                    className="gap-1.5 w-full sm:w-auto"
+                    className="gap-1.5 w-full sm:w-auto max-sm:px-3"
                     onClick={() => setImportOpen(true)}
                   >
-                    <HiArrowUpTray className="text-base" />
+                    <HiArrowUpTray className="text-base shrink-0" />
                     {t("import.buttonLabel")}
                   </Button>
+                </div>
+                <div className="max-sm:flex-1 max-sm:min-w-[140px]">
                   <Button
                     variant="outlined"
-                    className="gap-1.5 w-full sm:w-auto"
+                    className="gap-1.5 w-full sm:w-auto max-sm:px-3"
                     onClick={() => {
                       setEnrollKey((k) => k + 1);
                       setEnrollOpen(true);
                     }}
                   >
-                    <HiPlus className="text-base" />
+                    <HiPlus className="text-base shrink-0" />
                     {t("student.create")}
                   </Button>
-                </>
-              )}
-            </div>
+                </div>
+              </div>
+            )}
         </div>
         )}
 
@@ -1254,7 +1319,11 @@ function GroupDetail({ groupId, live = false }) {
               }`}
             >
               <span>{t("student.fullName")}</span>
-              {!isTeacher && <span>{t("student.paymentFraction")}</span>}
+              {!isTeacher && <span className={isPastMonth ? "text-blue-500 dark:text-blue-400" : undefined}>
+                  {isPastMonth
+                    ? t("group.paymentFractionOfMonth", { month: monthNames[Number(selectedMonth.slice(5, 7)) - 1] || "" })
+                    : t("student.paymentFraction")}
+                </span>}
               {!isTeacher && <span>{t("student.debtStatus")}</span>}
               <span>{t("group.attendanceColumn")}</span>
               <span />
@@ -1262,9 +1331,13 @@ function GroupDetail({ groupId, live = false }) {
 
             {sortedStudents.map((s, index) => {
               const entry = entryOf(s);
-              const hasDebt =
-                entry.groupStatus !== "pending" &&
-                (entry.currentCyclePrice || 0) - (entry.paidForCurrentCycle || 0) > 0;
+              // Tanlangan oy bo'yicha moliya (joriy oyda — avvalgi mantiq).
+              // `null` — shu oyda a'zolik yo'q → "—".
+              const bill = monthBilling(entry, selectedMonth, currentMonth);
+              const noBill = entry.groupStatus === "pending" || !bill;
+              const hasDebt = !noBill && bill.debt > 0;
+              // Davr matni (§C) — faqat kalendar oyiga to'g'ri kelmasa.
+              const period = noBill ? null : bill.period;
               return (
                 <div
                   key={s._id}
@@ -1332,16 +1405,17 @@ function GroupDetail({ groupId, live = false }) {
                     {!isTeacher && (
                       <div className="flex flex-col gap-1 min-w-0">
                         <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">{t("student.debt")}</span>
-                        {entry.groupStatus === "pending" ? (
-                          <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">—</span>
+                        {noBill ? (
+                          <span title={t("group.noMembershipInMonth")} className="text-sm font-semibold text-slate-300 dark:text-slate-600">—</span>
                         ) : hasDebt ? (
                           <span className="text-[15px] font-bold leading-tight text-red-600 dark:text-red-400 whitespace-nowrap">
-                            {maskMoney(entry.currentCyclePrice - entry.paidForCurrentCycle, hideFinance)}{" "}
+                            {maskMoney(bill.debt, hideFinance)}{" "}
                             <span className="text-xs font-medium text-red-400">{t("student.somSuffix")}</span>
                           </span>
                         ) : (
                           <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{t("student.noDebt")}</span>
                         )}
+                        {period && <span title={t("group.billingPeriod")} className={PERIOD_TEXT_CLASS}>{period}</span>}
                       </div>
                     )}
 
@@ -1380,18 +1454,19 @@ function GroupDetail({ groupId, live = false }) {
                         <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 truncate">
                           {t("student.debt")}
                         </span>
-                        {entry.groupStatus === "pending" ? (
-                          <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">—</span>
+                        {noBill ? (
+                          <span title={t("group.noMembershipInMonth")} className="text-sm font-semibold text-slate-300 dark:text-slate-600">—</span>
                         ) : hasDebt ? (
                           <span className="flex flex-col min-w-0 leading-tight">
                             <span className="text-sm font-bold text-red-500 truncate">
-                              {maskMoney(entry.currentCyclePrice - entry.paidForCurrentCycle, hideFinance)}
+                              {maskMoney(bill.debt, hideFinance)}
                             </span>
                             <span className="text-[11px] font-medium text-red-400">{t("student.somSuffix")}</span>
                           </span>
                         ) : (
                           <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 truncate">{t("student.noDebt")}</span>
                         )}
+                        {period && <span title={t("group.billingPeriod")} className={PERIOD_TEXT_CLASS}>{period}</span>}
                       </div>
                     )}
 
@@ -1438,10 +1513,15 @@ function GroupDetail({ groupId, live = false }) {
                           <span className="text-slate-400 dark:text-slate-500">
                             {maskMoney(0, hideFinance)} / {maskMoney(0, hideFinance)} {t("student.somSuffix")}
                           </span>
+                        ) : !bill ? (
+                          <span title={t("group.noMembershipInMonth")} className="text-slate-300 dark:text-slate-600 cursor-default">—</span>
                         ) : (
-                          <span>
-                            {maskMoney(entry.paidForCurrentCycle, hideFinance)} /{" "}
-                            {maskMoney(entry.currentCyclePrice, hideFinance)} {t("student.somSuffix")}
+                          <span className="flex flex-col">
+                            <span>
+                              {maskMoney(bill.paid, hideFinance)} /{" "}
+                              {maskMoney(bill.due, hideFinance)} {t("student.somSuffix")}
+                            </span>
+                            {period && <span title={t("group.billingPeriod")} className={PERIOD_TEXT_CLASS}>{period}</span>}
                           </span>
                         )}
                       </div>
@@ -1475,7 +1555,15 @@ function GroupDetail({ groupId, live = false }) {
                                 label: t("student.addPayment"),
                                 icon: HiBanknotes,
                                 iconClass: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-                                onClick: () => setPayTarget({ student: s, entry }),
+                                // Tanlangan (o'tgan) oy bo'lsa — to'lov aynan
+                                // shu oyga, summa shu oyning qarzi bilan.
+                                onClick: () =>
+                                  setPayTarget({
+                                    student: s,
+                                    entry,
+                                    month: bill && !bill.isCurrent ? selectedMonth : null,
+                                    monthDebt: bill && !bill.isCurrent ? bill.debt : 0,
+                                  }),
                               },
                             ]
                           : []),
@@ -1596,7 +1684,16 @@ function GroupDetail({ groupId, live = false }) {
           student={editTargetView.student}
           entries={
             editTargetView.entry.status === "active"
-              ? [{ _id: editTargetView.entry._id, price: editTargetView.entry.price, cycles: editTargetView.entry.priceCycles }]
+              ? [
+                  {
+                    _id: editTargetView.entry._id,
+                    price: editTargetView.entry.price,
+                    cycles: editTargetView.entry.priceCycles,
+                    joinedAt: editTargetView.entry.joinedAt,
+                    groupStatus: group.status,
+                    activatedAt: group.activatedAt,
+                  },
+                ]
               : []
           }
           onClose={() => setEditTarget(null)}
@@ -1654,8 +1751,12 @@ function GroupDetail({ groupId, live = false }) {
           studentId={payTargetView.student._id}
           groupEntryId={payTargetView.entry._id}
           debt={payTargetView.entry.debt}
-          currentCyclePrice={payTargetView.entry.currentCyclePrice}
-          paidForCurrentCycle={payTargetView.entry.paidForCurrentCycle}
+          // O'tgan oy tanlangan bo'lsa: oy shu oyga qo'yiladi, summa — shu oy
+          // qarzi (0 bo'lsa bo'sh; joriy sikl qoldig'i aralashmasin).
+          currentCyclePrice={payTargetView.month ? 0 : payTargetView.entry.currentCyclePrice}
+          paidForCurrentCycle={payTargetView.month ? 0 : payTargetView.entry.paidForCurrentCycle}
+          presetForMonth={payTargetView.month || undefined}
+          presetAmount={payTargetView.month && payTargetView.monthDebt > 0 ? payTargetView.monthDebt : undefined}
           currentCycleMonth={payTargetView.entry.currentCycleMonth}
           courseStartMonth={payTargetView.entry.courseStartMonth}
           earliestPayableMonth={payTargetView.entry.earliestPayableMonth}
