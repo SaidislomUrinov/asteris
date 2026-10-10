@@ -489,6 +489,8 @@ const children = async (parent) => {
         groupId: group._id,
         name,
         subjectName: subjectName.get(String(group.subject)) || "",
+        // Individual (1 kishilik) dars — WebApp reyting o'rniga "Individual" yozadi.
+        isIndividual: group.kind === "individual",
         telegramLink: group.telegramLink || null,
         teacherName: staffName.get(String(group.teacher)) || "",
         roomName: roomName.get(String(group.room)) || "",
@@ -776,7 +778,13 @@ const entryRank = async (parent, entryId) => {
   // UI "Sentabr reytingi" yozuvi uchun `month` javobda qaytadi.
   const month = moment.tz(TZ).format("YYYY-MM");
   const summary = await groupStudentsSummary(group, { month });
-  const { total, ranked, position } = rankInSummary(summary, student._id);
+  // Individual (1 kishilik) guruhda o'rin ma'nosiz — doim "1/1" chiqardi
+  // (API_CONTRACT_individual_students.md §0.6). O'rin berilmaydi, lekin
+  // o'quvchining o'z baho/davomat ko'rsatkichlari (kartalar shundan oladi) qoladi.
+  const individual = group.kind === "individual";
+  const { total, ranked, position } = individual
+    ? { total: 1, ranked: 0, position: null }
+    : rankInSummary(summary, student._id);
   const own = summary[String(student._id)] || null;
   // Markaz baholarni yashirgan bo'lsa (entryGrades bilan bir xil qoida) —
   // o'rin ham bahodan kelib chiqadi, shuning uchun u ham berilmaydi.
@@ -791,6 +799,7 @@ const entryRank = async (parent, entryId) => {
       gradeScore: null,
       attendanceRate: own?.attendanceRate ?? 0,
       gradesHidden: true,
+      individual,
     };
   }
   return {
@@ -802,6 +811,7 @@ const entryRank = async (parent, entryId) => {
     gradeCount: own?.gradeCount ?? 0,
     gradeScore: own?.gradeScore ?? null,
     attendanceRate: own?.attendanceRate ?? 0,
+    individual,
   };
 };
 

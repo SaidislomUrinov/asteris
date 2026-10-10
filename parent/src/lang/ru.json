@@ -80,6 +80,10 @@
     "groups_few": "{{count}} группы",
     "groups_many": "{{count}} групп",
     "groups_other": "{{count}} групп",
+    "individuals_one": "{{count}} индивидуальное занятие",
+    "individuals_few": "{{count}} индивидуальных занятия",
+    "individuals_many": "{{count}} индивидуальных занятий",
+    "individuals_other": "{{count}} индивидуальных занятий",
     "attendance": "Посещаемость",
     "avgGrade": "Средний балл",
     "totalDebt": "Общий долг",
@@ -137,7 +141,8 @@
       "downloadHint": "Карта придёт картинкой в ваш чат Telegram",
       "sent": "Карта отправлена в ваш чат Telegram",
       "close": "Закрыть"
-    }
+    },
+    "individual": "Индивидуальное занятие"
   },
   "days": {
     "mon": "Пн",

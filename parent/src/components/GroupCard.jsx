@@ -24,6 +24,7 @@ export const GroupCard = ({ group, onClick, muted }) => {
           <Pill tone={tone}>
             {finished ? t(`group.status.${group.status}`) : hasDebt ? <Num text={t("common.debtShort", { v: money(group.debt) })} v={money(group.debt)} /> : t("common.paid")}
           </Pill>
+          {group.isIndividual && <Pill tone="acc">{t("group.individual")}</Pill>}
           {finished && hasDebt && <Pill tone="bad"><Num text={t("common.debtShort", { v: money(group.debt) })} v={money(group.debt)} /></Pill>}
         </div>
       </div>

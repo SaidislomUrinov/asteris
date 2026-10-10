@@ -51,6 +51,7 @@ export const StudentGroupCard = ({ group, centerName, onClick, muted }) => {
         <div className="flex-1 min-w-0">
           <div className="font-title font-bold text-[15px] break-words leading-tight">{group.name}</div>
           {meta && <div className="text-xs text-hint mt-1 break-words leading-snug"><Num text={meta} v={time} /></div>}
+          {group.isIndividual && <Pill tone="acc" className="mt-1.5">{t("group.individual")}</Pill>}
         </div>
         <HiChevronRight className="w-5 h-5 text-hint/70 shrink-0" />
       </div>
@@ -66,13 +67,16 @@ export const StudentGroupCard = ({ group, centerName, onClick, muted }) => {
               <Skeleton className="h-[46px] rounded-xl" />
             </div>
           ) : rank.error ? null : (
-            <div className="mt-2.5 grid grid-cols-3 gap-1.5">
-              <Metric
-                value={r?.position != null ? `${r.position}/${r.total}` : "—"}
-                label={t("student.home.rank")}
-                className={medalBg}
-                medal={medalBg && <Medal position={r.position} size={13} label={t("rankCard.medal", { position: r.position })} />}
-              />
+            <div className={cn("mt-2.5 grid gap-1.5", group.isIndividual ? "grid-cols-2" : "grid-cols-3")}>
+              {/* Individual darsda o'rin yo'q (1 kishilik) — faqat baho va davomat */}
+              {!group.isIndividual && (
+                <Metric
+                  value={r?.position != null ? `${r.position}/${r.total}` : "—"}
+                  label={t("student.home.rank")}
+                  className={medalBg}
+                  medal={medalBg && <Medal position={r.position} size={13} label={t("rankCard.medal", { position: r.position })} />}
+                />
+              )}
               <Metric value={r?.gradeAverage ?? "—"} label={t("grades.avg")} />
               <Metric value={r?.attendanceRate != null ? `${r.attendanceRate}%` : "—"} label={t("att.rate")} />
             </div>

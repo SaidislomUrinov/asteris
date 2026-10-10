@@ -45,7 +45,7 @@ export const RankCard = ({ entryId }) => {
   if (rank.loading) return <Skeleton className="h-[92px] rounded-2xl" />;
   // Xato yoki markaz baholarni yashirgan — karta umuman chiqmaydi (sahifaning
   // asosiy maqsadi tablar; reyting qo'shimcha ma'lumot).
-  if (rank.error || !r || r.gradesHidden) return null;
+  if (rank.error || !r || r.gradesHidden || r.individual) return null;
 
   // Reyting joriy oy bo'yicha (kontrakt §A) — davr yozuvi "Sentabr reytingi".
   const period = r.month ? (

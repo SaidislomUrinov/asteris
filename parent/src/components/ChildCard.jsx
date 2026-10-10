@@ -9,8 +9,17 @@ export const ChildCard = ({ child, index, onClick }) => {
   const { t } = useTranslation();
   const { student, stats, centers } = child;
   const linked = centers.filter((c) => c.linked);
-  const groupCount = linked.reduce((a, c) => a + (c.groups || []).filter((g) => g.status === "active").length, 0);
-  const centerNames = centers.map((c) => c.center.name).join(" · ");
+  const active = linked.flatMap((c) => (c.groups || []).filter((g) => g.status === "active"));
+  // Individual dars guruh sifatida sanalmaydi — alohida ko'rsatiladi.
+  const individualCount = active.filter((g) => g.isIndividual).length;
+  const groupCount = active.length - individualCount;
+  const summary = [
+    centers.map((c) => c.center.name).join(" · "),
+    (groupCount > 0 || !individualCount) && t("child.groups", { count: groupCount }),
+    individualCount > 0 && t("child.individuals", { count: individualCount }),
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return (
     <Card as="button" onClick={onClick} className="flex items-center gap-3">
       <Avatar text={initials(student.fullName)} tone={index} src={photoSrc(student.photo)} alt={student.fullName} className="w-11 h-11 text-[15px]" />
@@ -20,7 +29,7 @@ export const ChildCard = ({ child, index, onClick }) => {
           {student.isSelf && <span className="text-hint font-semibold text-xs font-sans"> · {t("child.self")}</span>}
         </div>
         <div className="text-xs text-hint mt-1 break-words leading-snug">
-          {centerNames} · {t("child.groups", { count: groupCount })}
+          {summary}
         </div>
         <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
           {stats.totalDebt > 0 ? (

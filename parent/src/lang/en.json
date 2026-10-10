@@ -78,6 +78,8 @@
     "self": "self",
     "groups_one": "{{count}} group",
     "groups_other": "{{count}} groups",
+    "individuals_one": "{{count}} individual lesson",
+    "individuals_other": "{{count}} individual lessons",
     "attendance": "Attendance",
     "avgGrade": "Avg grade",
     "totalDebt": "Total debt",
@@ -135,7 +137,8 @@
       "downloadHint": "The card arrives as an image in your Telegram chat",
       "sent": "The card was sent to your Telegram chat",
       "close": "Close"
-    }
+    },
+    "individual": "Individual lesson"
   },
   "days": {
     "mon": "Mo",

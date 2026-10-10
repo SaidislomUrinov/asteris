@@ -78,6 +78,8 @@
     "self": "o'zi",
     "groups_one": "{{count}} guruh",
     "groups_other": "{{count}} guruh",
+    "individuals_one": "{{count}} ta individual dars",
+    "individuals_other": "{{count}} ta individual dars",
     "attendance": "Davomat",
     "avgGrade": "O'rtacha baho",
     "totalDebt": "Jami qarz",
@@ -135,7 +137,8 @@
       "downloadHint": "Karta Telegram chatingizga rasm bo‘lib keladi",
       "sent": "Karta Telegram chatingizga yuborildi",
       "close": "Yopish"
-    }
+    },
+    "individual": "Individual dars"
   },
   "days": {
     "mon": "Du",

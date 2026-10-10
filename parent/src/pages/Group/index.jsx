@@ -22,7 +22,7 @@ import { QrCardSheet } from "./QrCardSheet";
 import { cn } from "../../utils/cn";
 import { Button } from "../../components/Button";
 import { openTelegramLink } from "../../lib/telegram";
-import { Avatar } from "../../components/Card";
+import { Avatar, Pill } from "../../components/Card";
 import { photoSrc } from "../../lib/studentPhoto";
 import { initials } from "../../utils/format";
 
@@ -96,6 +96,7 @@ export const Group = () => {
         <>
           {/* Ota-ona bir nechta farzand ko'rishi mumkin — qaysi bola ekani ko'rinsin */}
           {!isStudent && <div className="font-bold text-ink break-words">{child.student.fullName}</div>}
+          {group.isIndividual && <Pill tone="acc" className="mb-1">{t("group.individual")}</Pill>}
           <div className="break-words">
             {subParts.map((p, i) => (
               <span key={i}>
@@ -116,7 +117,7 @@ export const Group = () => {
       }
     >
       {/* Reyting faqat faol a'zolikda — tugagan guruhda so'rov yuborilmaydi */}
-      {group.status === "active" && <RankCard entryId={eid} />}
+      {group.status === "active" && !group.isIndividual && <RankCard entryId={eid} />}
       {/* Telegram guruh — faqat faol a'zolikda va markaz havola qo'ygan bo'lsa */}
       {group.status === "active" && (qr.data || group.telegramLink) && (
         <div className={cn("grid gap-2.5", qr.data && group.telegramLink && "grid-cols-2")}>
