@@ -36,6 +36,7 @@ import useHideFinance from "../../hooks/useHideFinance";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 import { maskMoney } from "../../utils/moneyFormat";
+import IndividualSalaryRows from "../../components/IndividualSalaryRows";
 
 const currentMonth = () => {
   const d = new Date();
@@ -431,6 +432,12 @@ function StaffDetail() {
                 </NumberText>
               </div>
             </div>
+
+            <IndividualSalaryRows
+              individual={salary.individual}
+              hidden={hideFinance}
+              className="px-3 rounded-lg bg-slate-50 dark:bg-night-800"
+            />
 
             <div className="flex flex-col gap-2">
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">

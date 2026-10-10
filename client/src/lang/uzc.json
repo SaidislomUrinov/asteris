@@ -186,7 +186,8 @@
     "archive": "Архив",
     "leads": "Лидлар",
     "myPlans": "Дарс режаларим",
-    "videoLessons": "Видео қўлланмалар"
+    "videoLessons": "Видео қўлланмалар",
+    "individual": "Индивидуал"
   },
   "report": {
     "revenue": "Тушум",
@@ -1260,7 +1261,8 @@
     "telegramRemove": "Узиш",
     "invalidTelegramLink": "Telegram ҳаволаси нотўғри. Масалан: https://t.me/+AbCd ёки @guruh",
     "telegramUpdated": "Telegram гуруҳ манзили янгиланди",
-    "billingPeriod": "Тўлов даври"
+    "billingPeriod": "Тўлов даври",
+    "notIndividual": "Бу индивидуал гуруҳ эмас"
   },
   "notification": {
     "title": "Билдиришномалар",
@@ -2173,5 +2175,27 @@
       "roomDetail": "Хона саҳифаси",
       "studentDetail": "Ўқувчи саҳифаси"
     }
+  },
+  "individual": {
+    "label": "Индивидуал",
+    "create": "Индивидуал қўшиш",
+    "studentSection": "Ўқувчи",
+    "lessonSection": "Дарс",
+    "percent": "Ўқитувчи фоизи (%)",
+    "percentHint": "Ўқувчи тўловининг неча фоизи ўқитувчига берилади",
+    "startDate": "Дарслар бошланиш санаси",
+    "optional": "ихтиёрий",
+    "searchPlaceholder": "Ўқувчи исми ёки телефони",
+    "loadError": "Индивидуал ўқувчиларни юклаб бўлмади",
+    "empty": "Ҳозирча индивидуал ўқувчилар йўқ",
+    "badgeTitle": "Индивидуал ўқувчи",
+    "studentTooltip": "Индивидуал ўқувчи · Ўқитувчи: {{teacher}}",
+    "teacherShare": "Ўқитувчига",
+    "editShort": "Ўзгартириш",
+    "editPercent": "Ўқитувчи фоизини ўзгартириш",
+    "salaryRow": "Индивидуал ўқувчилар",
+    "invalidPercent": "Фоиз 0 дан 100 гача бўлиши керак",
+    "occupied": "Бу индивидуал гуруҳда аллақачон ўқувчи бор",
+    "updated": "Сақланди"
   }
 }

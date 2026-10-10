@@ -26,6 +26,7 @@ import {
   HiPencilSquare,
   HiPhone,
   HiPlus,
+  HiReceiptPercent,
   HiUserGroup,
   HiUserMinus,
   HiUsers,
@@ -63,6 +64,8 @@ import SyllabusTab from "./SyllabusTab";
 import HomeworkTab from "./HomeworkTab";
 import TodayLessonCard from "./TodayLessonCard";
 import GroupHeader from "./GroupHeader";
+import IndBadge from "../../ui/IndBadge";
+import IndividualPercentDialog from "../Individual/IndividualPercentDialog";
 import HeaderCard from "./HeaderCard";
 import AttendanceStatusCell, { DebtPill } from "./AttendanceStatusCell";
 import { useLessonSchedule } from "./useLessonSchedule";
@@ -200,6 +203,9 @@ function GroupDetail({ groupId, live = false }) {
   const roomMap = Object.fromEntries(rooms.map((r) => [r._id, r.name]));
 
   const [activateOpen, setActivateOpen] = useState(false);
+  // Individual guruh: o'qituvchi foizini tahrirlash oynasi (API_CONTRACT_individual_students.md §4).
+  const [percentOpen, setPercentOpen] = useState(false);
+  const [percentKey, setPercentKey] = useState(0);
   const [activateKey, setActivateKey] = useState(0);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleKey, setScheduleKey] = useState(0);
@@ -478,7 +484,7 @@ function GroupDetail({ groupId, live = false }) {
       successMsg(msg);
       setArchiveOpen(false);
       // Guruh endi arxivda — bu sahifa uni ko'rsata olmaydi, ro'yxatga qaytamiz.
-      navigate("/groups");
+      navigate(group?.kind === "individual" ? "/individual" : "/groups");
     } catch (error) {
       errorMsg(error.message);
     } finally {
@@ -787,7 +793,13 @@ function GroupDetail({ groupId, live = false }) {
     setExcuseTarget(null);
   };
 
+  // Individual guruh — bitta o'quvchi; sarlavha o'quvchi ismi, guruh
+  // yig'ish amallari (qo'shish/import/faollashtirish/limit) yashiriladi.
+  const isIndividual = group.kind === "individual";
+  // Foiz — moliyaviy: faqat Boshliq/Resepshin (o'qituvchiga `null` keladi).
+  const canEditPercent = isIndividual && !isTeacher && (authType === "owner" || can("group:update"));
   const groupLabel =
+    (isIndividual && group.individualStudent?.fullName) ||
     group.name ||
     `${group.subjectName || subjectMap[group.subject] || "?"} - ${
       group.status === "pending" ? group.pendingId : group.activeId
@@ -796,13 +808,12 @@ function GroupDetail({ groupId, live = false }) {
   // Guruh nomini tahrirlash — Yordamchi o'qituvchidan boshqa hamma
   // (Boshliq, Menejer, Resepshin, O'qituvchi) tahrirlay oladi (backend
   // "requireGroupRenameAccess" bilan bir xil qoida).
-  const canRenameGroup = authType === "owner" || role !== "assistant";
+  const canRenameGroup = !isIndividual && (authType === "owner" || role !== "assistant");
   // Telegram guruh manzili — `PATCH /groups/:id/telegram` doirasi (/groups
   // ro'yxatidagi belgi bilan bir xil): Boshliq, O'qituvchi, `group:update`li hodim.
   const canEditTelegram =
     authType === "owner" || role === "teacher" || (role !== "assistant" && can("group:update"));
 
-  const monthlyFee = subjectPriceMap[group.subject] || 0;
 
   // Guruhdan chiqarilgan ("left") a'zolik bu sahifada UMUMAN ko'rinmaydi —
   // ro'yxat, davomat va baho matritsalari faqat FAOL a'zolarni oladi. Bitta
@@ -810,6 +821,10 @@ function GroupDetail({ groupId, live = false }) {
   // qayta yozilgan), shuning uchun `entryOf` faol a'zolikni tanlaydi.
   const entryOf = (s) => s.groups.find((g) => g.group === id && g.status === "active");
   const activeStudents = students.filter((s) => entryOf(s));
+  // Individual guruhda oylik to'lov — o'quvchining kelishilgan narxi (fan narxi emas).
+  const monthlyFee =
+    (isIndividual && activeStudents.length ? entryOf(activeStudents[0]).price : null) ??
+    (subjectPriceMap[group.subject] || 0);
   // Faqat "Umumiy" ro'yxatning tartibi o'zgaradi — Baholar/Oylik davomat
   // tablari o'z ichki tartibida qoladi.
   const sortedStudents = sortStudents(activeStudents, sortKey, studentsSummary);
@@ -889,7 +904,7 @@ function GroupDetail({ groupId, live = false }) {
           },
         ]
       : []),
-    ...(canManageGroup && group.status === "pending"
+    ...(canManageGroup && group.status === "pending" && !isIndividual
       ? [
           {
             key: "activate",
@@ -1028,6 +1043,31 @@ function GroupDetail({ groupId, live = false }) {
       <GroupHeader
         group={group}
         label={groupLabel}
+        titleBadge={isIndividual ? <IndBadge title={t("individual.badgeTitle")} /> : null}
+        studentsCard={
+          canEditPercent ? (
+            <HeaderCard
+              icon={<HiReceiptPercent />}
+              title={t("individual.teacherShare")}
+              value={group.teacherPercent != null ? `${group.teacherPercent}%` : "—"}
+              accent="violet"
+            >
+              {/* Tor katak — tugma sarlavha yonida uni kesib qo'yardi, shuning
+                  uchun qiymat ostida matnli havola. */}
+              <button
+                type="button"
+                className="self-start inline-flex items-center gap-1 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 cursor-pointer whitespace-nowrap"
+                onClick={() => {
+                  setPercentKey((k) => k + 1);
+                  setPercentOpen(true);
+                }}
+              >
+                <HiPencilSquare className="text-sm" />
+                {t("individual.editShort")}
+              </button>
+            </HeaderCard>
+          ) : null
+        }
         status={
           live ? (
             <Chip value={t("dashboard.lessonStatus.ongoing")} color="blue" variant="filled" />
@@ -1073,7 +1113,7 @@ function GroupDetail({ groupId, live = false }) {
         }
         studentsCount={studentsCount}
         studentsFooter={
-          group.status === "pending" && group.maxStudents ? (
+          group.status === "pending" && group.maxStudents && !isIndividual ? (
             <ProgressBar value={studentsCount} max={group.maxStudents} color="orange" />
           ) : null
         }
@@ -1192,7 +1232,7 @@ function GroupDetail({ groupId, live = false }) {
                 options={SORT_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
               />
             </div>
-            {activeTab === "general" && group.status !== "finished" && can("student:create") && (
+            {activeTab === "general" && group.status !== "finished" && can("student:create") && !isIndividual && (
               <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto sm:ml-auto">
                 <div className="max-sm:flex-1 max-sm:min-w-[140px]">
                   {/* 390px da ikki tugma yonma-yon ~158px dan oladi, tarkib
@@ -1733,10 +1773,25 @@ function GroupDetail({ groupId, live = false }) {
         assistants={assistants}
         rooms={rooms}
         canRenameName={canRenameGroup}
+        individual={isIndividual}
         canEditSchedule={canManageGroup && !isTeacher && group.status === "active"}
         onClose={() => setScheduleOpen(false)}
         onSaved={fetchGroup}
       />
+
+      {canEditPercent && (
+        <IndividualPercentDialog
+          key={`percent-${percentKey}`}
+          open={percentOpen}
+          group={group}
+          onClose={() => setPercentOpen(false)}
+          onSaved={(data) =>
+            setGroup((prev) =>
+              prev ? { ...prev, teacherPercent: data?.teacherPercent ?? prev.teacherPercent } : prev,
+            )
+          }
+        />
+      )}
 
       <IssueCertificateDialog
         open={certificateOpen}

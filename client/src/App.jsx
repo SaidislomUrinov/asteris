@@ -29,6 +29,7 @@ import Rooms from "./pages/Rooms";
 import RoomDetail from "./pages/Rooms/RoomDetail";
 import Groups from "./pages/Groups";
 import GroupDetail from "./pages/Groups/GroupDetail";
+import Individual from "./pages/Individual";
 import Schedule from "./pages/Schedule";
 import Lesson from "./pages/Lesson";
 import MyPlans from "./pages/MyPlans";
@@ -231,6 +232,16 @@ function App() {
               )}
               {can("group:view") && (
                 <Route path="/groups" element={<Groups />} />
+              )}
+              {/* Individual o'quvchilar — yordamchi o'qituvchidan boshqa hamma
+                  (docs/API_CONTRACT_individual_students.md §4). */}
+              {can("group:view") && role !== "assistant" && (
+                <Route path="/individual" element={<Individual />} />
+              )}
+              {/* Individual detali — GroupDetail'ning o'zi, faqat menyuda
+                  "Individual" bandi aktiv bo'lishi uchun alohida yo'l. */}
+              {can("group:view") && role !== "assistant" && (
+                <Route path="/individual/:id" element={<GroupDetail />} />
               )}
               {/* Jadval — haftalik jadval + oylik kalendar bitta tab qatori ostida. */}
               <Route element={<ScheduleLayout />}>

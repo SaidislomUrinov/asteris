@@ -822,6 +822,8 @@ const groupEntryDTO = (entry, group, cycleMode) => {
     archivedAt: entry.archivedAt || null,
     archivedWithGroup: !!entry.archivedWithGroup,
     groupStatus: group?.status || null,
+    // Individual (1 kishilik yashirin) guruh a'zoligi — API_CONTRACT_individual_students.md.
+    isIndividual: group?.kind === "individual",
     joinedAt: entry.joinedAt,
     leftAt: entry.leftAt,
     ...billing,
@@ -877,7 +879,7 @@ const DTO = async (student, clientId, centerId = "", { includeArchived = false }
 
   const groupIds = [...new Set(groups.map((g) => String(g.group)))];
   const groupDocs = groupIds.length
-    ? await Group.find({ _id: { $in: groupIds } }).select("status activatedAt finishedAt center days")
+    ? await Group.find({ _id: { $in: groupIds } }).select("status activatedAt finishedAt center days kind")
     : [];
   const groupMap = Object.fromEntries(groupDocs.map((g) => [String(g._id), g]));
 
@@ -1005,6 +1007,28 @@ async function buildRevenueRows(clientId, { from = "", to = "", center = "", typ
     collectedBy: resolveCollector(row),
   }));
 }
+
+// O'quvchilar ro'yxati (API_CONTRACT_individual_students.md §2): kamida bitta
+// FAOL a'zoligi individual guruhda bo'lsa `isIndividual: true` va o'sha
+// guruh o'qituvchisi ismi (tooltip uchun). DTO'lar joyida to'ldiriladi —
+// o'qituvchilar BITTA so'rovda.
+const attachIndividualInfo = async (dtos) => {
+  const groupOf = new Map();
+  for (const dto of dtos) {
+    const entry = (dto.groups || []).find((g) => g.isIndividual && g.status === "active");
+    dto.isIndividual = !!entry;
+    dto.individualTeacher = null;
+    if (entry) groupOf.set(dto, String(entry.group));
+  }
+  if (!groupOf.size) return;
+
+  const groups = await Group.find({ _id: { $in: [...new Set(groupOf.values())] } }).select("teacher").lean();
+  const teacherOfGroup = Object.fromEntries(groups.map((g) => [String(g._id), g.teacher ? String(g.teacher) : null]));
+  const teacherIds = [...new Set(Object.values(teacherOfGroup).filter(Boolean))];
+  const teachers = teacherIds.length ? await Staff.find({ _id: { $in: teacherIds } }).select("name").lean() : [];
+  const nameOf = Object.fromEntries(teachers.map((t) => [String(t._id), t.name]));
+  for (const [dto, groupId] of groupOf) dto.individualTeacher = nameOf[teacherOfGroup[groupId]] || null;
+};
 
 const findClientGroupEntry = (student, clientId, groupEntryId) => {
   const entry = student.groups.id(groupEntryId);
@@ -1253,6 +1277,14 @@ module.exports = {
     });
     if (!group) throw new Error("group.notFound");
     if (group.status === "finished") throw new Error("student.groupFinished");
+    // Individual guruh — BITTA o'quvchi: a'zosi (har qanday holatda — arxiv/
+    // chiqqan ham) bor bo'lsa ikkinchisi qo'shilmaydi, aks holda arxivdan
+    // qaytarishda bitta guruhda ikki faol a'zo paydo bo'lardi (maxStudents'dan
+    // farqli, bu QAT'IY cheklov).
+    if (group.kind === "individual") {
+      const occupied = await Student.exists({ isDeleted: false, "groups.group": group._id });
+      if (occupied) throw new Error("individual.occupied");
+    }
 
     // `group.maxStudents` — MO'LJAL, qat'iy cheklov EMAS. Avval bu yerda
     // limitga yetgan guruhga o'quvchi qo'shish `student.groupFull` xatosi
@@ -1786,7 +1818,7 @@ module.exports = {
       // Chiqib ketgan, lekin qarzini to'lamagan o'quvchi ham "Qarzdorlar"da.
       const hasDebt = (s) => s.groups.some((g) => (g.status === "active" || g.status === "left") && (g.debt || 0) > 0);
       const filtered = dtos.filter((s) => (debtStatus === "debtor" ? hasDebt(s) : !hasDebt(s)));
-      await attachTelegramStatus(filtered);
+      await Promise.all([attachTelegramStatus(filtered), attachIndividualInfo(filtered)]);
 
       return {
         data: filtered,
@@ -1810,7 +1842,7 @@ module.exports = {
     ]);
 
     const dtos = await Promise.all(data.map((s) => DTO(s, clientId, center)));
-    await attachTelegramStatus(dtos);
+    await Promise.all([attachTelegramStatus(dtos), attachIndividualInfo(dtos)]);
 
     return {
       data: dtos,
@@ -2413,7 +2445,14 @@ module.exports = {
 
     const center = await Center.findOne({ _id: centerId, client: clientId, isDeleted: false });
     if (!center) throw new Error("center.notFound");
-    const group = await Group.findOne({ _id: groupId, client: clientId, center: center._id, isDeleted: false });
+    // Individual guruhga o'tkazib bo'lmaydi — u faqat o'z o'quvchisi bilan yaratiladi.
+    const group = await Group.findOne({
+      _id: groupId,
+      client: clientId,
+      center: center._id,
+      isDeleted: false,
+      kind: { $ne: "individual" },
+    });
     if (!group) throw new Error("group.notFound");
     if (group.status === "finished") throw new Error("student.groupFinished");
 

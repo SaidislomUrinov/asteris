@@ -53,6 +53,8 @@ function TelegramRow({ label, children }) {
  * @param {number} props.studentsCount
  * @param {React.ReactNode} [props.studentsFooter] - masalan to'lganlik ProgressBar
  * @param {React.ReactNode} [props.extra] - 3-karta
+ * @param {React.ReactNode} [props.titleBadge] - sarlavha yonidagi belgi (masalan IND)
+ * @param {React.ReactNode} [props.studentsCard] - berilsa o'quvchilar soni kartasi o'rniga
  * @param {boolean} [props.canEditTelegram]
  * @param {(group: Object) => void} [props.onTelegramSaved]
  */
@@ -64,6 +66,8 @@ function GroupHeader({
   studentsCount,
   studentsFooter,
   extra,
+  titleBadge,
+  studentsCard,
   canEditTelegram = false,
   onTelegramSaved,
 }) {
@@ -85,7 +89,16 @@ function GroupHeader({
       <HeaderCard
         className="col-span-2 xl:col-span-1"
         icon={<HiUserGroup />}
-        title={label}
+        title={
+          titleBadge ? (
+            <span className="flex items-center gap-2 min-w-0">
+              <span className="truncate">{label}</span>
+              {titleBadge}
+            </span>
+          ) : (
+            label
+          )
+        }
         accent="blue"
         strong
         badge={
@@ -112,16 +125,18 @@ function GroupHeader({
         </div>
       </HeaderCard>
 
-      <HeaderCard
-        className={extra ? "" : "col-span-2 xl:col-span-1"}
-        icon={<HiUsers />}
-        title={t("group.studentsCount")}
-        value={studentsCount}
-        suffix={group.maxStudents ? `/ ${group.maxStudents}` : null}
-        accent="violet"
-      >
-        {studentsFooter}
-      </HeaderCard>
+      {studentsCard || (
+        <HeaderCard
+          className={extra ? "" : "col-span-2 xl:col-span-1"}
+          icon={<HiUsers />}
+          title={t("group.studentsCount")}
+          value={studentsCount}
+          suffix={group.maxStudents && group.kind !== "individual" ? `/ ${group.maxStudents}` : null}
+          accent="violet"
+        >
+          {studentsFooter}
+        </HeaderCard>
+      )}
 
       {extra}
 

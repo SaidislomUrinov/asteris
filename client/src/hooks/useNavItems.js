@@ -10,6 +10,7 @@ import {
   HiQrCode,
   HiRectangleStack,
   HiUser,
+  HiUserCircle,
   HiUserGroup,
   HiUsers,
   HiVideoCamera,
@@ -47,6 +48,10 @@ export default function useNavItems() {
     can("lead:view") && !isTeacher && { key: "leads", to: "/leads", icon: HiViewfinderCircle, labelKey: "nav.leads" },
     isOwner && { key: "staff", to: "/staff", icon: HiBriefcase, labelKey: "nav.staff" },
     can("group:view") && { key: "groups", to: "/groups", icon: HiUserGroup, labelKey: "nav.groups" },
+    // Individual o'quvchilar — yordamchi o'qituvchida yo'q (individual guruhda
+    // assistant bo'lmaydi), docs/API_CONTRACT_individual_students.md §4.
+    can("group:view") &&
+      role !== "assistant" && { key: "individual", to: "/individual", icon: HiUserCircle, labelKey: "nav.individual" },
     scheduleTabs.length > 0 && {
       key: "schedule",
       to: scheduleTabs[0].to,

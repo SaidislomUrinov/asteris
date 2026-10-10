@@ -186,7 +186,8 @@
     "archive": "Arxiv",
     "leads": "Lidlar",
     "myPlans": "Dars rejalarim",
-    "videoLessons": "Video qo'llanmalar"
+    "videoLessons": "Video qo'llanmalar",
+    "individual": "Individual"
   },
   "report": {
     "revenue": "Tushum",
@@ -1322,7 +1323,8 @@
     "telegramRemove": "Uzish",
     "invalidTelegramLink": "Telegram havolasi noto'g'ri. Masalan: https://t.me/+AbCd yoki @guruh",
     "telegramUpdated": "Telegram guruh manzili yangilandi",
-    "billingPeriod": "To'lov davri"
+    "billingPeriod": "To'lov davri",
+    "notIndividual": "Bu individual guruh emas"
   },
   "notification": {
     "title": "Bildirishnomalar",
@@ -2173,5 +2175,27 @@
       "roomDetail": "Xona sahifasi",
       "studentDetail": "O'quvchi sahifasi"
     }
+  },
+  "individual": {
+    "label": "Individual",
+    "create": "Individual qo'shish",
+    "studentSection": "O'quvchi",
+    "lessonSection": "Dars",
+    "percent": "O'qituvchi foizi (%)",
+    "percentHint": "O'quvchi to'lovining necha foizi o'qituvchiga beriladi",
+    "startDate": "Darslar boshlanish sanasi",
+    "optional": "ixtiyoriy",
+    "searchPlaceholder": "O'quvchi ismi yoki telefoni",
+    "loadError": "Individual o'quvchilarni yuklab bo'lmadi",
+    "empty": "Hozircha individual o'quvchilar yo'q",
+    "badgeTitle": "Individual o'quvchi",
+    "studentTooltip": "Individual o'quvchi · O'qituvchi: {{teacher}}",
+    "teacherShare": "O'qituvchiga",
+    "editShort": "O'zgartirish",
+    "editPercent": "O'qituvchi foizini o'zgartirish",
+    "salaryRow": "Individual o'quvchilar",
+    "invalidPercent": "Foiz 0 dan 100 gacha bo'lishi kerak",
+    "occupied": "Bu individual guruhda allaqachon o'quvchi bor",
+    "updated": "Saqlandi"
   }
 }

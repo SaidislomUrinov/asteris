@@ -6,6 +6,22 @@ const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 // O'quvchilar bu yerda SAQLANMAYDI — Student.groups[] orqali bog'lanadi
 // (API_CONTRACT.md "Guruh (Group) — qayta qurish").
 const schema = new Schema({
+  // "individual" — yashirin, BITTA o'quvchili guruh (API_CONTRACT_individual_students.md).
+  // Eski hujjatlarda maydon yo'q → "group" deb talqin qilinadi: querylarda
+  // `kind: { $ne: "individual" }` ishlatilsin, `kind: "group"` EMAS.
+  kind: {
+    type: String,
+    enum: ["group", "individual"],
+    default: "group",
+  },
+  // O'qituvchiga to'lovning necha foizi beriladi (0–100) — FAQAT individual
+  // guruhda; oylikka fiks/guruh foizidan MUSTAQIL ravishda qo'shiladi.
+  teacherPercent: {
+    type: Number,
+    default: null,
+    min: 0,
+    max: 100,
+  },
   client: {
     type: Schema.Types.ObjectId,
     ref: "Client",
@@ -145,5 +161,6 @@ schema.index({ client: 1, center: 1, isDeleted: 1, status: 1 });
 schema.index({ client: 1, room: 1, isDeleted: 1, status: 1 });
 schema.index({ client: 1, teacher: 1, isDeleted: 1 });
 schema.index({ client: 1, assistant: 1, isDeleted: 1 });
+schema.index({ client: 1, kind: 1, isDeleted: 1, status: 1 });
 
 module.exports = model("Group", schema);

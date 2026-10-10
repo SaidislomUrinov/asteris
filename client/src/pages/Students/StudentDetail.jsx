@@ -79,6 +79,7 @@ function StudentDetail() {
   const groupLabel = (groupId) => {
     const g = groupMap[groupId];
     if (!g) return "?";
+    if (g.kind === "individual") return `${subjectMap[g.subject] || "?"} · ${t("individual.label")}`;
     const displayId = g.status === "pending" ? g.pendingId : g.activeId;
     return `${subjectMap[g.subject] || "?"} - ${displayId}${
       g.status === "pending" ? ` - ${t("group.pendingSuffix")}` : ""
@@ -190,7 +191,7 @@ function StudentDetail() {
       const [centersRes, subjectsRes, groupsRes] = await Promise.all([
         api.get("/centers", { params: { page: 1 } }),
         api.get("/subjects", { params: { page: 1 } }),
-        api.get("/groups", { params: { page: 1 } }),
+        api.get("/groups", { params: { page: 1, kind: "all" } }),
       ]);
       if (centersRes.data.ok) setCenters(centersRes.data.data || []);
       if (subjectsRes.data.ok) setSubjects(subjectsRes.data.data || []);

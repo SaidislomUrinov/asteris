@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { HiCalendarDays, HiChevronRight, HiHome, HiUsers } from "react-icons/hi2";
 import { groupCode, lessonState } from "./lessonTime";
+import IndBadge from "../../ui/IndBadge";
 
 const CARD = {
   ongoing: "border-blue-200 dark:border-blue-500/30 bg-blue-50/60 dark:bg-blue-500/15 hover:bg-blue-50 dark:hover:bg-blue-500/15",
@@ -55,7 +56,7 @@ function TodayLessons({ lessons, mins }) {
             return (
               <li key={g._id}>
                 <Link
-                  to={`/groups/${g._id}`}
+                  to={g.isIndividual ? `/individual/${g._id}` : `/groups/${g._id}`}
                   className={`group flex items-center gap-3 sm:gap-4 p-3 sm:px-4 rounded-xl border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 ${CARD[state]}`}
                 >
                   {/* Vaqt ustuni */}
@@ -79,18 +80,25 @@ function TodayLessons({ lessons, mins }) {
                   {/* Guruh ma'lumoti */}
                   <div className="flex flex-col gap-1 flex-1 min-w-0">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-semibold text-slate-900 dark:text-slate-100 truncate">{g.subject || g.label}</span>
-                      {code && (
+                      <span className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                        {(g.isIndividual && g.studentName) || g.subject || g.label}
+                      </span>
+                      {g.isIndividual && <IndBadge title={t("individual.badgeTitle")} />}
+                      {code && !g.isIndividual && (
                         <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-night-800 font-jet text-[11px] font-medium text-slate-500 dark:text-slate-400">
                           #{code}
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-x-3 gap-y-1 flex-wrap text-xs text-slate-500 dark:text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <HiUsers className="text-slate-400 dark:text-slate-500" aria-hidden="true" />
-                        {t("group.studentsShort", { count: g.studentsCount })}
-                      </span>
+                      {g.isIndividual ? (
+                        <span className="truncate">{g.subject}</span>
+                      ) : (
+                        <span className="flex items-center gap-1">
+                          <HiUsers className="text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                          {t("group.studentsShort", { count: g.studentsCount })}
+                        </span>
+                      )}
                       {g.room?.name && (
                         <span className="flex items-center gap-1 min-w-0">
                           <HiHome className="text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />

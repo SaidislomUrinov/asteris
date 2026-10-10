@@ -186,7 +186,8 @@
     "archive": "Архив",
     "leads": "Лиды",
     "myPlans": "Мои планы уроков",
-    "videoLessons": "Видеоуроки"
+    "videoLessons": "Видеоуроки",
+    "individual": "Индивидуальные"
   },
   "report": {
     "revenue": "Выручка",
@@ -1322,7 +1323,8 @@
     "telegramRemove": "Отключить",
     "invalidTelegramLink": "Неверная ссылка Telegram. Например: https://t.me/+AbCd или @group",
     "telegramUpdated": "Ссылка на Telegram-группу обновлена",
-    "billingPeriod": "Период оплаты"
+    "billingPeriod": "Период оплаты",
+    "notIndividual": "Это не индивидуальная группа"
   },
   "notification": {
     "title": "Уведомления",
@@ -2173,5 +2175,27 @@
       "roomDetail": "Страница кабинета",
       "studentDetail": "Страница ученика"
     }
+  },
+  "individual": {
+    "label": "Индивидуально",
+    "create": "Добавить индивидуального",
+    "studentSection": "Ученик",
+    "lessonSection": "Занятия",
+    "percent": "Процент преподавателя (%)",
+    "percentHint": "Какой процент оплаты ученика получает преподаватель",
+    "startDate": "Дата начала занятий",
+    "optional": "необязательно",
+    "searchPlaceholder": "Имя или телефон ученика",
+    "loadError": "Не удалось загрузить индивидуальных учеников",
+    "empty": "Пока нет индивидуальных учеников",
+    "badgeTitle": "Индивидуальный ученик",
+    "studentTooltip": "Индивидуальный ученик · Преподаватель: {{teacher}}",
+    "teacherShare": "Преподавателю",
+    "editShort": "Изменить",
+    "editPercent": "Изменить процент преподавателя",
+    "salaryRow": "Индивидуальные ученики",
+    "invalidPercent": "Процент должен быть от 0 до 100",
+    "occupied": "В этой индивидуальной группе уже есть ученик",
+    "updated": "Сохранено"
   }
 }

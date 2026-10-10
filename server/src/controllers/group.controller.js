@@ -5,6 +5,10 @@ const { buildActor } = require("../utils/audit.util");
 const DAY_LABELS = { mon: "Dushanba", tue: "Seshanba", wed: "Chorshanba", thu: "Payshanba", fri: "Juma", sat: "Shanba", sun: "Yakshanba" };
 const STATUS_LABELS = { pending: "Yig'ilmoqda", active: "Faol", finished: "Tugagan" };
 
+// O'qituvchi/yordamchi individual foizni (moliyaviy) ko'rmaydi.
+const hidesFinance = (req) => ["teacher", "assistant"].includes(req.staff?.role);
+const forViewer = (req, data) => (data && hidesFinance(req) ? { ...data, teacherPercent: null } : data);
+
 module.exports = {
   // Jadval sahifasining ma'lumot bazasi (guruhlar + xonalar). Saqlash har bir
   // guruh uchun alohida `PATCH /:id/schedule` (pastda `reschedule`) orqali
@@ -27,18 +31,33 @@ module.exports = {
     }
   },
 
+  // Individual o'quvchi qo'shish — yashirin guruh + o'quvchi (API_CONTRACT_individual_students.md §2).
+  createIndividual: async (req, res, next) => {
+    try {
+      const data = await groupService.createIndividual(req.client._id, req.body, buildActor(req));
+      return res.status(201).send({ ok: true, data, msg: "student.created" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  updateIndividual: async (req, res, next) => {
+    try {
+      const data = await groupService.updateIndividual(req.client._id, req.params.id, req.body, buildActor(req));
+      return res.send({ ok: true, data, msg: "individual.updated" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   list: async (req, res, next) => {
     try {
-      const { page, search, center, teacher, assistant, status, days } = req.query;
-      const { data, meta } = await groupService.list(req.client._id, {
-        page,
-        search,
-        center,
-        teacher,
-        assistant,
-        status,
-        days,
-      });
+      const { page, search, center, teacher, assistant, status, days, kind } = req.query;
+      const { data, meta } = await groupService.list(
+        req.client._id,
+        { page, search, center, teacher, assistant, status, days, kind },
+        hidesFinance(req),
+      );
       return res.send({ ok: true, data, meta });
     } catch (error) {
       next(error);
@@ -47,7 +66,7 @@ module.exports = {
 
   getOne: async (req, res, next) => {
     try {
-      const data = await groupService.getOne(req.client._id, req.params.id);
+      const data = await groupService.getOne(req.client._id, req.params.id, hidesFinance(req));
       // O'qituvchi guruh NARXINI ko'rmaydi (moliyaviy ma'lumot —
       // utils/teacherView.util.js bilan bir xil tamoyil).
       if (req.staff?.role === "teacher" && data) {
@@ -126,7 +145,7 @@ module.exports = {
   reschedule: async (req, res, next) => {
     try {
       const data = await groupService.reschedule(req.client._id, req.params.id, req.body, req.staff);
-      return res.send({ ok: true, data, msg: "group.rescheduled" });
+      return res.send({ ok: true, data: forViewer(req, data), msg: "group.rescheduled" });
     } catch (error) {
       next(error);
     }
@@ -155,7 +174,7 @@ module.exports = {
   rename: async (req, res, next) => {
     try {
       const data = await groupService.rename(req.client._id, req.params.id, req.body.name);
-      return res.send({ ok: true, data, msg: "group.renamed" });
+      return res.send({ ok: true, data: forViewer(req, data), msg: "group.renamed" });
     } catch (error) {
       next(error);
     }
@@ -169,7 +188,7 @@ module.exports = {
         req.params.id,
         req.body?.telegramLink,
       );
-      return res.send({ ok: true, data, msg: "group.telegramUpdated" });
+      return res.send({ ok: true, data: forViewer(req, data), msg: "group.telegramUpdated" });
     } catch (error) {
       next(error);
     }

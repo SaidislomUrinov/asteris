@@ -18,6 +18,7 @@ export const NAV_SECTIONS = [
   { path: "/subjects", titleKey: "nav.settings" },
   { path: "/rooms", titleKey: "nav.settings" },
   { path: "/groups", titleKey: "nav.groups" },
+  { path: "/individual", titleKey: "nav.individual" },
   { path: "/schedule", titleKey: "nav.schedule" },
   { path: "/calendar", titleKey: "nav.schedule" },
   { path: "/lesson", titleKey: "nav.lesson" },

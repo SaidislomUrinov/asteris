@@ -336,6 +336,8 @@ module.exports = {
         center: centerId,
         subject: subjectId,
         isDeleted: false,
+        // Individual guruhga lid yozilmaydi (API_CONTRACT_individual_students.md §3).
+        kind: { $ne: "individual" },
       });
       if (!doc) throw new Error("group.notFound");
       if (doc.status === "finished") throw new Error("student.groupFinished");

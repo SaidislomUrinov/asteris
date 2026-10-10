@@ -186,7 +186,8 @@
     "archive": "Archive",
     "leads": "Leads",
     "myPlans": "My lesson plans",
-    "videoLessons": "Video guides"
+    "videoLessons": "Video guides",
+    "individual": "Individual"
   },
   "report": {
     "revenue": "Revenue",
@@ -1322,7 +1323,8 @@
     "telegramRemove": "Disconnect",
     "invalidTelegramLink": "Invalid Telegram link. E.g. https://t.me/+AbCd or @group",
     "telegramUpdated": "Telegram group link updated",
-    "billingPeriod": "Billing period"
+    "billingPeriod": "Billing period",
+    "notIndividual": "This is not an individual group"
   },
   "notification": {
     "title": "Notifications",
@@ -2173,5 +2175,27 @@
       "roomDetail": "Room page",
       "studentDetail": "Student page"
     }
+  },
+  "individual": {
+    "label": "Individual",
+    "create": "Add individual",
+    "studentSection": "Student",
+    "lessonSection": "Lessons",
+    "percent": "Teacher share (%)",
+    "percentHint": "What percent of the student's payment goes to the teacher",
+    "startDate": "Lessons start date",
+    "optional": "optional",
+    "searchPlaceholder": "Student name or phone",
+    "loadError": "Failed to load individual students",
+    "empty": "No individual students yet",
+    "badgeTitle": "Individual student",
+    "studentTooltip": "Individual student · Teacher: {{teacher}}",
+    "teacherShare": "Teacher share",
+    "editShort": "Change",
+    "editPercent": "Change teacher share",
+    "salaryRow": "Individual students",
+    "invalidPercent": "Percent must be between 0 and 100",
+    "occupied": "This individual group already has a student",
+    "updated": "Saved"
   }
 }

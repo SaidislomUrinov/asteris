@@ -1,55 +1,28 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  HiBanknotes,
-  HiBuildingOffice2,
-  HiCheckCircle,
-  HiOutlineChevronRight,
-  HiDevicePhoneMobile,
-  HiPhone,
-  HiUser,
-  HiUserGroup,
-} from "react-icons/hi2";
+import { HiBanknotes, HiBuildingOffice2, HiUserGroup } from "react-icons/hi2";
 import Dialog from "../../ui/Dialog";
 import Input from "../../ui/Input";
 import Select from "../../ui/Select";
 import Button from "../../ui/Button";
-import Chip from "../../ui/Chip";
-import Avatar from "../../ui/Avatar";
-import TelegramPhoneField from "../../ui/TelegramPhoneField";
 import { toast } from "sonner";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
-import OpeningDebtsEditor from "./OpeningDebtsEditor";
+import OpeningDebtsSection from "./OpeningDebtsSection";
+import StudentContactFields from "./StudentContactFields";
+import { EMPTY_CONTACT_FORM, buildContactPayload } from "./studentContact.util";
 import StudentPhotoCapture from "./StudentPhotoCapture";
 import StartDateField from "./StartDateField";
 import { assertStartDate, tashkentDay } from "./startDate.util";
 import { uploadStudentPhoto } from "../../utils/studentPhoto";
-import { EMPTY_OPENING, buildOpeningPayload, openingTotal } from "./openingDebts.util";
-import {
-  EMPTY_TELEGRAM_FORM,
-  assertTelegramForm,
-  buildTelegramPayload,
-  telegramFormFromDto,
-} from "../../utils/telegramPhone";
-
-const PHONE_PREFIX = "+998";
-
-// "+998901234567" → "901234567" (prefiksli inputga qo'yish uchun); eski
-// formatdagi yozuvlar uchun ham — oxirgi 9 ta raqam.
-const phoneSuffix = (raw) => {
-  const digits = (raw || "").replace(/\D/g, "");
-  return (digits.length > 9 && digits.startsWith("998") ? digits.slice(3) : digits).slice(-9);
-};
+import { EMPTY_OPENING, buildOpeningPayload } from "./openingDebts.util";
+import { assertTelegramForm } from "../../utils/telegramPhone";
 
 const EMPTY_FORM = {
   center: "",
   group: "",
-  fullName: "",
-  phone: "",
-  parentPhone: "",
   price: "",
-  ...EMPTY_TELEGRAM_FORM,
+  ...EMPTY_CONTACT_FORM,
 };
 
 // O'quvchini guruhga yozish (yaratish yoki mavjud telefon bo'lsa qo'shimcha
@@ -87,13 +60,6 @@ function StudentDialog({
   const [disabled, setDisabled] = useState(false);
   // "Oldingi qarzdorlik" — ko'chirishdan oldingi qarz (API_CONTRACT_opening_debts.md §3.1).
   const [opening, setOpening] = useState(EMPTY_OPENING);
-  const [openingOpen, setOpeningOpen] = useState(false);
-  const openingSum = openingTotal(opening.openingDebts);
-  // Bir nechta bola bitta telefon raqamda bo'lishi mumkin — lookup endi
-  // massiv qaytaradi (API_CONTRACT.md §2). Foydalanuvchi ro'yxatdan birini
-  // tanlasa "mavjud o'quvchi" oqimi (existingStudentId), tanlamasa/tozalasa
-  // — har doim yangi Student hujjati yaratiladi (dublikat telefon bilan ham).
-  const [matches, setMatches] = useState([]);
   const [existingStudent, setExistingStudent] = useState(null);
   // Guruh detalidan qo'shishda olingan/tanlangan rasm
   // (docs/API_CONTRACT_enroll_with_photo.md) — saqlashdan keyin yuboriladi.
@@ -105,41 +71,6 @@ function StudentDialog({
   const selectedGroup = fixedGroup || groups.find((g) => g._id === form.group) || null;
   const showStartDate = selectedGroup?.status === "active";
   const startDateMin = selectedGroup?.activatedAt ? tashkentDay(selectedGroup.activatedAt) : undefined;
-
-  useEffect(() => {
-    const suffix = form.phone.trim();
-    if (suffix.length < 9) {
-      const clearTimer = setTimeout(() => setMatches([]), 0);
-      return () => clearTimeout(clearTimer);
-    }
-
-    const timer = setTimeout(async () => {
-      try {
-        const res = await api.get("/students/lookup", { params: { phone: PHONE_PREFIX + suffix } });
-        const { ok, data } = res.data;
-        setMatches(ok && Array.isArray(data) ? data : []);
-      } catch {
-        // lookup xatosi jim o'tkaziladi — foydalanuvchi qo'lda kiritishda davom etadi
-      }
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [form.phone]);
-
-  const selectExisting = (student) => {
-    setExistingStudent(student);
-    setForm((prev) => ({
-      ...prev,
-      fullName: student.fullName || "",
-      parentPhone: phoneSuffix(student.parentPhone) || prev.parentPhone,
-      ...telegramFormFromDto(student),
-    }));
-  };
-
-  const clearExisting = () => {
-    setExistingStudent(null);
-    setForm((prev) => ({ ...prev, fullName: "", ...EMPTY_TELEGRAM_FORM }));
-  };
 
   const centerGroups = useMemo(
     () =>
@@ -159,14 +90,10 @@ function StudentDialog({
       setDisabled(true);
 
       const body = {
-        fullName: form.fullName.trim() || undefined,
-        phone: PHONE_PREFIX + form.phone.trim(),
-        parentPhone: form.parentPhone.trim() ? PHONE_PREFIX + form.parentPhone.trim() : "",
+        ...buildContactPayload(form, existingStudent),
         centerId: form.center,
         groupId: form.group,
         price: form.price === "" ? undefined : Number(form.price),
-        existingStudentId: existingStudent?._id || undefined,
-        ...buildTelegramPayload(form),
         openingDebts: openingPayload.openingDebts,
         openingBalance: openingPayload.openingBalance,
         startDate: sendStartDate ? startDate : undefined,
@@ -264,104 +191,12 @@ function StudentDialog({
           </div>
         )}
 
-        <Input
-          label={t("student.phone")}
-          placeholder="90 123 45 67"
-          required
-          icon={<HiDevicePhoneMobile />}
-          prefix={PHONE_PREFIX}
-          value={form.phone}
-          onChange={(e) => {
-            const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
-            if (existingStudent) {
-              setExistingStudent(null);
-              setForm((prev) => ({ ...prev, phone: digits, fullName: "", ...EMPTY_TELEGRAM_FORM }));
-              return;
-            }
-            setForm((prev) => ({ ...prev, phone: digits, fullName: "" }));
-          }}
+        <StudentContactFields
+          form={form}
+          setForm={setForm}
+          existingStudent={existingStudent}
+          setExistingStudent={setExistingStudent}
         />
-
-        {existingStudent ? (
-          <div className="flex items-center justify-between gap-2 -mt-2 pl-2 pr-1 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
-            <p className="flex items-center gap-2 text-xs min-w-0">
-              <Avatar user={{ _id: existingStudent._id, name: existingStudent.fullName, avatar: existingStudent.photo }} size={24} />
-              <HiCheckCircle className="shrink-0" /> {t("student.existingStudentFound", { name: existingStudent.fullName })}
-            </p>
-            <button
-              type="button"
-              className="text-xs font-semibold underline shrink-0 cursor-pointer"
-              onClick={clearExisting}
-            >
-              {t("student.chooseDifferent")}
-            </button>
-          </div>
-        ) : null}
-        {existingStudent?.shared && (
-          <p className="-mt-1 text-xs text-slate-500 dark:text-slate-400">{t("student.sharedContactHint")}</p>
-        )}
-        {existingStudent ? null : matches.length > 0 ? (
-          <div className="flex flex-col gap-1 -mt-1">
-            <p className="pl-2 text-xs text-slate-400 dark:text-slate-500">{t("student.existingMatchesHint")}</p>
-            <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
-              {matches.map((m) => (
-                <button
-                  type="button"
-                  key={m._id}
-                  onClick={() => selectExisting(m)}
-                  className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-night-700 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/15 text-left transition-colors cursor-pointer"
-                >
-                  <Avatar user={{ _id: m._id, name: m.fullName, avatar: m.photo }} size={32} />
-                  <span className="flex flex-col min-w-0">
-                    <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{m.fullName}</span>
-                    {m.parentPhone && (
-                      <span className="text-xs text-slate-400 dark:text-slate-500 truncate">{m.parentPhone}</span>
-                    )}
-                  </span>
-                </button>
-              ))}
-            </div>
-            <p className="pl-2 text-xs text-slate-400 dark:text-slate-500">{t("student.newStudentHint")}</p>
-          </div>
-        ) : (
-          <p className="pl-2 -mt-2 text-xs text-slate-400 dark:text-slate-500">{t("student.existingPhoneHint")}</p>
-        )}
-
-        <TelegramPhoneField
-          same={form.telegramSame}
-          onSameChange={(v) => setForm((prev) => ({ ...prev, telegramSame: v }))}
-          value={form.telegramPhone}
-          onChange={(v) => setForm((prev) => ({ ...prev, telegramPhone: v }))}
-          label={t("telegramPhone.studentLabel")}
-        />
-        <Input
-          label={t("student.fullName")}
-          placeholder={t("student.fullName")}
-          icon={<HiUser />}
-          readOnly={!!existingStudent}
-          value={form.fullName}
-          onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
-        />
-        <TelegramPhoneField
-          same={form.parentTelegramSame}
-          onSameChange={(v) => setForm((prev) => ({ ...prev, parentTelegramSame: v }))}
-          value={form.parentTelegramPhone}
-          onChange={(v) => setForm((prev) => ({ ...prev, parentTelegramPhone: v }))}
-          label={t("telegramPhone.parentLabel")}
-        >
-          <Input
-            label={t("student.parentPhone")}
-            placeholder="90 123 45 67"
-            hint={t("student.parentPhoneHint")}
-            icon={<HiPhone />}
-            prefix={PHONE_PREFIX}
-            variant="white"
-            value={form.parentPhone}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, parentPhone: e.target.value.replace(/\D/g, "").slice(0, 9) }))
-            }
-          />
-        </TelegramPhoneField>
         <Input
           type="number"
           label={t("student.price")}
@@ -373,35 +208,7 @@ function StudentDialog({
 
         {showStartDate && <StartDateField value={startDate} onChange={setStartDate} min={startDateMin} />}
 
-        <div className="flex flex-col">
-          <button
-            type="button"
-            onClick={() => setOpeningOpen((v) => !v)}
-            className="flex items-center justify-between gap-2 py-2 cursor-pointer text-left"
-          >
-            <span className="flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-100">
-              <HiOutlineChevronRight
-                className={`text-slate-400 dark:text-slate-500 transition-transform duration-200 ${openingOpen ? "rotate-90" : ""}`}
-              />
-              {t("student.openingSectionTitle")}
-            </span>
-            {openingSum > 0 && (
-              <Chip
-                color="orange"
-                className="normal-case"
-                value={`${openingSum.toLocaleString("uz-UZ")} ${t("student.somSuffix")}`}
-              />
-            )}
-          </button>
-          {openingOpen && (
-            <div
-              className="border-t border-slate-100 dark:border-night-700 pt-3 mt-1"
-              onKeyDown={(e) => e.stopPropagation()}
-            >
-              <OpeningDebtsEditor value={opening} onChange={setOpening} />
-            </div>
-          )}
-        </div>
+        <OpeningDebtsSection value={opening} onChange={setOpening} />
       </div>
     </Dialog>
   );

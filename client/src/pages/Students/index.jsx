@@ -12,6 +12,7 @@ import {
   HiXMark,
 } from "react-icons/hi2";
 import Avatar from "../../ui/Avatar";
+import IndBadge from "../../ui/IndBadge";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
 import Chip from "../../ui/Chip";
@@ -75,9 +76,12 @@ function Students() {
 
   const groupLabel = useCallback(
     (g) =>
-      `${subjectMap[g.subject] || "?"} - ${g.status === "pending" ? g.pendingId : g.activeId}${
-        g.status === "pending" ? ` - ${t("group.pendingSuffix")}` : ""
-      }`,
+      // Individual (yashirin 1 kishilik) guruh raqami ma'nosiz — "Fan · Individual".
+      g.kind === "individual"
+        ? `${subjectMap[g.subject] || "?"} · ${t("individual.label")}`
+        : `${subjectMap[g.subject] || "?"} - ${g.status === "pending" ? g.pendingId : g.activeId}${
+            g.status === "pending" ? ` - ${t("group.pendingSuffix")}` : ""
+          }`,
     [subjectMap, t],
   );
   // Filtr dropdown'i uchun KENGAYTIRILGAN yorliq — bir xil fandan bir nechta
@@ -93,17 +97,23 @@ function Students() {
     },
     [groupLabel, t],
   );
-  const groupOptions = useMemo(
+  // `groups` individual guruhlarni ham o'z ichiga oladi (`kind: "all"`) —
+  // yorliqlar xaritasi uchun. Filtr/qo'shish selectlariga esa faqat oddiy guruhlar.
+  const allGroupOptions = useMemo(
     () => groups.map((g) => ({ ...g, label: groupLabel(g), filterLabel: groupFilterLabel(g) })),
     [groups, groupLabel, groupFilterLabel],
+  );
+  const groupOptions = useMemo(
+    () => allGroupOptions.filter((g) => g.kind !== "individual"),
+    [allGroupOptions],
   );
   const groupActivatedAtMap = useMemo(
     () => Object.fromEntries(groups.map((g) => [g._id, g.activatedAt])),
     [groups],
   );
   const groupLabelMap = useMemo(
-    () => Object.fromEntries(groupOptions.map((g) => [g._id, g.label])),
-    [groupOptions],
+    () => Object.fromEntries(allGroupOptions.map((g) => [g._id, g.label])),
+    [allGroupOptions],
   );
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -210,7 +220,7 @@ function Students() {
       const [centersRes, subjectsRes, groupsRes] = await Promise.all([
         api.get("/centers", { params: { page: 1 } }),
         api.get("/subjects", { params: { page: 1 } }),
-        api.get("/groups", { params: { page: 1 } }),
+        api.get("/groups", { params: { page: 1, kind: "all" } }),
       ]);
       if (centersRes.data.ok) setCenters(centersRes.data.data || []);
       if (subjectsRes.data.ok) setSubjects(subjectsRes.data.data || []);
@@ -266,6 +276,10 @@ function Students() {
     setEntryPickerRow(null);
   };
 
+  // Individual o'quvchi belgisi tooltip'i (API_CONTRACT_individual_students.md §2, §4).
+  const individualTitle = (row) =>
+    t("individual.studentTooltip", { teacher: row.individualTeacher || "—" });
+
   const renderCard = (row) => {
     const debt = totalDebtOf(row);
     const actives = activeGroupsOf(row);
@@ -279,9 +293,12 @@ function Students() {
           >
             <Avatar user={{ _id: row._id, name: row.fullName, avatar: row.photo }} size={40} />
             <div className="min-w-0">
-              <p className="font-semibold text-slate-800 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate">
-                {row.fullName}
-              </p>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <p className="font-semibold text-slate-800 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate">
+                  {row.fullName}
+                </p>
+                {row.isIndividual && <IndBadge title={individualTitle(row)} />}
+              </div>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{row.phone}</p>
             </div>
           </div>
@@ -365,7 +382,8 @@ function Students() {
           onClick={() => navigate(`/students/${row._id}`)}
         >
           <Avatar user={{ _id: row._id, name: row.fullName, avatar: row.photo }} size={32} />
-          {row.fullName}
+          <span className="whitespace-nowrap">{row.fullName}</span>
+          {row.isIndividual && <IndBadge title={individualTitle(row)} />}
         </span>
       ),
     },

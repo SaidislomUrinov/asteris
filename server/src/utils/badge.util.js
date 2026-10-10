@@ -35,6 +35,10 @@ const GRADE_BADGES = [
   "bigJump",
 ];
 
+// Guruh ichidagi O'RINGA bog'liq nishonlar — individual (1 kishilik) guruhda
+// ma'nosiz, u yerda ko'rsatilmaydi (API_CONTRACT_individual_students.md §0.6).
+const RANK_BADGES = ["champion", "mostImproved", "podiumStreak", "goldCollection", "bigJump"];
+
 // Telegram xabaridagi belgi.
 const BADGE_EMOJI = {
   perfectAttendance: "📅",
@@ -272,6 +276,7 @@ const filterHiddenGrades = (types, gradesHidden) =>
 module.exports = {
   BADGE_TYPES,
   GRADE_BADGES,
+  RANK_BADGES,
   BADGE_EMOJI,
   BADGE_FEATURE,
   MIN_LESSONS,

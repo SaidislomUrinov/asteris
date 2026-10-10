@@ -30,7 +30,8 @@ const getRoomStatsMap = async (roomIds) => {
   if (!roomIds.length) return {};
 
   const groups = await Group.find(
-    { room: { $in: roomIds }, isDeleted: false, status: { $in: ["pending", "active"] } },
+    // Individual guruhlar xona bandligiga kirmaydi (API_CONTRACT_individual_students.md §3).
+    { room: { $in: roomIds }, isDeleted: false, status: { $in: ["pending", "active"] }, kind: { $ne: "individual" } },
     { room: 1 },
   );
   if (!groups.length) return {};
@@ -179,6 +180,8 @@ module.exports = {
       room: room._id,
       isDeleted: false,
       status: { $in: ["pending", "active"] },
+      // Individual guruhlar xona jadvalida ko'rinmaydi.
+      kind: { $ne: "individual" },
     }).sort({ startTime: 1 });
 
     const subjectIds = [...new Set(groups.map((g) => String(g.subject)))];

@@ -7,13 +7,34 @@ const Staff = require("../models/Staff");
 const Room = require("../models/Room");
 const Student = require("../models/Student");
 const Counter = require("../models/Counter");
-const { getNow, dateStringToUnix } = require("../utils/date.util");
+const { getNow, dateStringToUnix, todayString, formatDay } = require("../utils/date.util");
+const { photoFor } = require("../utils/studentPhoto.util");
 const syllabusProgress = require("../utils/syllabusProgress.util");
 const emit = require("../utils/emitter.util");
 const audit = require("../utils/audit.util");
 const { archiveGroupEntries, emitArchiveChanged } = require("../utils/archive.util");
 
 const PAGE_SIZE = 50;
+
+// Individual guruh (API_CONTRACT_individual_students.md) — eski hujjatlarda
+// `kind` yo'q, shu sabab "oddiy guruh" sharti doim `$ne` orqali.
+const NOT_INDIVIDUAL = { $ne: "individual" };
+
+// GET /groups `kind` query'si → Mongo sharti. Yo'q/"group" — faqat oddiy
+// guruhlar (default), "individual" — faqat individual, "all" — ikkalasi.
+const kindFilterOf = (kind) => {
+  if (kind === "individual") return "individual";
+  if (kind === "all") return null;
+  return NOT_INDIVIDUAL;
+};
+
+// O'qituvchi foizi 0..100 (butun bo'lishi shart emas) — aks holda xato.
+const parsePercent = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < 0 || num > 100) return undefined;
+  return num;
+};
 
 // "mon,wed" → ["mon","wed"]. Notanish kodlar jimgina tashlanadi (xato emas) —
 // API_CONTRACT_group_days_filter.md §1. Bo'sh natija = filtr qo'llanmaydi.
@@ -50,8 +71,20 @@ const normalizeTelegramLink = (value) => {
   return TG_PATH_RE.test(path) ? `https://t.me/${path}` : undefined;
 };
 
-const DTO = (data, studentsCount = 0, syllabus = null, roomName = null, subjectName = null) => ({
+// `individualStudent` — faqat individual guruhda (ro'yxat/getOne). `hideFinance` —
+// o'qituvchi/yordamchi so'raganda `teacherPercent` (moliyaviy) yashiriladi.
+const DTO = (
+  data,
+  studentsCount = 0,
+  syllabus = null,
+  roomName = null,
+  subjectName = null,
+  { individualStudent = null, hideFinance = false } = {},
+) => ({
   _id: data?._id,
+  kind: data?.kind === "individual" ? "individual" : "group",
+  teacherPercent: hideFinance ? null : data?.teacherPercent ?? null,
+  individualStudent: data?.kind === "individual" ? individualStudent : null,
   client: data?.client,
   center: data?.center,
   subject: data?.subject,
@@ -191,6 +224,53 @@ const getSubjectNameMap = async (groups) => {
   return Object.fromEntries(subjects.map((s) => [String(s._id), s.name]));
 };
 
+// Individual guruhlarning o'quvchisi — BITTA so'rovda: faol a'zo bo'lsa o'sha,
+// aks holda (chiqqan) oxirgi a'zo. Arxivlangan a'zolik hisobga olinmaydi.
+const getIndividualStudentMap = async (clientId, groups) => {
+  const ids = groups.filter((g) => g.kind === "individual").map((g) => g._id);
+  if (!ids.length) return {};
+  const students = await Student.find(
+    { isDeleted: false, groups: { $elemMatch: { group: { $in: ids }, status: { $ne: "archived" } } } },
+    { fullName: 1, phone: 1, photos: 1, groups: 1 },
+  );
+  const idSet = new Set(ids.map(String));
+  const map = {};
+  for (const st of students) {
+    for (const entry of st.groups) {
+      const key = String(entry.group);
+      if (!idSet.has(key) || entry.status === "archived") continue;
+      const cur = map[key];
+      if (cur && (cur.active || entry.status !== "active")) continue;
+      map[key] = {
+        active: entry.status === "active",
+        value: { _id: st._id, fullName: st.fullName, phone: st.phone, photo: photoFor(st, clientId) },
+      };
+    }
+  }
+  return Object.fromEntries(Object.entries(map).map(([k, v]) => [k, v.value]));
+};
+
+// Ro'yxat/getOne uchun umumiy: barcha yordamchi xaritalar + DTO.
+const buildDTOs = async (clientId, groups, hideFinance = false) => {
+  const [countMap, syllabusMap, roomNameMap, subjectNameMap, individualMap] = await Promise.all([
+    getStudentsCountMap(groups.map((g) => g._id)),
+    getSyllabusMap(clientId, groups),
+    getRoomNameMap(groups),
+    getSubjectNameMap(groups),
+    getIndividualStudentMap(clientId, groups),
+  ]);
+  return groups.map((g) =>
+    DTO(
+      g,
+      countMap[String(g._id)] || 0,
+      syllabusMap[String(g._id)] || null,
+      roomNameMap[String(g.room)] || null,
+      subjectNameMap[String(g.subject)] || null,
+      { individualStudent: individualMap[String(g._id)] || null, hideFinance },
+    ),
+  );
+};
+
 const validateCenterSubject = async (clientId, centerId, subjectId) => {
   const center = await Center.findOne({ _id: centerId, client: clientId, isDeleted: false });
   if (!center) throw new Error("center.notFound");
@@ -271,6 +351,8 @@ const checkRoomConflict = async (clientId, centerId, room, days, startTime, endT
     room: room._id,
     isDeleted: false,
     status: { $in: ["pending", "active"] },
+    // Individual guruhlar to'qnashuv nomzodi emas (kontrakt §0.4).
+    kind: NOT_INDIVIDUAL,
     ...(excludeGroupId ? { _id: { $ne: excludeGroupId } } : {}),
   });
 
@@ -324,7 +406,8 @@ const buildScheduleData = async (clientId, staffCenter = "") => {
   // shuning uchun filial nomlari ham qaytariladi (aks holda frontend
   // faqat ObjectId ko'rardi).
   const [groups, rooms, centers] = await Promise.all([
-    Group.find({ ...filter, status: { $in: ["pending", "active"] } }).sort({ createdAt: -1 }),
+    // Individual guruhlar jadval ish maydonida ko'rinmaydi.
+    Group.find({ ...filter, status: { $in: ["pending", "active"] }, kind: NOT_INDIVIDUAL }).sort({ createdAt: -1 }),
     Room.find({ ...filter, status: { $ne: "inactive" } }).select("name center capacity"),
     // Center'da filial identifikatori `_id` (boshqa modellardagi kabi
     // `center` maydoni emas) — shu sabab scopeFilter ishlatilmaydi.
@@ -438,12 +521,134 @@ module.exports = {
     return DTO(group, 0);
   },
 
+  // Individual o'quvchi qo'shish (API_CONTRACT_individual_students.md §2):
+  // yashirin 1 kishilik guruh yaratiladi va o'quvchi MAVJUD
+  // `studentService.create` orqali unga qo'shiladi (yangi parallel mantiq
+  // yo'q). Jadval ixtiyoriy, to'qnashuv tekshirilmaydi. Guruh darhol
+  // `active` — activate bosqichi yo'q.
+  createIndividual: async (clientId, body = {}, actor = null) => {
+    const { centerId, subjectId, teacherId, roomId, days, startTime, endTime, startDate } = body;
+    if (!centerId || !subjectId || !teacherId) throw new Error("group.fillTheRows");
+    const teacherPercent = parsePercent(body.teacherPercent);
+    if (teacherPercent === undefined || teacherPercent === null) throw new Error("individual.invalidPercent");
+    validateDays(days);
+    if (startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) throw new Error("group.invalidStartDate");
+    const startDay = startDate || todayString();
+    const activatedAt = dateStringToUnix(startDay);
+    if (!Number.isFinite(activatedAt) || formatDay(activatedAt) !== startDay) {
+      throw new Error("group.invalidStartDate");
+    }
+
+    const { center, subject } = await validateCenterSubject(clientId, centerId, subjectId);
+    const teacher = await validateTeacher(clientId, center._id, teacherId);
+    const room = await validateRoom(clientId, center._id, roomId);
+
+    // Alohida ketma-ketlik — oddiy guruh raqamlari buzilmasin.
+    const number = await Counter.next(`group_individual_${clientId}`);
+
+    const group = await Group.create({
+      kind: "individual",
+      client: clientId,
+      center: center._id,
+      subject: subject._id,
+      teacher: teacher._id,
+      teacherPercent,
+      assistant: null,
+      room: room?._id || null,
+      days: days || [],
+      startTime: startTime || "",
+      endTime: endTime || "",
+      maxStudents: 1,
+      status: "active",
+      pendingId: number,
+      activeId: number,
+      activatedAt,
+    });
+
+    let student;
+    try {
+      // eslint-disable-next-line global-require
+      const studentService = require("./student.service");
+      // `startDate` a'zolikka ham (joinedAt) — guruh boshlangan kundan o'qiydi,
+      // o'tgan kunlar uchun "kech qo'shildi" kreditlari yozilmaydi.
+      student = await studentService.create(
+        clientId,
+        { ...body, centerId: String(center._id), groupId: String(group._id), startDate: startDay },
+        actor,
+      );
+    } catch (error) {
+      // Guruh hali hech qanday yozuvga ega emas — izsiz o'chiriladi.
+      await Group.deleteOne({ _id: group._id });
+      throw error;
+    }
+
+    emitGroupChanged(clientId, group, "created");
+    void audit.log({
+      actor,
+      client: clientId,
+      center: center._id,
+      action: "group:create",
+      entity: { type: "group", id: group._id, label: student.fullName || subject.name },
+      meta: { kind: "individual", teacherPercent, studentId: String(student._id) },
+    });
+
+    const [dto] = await buildDTOs(clientId, [group]);
+    return { group: dto, student };
+  },
+
+  // Individual guruh foizi/o'qituvchisini tahrirlash (§2 PATCH /:id/individual).
+  updateIndividual: async (clientId, id, body = {}, actor = null) => {
+    const group = await Group.findOne({ _id: id, client: clientId, isDeleted: false });
+    if (!group) throw new Error("group.notFound");
+    if (group.kind !== "individual") throw new Error("group.notIndividual");
+
+    const changes = [];
+    if (body.teacherPercent !== undefined) {
+      const percent = parsePercent(body.teacherPercent);
+      if (percent === undefined || percent === null) throw new Error("individual.invalidPercent");
+      if (percent !== group.teacherPercent) {
+        changes.push({ field: "teacherPercent", from: group.teacherPercent, to: percent });
+        group.teacherPercent = percent;
+      }
+    }
+    if (body.teacherId !== undefined && body.teacherId !== null && body.teacherId !== "") {
+      const teacher = await validateTeacher(clientId, group.center, body.teacherId);
+      if (String(teacher._id) !== String(group.teacher)) {
+        changes.push({ field: "teacher", from: group.teacher ? String(group.teacher) : null, to: String(teacher._id) });
+        group.teacher = teacher._id;
+      }
+    }
+
+    if (changes.length) {
+      await group.save();
+      emitGroupChanged(clientId, group, "updated");
+      // Foiz/o'qituvchi o'zgardi — oylik jonli qayta hisoblansin.
+      emit(`client:${clientId}`, "salary:updated", { staff: group.teacher ? String(group.teacher) : null });
+      const subject = await Subject.findById(group.subject).select("name");
+      void audit.log({
+        actor,
+        client: clientId,
+        center: group.center,
+        action: "group:update",
+        entity: { type: "group", id: group._id, label: group.name || subject?.name || "" },
+        changes,
+        meta: { kind: "individual" },
+      });
+    }
+
+    const [dto] = await buildDTOs(clientId, [group]);
+    return dto;
+  },
+
   list: async (
     clientId,
-    { page = 1, search = "", center = "", teacher = "", assistant = "", status = "", days = "" },
+    { page = 1, search = "", center = "", teacher = "", assistant = "", status = "", days = "", kind = "" },
+    hideFinance = false,
   ) => {
     const trimmedSearch = search?.trim();
     const baseFilter = { client: clientId, isDeleted: false };
+    const kindFilter = kindFilterOf(kind);
+    if (kindFilter) baseFilter.kind = kindFilter;
     if (center) baseFilter.center = center;
     if (teacher) baseFilter.teacher = teacher;
     if (assistant) baseFilter.assistant = assistant;
@@ -465,28 +670,22 @@ module.exports = {
       const subjectMap = Object.fromEntries(subjects.map((s) => [String(s._id), s.name]));
       const teacherMap = Object.fromEntries(teachers.map((s) => [String(s._id), s.name]));
 
+      // Individual guruhda qidiruv o'quvchi ismi/telefoni bo'yicha ham.
+      const individualMap = await getIndividualStudentMap(clientId, all);
+      const matchesStudent = (g) => {
+        const st = individualMap[String(g._id)];
+        return !!st && (regex.test(st.fullName || "") || regex.test(st.phone || ""));
+      };
+
       const data = all.filter(
         (g) =>
           regex.test(subjectMap[String(g.subject)] || "") ||
-          (g.teacher && regex.test(teacherMap[String(g.teacher)] || "")),
+          (g.teacher && regex.test(teacherMap[String(g.teacher)] || "")) ||
+          matchesStudent(g),
       );
 
-      const [countMap, syllabusMap, roomNameMap, subjectNameMap] = await Promise.all([
-        getStudentsCountMap(data.map((g) => g._id)),
-        getSyllabusMap(clientId, data),
-        getRoomNameMap(data),
-        getSubjectNameMap(data),
-      ]);
       return {
-        data: data.map((g) =>
-          DTO(
-            g,
-            countMap[String(g._id)] || 0,
-            syllabusMap[String(g._id)] || null,
-            roomNameMap[String(g.room)] || null,
-            subjectNameMap[String(g.subject)] || null,
-          ),
-        ),
+        data: await buildDTOs(clientId, data, hideFinance),
         meta: { page: 1, limit: data.length, total: data.length, totalPages: 1 },
       };
     }
@@ -499,23 +698,8 @@ module.exports = {
       Group.countDocuments(baseFilter),
     ]);
 
-    const [countMap, syllabusMap, roomNameMap, subjectNameMap] = await Promise.all([
-      getStudentsCountMap(data.map((g) => g._id)),
-      getSyllabusMap(clientId, data),
-      getRoomNameMap(data),
-      getSubjectNameMap(data),
-    ]);
-
     return {
-      data: data.map((g) =>
-        DTO(
-          g,
-          countMap[String(g._id)] || 0,
-          syllabusMap[String(g._id)] || null,
-          roomNameMap[String(g.room)] || null,
-          subjectNameMap[String(g.subject)] || null,
-        ),
-      ),
+      data: await buildDTOs(clientId, data, hideFinance),
       meta: {
         page: pageNum,
         limit: PAGE_SIZE,
@@ -525,30 +709,20 @@ module.exports = {
     };
   },
 
-  getOne: async (clientId, id) => {
+  getOne: async (clientId, id, hideFinance = false) => {
     const group = await Group.findOne({ _id: id, client: clientId, isDeleted: false });
     if (!group) throw new Error("group.notFound");
 
-    const [countMap, syllabusMap, roomNameMap, subjectNameMap] = await Promise.all([
-      getStudentsCountMap([group._id]),
-      getSyllabusMap(clientId, [group]),
-      getRoomNameMap([group]),
-      getSubjectNameMap([group]),
-    ]);
-    return DTO(
-      group,
-      countMap[String(group._id)] || 0,
-      syllabusMap[String(group._id)] || null,
-      roomNameMap[String(group.room)] || null,
-      subjectNameMap[String(group.subject)] || null,
-    );
+    const [dto] = await buildDTOs(clientId, [group], hideFinance);
+    return dto;
   },
 
   // Excel export — list() bilan bir xil filtr, sahifalashsiz, Filial/Fan/
   // O'qituvchi nomi hal qilingan holda.
   exportList: async (clientId, { search = "", center = "", teacher = "", status = "", days = "" }) => {
     const trimmedSearch = search?.trim();
-    const baseFilter = { client: clientId, isDeleted: false };
+    // Groups sahifasi kabi — individual guruhlar eksportga tushmaydi.
+    const baseFilter = { client: clientId, isDeleted: false, kind: NOT_INDIVIDUAL };
     if (center) baseFilter.center = center;
     if (teacher) baseFilter.teacher = teacher;
     if (status && ["pending", "active", "finished"].includes(status)) baseFilter.status = status;
@@ -700,9 +874,12 @@ module.exports = {
     if (group.status === "finished") throw new Error("group.scheduleFinished");
 
     const isTeacherScoped = staff?.role === "teacher";
-    const { teacherId, assistantId, roomId, days, startTime, endTime } = isTeacherScoped
+    const fields = isTeacherScoped
       ? { teacherId: undefined, assistantId: body.assistantId, roomId: undefined, days: undefined, startTime: undefined, endTime: undefined }
       : body;
+    const { teacherId, roomId, days, startTime, endTime } = fields;
+    // Individual guruhda yordamchi o'qituvchi bo'lmaydi — maydon e'tiborsiz.
+    const assistantId = group.kind === "individual" ? undefined : fields.assistantId;
     validateDays(days);
 
     const teacher = teacherId ? await validateTeacher(clientId, group.center, teacherId) : null;
@@ -724,7 +901,8 @@ module.exports = {
         ? room
         : await Room.findOne({ _id: group.room, isDeleted: false });
 
-    if (roomId === undefined || room) {
+    // Individual guruhda xona to'qnashuvi tekshirilmaydi (kontrakt §0.4).
+    if (group.kind !== "individual" && (roomId === undefined || room)) {
       await checkRoomConflict(
         clientId,
         group.center,

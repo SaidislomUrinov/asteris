@@ -21,6 +21,7 @@ const {
   evaluateStudent,
   applyMostImproved,
   summarizeEarned,
+  RANK_BADGES,
 } = require("../utils/badge.util");
 
 // Guruhning `untilDate`gacha bo'lgan butun davomat/baho tarixi (seriyalar oy
@@ -65,8 +66,12 @@ const evaluateGroup = async (group, month, studentIds = null) => {
     groupStudentsSummary(group, { month }),
     groupStudentsSummary(group, { month: prevMonthOf(month) }),
   ]);
-  const positions = positionsInSummary(summary);
-  const prevPositions = positionsInSummary(prevSummary);
+  // Individual guruhda reyting yo'q (1 kishilik guruhda doim 1-o'rin bo'lardi) —
+  // o'rin bo'lmasa champion/podiumStreak/goldCollection/bigJump va medal ham
+  // chiqmaydi, davomat/baho nishonlari odatdagidek (API_CONTRACT_individual_students.md §0.6).
+  const ranked = group.kind !== "individual";
+  const positions = ranked ? positionsInSummary(summary) : {};
+  const prevPositions = ranked ? positionsInSummary(prevSummary) : {};
   const rankedTotal = Object.keys(positions).length;
   const ids = studentIds ? studentIds.map(String) : Object.keys(summary);
   const only = { group: group._id, month: { $lt: month }, ...(studentIds ? { student: { $in: studentIds } } : {}) };
@@ -114,11 +119,22 @@ const entryBadges = async (group, studentId, { progress = true } = {}) => {
     StudentMedal.find({ student: studentId, group: group._id }).select("month position total").sort({ month: -1 }).lean(),
     progress ? evaluateGroup(group, month, [studentId]) : null,
   ]);
+  const own = progress ? results[String(studentId)]?.progress || null : null;
+  // Individual guruh: o'ringa bog'liq nishonlar umuman chiqmaydi (qulflangan
+  // "Chempion" kabi erishib bo'lmaydigan maqsad ko'rsatilmasin).
+  if (group.kind === "individual") {
+    return {
+      month,
+      earned: summarizeEarned(badges).filter((b) => !RANK_BADGES.includes(b.type)),
+      medals: [],
+      progress: own && Object.fromEntries(Object.entries(own).filter(([type]) => !RANK_BADGES.includes(type))),
+    };
+  }
   return {
     month,
     earned: summarizeEarned(badges),
     medals: medals.map((m) => ({ month: m.month, position: m.position, total: m.total })),
-    progress: progress ? results[String(studentId)]?.progress || null : null,
+    progress: own,
   };
 };
 
@@ -152,7 +168,7 @@ const isDuplicateError = (error) =>
 const awardMonth = async (month, { dry = false, medalsOnly = false } = {}) => {
   if (!MONTH_RE.test(month || "")) throw new Error("validation.month");
 
-  const groups = await Group.find({ status: "active", isDeleted: false }).select("client center name").lean();
+  const groups = await Group.find({ status: "active", isDeleted: false }).select("client center name kind").lean();
   const featureCache = new Map();
   const report = { month, groups: groups.length, skippedTariff: 0, awarded: [], inserted: 0, medals: 0 };
 
@@ -320,7 +336,7 @@ module.exports = {
       client: clientId,
       ...(teaching ? { [teaching.field]: teaching.staffId } : {}),
     })
-      .select("name subject status isDeleted deletedAt finishedAt")
+      .select("name subject status isDeleted deletedAt finishedAt kind")
       .lean();
     // O'qituvchining bu o'quvchi bilan umumiy guruhi yo'q — o'quvchi "topilmadi".
     if (!groups.length) throw new Error("student.notFound");

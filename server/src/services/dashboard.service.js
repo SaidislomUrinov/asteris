@@ -31,7 +31,8 @@ module.exports = {
     const cached = await dashboardCache.get(clientId, center, m);
     if (cached) return cached;
 
-    const groupFilter = { client: clientId, isDeleted: false };
+    // "Guruhlar soni" — individual (yashirin 1 kishilik) guruhlarsiz.
+    const groupFilter = { client: clientId, isDeleted: false, kind: { $ne: "individual" } };
     if (center) groupFilter.center = center;
 
     const staffFilter = { client: clientId, isDeleted: false };

@@ -40,6 +40,8 @@ const acquireLock = async (tick) => {
 // yangilari yoziladi. Faqat guruh uchun BIR MARTA (har o'quvchi uchun emas).
 // Qaytaradi: { [studentId]: { from, to, total } } — faqat o'rni KO'TARILGANLAR.
 const rankChangesOf = async (group) => {
+  // Individual guruhda reyting yo'q (API_CONTRACT_individual_students.md §0.6).
+  if (group.kind === "individual") return {};
   const month = currentMonthString();
   const summary = await groupStudentsSummary(group, { month });
   const positions = positionsInSummary(summary);
@@ -79,7 +81,7 @@ const run = async () => {
   if (!(await acquireLock(tick))) return;
 
   const groups = await Group.find({ status: "active", isDeleted: false, days: todayDayCode() }).select(
-    "client center days startTime endTime",
+    "client center days startTime endTime kind",
   );
   if (!groups.length) return;
 

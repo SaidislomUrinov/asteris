@@ -49,6 +49,9 @@ function GroupScheduleDialog({
   // vaqt band chiqsa tuzatiladi) — shu ikki maydon faqat KO'RSATISH uchun
   // qulflanadi, validatsiyadan ham chiqariladi (Archive/index.jsx).
   lockAssignment = false,
+  // Individual guruh (docs/API_CONTRACT_individual_students.md §2): jadval
+  // ixtiyoriy (kun/vaqt/xona majburiy emas), yordamchi o'qituvchi yo'q.
+  individual = false,
   // Berilsa, standart `PATCH /groups/:id/schedule` o'rniga shu funksiya
   // chaqiriladi (masalan arxivdan qaytarish + yangi jadval bitta so'rovda —
   // Archive/index.jsx) — natija bir xil shaklda qaytarilishi kutiladi:
@@ -132,7 +135,7 @@ function GroupScheduleDialog({
     try {
       const missingCore = !form.room || !form.days.length || !form.startTime || !form.endTime;
       const missingTeacher = !assistantOnly && !lockAssignment && !form.teacher;
-      if (canEditSchedule && (missingCore || missingTeacher))
+      if (canEditSchedule && ((missingCore && !individual) || missingTeacher))
         throw new Error("group.activationIncomplete");
       if (canRenameName && !name.trim()) throw new Error("group.invalidName");
       setDisabled(true);
@@ -258,7 +261,7 @@ function GroupScheduleDialog({
               <Select
                 label={t("group.room")}
                 placeholder={t("group.room")}
-                required
+                required={!individual}
                 disabled={assistantOnly}
                 icon={<HiHome />}
                 value={form.room}
@@ -269,6 +272,7 @@ function GroupScheduleDialog({
 
             {/* Yordamchi o'qituvchi — ixtiyoriy, bo'sh qoldirilsa biriktirish olinadi.
                 Bu maydon `assistantOnly` bo'lsa ham HAR DOIM ochiq qoladi. */}
+            {!individual && (
             <Select
               label={t("group.assistant")}
               placeholder={t("group.assistantEmpty")}
@@ -281,11 +285,12 @@ function GroupScheduleDialog({
                 ...centerAssistants.map((s) => ({ value: s._id, label: s.name })),
               ]}
             />
+            )}
 
             <div className="flex flex-col gap-1.5">
               <span className="pl-2 text-sm text-slate-800 dark:text-slate-100">
                 {t("group.days")}
-                <span className="text-red-500">*</span>
+                {!individual && <span className="text-red-500">*</span>}
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {DAYS.map((day) => {
@@ -314,7 +319,7 @@ function GroupScheduleDialog({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <TimeInput
                 label={t("group.startTime")}
-                required
+                required={!individual}
                 disabled={assistantOnly}
                 icon={<HiClock />}
                 value={form.startTime}
@@ -322,7 +327,7 @@ function GroupScheduleDialog({
               />
               <TimeInput
                 label={t("group.endTime")}
-                required
+                required={!individual}
                 disabled={assistantOnly}
                 icon={<HiClock />}
                 value={form.endTime}

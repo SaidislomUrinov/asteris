@@ -44,8 +44,11 @@ const txDTO = (t) => ({
 // Hodim qamrovidagi guruhlar: O'qituvchi va YORDAMCHI o'qituvchi — faqat
 // o'zi biriktirilgan guruhlar, Reception — markazdagi BARCHA guruhlar
 // (feedback: center-wide).
+// Individual guruhlar bu havzaga KIRMAYDI — o'qituvchi uchun ular alohida
+// (`individualOf`), Reception/Yordamchi esa ulardan foiz olmaydi
+// (API_CONTRACT_individual_students.md §0.3).
 const scopedGroupFilter = (staff) => {
-  const filter = { client: staff.client, center: staff.center, isDeleted: false };
+  const filter = { client: staff.client, center: staff.center, isDeleted: false, kind: { $ne: "individual" } };
   if (staff.role === "teacher") filter.teacher = staff._id;
   if (staff.role === "assistant") filter.assistant = staff._id;
   return filter;
@@ -80,6 +83,61 @@ const sumMonthPayments = async (groupIds, month) => {
   return Math.max(0, total);
 };
 
+// Individual guruhlar to'lovlari guruh kesimida: { [groupId]: { total, studentName } }.
+// `sumMonthPayments` bilan AYNAN bir xil oy qoidasi (paymentSalaryDelta + rollover).
+const sumMonthPaymentsByGroup = async (groupIds, month) => {
+  if (!groupIds.length) return {};
+  const students = await Student.find({ "groups.group": { $in: groupIds } }, { fullName: 1, groups: 1 });
+  const idSet = new Set(groupIds.map(String));
+  const map = {};
+  for (const student of students) {
+    for (const entry of student.groups) {
+      const key = String(entry.group);
+      if (!idSet.has(key)) continue;
+      const row = (map[key] ||= { total: 0, studentName: "", active: false });
+      for (const p of entry.payments) row.total += paymentSalaryDelta(p, month);
+      for (const r of entry.rollovers || []) row.total += rolloverSalaryDelta(r, month);
+      // Ism — faol a'zodan (bo'lmasa istalgan a'zodan).
+      if (!row.active) {
+        row.studentName = student.fullName;
+        row.active = entry.status === "active";
+      }
+    }
+  }
+  return map;
+};
+
+// O'qituvchining individual o'quvchilari ulushi — oylik turidan (fiks/foiz/
+// belgilanmagan) qat'i nazar `base` ustiga qo'shiladi. Har guruh o'z
+// `teacherPercent`i bilan, guruh foizidan MUSTAQIL.
+const individualOf = async (staff, month) => {
+  const groups = await Group.find(
+    { client: staff.client, center: staff.center, isDeleted: false, kind: "individual", teacher: staff._id },
+    { _id: 1, teacherPercent: 1 },
+  );
+  const sums = await sumMonthPaymentsByGroup(groups.map((g) => g._id), month);
+  const items = groups
+    .map((g) => {
+      const row = sums[String(g._id)] || { total: 0, studentName: "" };
+      const paymentsTotal = Math.max(0, row.total);
+      const percent = g.teacherPercent || 0;
+      return {
+        groupId: g._id,
+        studentName: row.studentName,
+        percent,
+        paymentsTotal,
+        amount: Math.round((paymentsTotal * percent) / 100),
+      };
+    })
+    // Shu oyda to'lovi bo'lmagan va o'quvchisi yo'q qatorlar ro'yxatni to'ldirmaydi.
+    .filter((it) => it.paymentsTotal > 0 || it.studentName);
+  return {
+    total: items.reduce((sum, it) => sum + it.paymentsTotal, 0),
+    amount: items.reduce((sum, it) => sum + it.amount, 0),
+    items,
+  };
+};
+
 // Bitta hodimning bitta oy uchun jonli hisob-kitobi.
 // `features` — joriy tarif flaglari (bitta so'rovda bir marta olinadi).
 const computeStaffMonth = async (staff, month, features = null) => {
@@ -102,6 +160,10 @@ const computeStaffMonth = async (staff, month, features = null) => {
     base = Math.round((paymentsTotal * (staff.salaryValue || 0)) / 100);
     meta = { paymentsTotal, percent: staff.salaryValue || 0 };
   }
+
+  // O'qituvchi — individual ulush har qanday oylik turi ustiga qo'shiladi.
+  const individual = staff.role === "teacher" ? await individualOf(staff, month) : null;
+  if (individual) base += individual.amount;
 
   const transactions = await SalaryTransaction.find({
     staff: staff._id,
@@ -127,6 +189,7 @@ const computeStaffMonth = async (staff, month, features = null) => {
     salaryTypeInTariff,
     base,
     ...meta,
+    individual,
     advance: sums.advance,
     withdrawal: sums.withdrawal,
     bonus: sums.bonus,

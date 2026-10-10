@@ -61,6 +61,15 @@ const requireGroupScheduleAccess = (req, res, next) => {
   return requireTenantPermission("group:update")(req, res, next);
 };
 
+// Individual o'quvchi (API_CONTRACT_individual_students.md §2) — faqat
+// Boshliq va Resepshin/Menejer: O'qituvchi/Yordamchi rol bo'yicha qat'iy
+// bloklanadi (ular faqat ko'radi va dars o'tadi), qolganlarga granular ruxsat.
+const requireIndividualAccess = (permission) => (req, res, next) => {
+  if (!req.staff) return next(); // Client Owner
+  if (["teacher", "assistant"].includes(req.staff.role)) return next(new Error("auth.forbidden"));
+  return requireTenantPermission(permission)(req, res, next);
+};
+
 const router = Router();
 
 router.use(tenantAuth);
@@ -88,6 +97,9 @@ router.get(
 router.use("/:id", requireCenterMatch(Group), requireTeacherGroup("id"));
 
 router.post("/", requireGroupCreateAccess, groupController.create);
+// "/individual" — ObjectId emas, shu sabab yuqoridagi `/:id` guard'lari
+// uni chetlab o'tadi (isValidObjectId tekshiruvi).
+router.post("/individual", requireIndividualAccess("student:create"), groupController.createIndividual);
 router.get("/", requireTenantPermission("group:view"), groupController.list);
 router.get(
   "/export",
@@ -121,6 +133,7 @@ router.patch(
   requireTenantPermission("group:update"),
   groupController.finish,
 );
+router.patch("/:id/individual", requireIndividualAccess("group:update"), groupController.updateIndividual);
 router.patch("/:id/rename", requireGroupRenameAccess, groupController.rename);
 // Telegram guruh manzili — nom tahriri bilan bir xil doira (Yordamchidan boshqa hamma).
 router.patch("/:id/telegram", requireGroupRenameAccess, groupController.setTelegramLink);

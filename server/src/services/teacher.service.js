@@ -52,10 +52,27 @@ module.exports = {
     const uniqueStudents = new Set();
     for (const c of counts) for (const id of c.students) uniqueStudents.add(String(id));
 
+    // Individual guruhlar (API_CONTRACT_individual_students.md) — sarlavha
+    // o'rniga o'quvchi ismi kerak; "Mening guruhlarim" va guruhlar sonidan
+    // chiqariladi, lekin "Bugungi darslar"da qoladi (dars baribir o'tiladi).
+    const individualStudentIds = counts
+      .filter((c) => groups.some((g) => g.kind === "individual" && String(g._id) === String(c._id)))
+      .map((c) => c.students[0]);
+    const individualStudents = individualStudentIds.length
+      ? await Student.find({ _id: { $in: individualStudentIds } }).select("fullName")
+      : [];
+    const studentNameMap = Object.fromEntries(individualStudents.map((s) => [String(s._id), s.fullName]));
+    const individualNameOf = (g) => {
+      const c = counts.find((x) => String(x._id) === String(g._id));
+      return c ? studentNameMap[String(c.students[0])] || "" : "";
+    };
+
     const dayCode = todayDayCode();
     const dto = groups.map((g) => ({
       _id: String(g._id),
       label: `${subjectMap[String(g.subject)] || "?"} - ${g.status === "pending" ? g.pendingId : g.activeId}`,
+      isIndividual: g.kind === "individual",
+      studentName: g.kind === "individual" ? individualNameOf(g) : null,
       subject: subjectMap[String(g.subject)] || "",
       status: g.status,
       days: g.days || [],
@@ -67,16 +84,19 @@ module.exports = {
       isToday: g.status === "active" && (g.days || []).includes(dayCode),
     }));
 
+    const regular = dto.filter((g) => !g.isIndividual);
+
     return {
       month: targetMonth,
       stats: {
-        groups: dto.filter((g) => g.status === "active").length,
-        pendingGroups: dto.filter((g) => g.status === "pending").length,
+        groups: regular.filter((g) => g.status === "active").length,
+        pendingGroups: regular.filter((g) => g.status === "pending").length,
+        individuals: dto.length - regular.length,
         rooms: rooms.length,
         students: uniqueStudents.size,
         todayLessons: dto.filter((g) => g.isToday).length,
       },
-      groups: dto,
+      groups: regular,
       // Bugungi darslar — vaqt bo'yicha tartiblangan (o'qituvchi kun
       // tartibini shu ro'yxatdan o'qiydi).
       todayLessons: dto
@@ -86,7 +106,7 @@ module.exports = {
         _id: String(r._id),
         name: r.name,
         capacity: r.capacity ?? null,
-        groups: dto.filter((g) => g.room?._id === String(r._id)).length,
+        groups: regular.filter((g) => g.room?._id === String(r._id)).length,
       })),
       salary,
     };
@@ -116,7 +136,8 @@ module.exports = {
     // ochilmaydi (API_CONTRACT.md "Kalendar").
     if (await calendarService.isCenterHoliday(current.center, todayString())) return null;
 
-    const group = await groupService.getOne(clientId, current._id);
+    // O'qituvchi/yordamchi — individual foiz (moliyaviy) yashiriladi.
+    const group = await groupService.getOne(clientId, current._id, true);
     return { group, isLive: true };
   },
 };
