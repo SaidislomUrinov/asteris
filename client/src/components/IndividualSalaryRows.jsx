@@ -3,17 +3,22 @@ import NumberText from "../ui/NumberText";
 import { maskMoney } from "../utils/moneyFormat";
 
 /**
- * O'qituvchi oyligidagi "Individual o'quvchilar" qismi
- * (docs/API_CONTRACT_individual_students.md §2 — `computeStaffMonth.individual`).
- * Summa allaqachon `base` ichida — bu yerda faqat tarkibi ko'rsatiladi.
- * Bo'sh bo'lsa chizilmaydi.
+ * O'qituvchi oyligidagi qo'shimcha foiz qismlari:
+ * - "Individual o'quvchilar" (docs/API_CONTRACT_individual_students.md §2 —
+ *   `computeStaffMonth.individual`);
+ * - "Alohida foizli o'quvchilar" (docs/API_CONTRACT_entry_teacher_percent.md §3 —
+ *   `computeStaffMonth.customPercent`).
+ * Summalar allaqachon `base` ichida — bu yerda faqat tarkibi ko'rsatiladi.
+ * Bo'sh qism chizilmaydi. Har qism alohida blok (ota `divide-y` ajratgichi
+ * ikkalasiga ham tushadi).
  *
  * @param {Object} props
  * @param {{amount: number, items?: Array<{groupId: string, studentName: string, percent: number, amount: number}>}|null} [props.individual]
+ * @param {{amount: number, items?: Array<{groupEntryId: string, studentName: string, groupLabel?: string, percent: number, amount: number}>}|null} [props.customPercent]
  * @param {boolean} [props.hidden] - useHideFinance
  * @param {string} [props.className]
  */
-function IndividualSalaryRows({ individual, hidden = false, className = "" }) {
+function IndividualSalaryRows({ individual, customPercent, hidden = false, className = "" }) {
   const { t } = useTranslation();
 
   const blocks = [
@@ -23,6 +28,14 @@ function IndividualSalaryRows({ individual, hidden = false, className = "" }) {
       data: individual,
       itemKey: (item) => item.groupId,
       itemText: (item) => `${item.studentName} · ${item.percent}%`,
+    },
+    {
+      key: "customPercent",
+      label: t("entryPercent.salaryRows"),
+      data: customPercent,
+      itemKey: (item) => item.groupEntryId || `${item.groupId}-${item.studentName}`,
+      itemText: (item) =>
+        [item.studentName, item.groupLabel, `${item.percent}%`].filter(Boolean).join(" · "),
     },
   ].filter(({ data }) => data && (data.amount > 0 || (data.items || []).length > 0));
 

@@ -36,6 +36,9 @@ const FINANCIAL_FIELDS = [
 const stripEntry = (entry) => {
   const clean = { ...entry };
   for (const field of FINANCIAL_FIELDS) delete clean[field];
+  // "Alohida foiz" — moliyaviy, lekin maydon shakli saqlanadi: `null`
+  // (API_CONTRACT_entry_teacher_percent.md §1).
+  if ("teacherPercent" in clean) clean.teacherPercent = null;
   return clean;
 };
 

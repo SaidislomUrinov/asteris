@@ -67,7 +67,7 @@ function SalaryPanel({ salary, loading, hidden, month, monthLabel, maxMonth, onM
           <div className="flex flex-col min-w-0">
             <div className="flex flex-col divide-y divide-slate-100 dark:divide-night-700">
               <LedgerRow label={t("salary.base")} value={salary.base} />
-              <IndividualSalaryRows individual={salary.individual} />
+              <IndividualSalaryRows individual={salary.individual} customPercent={salary.customPercent} />
               <LedgerRow label={t("salary.bonus")} value={salary.bonus} tone="positive" />
               <LedgerRow label={t("salary.advance")} value={salary.advance} tone="negative" />
               <LedgerRow label={t("salary.withdrawal")} value={salary.withdrawal} tone="negative" />

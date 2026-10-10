@@ -65,6 +65,8 @@ import HomeworkTab from "./HomeworkTab";
 import TodayLessonCard from "./TodayLessonCard";
 import GroupHeader from "./GroupHeader";
 import IndBadge from "../../ui/IndBadge";
+import PercentChip from "../../ui/PercentChip";
+import EntryPercentDialog from "./EntryPercentDialog";
 import IndividualPercentDialog from "../Individual/IndividualPercentDialog";
 import HeaderCard from "./HeaderCard";
 import AttendanceStatusCell, { DebtPill } from "./AttendanceStatusCell";
@@ -244,6 +246,10 @@ function GroupDetail({ groupId, live = false }) {
   const [leaving, setLeaving] = useState(false);
   const [transferTarget, setTransferTarget] = useState(null);
   const transferTargetView = useClosingValue(transferTarget);
+  // "Alohida foiz" dialogi (docs/API_CONTRACT_entry_teacher_percent.md §4).
+  const [entryPercentTarget, setEntryPercentTarget] = useState(null);
+  const entryPercentView = useClosingValue(entryPercentTarget);
+  const [entryPercentKey, setEntryPercentKey] = useState(0);
   const [transferKey, setTransferKey] = useState(0);
   const [editTarget, setEditTarget] = useState(null);
   const editTargetView = useClosingValue(editTarget);
@@ -672,6 +678,32 @@ function GroupDetail({ groupId, live = false }) {
   // O'quvchi summasi (StudentEditDialog orqali) o'zgarganda — attendance:marked
   // bilan bir xil applyEntryUpdate mexanizmi orqali refetchsiz yangilanadi
   // (docs/API_CONTRACT_student_edit_price.md).
+  // "Alohida foiz" o'zgardi (shu yoki boshqa tab/xodim) — a'zolik joyida yangilanadi.
+  const applyEntryPercent = useCallback((studentId, groupEntryId, teacherPercent) => {
+    setStudents((prev) =>
+      prev.map((s) =>
+        s._id !== studentId
+          ? s
+          : {
+              ...s,
+              groups: s.groups.map((g) =>
+                g._id === groupEntryId ? { ...g, teacherPercent: teacherPercent ?? null } : g,
+              ),
+            },
+      ),
+    );
+  }, []);
+
+  useSocketEvent(
+    "student:teacherPercent",
+    (payload) => {
+      if (!payload?.studentId || !payload?.groupEntryId) return;
+      if (payload.groupId && payload.groupId !== id) return;
+      applyEntryPercent(payload.studentId, payload.groupEntryId, payload.teacherPercent);
+    },
+    !!id,
+  );
+
   useSocketEvent(
     "student:priceUpdated",
     (payload) => {
@@ -798,6 +830,9 @@ function GroupDetail({ groupId, live = false }) {
   const isIndividual = group.kind === "individual";
   // Foiz — moliyaviy: faqat Boshliq/Resepshin (o'qituvchiga `null` keladi).
   const canEditPercent = isIndividual && !isTeacher && (authType === "owner" || can("group:update"));
+  // O'quvchi a'zoligiga "Alohida foiz" — oddiy guruhda, Boshliq/Resepshin
+  // (`group:update`), o'qituvchi/yordamchiga yo'q (moliyaviy).
+  const canEditEntryPercent = !isIndividual && !isTeacher && (authType === "owner" || can("group:update"));
   const groupLabel =
     (isIndividual && group.individualStudent?.fullName) ||
     group.name ||
@@ -1412,6 +1447,12 @@ function GroupDetail({ groupId, live = false }) {
                         ) : (
                           <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">{s.fullName}</span>
                         )}
+                        {!isTeacher && entry.teacherPercent != null && (
+                          <PercentChip
+                            percent={entry.teacherPercent}
+                            title={t("entryPercent.chipTooltip", { p: entry.teacherPercent })}
+                          />
+                        )}
                         {/* Telefonda medal va yutuq belgilari yashirin — o'rin pastki qatorda. */}
                         <span className="contents max-sm:hidden">
                           <RankMedal position={ranks[s._id]} size={21} />
@@ -1663,6 +1704,19 @@ function GroupDetail({ groupId, live = false }) {
                               },
                             ]
                           : []),
+                        ...(entry.status === "active" && canEditEntryPercent
+                          ? [
+                              {
+                                label: t("entryPercent.menu"),
+                                icon: HiReceiptPercent,
+                                iconClass: "bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400",
+                                onClick: () => {
+                                  setEntryPercentTarget({ student: s, entry });
+                                  setEntryPercentKey((k) => k + 1);
+                                },
+                              },
+                            ]
+                          : []),
                         ...(entry.status === "active" && can("student:update")
                           ? [
                               {
@@ -1778,6 +1832,18 @@ function GroupDetail({ groupId, live = false }) {
         onClose={() => setScheduleOpen(false)}
         onSaved={fetchGroup}
       />
+
+      {entryPercentView && (
+        <EntryPercentDialog
+          key={`entry-percent-${entryPercentKey}`}
+          open={!!entryPercentTarget}
+          studentId={entryPercentView.student._id}
+          studentName={entryPercentView.student.fullName}
+          entry={entryPercentView.entry}
+          onClose={() => setEntryPercentTarget(null)}
+          onSaved={(entryId, p) => applyEntryPercent(entryPercentView.student._id, entryId, p)}
+        />
+      )}
 
       {canEditPercent && (
         <IndividualPercentDialog

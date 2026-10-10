@@ -126,7 +126,7 @@ function Finance() {
 
               <div className="flex flex-col divide-y divide-slate-100 dark:divide-night-700 pt-1">
                 <LedgerRow label={t("salary.base")} value={salary?.base} hidden={hideFinance} />
-                <IndividualSalaryRows individual={salary?.individual} hidden={hideFinance} />
+                <IndividualSalaryRows individual={salary?.individual} customPercent={salary?.customPercent} hidden={hideFinance} />
                 <LedgerRow
                   label={t("salary.bonus")}
                   value={salary?.bonus}

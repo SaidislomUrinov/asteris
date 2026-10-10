@@ -79,6 +79,7 @@
       "student:startDate": "Study start date changed",
       "student:paymentMonthMoved": "Payment month moved",
       "student:transfer": "Student transferred",
+      "student:teacherPercent": "Custom teacher share changed",
       "subject:archived": "Subject archived",
       "subject:restored": "Subject restored",
       "certificate:issued": "Certificate issued",
@@ -2197,5 +2198,17 @@
     "invalidPercent": "Percent must be between 0 and 100",
     "occupied": "This individual group already has a student",
     "updated": "Saved"
+  },
+  "entryPercent": {
+    "title": "Custom teacher share",
+    "menu": "Custom teacher share",
+    "switch": "Custom share for this student",
+    "chipTooltip": "Custom share: {{p}}% of payments goes to the teacher",
+    "updated": "Custom teacher share saved",
+    "removed": "Custom teacher share removed",
+    "notActive": "A custom share can only be set for an active membership",
+    "individualGroup": "In an individual group the teacher's percent is set in the group settings",
+    "salaryRows": "Students with custom share",
+    "example": "Example: from a {{price}} UZS payment, {{amount}} UZS goes to the teacher."
   }
 }

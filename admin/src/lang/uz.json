@@ -453,6 +453,7 @@
       "student:delete": "O'quvchi o'chirildi",
       "student:leftGroup": "O'quvchi guruhdan chiqdi",
       "student:transfer": "O'quvchi ko'chirildi",
+      "student:teacherPercent": "O'qituvchi uchun alohida foiz o'zgartirildi",
       "group:create": "Guruh yaratildi",
       "group:update": "Guruh tahrirlandi",
       "group:delete": "Guruh o'chirildi",

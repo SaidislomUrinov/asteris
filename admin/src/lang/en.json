@@ -453,6 +453,7 @@
       "student:delete": "Student deleted",
       "student:leftGroup": "Student left group",
       "student:transfer": "Student transferred",
+      "student:teacherPercent": "Custom teacher share changed",
       "group:create": "Group created",
       "group:update": "Group updated",
       "group:delete": "Group deleted",

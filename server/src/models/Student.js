@@ -164,6 +164,11 @@ const groupEntrySchema = new Schema(
     // yozuv hech qachon o'chirilmaydi (CLAUDE.md).
     openingBalance: { type: Number, default: 0 },
     openingDebts: { type: [openingDebtSchema], default: [] },
+    // "Alohida foiz" (API_CONTRACT_entry_teacher_percent.md §1): SHU a'zolik
+    // to'lovlarining shu %i guruhning joriy o'qituvchisi oyligiga ALOHIDA
+    // qo'shiladi va oddiy guruh/Reception/Yordamchi foiz havzalaridan
+    // chiqariladi. `null` — oddiy holat. Eski hujjatlarda maydon yo'q → null.
+    teacherPercent: { type: Number, default: null, min: 0, max: 100 },
     // Shu A'ZOLIKNI import qo'shgan bo'lsa (yangi yoki mavjud hujjatga
     // yangi guruh) — batch id. Bekor qilishda (`undoImportBatch`)
     // `$pull` orqali izlanadi (API_CONTRACT_import_undo.md §1).

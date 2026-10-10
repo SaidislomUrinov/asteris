@@ -824,6 +824,9 @@ const groupEntryDTO = (entry, group, cycleMode) => {
     groupStatus: group?.status || null,
     // Individual (1 kishilik yashirin) guruh a'zoligi — API_CONTRACT_individual_students.md.
     isIndividual: group?.kind === "individual",
+    // "Alohida foiz" (API_CONTRACT_entry_teacher_percent.md) — teacher/assistant
+    // uchun controller'da (teacherView.stripEntry) `null`ga almashtiriladi.
+    teacherPercent: entry.teacherPercent ?? null,
     joinedAt: entry.joinedAt,
     leftAt: entry.leftAt,
     ...billing,
@@ -2353,6 +2356,61 @@ module.exports = {
     emit(`center:${String(entry.center)}`, "student:priceUpdated", payload);
 
     return dto;
+  },
+
+  // PATCH /students/:id/groups/:groupEntryId/teacher-percent — "Alohida foiz"
+  // (API_CONTRACT_entry_teacher_percent.md §2). O'quvchi guruhda qoladi, faqat
+  // shu a'zolik to'lovlari o'qituvchi oyligiga alohida foiz bilan hisoblanadi
+  // (salary.service.js `customPercentOf`). `null` — alohida foizni olib tashlash.
+  updateTeacherPercent: async (clientId, id, groupEntryId, body = {}, actor = null) => {
+    const raw = body?.teacherPercent;
+    let percent = null;
+    if (raw !== null) {
+      percent = typeof raw === "number" ? raw : NaN;
+      if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
+        throw new Error("individual.invalidPercent");
+      }
+    }
+
+    const student = await Student.findOne({ _id: id, isDeleted: false });
+    if (!student) throw new Error("student.notFound");
+
+    const entry = findClientGroupEntry(student, clientId, groupEntryId);
+    if (!entry) throw new Error("student.groupEntryNotFound");
+    if (entry.status !== "active") throw new Error("entryPercent.notActive");
+
+    const group = await Group.findById(entry.group).select("kind teacher center");
+    if (!group) throw new Error("group.notFound");
+    // Individual guruhda `Group.teacherPercent` ishlaydi (API_CONTRACT_individual_students.md).
+    if (group.kind === "individual") throw new Error("entryPercent.individualGroup");
+
+    const from = entry.teacherPercent ?? null;
+    if (from !== percent) {
+      entry.teacherPercent = percent;
+      await student.save();
+
+      void audit.log({
+        actor,
+        client: clientId,
+        center: entry.center,
+        action: "student:teacherPercent",
+        entity: { type: "student", id: student._id, label: student.fullName },
+        changes: [{ field: "teacherPercent", from, to: percent }],
+        meta: { groupId: String(entry.group), groupEntryId: String(groupEntryId), from, to: percent },
+      });
+
+      const payload = {
+        studentId: String(student._id),
+        groupId: String(entry.group),
+        groupEntryId: String(groupEntryId),
+        teacherPercent: percent,
+      };
+      emit(`client:${clientId}`, "student:teacherPercent", payload);
+      emit(`center:${String(entry.center)}`, "student:teacherPercent", payload);
+      if (group.teacher) emit(`client:${clientId}`, "salary:updated", { staff: String(group.teacher) });
+    }
+
+    return { groupEntryId: String(groupEntryId), teacherPercent: percent };
   },
 
   // Bitta A'ZOLIKNI arxivlash (o'quvchi HUJJATI emas) —

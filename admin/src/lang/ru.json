@@ -453,6 +453,7 @@
       "student:delete": "Ученик удалён",
       "student:leftGroup": "Ученик покинул группу",
       "student:transfer": "Ученик переведён",
+      "student:teacherPercent": "Изменён отдельный процент преподавателя",
       "group:create": "Группа создана",
       "group:update": "Группа изменена",
       "group:delete": "Группа удалена",

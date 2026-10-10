@@ -73,6 +73,10 @@ const sumMonthPayments = async (groupIds, month) => {
   for (const student of students) {
     for (const entry of student.groups) {
       if (!idSet.has(String(entry.group))) continue;
+      // "Alohida foiz"li a'zolik bu havzaga KIRMAYDI — o'qituvchiga
+      // `customPercentOf` orqali alohida, Reception/Yordamchiga umuman
+      // (API_CONTRACT_entry_teacher_percent.md §0). Eski hujjatda maydon yo'q.
+      if (entry.teacherPercent != null) continue;
       for (const p of entry.payments) total += paymentSalaryDelta(p, month);
       // "3 kun ketma-ket kelmadi → keyingi oyga o'tkazish" (CLAUDE.md Ish haqi):
       // o'tkazilgan summa shu oydan ayiriladi, keyingi oyga qo'shiladi.
@@ -138,6 +142,61 @@ const individualOf = async (staff, month) => {
   };
 };
 
+// Guruh yorlig'i — qo'lda qo'yilgan nom bo'lmasa "{fanNomi} - {raqam}"
+// (paymentVerify.service.js/group.service.js bilan bir xil naqsh).
+const groupLabelOf = (g) => {
+  if (g.name) return g.name;
+  const id = g.status === "pending" ? g.pendingId : g.activeId;
+  return `${g.subject?.name || "?"} - ${id ?? "?"}`;
+};
+
+// "Alohida foiz" (API_CONTRACT_entry_teacher_percent.md §3): o'qituvchining
+// ODDIY guruhlaridagi `teacherPercent` belgilangan a'zoliklar — har biri o'z
+// foizi bilan, oylik turidan qat'i nazar `base` ustiga qo'shiladi. Pul
+// guruhning JORIY o'qituvchisiga tushadi. Oy qoidasi `sumMonthPayments`
+// bilan aynan bir xil (paymentSalaryDelta + rollover). Hech narsa bo'lmasa null.
+const customPercentOf = async (staff, month) => {
+  const groups = await Group.find(
+    { client: staff.client, center: staff.center, isDeleted: false, kind: { $ne: "individual" }, teacher: staff._id },
+    { _id: 1, name: 1, status: 1, activeId: 1, pendingId: 1, subject: 1 },
+  ).populate("subject", "name");
+  if (!groups.length) return null;
+  const groupMap = new Map(groups.map((g) => [String(g._id), g]));
+
+  const students = await Student.find(
+    { groups: { $elemMatch: { group: { $in: groups.map((g) => g._id) }, teacherPercent: { $ne: null } } } },
+    { fullName: 1, groups: 1 },
+  );
+
+  const items = [];
+  for (const student of students) {
+    for (const entry of student.groups) {
+      const group = groupMap.get(String(entry.group));
+      if (!group || entry.teacherPercent == null) continue;
+      let total = 0;
+      for (const p of entry.payments) total += paymentSalaryDelta(p, month);
+      for (const r of entry.rollovers || []) total += rolloverSalaryDelta(r, month);
+      const paymentsTotal = Math.max(0, total);
+      items.push({
+        groupId: group._id,
+        groupEntryId: entry._id,
+        studentName: student.fullName,
+        groupLabel: groupLabelOf(group),
+        percent: entry.teacherPercent,
+        paymentsTotal,
+        amount: Math.round((paymentsTotal * entry.teacherPercent) / 100),
+      });
+    }
+  }
+  if (!items.length) return null;
+
+  return {
+    total: items.reduce((sum, it) => sum + it.paymentsTotal, 0),
+    amount: items.reduce((sum, it) => sum + it.amount, 0),
+    items,
+  };
+};
+
 // Bitta hodimning bitta oy uchun jonli hisob-kitobi.
 // `features` — joriy tarif flaglari (bitta so'rovda bir marta olinadi).
 const computeStaffMonth = async (staff, month, features = null) => {
@@ -164,6 +223,8 @@ const computeStaffMonth = async (staff, month, features = null) => {
   // O'qituvchi — individual ulush har qanday oylik turi ustiga qo'shiladi.
   const individual = staff.role === "teacher" ? await individualOf(staff, month) : null;
   if (individual) base += individual.amount;
+  const customPercent = staff.role === "teacher" ? await customPercentOf(staff, month) : null;
+  if (customPercent) base += customPercent.amount;
 
   const transactions = await SalaryTransaction.find({
     staff: staff._id,
@@ -190,6 +251,7 @@ const computeStaffMonth = async (staff, month, features = null) => {
     base,
     ...meta,
     individual,
+    customPercent,
     advance: sums.advance,
     withdrawal: sums.withdrawal,
     bonus: sums.bonus,

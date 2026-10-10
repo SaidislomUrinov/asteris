@@ -285,6 +285,26 @@ module.exports = {
     }
   },
 
+  // "Alohida foiz" (API_CONTRACT_entry_teacher_percent.md §2). Validatsiya servisda.
+  updateTeacherPercent: async (req, res, next) => {
+    try {
+      const data = await studentService.updateTeacherPercent(
+        req.client._id,
+        req.params.id,
+        req.params.groupEntryId,
+        req.body || {},
+        buildActor(req),
+      );
+      return res.send({
+        ok: true,
+        data,
+        msg: data.teacherPercent === null ? "entryPercent.removed" : "entryPercent.updated",
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   archiveGroupEntry: async (req, res, next) => {
     try {
       const data = await studentService.archiveGroupEntry(

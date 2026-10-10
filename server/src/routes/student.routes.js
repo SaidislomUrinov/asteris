@@ -251,6 +251,14 @@ router.patch(
   requireTenantPermission("student:update"),
   studentController.updateStartDate,
 );
+// "Alohida foiz" — a'zolik to'lovlarining o'qituvchiga alohida ulushi
+// (API_CONTRACT_entry_teacher_percent.md §2). Moliyaviy — o'qituvchi rollariga yopiq.
+router.patch(
+  "/:id/groups/:groupEntryId/teacher-percent",
+  blockTeachingRoles,
+  requireTenantPermission("group:update"),
+  studentController.updateTeacherPercent,
+);
 // O'quvchini guruhdan chiqarish — Resepshin/Boshliq ishi. O'qituvchi va
 // yordamchi o'qituvchi uchun ROL darajasida yopiq (ruxsat ro'yxati ham
 // `student:update` ni ularga bermaydi, bu ikkinchi qatlam).

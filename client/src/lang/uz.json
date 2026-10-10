@@ -79,6 +79,7 @@
       "student:startDate": "O'qishni boshlagan sana o'zgartirildi",
       "student:paymentMonthMoved": "To'lov oyi o'zgartirildi",
       "student:transfer": "O'quvchi boshqa guruhga ko'chirildi",
+      "student:teacherPercent": "O'qituvchi uchun alohida foiz o'zgartirildi",
       "subject:archived": "Fan arxivlandi",
       "subject:restored": "Fan arxivdan qaytarildi",
       "certificate:issued": "Sertifikat berildi",
@@ -2197,5 +2198,17 @@
     "invalidPercent": "Foiz 0 dan 100 gacha bo'lishi kerak",
     "occupied": "Bu individual guruhda allaqachon o'quvchi bor",
     "updated": "Saqlandi"
+  },
+  "entryPercent": {
+    "title": "Alohida foiz",
+    "menu": "Alohida foiz",
+    "switch": "Bu o'quvchi uchun alohida foiz",
+    "chipTooltip": "Alohida foiz: to'lovning {{p}}%i o'qituvchiga",
+    "updated": "Alohida foiz saqlandi",
+    "removed": "Alohida foiz olib tashlandi",
+    "notActive": "Faqat faol a'zolikka alohida foiz qo'yish mumkin",
+    "individualGroup": "Individual guruhda o'qituvchi foizi guruh sozlamasida belgilanadi",
+    "salaryRows": "Alohida foizli o'quvchilar",
+    "example": "Masalan: {{price}} so'm to'lovdan {{amount}} so'm o'qituvchiga."
   }
 }

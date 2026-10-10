@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   HiAcademicCap,
   HiArrowLeft,
@@ -15,6 +16,7 @@ import {
   HiPaperAirplane,
   HiPhone,
   HiQrCode,
+  HiReceiptPercent,
   HiUserGroup,
   HiArchiveBox,
   HiOutlineArrowPath,
@@ -44,6 +46,8 @@ import ExportExcelButton from "../../ui/ExportExcelButton";
 import InfoCard, { InfoMeta } from "../../ui/InfoCard";
 import StudentPhotoAvatar from "../../ui/StudentPhotoAvatar";
 import MetricCard from "../../ui/MetricCard";
+import PercentChip from "../../ui/PercentChip";
+import EntryPercentDialog from "../Groups/EntryPercentDialog";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import useFeature from "../../hooks/useFeature";
 import useCan from "../../hooks/useCan";
@@ -121,6 +125,14 @@ function StudentDetail() {
   // { groupEntryId, payment } — "Oyni o'zgartirish" (API_CONTRACT_payment_move_month.md)
   const [moveTarget, setMoveTarget] = useState(null);
   const moveTargetView = useClosingValue(moveTarget);
+  // "Alohida foiz" (docs/API_CONTRACT_entry_teacher_percent.md §4) — moliyaviy:
+  // o'qituvchi/yordamchiga ko'rinmaydi; tahrir Boshliq yoki `group:update`li hodim.
+  const { authType, role } = useSelector((e) => e.user);
+  const isTeachingRole = authType === "staff" && ["teacher", "assistant"].includes(role);
+  const canEditEntryPercent = !isTeachingRole && (authType === "owner" || can("group:update"));
+  const [entryPercentTarget, setEntryPercentTarget] = useState(null);
+  const entryPercentView = useClosingValue(entryPercentTarget);
+  const [entryPercentKey, setEntryPercentKey] = useState(0);
   const monthNames = t("common.monthNames", { returnObjects: true });
 
   const payMonth = (entry, item) => {
@@ -257,6 +269,22 @@ function StudentDetail() {
   useSocketEvent("student:priceUpdated", (payload) => {
     if (payload?.studentId !== id) return;
     fetchStudent();
+  });
+  const applyEntryPercent = useCallback((groupEntryId, teacherPercent) => {
+    setStudent((prev) =>
+      prev
+        ? {
+            ...prev,
+            groups: prev.groups.map((g) =>
+              g._id === groupEntryId ? { ...g, teacherPercent: teacherPercent ?? null } : g,
+            ),
+          }
+        : prev,
+    );
+  }, []);
+  useSocketEvent("student:teacherPercent", (payload) => {
+    if (payload?.studentId !== id || !payload?.groupEntryId) return;
+    applyEntryPercent(payload.groupEntryId, payload.teacherPercent);
   });
   useSocketEvent("student:leftGroup", (payload) => {
     if (payload?.studentId !== id) return;
@@ -484,12 +512,20 @@ function StudentDetail() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-col gap-1 min-w-0">
-                    <p
-                      className="font-semibold text-slate-800 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer truncate"
-                      onClick={() => navigate(`/groups/${entry.group}`)}
-                    >
-                      {groupLabel(entry.group)}
-                    </p>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <p
+                        className="font-semibold text-slate-800 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer truncate"
+                        onClick={() => navigate(`/groups/${entry.group}`)}
+                      >
+                        {groupLabel(entry.group)}
+                      </p>
+                      {!isTeachingRole && entry.teacherPercent != null && (
+                        <PercentChip
+                          percent={entry.teacherPercent}
+                          title={t("entryPercent.chipTooltip", { p: entry.teacherPercent })}
+                        />
+                      )}
+                    </div>
                     <Chip
                       className="self-start"
                       value={t(entry.status === "active" ? "student.statusActive" : "student.statusLeft")}
@@ -522,6 +558,20 @@ function StudentDetail() {
                               icon: HiOutlineClipboardDocumentList,
                               iconClass: "bg-slate-50 dark:bg-night-800 text-slate-600 dark:text-slate-300",
                               onClick: () => setOpeningTarget(entry),
+                            }]
+                          : []),
+                        // "Alohida foiz" — faqat oddiy guruhdagi faol a'zolik.
+                        ...(entry.status === "active" &&
+                        canEditEntryPercent &&
+                        groupMap[entry.group]?.kind !== "individual"
+                          ? [{
+                              label: t("entryPercent.menu"),
+                              icon: HiReceiptPercent,
+                              iconClass: "bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400",
+                              onClick: () => {
+                                setEntryPercentTarget(entry);
+                                setEntryPercentKey((k) => k + 1);
+                              },
                             }]
                           : []),
                         ...(can("student:delete")
@@ -735,6 +785,18 @@ function StudentDetail() {
       )}
 
       <ReceiptPromptDialog open={!!receipt} receipt={receipt} onClose={() => setReceipt(null)} />
+
+      {entryPercentView && (
+        <EntryPercentDialog
+          key={`entry-percent-${entryPercentKey}`}
+          open={!!entryPercentTarget}
+          studentId={id}
+          studentName={groupLabel(entryPercentView.group)}
+          entry={entryPercentView}
+          onClose={() => setEntryPercentTarget(null)}
+          onSaved={applyEntryPercent}
+        />
+      )}
 
       <Dialog
         open={!!paymentsTarget}

@@ -435,6 +435,7 @@ function StaffDetail() {
 
             <IndividualSalaryRows
               individual={salary.individual}
+              customPercent={salary.customPercent}
               hidden={hideFinance}
               className="px-3 rounded-lg bg-slate-50 dark:bg-night-800"
             />
