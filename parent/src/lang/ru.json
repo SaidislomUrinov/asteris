@@ -726,6 +726,20 @@
         "fixed": "Фиксированная",
         "percentage": "Процентная"
       },
+      "breakdown": {
+        "title": "Состав начисления",
+        "main": "Основная зарплата",
+        "mainFixed": "Фиксированная",
+        "mainPercent": "{{p}}% от групп",
+        "individual_one": "Индивидуальные · {{count}}",
+        "individual_few": "Индивидуальные · {{count}}",
+        "individual_many": "Индивидуальные · {{count}}",
+        "individual_other": "Индивидуальные · {{count}}",
+        "custom_one": "Отдельный процент · {{count}} ученик",
+        "custom_few": "Отдельный процент · {{count}} ученика",
+        "custom_many": "Отдельный процент · {{count}} учеников",
+        "custom_other": "Отдельный процент · {{count}} учеников"
+      },
       "tx": {
         "advance": "Аванс",
         "withdrawal": "Досрочная выплата",

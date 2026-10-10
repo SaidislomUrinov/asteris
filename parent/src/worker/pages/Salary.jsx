@@ -24,6 +24,37 @@ export const Salary = () => {
   const load = useCallback(() => workerApi.salary(me?._id, month), [me?._id, month]);
   const { data, loading, error, reload } = useLive(load, [load], { enabled: !!me?._id });
   const txs = (data?.transactions || []).filter((x) => x.status !== "cancelled");
+  // "Hisoblangan" tarkibi — individual / alohida foizli o'quvchilar bo'lsagina
+  // (server `base`ga ularni allaqachon qo'shgan; mainBase — fiks yoki guruh %).
+  const ind = data?.individual?.items?.length ? data.individual : null;
+  const custom = data?.customPercent?.items?.length ? data.customPercent : null;
+  const breakdown =
+    ind || custom
+      ? [
+          {
+            key: "main",
+            title:
+              data.salaryType === "fixed"
+                ? t("worker.salary.breakdown.mainFixed")
+                : data.salaryType === "percentage"
+                  ? t("worker.salary.breakdown.mainPercent", { p: data.percent ?? 0 })
+                  : t("worker.salary.breakdown.main"),
+            amount: data.mainBase ?? (data.base || 0) - (ind?.amount || 0) - (custom?.amount || 0),
+          },
+          ind && {
+            key: "individual",
+            title: t("worker.salary.breakdown.individual", { count: ind.items.length }),
+            sub: ind.items.map((it) => `${it.studentName} ${it.percent}%`).join(" · "),
+            amount: ind.amount,
+          },
+          custom && {
+            key: "custom",
+            title: t("worker.salary.breakdown.custom", { count: custom.items.length }),
+            sub: custom.items.map((it) => `${it.studentName} ${it.percent}%`).join(" · "),
+            amount: custom.amount,
+          },
+        ].filter(Boolean)
+      : null;
 
   return (
     <WorkerPage title={t("worker.salary.title")}>
@@ -54,6 +85,16 @@ export const Salary = () => {
               { key: "pen", label: t("worker.salary.penalty"), value: compactMoney(data?.penalty), tone: data?.penalty > 0 ? "bad" : undefined },
             ]}
           />
+          {breakdown && (
+            <>
+              <SectionLabel>{t("worker.salary.breakdown.title")}</SectionLabel>
+              <Card className="py-1 divide-y divide-line/70">
+                {breakdown.map((row) => (
+                  <ListRow key={row.key} title={row.title} sub={row.sub} right={money(row.amount)} />
+                ))}
+              </Card>
+            </>
+          )}
           <SectionLabel>{t("worker.salary.history")}</SectionLabel>
           {txs.length === 0 ? (
             <EmptyState icon={HiOutlineBanknotes} title={t("worker.salary.noTx")} />

@@ -7,6 +7,7 @@ import { getTashkentNow } from "../../utils/schedule";
 import { api } from "../../utils/fetching";
 import { errorMsg } from "../../utils/alert";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
+import IndBadge from "../../ui/IndBadge";
 
 const TICK_MS = 30000;
 const CARD_WIDTH = 224; // w-56
@@ -40,14 +41,16 @@ function LessonCard({ lesson, cardRef, onClick, t, navigate }) {
   return (
     <div
       ref={cardRef}
-      onClick={() => onClick(() => navigate(`/groups/${lesson._id}`))}
+      onClick={() => onClick(() => navigate(lesson.isIndividual ? `/individual/${lesson._id}` : `/groups/${lesson._id}`))}
       style={{ width: CARD_WIDTH }}
       className={`flex flex-col gap-2 p-3.5 shrink-0 select-none rounded-xl border border-l-4 bg-white dark:bg-night-900 cursor-pointer transition-shadow hover:shadow-md dark:hover:shadow-none ${style.border} ${
         isOngoing ? "border-slate-200 dark:border-night-700 ring-2 ring-blue-100 dark:ring-blue-500/30" : "border-slate-200 dark:border-night-700"
       }`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">{lesson.subjectName}</span>
+        <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">
+          {(lesson.isIndividual && lesson.studentName) || lesson.subjectName}
+        </span>
         <span className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${style.chip}`}>
           {isOngoing && <span className="w-1.5 h-1.5 rounded-full bg-white dark:bg-night-900 animate-pulse" />}
           {t(`dashboard.lessonStatus.${lesson.status}`)}
@@ -59,6 +62,9 @@ function LessonCard({ lesson, cardRef, onClick, t, navigate }) {
         <span>
           {lesson.startTime}–{lesson.endTime}
         </span>
+        {lesson.isIndividual && (
+          <IndBadge className="ml-auto" title={`${t("individual.badgeTitle")} · ${lesson.subjectName}`} />
+        )}
       </div>
       <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
         <HiUser className={style.icon} />

@@ -43,6 +43,11 @@ export const compactMoney = (v) => {
 
 // Guruh yorlig'i — client panelidagi bilan bir xil: nom bo'lsa nom,
 // aks holda "Fan - №".
+// Individual darsning sarlavhasi (ro'yxat kartasi/detal) — o'quvchi ismi;
+// boshqa joylarda (a'zoliklar, to'lovlar) `groupLabel` — "Fan · Individual" nomi.
+export const groupTitle = (g) =>
+  (g?.kind === "individual" && g.individualStudent?.fullName) || groupLabel(g);
+
 export const groupLabel = (g) => {
   if (!g) return "—";
   if (g.name) return g.name;

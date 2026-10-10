@@ -119,7 +119,8 @@ export const GroupDetail = () => {
     call: teaching ? can("student:contact") : can("student:contact") || can("student:view"),
     pay: !teaching && can("payment:create"),
     debt: !teaching && can("payment:view"),
-    add: can("student:create") && g?.status !== "finished",
+    // Individual darsda bitta o'quvchi — qo'shish yo'q.
+    add: can("student:create") && g?.status !== "finished" && g?.kind !== "individual",
   };
   const noList = (
     <EmptyState icon={HiOutlineLockClosed} title={t("worker.group.noStudentAccess")} text={t("worker.group.noStudentAccessText")} />

@@ -32,7 +32,9 @@ export const TodayEvent = ({ ev, nowHHmm }) => {
             sub={join(
               ev.endTime ? `${ev.time}–${ev.endTime}` : null,
               ev.room,
-              ev.studentsCount != null && t("worker.today.students", { count: ev.studentsCount }),
+              ev.group?.isIndividual
+                ? t("group.individual")
+                : ev.studentsCount != null && t("worker.today.students", { count: ev.studentsCount }),
               state === "now" && t("worker.today.lessonNow"),
             )}
             subNum={ev.endTime ? `${ev.time}–${ev.endTime}` : undefined}

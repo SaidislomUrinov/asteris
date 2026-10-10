@@ -142,7 +142,8 @@ export const workerApi = {
   subject: (id) => wreq("get", `/subjects/${id}`),
 
   // Guruhlar
-  groups: (params) => wreq("get", "/groups", { params: { page: 1, ...params } }),
+  // `kind: "all"` — individual darslar ham (server default faqat oddiy guruhlar).
+  groups: (params) => wreq("get", "/groups", { params: { page: 1, kind: "all", ...params } }),
   group: (id) => wreq("get", `/groups/${id}`),
   // O'qituvchi/yordamchi ismlari (ruxsatsiz tanlov ro'yxati — staff.routes `/lookup`).
   staffLookup: (role) => wreq("get", "/staffs/lookup", { params: { role } }),

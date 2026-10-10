@@ -4,7 +4,7 @@ import {
 } from "react-icons/hi2";
 import { Card, Pill } from "../../components/Card";
 import { openTelegramLink } from "../../lib/telegram";
-import { groupLabel } from "../utils";
+import { groupTitle } from "../utils";
 import { DayChips } from "../components/DayChips";
 import { MetaLine as Meta } from "../components/MetaLine";
 
@@ -19,8 +19,11 @@ export const GroupHeaderCard = ({ group: g, teacherName, assistantName, students
   return (
     <Card className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
-        <h2 className="text-[18px] min-[380px]:text-[20px] font-extrabold leading-tight tracking-tight break-words min-w-0">{groupLabel(g)}</h2>
-        <Pill tone={STATUS_TONE[g.status] || "mut"} className="shrink-0 mt-0.5">{t(`worker.group.status.${g.status}`)}</Pill>
+        <h2 className="text-[18px] min-[380px]:text-[20px] font-extrabold leading-tight tracking-tight break-words min-w-0">{groupTitle(g)}</h2>
+        <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+          {g.kind === "individual" && <Pill tone="acc">{t("group.individual")}</Pill>}
+          <Pill tone={STATUS_TONE[g.status] || "mut"}>{t(`worker.group.status.${g.status}`)}</Pill>
+        </div>
       </div>
       {(g.days?.length > 0 || g.startTime) && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
@@ -44,10 +47,12 @@ export const GroupHeaderCard = ({ group: g, teacherName, assistantName, students
             <span className="font-bold">{assistantName || "—"}</span>
           </Meta>
         )}
-        <Meta icon={HiOutlineUserGroup}>
-          <span className="tabular font-bold">{count}{g.maxStudents ? ` / ${g.maxStudents}` : ""}</span>{" "}
-          <span className="text-hint">{t("worker.group.studentsLabel")}</span>
-        </Meta>
+        {g.kind !== "individual" && (
+          <Meta icon={HiOutlineUserGroup}>
+            <span className="tabular font-bold">{count}{g.maxStudents ? ` / ${g.maxStudents}` : ""}</span>{" "}
+            <span className="text-hint">{t("worker.group.studentsLabel")}</span>
+          </Meta>
+        )}
       </div>
       {g.telegramLink && (
         <button

@@ -710,6 +710,16 @@
         "fixed": "Belgilangan oylik",
         "percentage": "Foizli oylik"
       },
+      "breakdown": {
+        "title": "Hisoblangan tarkibi",
+        "main": "Asosiy oylik",
+        "mainFixed": "Belgilangan oylik",
+        "mainPercent": "Guruhlardan {{p}}%",
+        "individual_one": "Individual o'quvchilar · {{count}} ta",
+        "individual_other": "Individual o'quvchilar · {{count}} ta",
+        "custom_one": "Alohida foiz · {{count}} ta o'quvchi",
+        "custom_other": "Alohida foiz · {{count}} ta o'quvchi"
+      },
       "tx": {
         "advance": "Avans",
         "withdrawal": "Oldindan olish",

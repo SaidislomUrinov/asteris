@@ -166,7 +166,7 @@ module.exports = {
     if (center) filter.center = center;
 
     const groups = await Group.find(filter).select(
-      "subject teacher room startTime endTime activatedAt activeId",
+      "subject teacher room startTime endTime activatedAt activeId kind",
     );
 
     const validGroups = groups.filter(
@@ -185,10 +185,24 @@ module.exports = {
     const subjectMap = Object.fromEntries(subjects.map((s) => [String(s._id), s.name]));
     const teacherMap = Object.fromEntries(teachers.map((s) => [String(s._id), s.name]));
     const roomMap = Object.fromEntries(rooms.map((r) => [String(r._id), r.name]));
+    // Individual dars — sarlavha o'quvchi ismi (API_CONTRACT_individual_students.md).
+    const individualIds = validGroups.filter((g) => g.kind === "individual").map((g) => g._id);
+    const individualStudents = individualIds.length
+      ? await Student.find(
+          { isDeleted: false, groups: { $elemMatch: { group: { $in: individualIds }, status: "active" } } },
+          { fullName: 1, groups: 1 },
+        )
+      : [];
+    const studentNameMap = {};
+    for (const st of individualStudents) {
+      for (const e of st.groups) if (e.status === "active") studentNameMap[String(e.group)] = st.fullName;
+    }
 
     return validGroups
       .map((g) => ({
         _id: g._id,
+        isIndividual: g.kind === "individual",
+        studentName: g.kind === "individual" ? studentNameMap[String(g._id)] || null : null,
         subjectName: subjectMap[String(g.subject)] || "?",
         teacherName: g.teacher ? teacherMap[String(g.teacher)] || "—" : "—",
         roomName: g.room ? roomMap[String(g.room)] || "—" : "—",

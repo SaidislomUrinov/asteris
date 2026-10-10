@@ -714,6 +714,16 @@
         "fixed": "Fixed salary",
         "percentage": "Percentage salary"
       },
+      "breakdown": {
+        "title": "Accrual breakdown",
+        "main": "Base salary",
+        "mainFixed": "Fixed salary",
+        "mainPercent": "{{p}}% of groups",
+        "individual_one": "Individual students · {{count}}",
+        "individual_other": "Individual students · {{count}}",
+        "custom_one": "Custom share · {{count}} student",
+        "custom_other": "Custom share · {{count}} students"
+      },
       "tx": {
         "advance": "Advance",
         "withdrawal": "Early withdrawal",
