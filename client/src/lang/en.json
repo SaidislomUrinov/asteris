@@ -588,6 +588,15 @@
     "revenueByDateHint": "By payment date (cash flow)"
   },
   "salary": {
+    "breakdown": {
+      "main": "Base salary",
+      "mainFixed": "Fixed salary",
+      "mainPercent": "{{p}}% of groups",
+      "individual_one": "Individual students · {{count}}",
+      "individual_other": "Individual students · {{count}}",
+      "custom_one": "Custom share · {{count}} student",
+      "custom_other": "Custom share · {{count}} students"
+    },
     "title": "Salary",
     "loadError": "Failed to load salary data",
     "empty": "No staff members yet",
@@ -2193,7 +2202,6 @@
     "teacherShare": "Teacher share",
     "editShort": "Change",
     "editPercent": "Change teacher share",
-    "salaryRow": "Individual students",
     "invalidPercent": "Percent must be between 0 and 100",
     "occupied": "This individual group already has a student",
     "updated": "Saved"
@@ -2207,7 +2215,6 @@
     "removed": "Custom teacher share removed",
     "notActive": "A custom share can only be set for an active membership",
     "individualGroup": "In an individual group the teacher's percent is set in the group settings",
-    "salaryRows": "Students with custom share",
     "example": "Example: from a {{price}} UZS payment, {{amount}} UZS goes to the teacher."
   }
 }

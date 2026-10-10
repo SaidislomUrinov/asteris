@@ -36,7 +36,7 @@ import useHideFinance from "../../hooks/useHideFinance";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 import { maskMoney } from "../../utils/moneyFormat";
-import IndividualSalaryRows from "../../components/IndividualSalaryRows";
+import SalaryBaseBreakdown from "../../components/SalaryBaseBreakdown";
 
 const currentMonth = () => {
   const d = new Date();
@@ -433,10 +433,10 @@ function StaffDetail() {
               </div>
             </div>
 
-            <IndividualSalaryRows
-              individual={salary.individual}
-              customPercent={salary.customPercent}
+            <SalaryBaseBreakdown
+              salary={salary}
               hidden={hideFinance}
+              onlyIfExtras
               className="px-3 rounded-lg bg-slate-50 dark:bg-night-800"
             />
 

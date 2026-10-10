@@ -12,7 +12,7 @@ import useHideFinance from "../../hooks/useHideFinance";
 import { api } from "../../utils/fetching";
 import { errorMsg } from "../../utils/alert";
 import { maskMoney } from "../../utils/moneyFormat";
-import IndividualSalaryRows from "../../components/IndividualSalaryRows";
+import SalaryBaseBreakdown from "../../components/SalaryBaseBreakdown";
 
 const monthOf = (str) => Number(str.slice(5, 7)) - 1;
 const yearOf = (str) => Number(str.slice(0, 4));
@@ -125,8 +125,7 @@ function Finance() {
               <div className="hidden lg:block w-px bg-slate-100 dark:bg-night-800 self-stretch" />
 
               <div className="flex flex-col divide-y divide-slate-100 dark:divide-night-700 pt-1">
-                <LedgerRow label={t("salary.base")} value={salary?.base} hidden={hideFinance} />
-                <IndividualSalaryRows individual={salary?.individual} customPercent={salary?.customPercent} hidden={hideFinance} />
+                <SalaryBaseBreakdown salary={salary} hidden={hideFinance} />
                 <LedgerRow
                   label={t("salary.bonus")}
                   value={salary?.bonus}

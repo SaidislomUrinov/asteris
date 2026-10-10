@@ -220,6 +220,10 @@ const computeStaffMonth = async (staff, month, features = null) => {
     meta = { paymentsTotal, percent: staff.salaryValue || 0 };
   }
 
+  // Asosiy qism (fiks yoki guruh foizi) — UI "Hisoblangan oylik"ni tarkibi
+  // bilan ko'rsatadi: asosiy + individual + alohida foiz = base.
+  const mainBase = base;
+
   // O'qituvchi — individual ulush har qanday oylik turi ustiga qo'shiladi.
   const individual = staff.role === "teacher" ? await individualOf(staff, month) : null;
   if (individual) base += individual.amount;
@@ -249,6 +253,7 @@ const computeStaffMonth = async (staff, month, features = null) => {
     salaryType: type,
     salaryTypeInTariff,
     base,
+    mainBase,
     ...meta,
     individual,
     customPercent,

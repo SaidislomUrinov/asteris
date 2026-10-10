@@ -588,6 +588,15 @@
     "revenueByDateHint": "To'lov sanasi bo'yicha (kassa oqimi)"
   },
   "salary": {
+    "breakdown": {
+      "main": "Asosiy oylik",
+      "mainFixed": "Fiks oylik",
+      "mainPercent": "Guruhlardan {{p}}%",
+      "individual_one": "Individual o'quvchilar · {{count}} ta",
+      "individual_other": "Individual o'quvchilar · {{count}} ta",
+      "custom_one": "Alohida foiz · {{count}} ta o'quvchi",
+      "custom_other": "Alohida foiz · {{count}} ta o'quvchi"
+    },
     "title": "Ish haqi",
     "loadError": "Ish haqi ma'lumotini yuklashda xatolik yuz berdi",
     "empty": "Hozircha hodimlar mavjud emas",
@@ -2193,7 +2202,6 @@
     "teacherShare": "O'qituvchiga",
     "editShort": "O'zgartirish",
     "editPercent": "O'qituvchi foizini o'zgartirish",
-    "salaryRow": "Individual o'quvchilar",
     "invalidPercent": "Foiz 0 dan 100 gacha bo'lishi kerak",
     "occupied": "Bu individual guruhda allaqachon o'quvchi bor",
     "updated": "Saqlandi"
@@ -2207,7 +2215,6 @@
     "removed": "Alohida foiz olib tashlandi",
     "notActive": "Faqat faol a'zolikka alohida foiz qo'yish mumkin",
     "individualGroup": "Individual guruhda o'qituvchi foizi guruh sozlamasida belgilanadi",
-    "salaryRows": "Alohida foizli o'quvchilar",
     "example": "Masalan: {{price}} so'm to'lovdan {{amount}} so'm o'qituvchiga."
   }
 }
