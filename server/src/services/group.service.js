@@ -548,6 +548,9 @@ module.exports = {
 
     const group = await Group.create({
       kind: "individual",
+      // Nom — chek, Tushumlar, Telegram xabarlari va eksportlarda "Fan - 1"
+      // (oddiy guruh raqami bilan adashadigan) yorliq o'rniga ko'rinadi.
+      name: `${subject.name} · Individual`,
       client: clientId,
       center: center._id,
       subject: subject._id,

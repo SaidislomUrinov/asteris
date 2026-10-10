@@ -97,7 +97,7 @@ const findChildren = async (rawPhone, role = "parent") => {
 
   // Guruh nomlari — o'quvchi roli uchun bot "Siz quyidagi guruhlarda o'qiysiz" ro'yxati.
   const groupIds = [...new Set(students.flatMap((s) => s.groups.filter((g) => g.status === "active").map((g) => String(g.group))))];
-  const groups = await Group.find({ _id: { $in: groupIds } }).select("name subject activeId pendingId status").lean();
+  const groups = await Group.find({ _id: { $in: groupIds } }).select("name subject activeId pendingId status kind").lean();
   const subjects = await Subject.find({ _id: { $in: [...new Set(groups.map((g) => String(g.subject)))] } })
     .select("name")
     .lean();
@@ -333,7 +333,9 @@ const resolveEntry = async (parent, entryId) => {
   return { student, entry, group, center, cycleMode: billingDoc?.cycleMode || "anchor" };
 };
 
-const groupLabelOf = (group, subjectName) => group?.name || subjectName || "";
+// Individual darsda fan nomi (WebApp alohida "Individual dars" belgisini qo'yadi).
+const groupLabelOf = (group, subjectName) =>
+  (group?.kind === "individual" ? subjectName : group?.name) || subjectName || "";
 
 // Oy chegarasi "YYYY-MM" — noto'g'ri bo'lsa joriy oy.
 const normalizeMonth = (month) =>
