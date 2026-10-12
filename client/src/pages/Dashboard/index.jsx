@@ -27,7 +27,6 @@ import useCan from "../../hooks/useCan";
 import MoneyCard from "../../components/dashboard/MoneyCard";
 import StatCard from "../../components/dashboard/StatCard";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
-import HideFinanceToggle from "../../components/HideFinanceToggle";
 import HiddenFinancePanel from "../../components/HiddenFinancePanel";
 import useHideFinance from "../../hooks/useHideFinance";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
@@ -58,7 +57,7 @@ function Dashboard() {
   const [subjectsCount, setSubjectsCount] = useState(0);
   // Moliyaviy raqamlarni vaqtincha yashirish — resepshin oldida odam
   // o'tirgan yoki noutbuk HDMI orqali proyektorga ulangan holatlar uchun.
-  const [hideFinance, toggleHideFinance] = useHideFinance();
+  const [hideFinance] = useHideFinance();
   const can = useCan();
   const canLeads = can("lead:view");
   const [leadStats, setLeadStats] = useState(null);
@@ -219,7 +218,6 @@ function Dashboard() {
       <DashboardHeader
         icon={<HiChartPie />}
         title={t("dashboard.title")}
-        toggle={<HideFinanceToggle hidden={hideFinance} onToggle={toggleHideFinance} />}
       >
         <MonthInput
           className="w-full sm:w-44"

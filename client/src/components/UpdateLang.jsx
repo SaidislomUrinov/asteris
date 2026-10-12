@@ -40,10 +40,10 @@ function UpdateLang({ dark = false }) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center cursor-pointer gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors duration-150 ${
+        className={`flex items-center cursor-pointer gap-1.5 py-1.5 rounded-lg text-[12px] font-semibold transition-colors duration-150 ${
           dark
-            ? "bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
-            : "bg-slate-100 dark:bg-night-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-night-700 hover:text-slate-800 dark:hover:text-slate-100"
+            ? "px-2 sm:px-3 bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
+            : "px-3 bg-slate-100 dark:bg-night-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-night-700 hover:text-slate-800 dark:hover:text-slate-100"
         }`}
       >
         <img

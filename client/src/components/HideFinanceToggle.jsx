@@ -14,9 +14,27 @@ import IconButton from "../ui/IconButton";
  * @param {boolean} props.hidden
  * @param {() => void} props.onToggle
  * @param {string} [props.className]
+ * @param {boolean} [props.dark] - Top panelning to'q fonida
  */
-function HideFinanceToggle({ hidden, onToggle, className = "" }) {
+function HideFinanceToggle({ hidden, onToggle, className = "", dark = false }) {
   const { t } = useTranslation();
+  const label = t(hidden ? "common.showFinance" : "common.hideFinance");
+  // Top panel (to'q fon) — yonidagi ThemeToggle/"?" bilan bir xil ko'rinish.
+  if (dark) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        title={label}
+        aria-label={label}
+        className={`flex items-center justify-center w-7 sm:w-9 h-9 shrink-0 rounded-lg hover:bg-white/10 cursor-pointer transition-colors ${
+          hidden ? "text-red-300 hover:text-red-200" : "text-white/70 hover:text-white"
+        } ${className}`}
+      >
+        {hidden ? <HiEyeSlash size={20} /> : <HiEye size={20} />}
+      </button>
+    );
+  }
   return (
     <IconButton
       variant={hidden ? "ghost" : "text"}

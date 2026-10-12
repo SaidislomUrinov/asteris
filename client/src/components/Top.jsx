@@ -5,6 +5,8 @@ import UpdateLang from "./UpdateLang";
 import NotificationBell from "./NotificationBell";
 import HelpMenu from "./HelpMenu";
 import ThemeToggle from "./ThemeToggle";
+import HideFinanceToggle from "./HideFinanceToggle";
+import useHideFinance from "../hooks/useHideFinance";
 import { resolveSectionTitleKey } from "../utils/navSections";
 
 export default function Top() {
@@ -13,6 +15,7 @@ export default function Top() {
 
   // Barcha bo'limlar (detail sahifalari ham) — utils/navSections.js.
   const resolvedKey = resolveSectionTitleKey(p);
+  const [hideFinance, toggleHideFinance] = useHideFinance();
 
   // Brauzer tab sarlavhasi ham joriy bo'lim va tilga mos bo'lishi uchun —
   // `resolvedKey` bilan bir xil manba, til almashsa `i18n.language`
@@ -29,12 +32,13 @@ export default function Top() {
     <div className="flex items-center justify-between w-full h-15 px-4 bg-[#0b2050] border-b border-white/7">
       <div className="lg:hidden w-10" />
 
-      <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
         <p className="font-semibold font-space uppercase text-white text-[18px] lg:text-[28px] truncate">
           {resolvedKey ? t(resolvedKey) : "WENET"}
         </p>
+        {p === "/dashboard" && <HideFinanceToggle dark hidden={hideFinance} onToggle={toggleHideFinance} />}
       </div>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-0.5 sm:gap-2 shrink-0">
         <ThemeToggle />
         <HelpMenu />
         <NotificationBell />
