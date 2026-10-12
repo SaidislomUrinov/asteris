@@ -1,5 +1,6 @@
 const { buildActor } = require("../utils/audit.util");
 const teachingPlanService = require("../services/teachingPlan.service");
+const { sendExcel } = require("../utils/excel.util");
 
 // "Dars rejalarim" — API_CONTRACT_teaching_plans.md §4.1. Egalik va rol
 // tekshiruvi servisda (`req.staff` yo'q yoki teacher/assistant emas → 403).
@@ -19,6 +20,15 @@ module.exports = {
         subject: req.query?.subject,
       });
       return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  importTemplate: async (req, res, next) => {
+    try {
+      const { filename, sheets } = teachingPlanService.importTemplate(req.staff || null, req.query || {});
+      return await sendExcel(res, filename, sheets);
     } catch (error) {
       next(error);
     }

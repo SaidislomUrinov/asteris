@@ -6,6 +6,7 @@ import {
   HiPencilSquare,
   HiPlus,
   HiTrash,
+  HiArrowUpTray,
 } from "react-icons/hi2";
 import IconButton from "../../ui/IconButton";
 import DropMenu from "../../ui/DropMenu";
@@ -26,6 +27,7 @@ import PlanLessonRow from "./PlanLessonRow";
  * @param {boolean} props.showHomework
  * @param {() => void} props.onToggle
  * @param {() => void} props.onAddLesson
+ * @param {() => void} props.onImportLessons - Excel'dan darslar
  * @param {() => void} props.onEdit
  * @param {() => void} props.onDelete
  * @param {(delta: number) => void} props.onMove
@@ -44,6 +46,7 @@ function PlanModuleCard({
   showHomework,
   onToggle,
   onAddLesson,
+  onImportLessons,
   onEdit,
   onDelete,
   onMove,
@@ -60,6 +63,12 @@ function PlanModuleCard({
       icon: HiPlus,
       iconClass: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
       onClick: onAddLesson,
+    },
+    {
+      label: t("teachingPlan.import.lessonsButton"),
+      icon: HiArrowUpTray,
+      iconClass: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+      onClick: onImportLessons,
     },
     {
       label: t("syllabus.editModule"),

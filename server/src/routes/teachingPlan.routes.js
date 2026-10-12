@@ -20,6 +20,12 @@ router.use(requireTariffFeature("lesson.planning"));
 // `/subjects` — `/:id` dan OLDIN (aks holda "subjects" id sifatida ushlanadi).
 router.get("/subjects", requireTenantPermission("lesson:view"), teachingPlanController.subjects);
 router.get("/", requireTenantPermission("lesson:view"), teachingPlanController.list);
+// Excel import namunasi — `/:id` dan OLDIN (API_CONTRACT_teaching_plan_excel_import.md §1).
+router.get(
+  "/import-template",
+  requireTenantPermission("lesson:create"),
+  teachingPlanController.importTemplate,
+);
 router.get("/:id", requireTenantPermission("lesson:view"), teachingPlanController.getOne);
 router.post("/", requireTenantPermission("lesson:create"), teachingPlanController.create);
 router.put("/:id", requireTenantPermission("lesson:update"), teachingPlanController.update);

@@ -100,6 +100,77 @@ const fullDTO = async (plan) => {
   return { ...summaryDTO(plan, names), modules: (plan.modules || []).map(moduleDTO) };
 };
 
+// Excel import namunasi (API_CONTRACT_teaching_plan_excel_import.md §1).
+// Ustun tartibi frontend parseri bilan AYNAN bir xil: plan — Modul | Mavzu |
+// Tavsif | Vazifa, lessons — Mavzu | Tavsif | Vazifa. Sarlavha 1-qatorda
+// (sarlavha/izoh qatorlari yo'q) — parser uni ma'lum sarlavhalar orqali taniydi.
+const TEMPLATE_TEXT = {
+  uz: {
+    file: { plan: "dars-rejasi-namuna", lessons: "darslar-namuna" },
+    sheet: "Reja",
+    head: { module: "Modul", title: "Dars mavzusi", description: "Tavsif", homework: "Uyga vazifa" },
+    plan: [
+      ["1-modul: Kirish", "Tanishuv va alifbo", "Harflar va tovushlar", "Alifboni yodlash"],
+      ["", "Salomlashish", "Kundalik iboralar", "10 ta ibora yozish"],
+      ["2-modul: Grammatika", "To be fe'li", "am / is / are", "1-mashq, 12-bet"],
+      ["", "Present Simple", "Oddiy hozirgi zamon", "2-mashq, 15-bet"],
+    ],
+    lessons: [
+      ["Present Perfect", "Tuzilishi va qo'llanishi", "3-mashq, 20-bet"],
+      ["since / for", "Vaqt iboralari", "5 ta gap tuzish"],
+      ["Takrorlash", "Modul bo'yicha savollar", ""],
+    ],
+  },
+  uzc: {
+    file: { plan: "dars-rejasi-namuna", lessons: "darslar-namuna" },
+    sheet: "Режа",
+    head: { module: "Модул", title: "Дарс мавзуси", description: "Тавсиф", homework: "Уйга вазифа" },
+    plan: [
+      ["1-модул: Кириш", "Танишув ва алифбо", "Ҳарфлар ва товушлар", "Алифбони ёдлаш"],
+      ["", "Саломлашиш", "Кундалик иборалар", "10 та ибора ёзиш"],
+      ["2-модул: Грамматика", "To be феъли", "am / is / are", "1-машқ, 12-бет"],
+      ["", "Present Simple", "Оддий ҳозирги замон", "2-машқ, 15-бет"],
+    ],
+    lessons: [
+      ["Present Perfect", "Тузилиши ва қўлланиши", "3-машқ, 20-бет"],
+      ["since / for", "Вақт иборалари", "5 та гап тузиш"],
+      ["Такрорлаш", "Модул бўйича саволлар", ""],
+    ],
+  },
+  ru: {
+    file: { plan: "plan-urokov-shablon", lessons: "uroki-shablon" },
+    sheet: "План",
+    head: { module: "Модуль", title: "Тема урока", description: "Описание", homework: "Домашнее задание" },
+    plan: [
+      ["Модуль 1: Введение", "Знакомство и алфавит", "Буквы и звуки", "Выучить алфавит"],
+      ["", "Приветствия", "Повседневные фразы", "Написать 10 фраз"],
+      ["Модуль 2: Грамматика", "Глагол to be", "am / is / are", "Упр. 1, стр. 12"],
+      ["", "Present Simple", "Простое настоящее время", "Упр. 2, стр. 15"],
+    ],
+    lessons: [
+      ["Present Perfect", "Образование и употребление", "Упр. 3, стр. 20"],
+      ["since / for", "Выражения времени", "Составить 5 предложений"],
+      ["Повторение", "Вопросы по модулю", ""],
+    ],
+  },
+  en: {
+    file: { plan: "lesson-plan-template", lessons: "lessons-template" },
+    sheet: "Plan",
+    head: { module: "Module", title: "Lesson topic", description: "Description", homework: "Homework" },
+    plan: [
+      ["Module 1: Intro", "Introductions and alphabet", "Letters and sounds", "Learn the alphabet"],
+      ["", "Greetings", "Everyday phrases", "Write 10 phrases"],
+      ["Module 2: Grammar", "The verb to be", "am / is / are", "Ex. 1, p. 12"],
+      ["", "Present Simple", "Simple present tense", "Ex. 2, p. 15"],
+    ],
+    lessons: [
+      ["Present Perfect", "Form and use", "Ex. 3, p. 20"],
+      ["since / for", "Time expressions", "Write 5 sentences"],
+      ["Revision", "Module questions", ""],
+    ],
+  },
+};
+
 const notify = (staff, plan) =>
   emit(`user:${staff._id}`, "teachingPlan:changed", { planId: String(plan._id) });
 
@@ -182,6 +253,26 @@ module.exports = {
 
     notify(staff, plan);
     return fullDTO(plan);
+  },
+
+  // Excel import namunasi — controller `sendExcel` bilan yuboradi
+  // (API_CONTRACT_teaching_plan_excel_import.md §1). Fayl hech qayerga saqlanmaydi.
+  importTemplate: (staff, query = {}) => {
+    assertTeacher(staff);
+    const kind = query.kind === "lessons" ? "lessons" : "plan";
+    const text = TEMPLATE_TEXT[query.lang] || TEMPLATE_TEXT.uz;
+    const keys = kind === "plan" ? ["module", "title", "description", "homework"] : ["title", "description", "homework"];
+    const WIDTH = { module: 26, title: 32, description: 36, homework: 30 };
+    const columns = keys.map((key, i) => ({
+      header: text.head[key],
+      key,
+      width: WIDTH[key],
+      value: (row) => row[i],
+    }));
+    return {
+      filename: text.file[kind],
+      sheets: [{ sheetName: text.sheet, color: "FF4F46E5", columns, rows: text[kind] }],
+    };
   },
 
   // Soft delete (arxiv semantikasi — CLAUDE.md).

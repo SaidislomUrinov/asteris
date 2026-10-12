@@ -9,6 +9,7 @@ import {
   HiPencilSquare,
   HiPlus,
   HiArchiveBox,
+  HiArrowUpTray,
   HiTrash,
 } from "react-icons/hi2";
 import Button from "../../ui/Button";
@@ -19,6 +20,7 @@ import DropMenu from "../../ui/DropMenu";
 import SyllabusDialog from "../Groups/SyllabusDialog";
 import PlanFormDialog from "./PlanFormDialog";
 import PlanModuleCard from "./PlanModuleCard";
+import PlanImportDialog from "./PlanImportDialog";
 import { countLessons, formatPlanDate, moveItem, serializeModules } from "./planUtils";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import useFeature from "../../hooks/useFeature";
@@ -57,6 +59,14 @@ function PlanEditor() {
   const [formKey, setFormKey] = useState(0);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [busy, setBusy] = useState(false); // nusxa / o'chirish
+  // Excel'dan import (docs/API_CONTRACT_teaching_plan_excel_import.md) —
+  // `{ kind: "plan"|"lessons", moduleId }`; key har ochilishda oynani yangilaydi.
+  const [importDialog, setImportDialog] = useState(null);
+  const [importKey, setImportKey] = useState(0);
+  const openImport = (kind, moduleId = null) => {
+    setImportKey((k) => k + 1);
+    setImportDialog({ kind, moduleId });
+  };
 
   const modules = useMemo(() => plan?.modules || [], [plan]);
 
@@ -352,6 +362,14 @@ function PlanEditor() {
               </IconButton>
               <IconButton
                 variant="ghost"
+                color="emerald"
+                title={t("teachingPlan.import.button")}
+                onClick={() => openImport("plan")}
+              >
+                <HiArrowUpTray />
+              </IconButton>
+              <IconButton
+                variant="ghost"
                 color="black"
                 title={t("teachingPlan.duplicate")}
                 loading={busy && !deleteOpen}
@@ -380,6 +398,12 @@ function PlanEditor() {
                     setFormKey((k) => k + 1);
                     setFormOpen(true);
                   },
+                },
+                {
+                  label: t("teachingPlan.import.button"),
+                  icon: HiArrowUpTray,
+                  iconClass: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+                  onClick: () => openImport("plan"),
                 },
                 {
                   label: t("teachingPlan.duplicate"),
@@ -421,10 +445,16 @@ function PlanEditor() {
           </span>
           <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{t("teachingPlan.noModules")}</p>
           <p className="text-xs text-slate-400 dark:text-slate-500 max-w-xs">{t("teachingPlan.noModulesHint")}</p>
-          <Button className="gap-1.5 mt-1" onClick={() => openModuleDialog()}>
-            <HiPlus className="text-base" />
-            {t("syllabus.newModule")}
-          </Button>
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+            <Button className="gap-1.5" onClick={() => openModuleDialog()}>
+              <HiPlus className="text-base" />
+              {t("syllabus.newModule")}
+            </Button>
+            <Button variant="outlined" color="emerald" className="gap-1.5" onClick={() => openImport("plan")}>
+              <HiArrowUpTray className="text-base" />
+              {t("teachingPlan.import.button")}
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col gap-2 pb-4">
@@ -441,6 +471,7 @@ function PlanEditor() {
               showHomework={showHomework}
               onToggle={() => toggleModule(module._id)}
               onAddLesson={() => setLessonDialog({ lesson: null, moduleId: module._id })}
+              onImportLessons={() => openImport("lessons", module._id)}
               onEdit={() => openModuleDialog(module)}
               onDelete={() =>
                 setRemoveTarget({ kind: "module", id: module._id, title: module.title })
@@ -455,6 +486,16 @@ function PlanEditor() {
           ))}
         </div>
       )}
+
+      <PlanImportDialog
+        key={importKey}
+        open={!!importDialog}
+        onClose={() => setImportDialog(null)}
+        initialKind={importDialog?.kind || "plan"}
+        initialModuleId={importDialog?.moduleId || null}
+        modules={modules}
+        onSave={(next) => persist(next, "teachingPlan.import.saved")}
+      />
 
       {/* Modul modali */}
       <Dialog
