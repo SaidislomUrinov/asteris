@@ -54,6 +54,112 @@ const revokeSessions = async (clientId, channels = ["web", "tg"]) => {
   ]);
 };
 
+// Mijoz o'chirilganda unga tegishli BARCHA data va uploads fayllari butunlay
+// o'chiriladi. Faqat obuna tarixi (Subscription + SubscriptionPayment) va
+// ularga nom/telefon beradigan Client hujjatining o'zi (isDeleted: true)
+// qoladi. Audit Log ham qoladi (CLAUDE.md: audit hech qachon o'chirilmaydi). Platforma darajasidagi Lead ham qoladi (admin CRM tarixi).
+// O'quvchi hujjati cross-tenant: faqat shu client'ning a'zoliklari/rasmi
+// olib tashlanadi, boshqa markazda a'zoligi qolmasa hujjat o'chadi.
+const purgeClientData = async (clientId) => {
+  const models = Object.fromEntries(
+    [
+      "Attendance", "AttendanceSetting", "BillingSetting", "CenterHoliday",
+      "Certificate", "CertificateTemplate", "ChatConversation", "ChatMessage", "Expense",
+      "Grade", "GroupHoliday", "Homework", "ImportBatch", "NewsRead", "Notification",
+      "Room", "SalaryTransaction", "StudentBadge", "StudentLead", "StudentMedal",
+      "Subject", "Syllabus", "TeachingPlan", "Counter",
+    ].map((name) => [name, require(`../models/${name}`)]),
+  );
+  const fileUtil = require("../utils/file.util");
+  const staffService = require("./staff.service");
+  const byClient = { client: clientId };
+
+  // Fayl yo'llari hujjatlar o'chishidan OLDIN yig'iladi.
+  const [centers, templates, chatImages, staff, students] = await Promise.all([
+    Center.find(byClient, { logo: 1 }).lean(),
+    models.CertificateTemplate.find(byClient, { backgroundUrl: 1 }).lean(),
+    models.ChatMessage.find({ clientId, imageUrl: { $gt: "" } }, { imageUrl: 1 }).lean(),
+    Staff.find(byClient, { _id: 1 }).lean(),
+    Student.find(
+      { $or: [{ "groups.client": clientId }, { "photos.client": clientId }] },
+      { "groups.client": 1, photos: 1 },
+    ).lean(),
+  ]);
+
+  const key = String(clientId);
+  const photoPaths = [];
+  const fullyOwned = [];
+  for (const st of students) {
+    (st.photos || []).forEach((p) => String(p.client) === key && p.path && photoPaths.push(p.path));
+    if ((st.groups || []).every((g) => String(g.client) === key)) fullyOwned.push(st._id);
+  }
+
+  // Hodim sessiyalari — o'chirilgan hodim kesh TTL'i davomida ishlab qolmasin.
+  await Promise.all(staff.map((s) => staffService.revokeSessions(s._id)));
+
+  const staffIds = staff.map((s) => s._id);
+  const batchIds = (await models.ImportBatch.find(byClient, { _id: 1 }).lean()).map((b) => b._id);
+
+  await Promise.all([
+    Student.deleteMany({ _id: { $in: fullyOwned } }),
+    Student.updateMany(
+      { _id: { $nin: fullyOwned }, $or: [{ "groups.client": clientId }, { "photos.client": clientId }] },
+      { $pull: { groups: { client: clientId }, photos: { client: clientId } } },
+    ),
+    batchIds.length
+      ? Student.updateMany({ importBatch: { $in: batchIds } }, { $set: { importBatch: null } })
+      : null,
+    Center.deleteMany(byClient),
+    Group.deleteMany(byClient),
+    Staff.deleteMany(byClient),
+    models.ChatConversation.deleteMany({ clientId }),
+    models.ChatMessage.deleteMany({ clientId }),
+    models.NewsRead.deleteMany({ "reader.id": { $in: [clientId, ...staffIds] } }),
+    models.Counter.deleteMany({ _id: { $regex: `_${key}$` } }),
+    ...[
+      "Attendance", "AttendanceSetting", "BillingSetting", "CenterHoliday",
+      "Certificate", "CertificateTemplate", "Expense", "Grade", "GroupHoliday", "Homework",
+      "ImportBatch", "Notification", "Room", "SalaryTransaction", "StudentBadge",
+      "StudentLead", "StudentMedal", "Subject", "Syllabus", "TeachingPlan",
+    ].map((name) => models[name].deleteMany(byClient)),
+  ]);
+
+  // O'quvchi rasmi ref-count bo'yicha: boshqa client'da nusxasi qolgan fayl o'chmaydi.
+  const inUse = new Set(
+    (await Student.find({ "photos.path": { $in: photoPaths } }, { photos: 1 }).lean()).flatMap(
+      (st) => (st.photos || []).map((p) => p.path),
+    ),
+  );
+  const files = [
+    ...centers.map((c) => c.logo),
+    ...templates.map((t) => t.backgroundUrl),
+    ...chatImages.map((m) => m.imageUrl),
+    ...photoPaths.filter((p) => !inUse.has(p)),
+  ].filter(Boolean);
+  await Promise.all([...new Set(files)].map((f) => fileUtil.remove(f)));
+
+  // Redis keshlari — TTL kutilmaydi.
+  await Promise.all([
+    require("../utils/dashboardCache.util").invalidate(clientId),
+    require("../utils/reportCache.util").invalidate(clientId),
+    ...centers.flatMap((c) => [
+      redisUtil.del(keyConfig.billingSetting(c._id)),
+      redisUtil.del(keyConfig.attendanceSetting(c._id)),
+    ]),
+  ]);
+};
+
+// Owner (`client:`) va hodimlar (`staff:`) socketlari butun cluster bo'ylab
+// uziladi (redis adapter). Qayta ulanish rad etiladi — access kalitlari o'chgan.
+const disconnectClientSockets = (clientId) => {
+  try {
+    const { getIo } = require("../configs/socket.config");
+    getIo().in([`client:${clientId}`, `staff:${clientId}`]).disconnectSockets(true);
+  } catch {
+    // socket ko'tarilmagan (skript/fon ishi) — ulanish ham yo'q
+  }
+};
+
 const PAGE_SIZE = 50;
 // Boshlanish sanasi kiritilsa, tugash sanasi default "keyingi oy, o'sha kun"
 // bo'lib avtomatik hisoblanadi — admin buni keyin qo'lda o'zgartira oladi.
@@ -316,11 +422,17 @@ module.exports = {
 
     client.isDeleted = true;
     client.deletedAt = getNow();
+    client.telegram = { chatId: null, lang: client.telegram?.lang || "uz", linkedAt: null };
     await client.save();
     // Sessiya keshi tashlanmasa o'chirilgan mijoz kesh TTL'i davomida
     // ishlashda davom etardi (fullClientAuth faqat kesh bo'sh bo'lsa o'qiydi).
     // Access kalitlari ham (brauzer + Telegram) — majburiy chiqarish.
     await revokeSessions(client._id);
+    // Ochiq tablar darhol chiqib ketsin: signal → frontend `verify` →
+    // auth.failed → logout. Purge'dan OLDIN — keyin filiallar bo'lmaydi.
+    await emitSubscriptionUpdated(client._id);
+    await purgeClientData(client._id);
+    disconnectClientSockets(client._id);
 
     return true;
   },

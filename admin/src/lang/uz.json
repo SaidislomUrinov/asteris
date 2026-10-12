@@ -393,7 +393,7 @@
     "dateModeNew": "Yangi sana (bugundan boshlab)",
     "dateModeKeep": "Avvalgi muddat saqlansin",
     "deleteTitle": "Mijozni o'chirish",
-    "deleteConfirm": "\"{{name}}\" mijozini o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi.",
+    "deleteConfirm": "\"{{name}}\" mijozini o'chirmoqchimisiz? Uning barcha ma'lumotlari va yuklangan fayllari butunlay o'chiriladi, faqat obuna tarixi qoladi. Bu amalni qaytarib bo'lmaydi.",
     "created": "Mijoz muvaffaqiyatli qo'shildi",
     "updated": "Mijoz yangilandi",
     "deleted": "Mijoz o'chirildi",

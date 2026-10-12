@@ -393,7 +393,7 @@
     "dateModeNew": "New date (starting today)",
     "dateModeKeep": "Keep the previous period",
     "deleteTitle": "Delete client",
-    "deleteConfirm": "Delete the client \"{{name}}\"? This action cannot be undone.",
+    "deleteConfirm": "Delete the client \"{{name}}\"? All of their data and uploaded files will be permanently deleted; only the subscription history is kept. This action cannot be undone.",
     "created": "Client added successfully",
     "updated": "Client updated",
     "deleted": "Client deleted",
