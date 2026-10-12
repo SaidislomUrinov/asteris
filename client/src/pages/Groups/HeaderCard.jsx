@@ -17,6 +17,7 @@ import { accentOf } from "../../utils/accent";
  * @param {React.ReactNode} [props.suffix]
  * @param {keyof import("../../utils/accent").ACCENT} [props.accent="blue"]
  * @param {boolean} [props.strong] - sarlavha katta (guruh nomi kartasi)
+ * @param {boolean} [props.headMobileHidden] - telefonda sarlavha qatori yashirin (mazmun o'zi tushunarli)
  */
 function HeaderCard({
   icon,
@@ -27,6 +28,7 @@ function HeaderCard({
   suffix,
   accent = "blue",
   strong = false,
+  headMobileHidden = false,
   children,
   className = "",
 }) {
@@ -34,13 +36,17 @@ function HeaderCard({
 
   return (
     <div
-      className={`relative overflow-hidden flex flex-col gap-2 p-3 pl-4 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none min-w-0 ${className}`}
+      className={`relative overflow-hidden flex flex-col gap-2 p-3 pl-4 max-sm:gap-1 max-sm:p-2.5 max-sm:pl-3.5 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none min-w-0 ${className}`}
     >
       <span className={`absolute inset-y-0 left-0 w-1 ${a.edge}`} />
 
-      <div className="flex items-center gap-2.5 min-w-0">
+      <div className={`flex items-center gap-2.5 min-w-0 ${headMobileHidden ? "max-sm:hidden" : ""}`}>
         <div
-          className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-base ${a.icon}`}
+          // Telefonda (strong — guruh nomi kartasidan tashqari) ikonka yashirin:
+          // sarlavha kesilmaydi, balandlik kamayadi.
+          className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-base ${a.icon} ${
+            strong ? "" : "max-sm:hidden"
+          }`}
         >
           {icon}
         </div>
@@ -49,7 +55,9 @@ function HeaderCard({
             className={
               strong
                 ? "font-space font-bold text-base leading-snug text-slate-900 dark:text-slate-100 truncate"
-                : "text-sm font-semibold text-slate-800 dark:text-slate-100 truncate"
+                : `font-semibold text-slate-800 dark:text-slate-100 truncate ${
+                    value != null ? "text-sm max-sm:text-xs max-sm:font-medium max-sm:text-slate-500 max-sm:dark:text-slate-400" : "text-sm"
+                  }`
             }
           >
             {title}

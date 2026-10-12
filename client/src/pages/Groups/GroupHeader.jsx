@@ -80,7 +80,7 @@ function GroupHeader({
 
   return (
     <div
-      className={`grid grid-cols-2 gap-3 ${
+      className={`grid grid-cols-2 gap-3 max-sm:gap-2 ${
         extra
           ? "xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.15fr)]"
           : "xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.8fr)_minmax(0,1.15fr)]"
@@ -102,14 +102,16 @@ function GroupHeader({
         accent="blue"
         strong
         badge={
-          <IconButton
-            variant="ghost"
-            color="slate"
-            title={t("group.infoCardDesc")}
-            onClick={() => setInfoOpen(true)}
-          >
-            <HiInformationCircle />
-          </IconButton>
+          <div className="max-sm:[&_button]:min-w-8 max-sm:[&_button]:max-w-8 max-sm:[&_button]:min-h-8 max-sm:[&_button]:max-h-8">
+            <IconButton
+              variant="ghost"
+              color="slate"
+              title={t("group.infoCardDesc")}
+              onClick={() => setInfoOpen(true)}
+            >
+              <HiInformationCircle />
+            </IconButton>
+          </div>
         }
       >
         {/* Holat chipi kun chiplari bilan bir qatorda — sarlavha to'liq ko'rinadi. */}
@@ -145,8 +147,9 @@ function GroupHeader({
         icon={<FaTelegram />}
         title="Telegram"
         accent="cyan"
+        headMobileHidden
       >
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 max-sm:gap-0.5">
           <TelegramRow label={t("group.telegramBot")}>
             {bot ? (
               <TelegramBotLink className="max-w-full !bg-[#229ED9] !text-white !ring-0 !text-sm !py-1.5 hover:!bg-[#1c8bc0]" />

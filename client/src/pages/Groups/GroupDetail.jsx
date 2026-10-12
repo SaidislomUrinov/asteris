@@ -31,6 +31,10 @@ import {
   HiUserMinus,
   HiUsers,
   HiTrophy,
+  HiTableCells,
+  HiStar,
+  HiClipboardDocumentList,
+  HiBookOpen,
 } from "react-icons/hi2";
 import Button from "../../ui/Button";
 import Input from "../../ui/Input";
@@ -60,14 +64,14 @@ import LessonCalendar from "./LessonCalendar";
 import AttendanceDonut from "./AttendanceDonut";
 import MonthlyAttendance from "./MonthlyAttendance";
 import GradesTab from "./GradesTab";
+import GradeCell from "./GradeCell";
+import useTodayGrades from "./useTodayGrades";
 import SyllabusTab from "./SyllabusTab";
 import HomeworkTab from "./HomeworkTab";
 import TodayLessonCard from "./TodayLessonCard";
 import GroupHeader from "./GroupHeader";
-import IndBadge from "../../ui/IndBadge";
-import PercentChip from "../../ui/PercentChip";
-import EntryPercentDialog from "./EntryPercentDialog";
-import IndividualPercentDialog from "../Individual/IndividualPercentDialog";
+import ShareChip from "../../ui/ShareChip";
+import TeacherShareDialog from "./TeacherShareDialog";
 import HeaderCard from "./HeaderCard";
 import AttendanceStatusCell, { DebtPill } from "./AttendanceStatusCell";
 import { useLessonSchedule } from "./useLessonSchedule";
@@ -177,6 +181,16 @@ function GroupDetail({ groupId, live = false }) {
   const canDeleteAnyStudy = authType === "owner" || role === "teacher";
   // Kurs dasturini yozish: boshliq + o'qituvchi/yordamchi (resepshin faqat ko'radi).
   const canWriteSyllabus = authType === "owner" || canWriteStudy;
+  // Soddalashtirilgan ko'rinish (docs/API_CONTRACT_group_simple_view.md): tab
+  // qatori yo'q — sahifa o'quvchilar ro'yxati, qolgan bo'limlar (davomat, baho,
+  // vazifa, dastur, statistika) "⋮" menyudan ochiladi. Qaytarish — rolni
+  // shu shartdan olib tashlash.
+  const simpleView =
+    authType === "owner" || (authType === "staff" && ["reception", "teacher", "assistant"].includes(role));
+  // Qatordagi pul ustunlari (qarz + "To'lov") — faqat Owner/Reception.
+  const ownerSimple = simpleView && !isTeacher;
+  // O'qituvchi/Yordamchi qatorida bugungi baho (ko'rish va yozish shartlari kontrakt §2).
+  const showGradeCol = simpleView && isTeacher && can("attendance:view") && hasFeature("student.rate");
   // Kalendarda sana→mavzu ko'rsatish va "Bugungi dars" kartochkasi —
   // ikkalasi ham bitta shartga bog'liq.
   const showPlans = isTeacher && can("lesson:view") && hasFeature("lesson.planning");
@@ -243,7 +257,7 @@ function GroupDetail({ groupId, live = false }) {
   const [leaving, setLeaving] = useState(false);
   const [transferTarget, setTransferTarget] = useState(null);
   const transferTargetView = useClosingValue(transferTarget);
-  // "Alohida foiz" dialogi (docs/API_CONTRACT_entry_teacher_percent.md §4).
+  // "O'qituvchi ulushi" dialogi (docs/API_CONTRACT_entry_teacher_percent.md §4).
   const [entryPercentTarget, setEntryPercentTarget] = useState(null);
   const entryPercentView = useClosingValue(entryPercentTarget);
   const [entryPercentKey, setEntryPercentKey] = useState(0);
@@ -267,7 +281,7 @@ function GroupDetail({ groupId, live = false }) {
   // (o'quvchi × dars-kuni matritsasi — API_CONTRACT_attendance_month.md).
   // O'qituvchi/yordamchida "Umumiy" tab yo'q — ular uchun boshlang'ich
   // ko'rinish darhol "Davomat" bo'ladi.
-  const [studentTab, setStudentTab] = useState(isTeacher ? "monthly" : "general");
+  const [studentTab, setStudentTab] = useState(isTeacher && !simpleView ? "monthly" : "general");
   // "Umumiy" — o'quvchilar ro'yxati; ichidagi to'lov/o'tkazish/chiqarish
   // amallari hamon RESEPSHIN va BOSHLIQ ishi bo'lib qoladi (DropMenu ichida
   // `!isTeacher` bilan yopiq). Lekin O'qituvchi/Yordamchiga `student:create`
@@ -304,6 +318,8 @@ function GroupDetail({ groupId, live = false }) {
   const studentsSummary = useStudentsSummary(id, isSortableTab(studentTab), summaryMonth);
   // O'tgan oy nishonlari — ism yonidagi mini ikonkalar (API_CONTRACT_badges_monthly_rank.md §D.3).
   const groupBadges = useGroupBadges(id);
+  const todayGrades = useTodayGrades(id, showGradeCol);
+  const [gradeOpenId, setGradeOpenId] = useState(null);
   const [excuseReason, setExcuseReason] = useState("");
 
   // Dars kunlari, dam olish kunlari va sana→mavzu moslashuvi — BITTA manba
@@ -675,7 +691,7 @@ function GroupDetail({ groupId, live = false }) {
   // O'quvchi summasi (StudentEditDialog orqali) o'zgarganda — attendance:marked
   // bilan bir xil applyEntryUpdate mexanizmi orqali refetchsiz yangilanadi
   // (docs/API_CONTRACT_student_edit_price.md).
-  // "Alohida foiz" o'zgardi (shu yoki boshqa tab/xodim) — a'zolik joyida yangilanadi.
+  // "O'qituvchi ulushi" o'zgardi (shu yoki boshqa tab/xodim) — a'zolik joyida yangilanadi.
   const applyEntryPercent = useCallback((studentId, groupEntryId, teacherPercent) => {
     setStudents((prev) =>
       prev.map((s) =>
@@ -827,7 +843,7 @@ function GroupDetail({ groupId, live = false }) {
   const isIndividual = group.kind === "individual";
   // Foiz — moliyaviy: faqat Boshliq/Resepshin (o'qituvchiga `null` keladi).
   const canEditPercent = isIndividual && !isTeacher && (authType === "owner" || can("group:update"));
-  // O'quvchi a'zoligiga "Alohida foiz" — oddiy guruhda, Boshliq/Resepshin
+  // O'quvchi a'zoligiga "O'qituvchi ulushi" — oddiy guruhda, Boshliq/Resepshin
   // (`group:update`), o'qituvchi/yordamchiga yo'q (moliyaviy).
   const canEditEntryPercent = !isIndividual && !isTeacher && (authType === "owner" || can("group:update"));
   const groupLabel =
@@ -991,7 +1007,7 @@ function GroupDetail({ groupId, live = false }) {
   // yo'qolsa, uning kontenti "yetim" bo'lib qolmasligi uchun birinchi mavjud
   // tabga qaytiladi.
   const studentTabs = [
-    ...(hasGeneralTab
+    ...(hasGeneralTab || simpleView
       ? [{ key: "general", label: t("group.tabStudentsSection") }]
       : []),
     { key: "monthly", label: t("group.tabMonthly") },
@@ -1012,6 +1028,56 @@ function GroupDetail({ groupId, live = false }) {
     ? studentTab
     : studentTabs[0]?.key;
 
+  const canAddStudents = group.status !== "finished" && can("student:create") && !isIndividual;
+  const canGradeToday = canWriteStudy && can("attendance:create") && group.status === "active" && !!todayLesson;
+  const VIEW_ICONS = {
+    monthly: HiTableCells,
+    grades: HiStar,
+    homework: HiClipboardDocumentList,
+    plan: HiBookOpen,
+    stats: HiChartBarSquare,
+  };
+  // simpleView: ekranda faqat "Faollashtirish" + "O'quvchi qo'shish";
+  // "Tahrirlash", bo'limlar va import — "⋮" ichida, xavfli amallar oxirida.
+  const shownPrimary = simpleView
+    ? [
+        ...primaryActions.filter((a) => a.key === "activate"),
+        ...(canAddStudents
+          ? [
+              {
+                key: "enroll",
+                icon: HiPlus,
+                label: t("student.create"),
+                color: "blue",
+                variant: "filled",
+                onClick: () => {
+                  setEnrollKey((k) => k + 1);
+                  setEnrollOpen(true);
+                },
+              },
+            ]
+          : []),
+      ]
+    : primaryActions;
+  const shownMenu = simpleView
+    ? [
+        ...topActions.filter((a) => a.key === "edit"),
+        ...studentTabs
+          .filter((tab) => tab.key !== "general")
+          .map((tab) => ({
+            key: `view-${tab.key}`,
+            icon: VIEW_ICONS[tab.key],
+            label: tab.label,
+            onClick: () => setStudentTab(tab.key),
+          })),
+        ...(canAddStudents
+          ? [{ key: "import", icon: HiArrowUpTray, label: t("import.buttonLabel"), onClick: () => setImportOpen(true) }]
+          : []),
+        ...topActions.filter((a) => !["edit", "activate"].includes(a.key) && !a.risky),
+        ...topActions.filter((a) => a.risky),
+      ]
+    : menuActions;
+
   return (
     <div className="flex flex-col w-full h-full gap-4">
       <div className="flex items-center justify-between gap-3">
@@ -1030,7 +1096,7 @@ function GroupDetail({ groupId, live = false }) {
             `inline-flex` bazasi `hidden` ni bosib ketadi. QR/Excel o'z
             yuklash holati bilan ishlaydi, shuning uchun menyuga olinmadi. */}
         <div className="flex items-center gap-2">
-          {primaryActions.map((action) => (
+          {shownPrimary.map((action) => (
             <div key={action.key} className="contents">
               <div className="sm:hidden">
                 <IconButton
@@ -1057,9 +1123,9 @@ function GroupDetail({ groupId, live = false }) {
           ))}
           <GroupQrCardsButton groupId={id} variant="icon" />
           {!isTeacher && <ExportExcelButton endpoint={`/groups/${id}/export`} variant="icon" />}
-          {menuActions.length > 0 && (
+          {shownMenu.length > 0 && (
             <DropMenu
-              items={menuActions.map((action) => ({
+              items={shownMenu.map((action) => ({
                 label: action.label,
                 icon: action.icon,
                 iconClass: action.risky
@@ -1075,12 +1141,12 @@ function GroupDetail({ groupId, live = false }) {
       <GroupHeader
         group={group}
         label={groupLabel}
-        titleBadge={isIndividual ? <IndBadge title={t("individual.badgeTitle")} /> : null}
+        titleBadge={isIndividual ? <ShareChip individual /> : null}
         studentsCard={
           canEditPercent ? (
             <HeaderCard
               icon={<HiReceiptPercent />}
-              title={t("individual.teacherShare")}
+              title={t("teacherShare.title")}
               value={group.teacherPercent != null ? `${group.teacherPercent}%` : "—"}
               accent="violet"
             >
@@ -1088,7 +1154,7 @@ function GroupDetail({ groupId, live = false }) {
                   uchun qiymat ostida matnli havola. */}
               <button
                 type="button"
-                className="self-start inline-flex items-center gap-1 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 cursor-pointer whitespace-nowrap"
+                className="self-start inline-flex items-center gap-1 h-6 px-2 rounded-md bg-violet-50 dark:bg-violet-500/15 ring-1 ring-inset ring-violet-200 dark:ring-violet-400/30 text-xs font-semibold text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-500/25 cursor-pointer whitespace-nowrap transition-colors"
                 onClick={() => {
                   setPercentKey((k) => k + 1);
                   setPercentOpen(true);
@@ -1174,6 +1240,23 @@ function GroupDetail({ groupId, live = false }) {
       {/* Yagona tab qatori: o'quvchilar ro'yxati, davomat, baholar, vazifa,
           dastur va statistika (avval ikki qavat edi: O'quvchilar|Statistika
           + ichki tablar). */}
+      {simpleView ? (
+        activeTab !== "general" && (
+          <div className="flex items-center gap-3 min-w-0 shrink-0">
+            <button
+              type="button"
+              onClick={() => setStudentTab("general")}
+              className="inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap h-9 pl-2.5 pr-3.5 rounded-xl bg-slate-100 dark:bg-night-800 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-night-700 cursor-pointer transition-colors"
+            >
+              <HiArrowLeft className="text-base shrink-0" />
+              {t("group.tabStudentsSection")}
+            </button>
+            <span className="font-space text-base font-bold text-slate-900 dark:text-slate-100 truncate">
+              {studentTabs.find((tab) => tab.key === activeTab)?.label}
+            </span>
+          </div>
+        )
+      ) : (
       <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-night-800 max-w-full overflow-x-auto self-start shrink-0">
         {studentTabs.map((tab) => (
           <button
@@ -1190,6 +1273,7 @@ function GroupDetail({ groupId, live = false }) {
           </button>
         ))}
       </div>
+      )}
 
       {activeTab === "stats" && (
         <>
@@ -1231,7 +1315,7 @@ function GroupDetail({ groupId, live = false }) {
         {isSortableTab(activeTab) && (
         <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-slate-100 dark:border-night-700">
             <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-              {activeTab === "general" && monthFilterOn && (
+              {activeTab === "general" && monthFilterOn && !isTeacher && (
                 <>
                   <MonthNav
                     month={selectedMonth}
@@ -1264,7 +1348,7 @@ function GroupDetail({ groupId, live = false }) {
                 options={SORT_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
               />
             </div>
-            {activeTab === "general" && group.status !== "finished" && can("student:create") && !isIndividual && (
+            {activeTab === "general" && group.status !== "finished" && can("student:create") && !isIndividual && !simpleView && (
               <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto sm:ml-auto">
                 <div className="max-sm:flex-1 max-sm:min-w-[140px]">
                   {/* 390px da ikki tugma yonma-yon ~158px dan oladi, tarkib
@@ -1386,18 +1470,25 @@ function GroupDetail({ groupId, live = false }) {
               // ustunli qatori sm'dan sig'adi.
               className={`hidden gap-2 px-3 py-2 bg-slate-50 dark:bg-night-800 text-[11px] font-semibold uppercase text-slate-400 dark:text-slate-500 ${
                 isTeacher
-                  ? "sm:grid grid-cols-[1fr_140px_44px]"
-                  : "xl:grid grid-cols-[1fr_190px_120px_140px_44px]"
+                  ? showGradeCol
+                    ? "sm:grid grid-cols-[1fr_176px_140px_44px]"
+                    : "sm:grid grid-cols-[1fr_140px_44px]"
+                  : ownerSimple
+                    ? "xl:grid grid-cols-[1fr_150px_140px_104px_44px]"
+                    : "xl:grid grid-cols-[1fr_190px_120px_140px_44px]"
               }`}
             >
               <span>{t("student.fullName")}</span>
-              {!isTeacher && <span className={isPastMonth ? "text-blue-500 dark:text-blue-400" : undefined}>
+              {ownerSimple && <span>{t("student.debt")}</span>}
+              {!isTeacher && !ownerSimple && <span className={isPastMonth ? "text-blue-500 dark:text-blue-400" : undefined}>
                   {isPastMonth
                     ? t("group.paymentFractionOfMonth", { month: monthNames[Number(selectedMonth.slice(5, 7)) - 1] || "" })
                     : t("student.paymentFraction")}
                 </span>}
-              {!isTeacher && <span>{t("student.debtStatus")}</span>}
+              {!isTeacher && !ownerSimple && <span>{t("student.debtStatus")}</span>}
+              {showGradeCol && <span>{t("grade.add")}</span>}
               <span>{t("group.attendanceColumn")}</span>
+              {ownerSimple && <span />}
               <span />
             </div>
 
@@ -1408,13 +1499,57 @@ function GroupDetail({ groupId, live = false }) {
               const bill = monthBilling(entry, selectedMonth, currentMonth);
               const noBill = entry.groupStatus === "pending" || !bill;
               const hasDebt = !noBill && bill.debt > 0;
+              const openPay = () =>
+                setPayTarget({
+                  student: s,
+                  entry,
+                  month: bill && !bill.isCurrent ? selectedMonth : null,
+                  monthDebt: bill && !bill.isCurrent ? bill.debt : 0,
+                });
+              // Owner: qarzi bor faol a'zolikda qatorning o'zida "To'lov".
+              const payButton =
+                ownerSimple && hasDebt && entry.status === "active" ? (
+                  <Button
+                    variant="ghost"
+                    color="emerald"
+                    className="gap-1.5 px-3! min-h-9! max-h-9!"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openPay();
+                    }}
+                  >
+                    <HiBanknotes className="text-base shrink-0" />
+                    {t("group.payShort")}
+                  </Button>
+                ) : null;
+              const gradeCell = showGradeCol ? (
+                <GradeCell
+                  value={todayGrades.grades[s._id]}
+                  canWrite={canGradeToday}
+                  blocked={["absent", "excused"].includes(attendanceMarks[s._id])}
+                  open={gradeOpenId === s._id}
+                  saving={todayGrades.saving === s._id}
+                  onOpen={() => setGradeOpenId(s._id)}
+                  onClose={() => setGradeOpenId(null)}
+                  onPick={async (v) => {
+                    if (await todayGrades.setGrade(s._id, v)) setGradeOpenId(null);
+                  }}
+                  onRemove={async () => {
+                    if (await todayGrades.removeGrade(s._id)) setGradeOpenId(null);
+                  }}
+                />
+              ) : null;
               return (
                 <div
                   key={s._id}
                   className={`relative grid grid-cols-1 gap-2.5 px-2 py-3 border-t border-slate-100 dark:border-night-700 hover:bg-slate-50 dark:hover:bg-night-800 transition-colors max-sm:gap-2.5 max-sm:p-3 max-sm:rounded-2xl max-sm:border max-sm:border-slate-200/80 dark:max-sm:border-night-700/80 max-sm:bg-white dark:max-sm:bg-night-900 max-sm:hover:bg-white dark:max-sm:hover:bg-night-900 ${
                     isTeacher
-                      ? "sm:grid-cols-[1fr_140px_44px] sm:items-center sm:gap-2 sm:px-3 sm:py-2.5"
-                      : "xl:grid-cols-[1fr_190px_120px_140px_44px] xl:items-center xl:gap-2 xl:px-3 xl:py-2.5"
+                      ? showGradeCol
+                        ? "sm:grid-cols-[1fr_176px_140px_44px] sm:items-center sm:gap-2 sm:px-3 sm:py-2.5"
+                        : "sm:grid-cols-[1fr_140px_44px] sm:items-center sm:gap-2 sm:px-3 sm:py-2.5"
+                      : ownerSimple
+                        ? "xl:grid-cols-[1fr_150px_140px_104px_44px] xl:items-center xl:gap-2 xl:px-3 xl:py-2.5"
+                        : "xl:grid-cols-[1fr_190px_120px_140px_44px] xl:items-center xl:gap-2 xl:px-3 xl:py-2.5"
                   }`}
                 >
                   <div className={`flex items-center gap-3 min-w-0 pr-11 ${isTeacher ? "sm:pr-0" : "xl:pr-0"}`}>
@@ -1443,10 +1578,7 @@ function GroupDetail({ groupId, live = false }) {
                           <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">{s.fullName}</span>
                         )}
                         {!isTeacher && entry.teacherPercent != null && (
-                          <PercentChip
-                            percent={entry.teacherPercent}
-                            title={t("entryPercent.chipTooltip", { p: entry.teacherPercent })}
-                          />
+                          <ShareChip percent={entry.teacherPercent} />
                         )}
                         {/* Telefonda medal va yutuq belgilari yashirin — o'rin pastki qatorda. */}
                         <span className="contents max-sm:hidden">
@@ -1484,9 +1616,12 @@ function GroupDetail({ groupId, live = false }) {
                         {noBill ? (
                           <span title={t("group.noMembershipInMonth")} className="text-sm font-semibold text-slate-300 dark:text-slate-600">—</span>
                         ) : hasDebt ? (
-                          <span className="text-[15px] font-bold leading-tight text-red-600 dark:text-red-400 whitespace-nowrap">
-                            {maskMoney(bill.debt, hideFinance)}{" "}
-                            <span className="text-xs font-medium text-red-400">{t("student.somSuffix")}</span>
+                          <span className="flex flex-wrap items-center gap-2">
+                            <span className="text-[15px] font-bold leading-tight text-red-600 dark:text-red-400 whitespace-nowrap">
+                              {maskMoney(bill.debt, hideFinance)}{" "}
+                              <span className="text-xs font-medium text-red-400">{t("student.somSuffix")}</span>
+                            </span>
+                            {payButton}
                           </span>
                         ) : (
                           <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{t("student.noDebt")}</span>
@@ -1494,7 +1629,13 @@ function GroupDetail({ groupId, live = false }) {
                       </div>
                     )}
 
-                    <div onClick={(e) => e.stopPropagation()} className={`flex flex-col gap-1 min-w-0 ${isTeacher ? "col-span-2" : ""}`}>
+                    {showGradeCol && (
+                      <div onClick={(e) => e.stopPropagation()} className={`flex flex-col items-start gap-1 min-w-0 ${gradeOpenId === s._id ? "col-span-2" : ""}`}>
+                        <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">{t("grade.add")}</span>
+                        {gradeCell}
+                      </div>
+                    )}
+                    <div onClick={(e) => e.stopPropagation()} className={`flex flex-col items-start gap-1 min-w-0 ${isTeacher && !showGradeCol ? "col-span-2" : ""}`}>
                       <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">{t("group.attendanceColumn")}</span>
                       <AttendanceStatusCell
                         status={attendanceMarks[s._id]}
@@ -1532,11 +1673,14 @@ function GroupDetail({ groupId, live = false }) {
                         {noBill ? (
                           <span title={t("group.noMembershipInMonth")} className="text-sm font-semibold text-slate-300 dark:text-slate-600">—</span>
                         ) : hasDebt ? (
-                          <span className="flex flex-col min-w-0 leading-tight">
-                            <span className="text-sm font-bold text-red-500 truncate">
-                              {maskMoney(bill.debt, hideFinance)}
+                          <span className="flex flex-col items-start gap-1.5 min-w-0 leading-tight">
+                            <span className="flex flex-col min-w-0">
+                              <span className="text-sm font-bold text-red-500 truncate">
+                                {maskMoney(bill.debt, hideFinance)}
+                              </span>
+                              <span className="text-[11px] font-medium text-red-400">{t("student.somSuffix")}</span>
                             </span>
-                            <span className="text-[11px] font-medium text-red-400">{t("student.somSuffix")}</span>
+                            {payButton}
                           </span>
                         ) : (
                           <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 truncate">{t("student.noDebt")}</span>
@@ -1581,7 +1725,20 @@ function GroupDetail({ groupId, live = false }) {
 
                   {/* ── Desktop jadval katakchalari (xl+ / o'qituvchida sm+) ── */}
                   <div className={isTeacher ? "hidden sm:contents" : "hidden xl:contents"}>
-                    {!isTeacher && (
+                    {ownerSimple && (
+                      <div className="text-sm font-semibold">
+                        {noBill ? (
+                          <span title={t("group.noMembershipInMonth")} className="text-slate-300 dark:text-slate-600">—</span>
+                        ) : hasDebt ? (
+                          <span className="font-bold text-red-600 dark:text-red-400 whitespace-nowrap">
+                            {maskMoney(bill.debt, hideFinance)} <span className="text-xs font-medium text-red-400">{t("student.somSuffix")}</span>
+                          </span>
+                        ) : (
+                          <span className="text-emerald-600 dark:text-emerald-400">{t("student.noDebt")}</span>
+                        )}
+                      </div>
+                    )}
+                    {!isTeacher && !ownerSimple && (
                       <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                         {entry.groupStatus === "pending" ? (
                           <span className="text-slate-400 dark:text-slate-500">
@@ -1597,7 +1754,12 @@ function GroupDetail({ groupId, live = false }) {
                         )}
                       </div>
                     )}
-                    {!isTeacher && <div>{hasDebt && <DebtPill />}</div>}
+                    {!isTeacher && !ownerSimple && <div>{hasDebt && <DebtPill />}</div>}
+                    {showGradeCol && (
+                      <div onClick={(e) => e.stopPropagation()} className="flex items-center">
+                        {gradeCell}
+                      </div>
+                    )}
                     <div onClick={(e) => e.stopPropagation()} className="flex items-center">
                       <AttendanceStatusCell
                         status={attendanceMarks[s._id]}
@@ -1608,6 +1770,7 @@ function GroupDetail({ groupId, live = false }) {
                         onExcuse={() => openExcuse(s)}
                       />
                     </div>
+                    {ownerSimple && <div>{payButton}</div>}
                   </div>
 
                   <div
@@ -1697,7 +1860,7 @@ function GroupDetail({ groupId, live = false }) {
                         ...(entry.status === "active" && canEditEntryPercent
                           ? [
                               {
-                                label: t("entryPercent.menu"),
+                                label: t("teacherShare.title"),
                                 icon: HiReceiptPercent,
                                 iconClass: "bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400",
                                 onClick: () => {
@@ -1824,8 +1987,9 @@ function GroupDetail({ groupId, live = false }) {
       />
 
       {entryPercentView && (
-        <EntryPercentDialog
+        <TeacherShareDialog
           key={`entry-percent-${entryPercentKey}`}
+          mode="entry"
           open={!!entryPercentTarget}
           studentId={entryPercentView.student._id}
           studentName={entryPercentView.student.fullName}
@@ -1836,10 +2000,13 @@ function GroupDetail({ groupId, live = false }) {
       )}
 
       {canEditPercent && (
-        <IndividualPercentDialog
+        <TeacherShareDialog
           key={`percent-${percentKey}`}
+          mode="individual"
           open={percentOpen}
           group={group}
+          studentName={group.individualStudent?.fullName}
+          price={monthlyFee}
           onClose={() => setPercentOpen(false)}
           onSaved={(data) =>
             setGroup((prev) =>
