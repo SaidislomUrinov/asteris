@@ -68,6 +68,12 @@ app.use(errorHandler);
 
 const PORT = env.PORT;
 
+// Kutilmagan, ushlanmagan promise xatosi (masalan Redis uzilganda
+// `await`siz chaqirilgan buyruq) butun worker'ni yiqitmasin — logga yoziladi.
+process.on("unhandledRejection", (reason) => {
+  console.error("unhandledRejection:", reason?.stack || reason);
+});
+
 const start = async () => {
   const server = http.createServer(app);
 

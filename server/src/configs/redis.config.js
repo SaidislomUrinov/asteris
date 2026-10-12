@@ -8,7 +8,12 @@ const redis = new Redis({
   db: env.REDIS_DB,
   keyPrefix: env.REDIS_KEY_PREFIX,
   retryStrategy: (times) => Math.min(times * 200, 5000),
-  maxRetriesPerRequest: null,
+  // Redis uzilganda buyruq ~1 soniyada xato bilan qaytadi. Avval `null` edi —
+  // buyruqlar Redis qaytguncha cheksiz kutardi va har so'rov (auth Redis'ni
+  // o'qiydi) osilib qolardi, navbat esa xotirada o'sardi.
+  maxRetriesPerRequest: 2,
+  // Ulanish bor-u Redis javob bermasa ham so'rov osilib qolmasin.
+  commandTimeout: 5000,
   enableReadyCheck: true,
 });
 

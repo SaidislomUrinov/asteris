@@ -150,23 +150,50 @@ const socketStatus = () => {
 };
 
 // ---- Storage ----
-const dirUsage = (dir) => {
+// Asinxron yurish — avval readdirSync/statSync edi va har daqiqada
+// (healthCheck) + admin sahifasida har 10s event loop'ni to'xtatardi;
+// minglab o'quvchi rasmida bu worker API'ga javob bermay qolardi.
+const dirUsage = async (dir) => {
   let usedBytes = 0;
   let filesCount = 0;
 
-  const walk = (current) => {
-    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+  const walk = async (current) => {
+    for (const entry of await fs.promises.readdir(current, { withFileTypes: true })) {
       const full = path.join(current, entry.name);
-      if (entry.isDirectory()) walk(full);
+      if (entry.isDirectory()) await walk(full);
       else {
-        usedBytes += fs.statSync(full).size;
-        filesCount++;
+        try {
+          usedBytes += (await fs.promises.stat(full)).size;
+          filesCount++;
+        } catch {
+          // yurish paytida o'chirilgan fayl
+        }
       }
     }
   };
 
-  walk(dir);
+  await walk(dir);
   return { usedBytes, filesCount };
+};
+
+// Hajm sekin o'zgaradi — natija 10 daqiqa keshlanadi, parallel so'rovlar
+// bitta yurishni kutadi.
+const DIR_USAGE_TTL_MS = 10 * 60 * 1000;
+let dirUsageCache = null;
+let dirUsagePending = null;
+const cachedDirUsage = async (dir) => {
+  if (dirUsageCache && Date.now() - dirUsageCache.at < DIR_USAGE_TTL_MS) return dirUsageCache.value;
+  if (!dirUsagePending) {
+    dirUsagePending = dirUsage(dir)
+      .then((value) => {
+        dirUsageCache = { value, at: Date.now() };
+        return value;
+      })
+      .finally(() => {
+        dirUsagePending = null;
+      });
+  }
+  return dirUsagePending;
 };
 
 const storageStatus = async () => {
@@ -182,7 +209,7 @@ const storageStatus = async () => {
   try {
     if (!fs.existsSync(UPLOAD_DIR)) return result;
 
-    const { usedBytes, filesCount } = dirUsage(UPLOAD_DIR);
+    const { usedBytes, filesCount } = await cachedDirUsage(UPLOAD_DIR);
     result.usedMb = mb(usedBytes);
     result.filesCount = filesCount;
     result.status = "healthy";

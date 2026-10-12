@@ -175,10 +175,18 @@ const initIo = async (httpServer) => {
     transports: ["websocket"],
   });
 
-  const subClient = redis.duplicate();
-  await Promise.all([waitReady(redis), waitReady(subClient)]);
+  // Adapter o'z ulanishlarida: u `publish`ni kutmasdan chaqiradi, shuning
+  // uchun asosiy klientdagi tez-xato sozlamasi (redis.config.js) bu yerda
+  // ushlanmagan rejection bo'lib worker'ni yiqitardi. Bu yerda buyruq
+  // Redis qaytguncha navbatda kutadi va hodisa keyin yetkaziladi.
+  const pubClient = redis.duplicate({ maxRetriesPerRequest: null, commandTimeout: undefined });
+  const subClient = redis.duplicate({ maxRetriesPerRequest: null, commandTimeout: undefined });
+  [pubClient, subClient].forEach((c) =>
+    c.on("error", (err) => console.error(`Redis adapter error (pid: ${process.pid}):`, err.message)),
+  );
+  await Promise.all([waitReady(pubClient), waitReady(subClient)]);
 
-  rootIo.adapter(createAdapter(redis, subClient));
+  rootIo.adapter(createAdapter(pubClient, subClient));
   console.log(`Worker ${process.pid} initialized`);
 
   // Client ilovasi (Boshliq + Hodim) shu namespace'ga ulanadi — client.js'dagi
