@@ -7,7 +7,7 @@ import { getTashkentNow } from "../../utils/schedule";
 import { api } from "../../utils/fetching";
 import { errorMsg } from "../../utils/alert";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
-import IndBadge from "../../ui/IndBadge";
+import ShareChip from "../../ui/ShareChip";
 
 const TICK_MS = 30000;
 const CARD_WIDTH = 224; // w-56
@@ -63,7 +63,7 @@ function LessonCard({ lesson, cardRef, onClick, t, navigate }) {
           {lesson.startTime}–{lesson.endTime}
         </span>
         {lesson.isIndividual && (
-          <IndBadge className="ml-auto" title={`${t("individual.badgeTitle")} · ${lesson.subjectName}`} />
+          <ShareChip individual className="ml-auto" title={`${t("individual.badgeTitle")} · ${lesson.subjectName}`} />
         )}
       </div>
       <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">

@@ -46,8 +46,8 @@ import ExportExcelButton from "../../ui/ExportExcelButton";
 import InfoCard, { InfoMeta } from "../../ui/InfoCard";
 import StudentPhotoAvatar from "../../ui/StudentPhotoAvatar";
 import MetricCard from "../../ui/MetricCard";
-import PercentChip from "../../ui/PercentChip";
-import EntryPercentDialog from "../Groups/EntryPercentDialog";
+import ShareChip from "../../ui/ShareChip";
+import TeacherShareDialog from "../Groups/TeacherShareDialog";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import useFeature from "../../hooks/useFeature";
 import useCan from "../../hooks/useCan";
@@ -125,7 +125,7 @@ function StudentDetail() {
   // { groupEntryId, payment } — "Oyni o'zgartirish" (API_CONTRACT_payment_move_month.md)
   const [moveTarget, setMoveTarget] = useState(null);
   const moveTargetView = useClosingValue(moveTarget);
-  // "Alohida foiz" (docs/API_CONTRACT_entry_teacher_percent.md §4) — moliyaviy:
+  // "O'qituvchi ulushi" (docs/API_CONTRACT_entry_teacher_percent.md §4) — moliyaviy:
   // o'qituvchi/yordamchiga ko'rinmaydi; tahrir Boshliq yoki `group:update`li hodim.
   const { authType, role } = useSelector((e) => e.user);
   const isTeachingRole = authType === "staff" && ["teacher", "assistant"].includes(role);
@@ -520,10 +520,7 @@ function StudentDetail() {
                         {groupLabel(entry.group)}
                       </p>
                       {!isTeachingRole && entry.teacherPercent != null && (
-                        <PercentChip
-                          percent={entry.teacherPercent}
-                          title={t("entryPercent.chipTooltip", { p: entry.teacherPercent })}
-                        />
+                        <ShareChip percent={entry.teacherPercent} />
                       )}
                     </div>
                     <Chip
@@ -560,12 +557,12 @@ function StudentDetail() {
                               onClick: () => setOpeningTarget(entry),
                             }]
                           : []),
-                        // "Alohida foiz" — faqat oddiy guruhdagi faol a'zolik.
+                        // "O'qituvchi ulushi" — faqat oddiy guruhdagi faol a'zolik.
                         ...(entry.status === "active" &&
                         canEditEntryPercent &&
                         groupMap[entry.group]?.kind !== "individual"
                           ? [{
-                              label: t("entryPercent.menu"),
+                              label: t("teacherShare.title"),
                               icon: HiReceiptPercent,
                               iconClass: "bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400",
                               onClick: () => {
@@ -787,11 +784,13 @@ function StudentDetail() {
       <ReceiptPromptDialog open={!!receipt} receipt={receipt} onClose={() => setReceipt(null)} />
 
       {entryPercentView && (
-        <EntryPercentDialog
+        <TeacherShareDialog
           key={`entry-percent-${entryPercentKey}`}
+          mode="entry"
           open={!!entryPercentTarget}
           studentId={id}
-          studentName={groupLabel(entryPercentView.group)}
+          studentName={student.fullName}
+          caption={groupLabel(entryPercentView.group)}
           entry={entryPercentView}
           onClose={() => setEntryPercentTarget(null)}
           onSaved={applyEntryPercent}

@@ -113,14 +113,18 @@ const sumMonthPaymentsByGroup = async (groupIds, month) => {
 
 // O'qituvchining individual o'quvchilari ulushi — oylik turidan (fiks/foiz/
 // belgilanmagan) qat'i nazar `base` ustiga qo'shiladi. Har guruh o'z
-// `teacherPercent`i bilan, guruh foizidan MUSTAQIL.
+// `teacherPercent`i bilan, guruh foizidan MUSTAQIL. Arxivlangan (isDeleted)
+// guruhlar ham olinadi: to'langan oy oyligida summa joyida qoladi, keyingi
+// oylarda to'lov bo'lmagani uchun o'zi tushib qoladi (paymentSalaryDelta).
 const individualOf = async (staff, month) => {
   const groups = await Group.find(
-    { client: staff.client, center: staff.center, isDeleted: false, kind: "individual", teacher: staff._id },
-    { _id: 1, teacherPercent: 1 },
+    { client: staff.client, center: staff.center, kind: "individual", teacher: staff._id },
+    { _id: 1, teacherPercent: 1, isDeleted: 1 },
   );
   const sums = await sumMonthPaymentsByGroup(groups.map((g) => g._id), month);
   const items = groups
+    // Arxivlangan guruh faqat shu oyda to'lovi bo'lsa ko'rinadi.
+    .filter((g) => !g.isDeleted || (sums[String(g._id)]?.total || 0) > 0)
     .map((g) => {
       const row = sums[String(g._id)] || { total: 0, studentName: "" };
       const paymentsTotal = Math.max(0, row.total);

@@ -201,7 +201,7 @@ function IndividualDialog({ open, onClose, centers = [], subjects = [], teachers
           />
           <Input
             type="number"
-            label={t("individual.percent")}
+            label={t("teacherShare.percent")}
             placeholder="50"
             required
             min={0}

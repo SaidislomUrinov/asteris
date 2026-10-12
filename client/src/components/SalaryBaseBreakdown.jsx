@@ -1,10 +1,11 @@
 import { useTranslation } from "react-i18next";
+import { HiMiniUser } from "react-icons/hi2";
 import NumberText from "../ui/NumberText";
 import { maskMoney } from "../utils/moneyFormat";
 
 /**
  * "Hisoblangan oylik" va uning tarkibi: asosiy qism (fiks yoki guruhlardan %)
- * + individual o'quvchilar + alohida foizli o'quvchilar
+ * + "O'qituvchi ulushi" (individual va alohida foizli o'quvchilar birga)
  * (docs/API_CONTRACT_individual_students.md, API_CONTRACT_entry_teacher_percent.md).
  * Server `base` ga ikkalasini allaqachon qo'shgan — bu yerda faqat tarkibi.
  * Individual/alohida foiz bo'lmasa oddiy bitta qator (avvalgi LedgerRow kabi).
@@ -33,27 +34,28 @@ function SalaryBaseBreakdown({ salary, hidden = false, onlyIfExtras = false, cla
         ? t("salary.breakdown.mainPercent", { p: salary.percent ?? salary.staff?.salaryValue ?? 0 })
         : t("salary.breakdown.main");
 
+  // Individual + alohida foiz — bitta "O'qituvchi ulushi" bo'limi
+  // (docs/API_CONTRACT_teacher_share_ui.md §5).
+  const shareItems = [
+    ...(individual?.items || []).map((it) => ({
+      key: it.groupId,
+      text: [it.studentName, t("individual.label"), `${it.percent}%`].join(" · "),
+      amount: it.amount,
+    })),
+    ...(custom?.items || []).map((it) => ({
+      key: it.groupEntryId || `${it.groupId}-${it.studentName}`,
+      text: [it.studentName, it.groupLabel, `${it.percent}%`].filter(Boolean).join(" · "),
+      amount: it.amount,
+    })),
+  ];
+
   const parts = [
     { key: "main", label: mainLabel, amount: mainBase, items: [] },
-    individual && {
-      key: "individual",
-      label: t("salary.breakdown.individual", { count: individual.items.length }),
-      amount: individual.amount,
-      items: individual.items.map((it) => ({
-        key: it.groupId,
-        text: `${it.studentName} · ${it.percent}%`,
-        amount: it.amount,
-      })),
-    },
-    custom && {
-      key: "custom",
-      label: t("salary.breakdown.custom", { count: custom.items.length }),
-      amount: custom.amount,
-      items: custom.items.map((it) => ({
-        key: it.groupEntryId || `${it.groupId}-${it.studentName}`,
-        text: [it.studentName, it.groupLabel, `${it.percent}%`].filter(Boolean).join(" · "),
-        amount: it.amount,
-      })),
+    hasExtras && {
+      key: "share",
+      label: t("teacherShare.salaryLine", { count: shareItems.length }),
+      amount: (individual?.amount || 0) + (custom?.amount || 0),
+      items: shareItems,
     },
   ].filter(Boolean);
 
@@ -68,7 +70,12 @@ function SalaryBaseBreakdown({ salary, hidden = false, onlyIfExtras = false, cla
           {parts.map((part) => (
             <li key={part.key} className="flex flex-col gap-1 min-w-0">
               <div className="flex items-center justify-between gap-3 min-w-0">
-                <span className="truncate text-[13px] text-slate-600 dark:text-slate-300">{part.label}</span>
+                <span className="inline-flex items-center gap-1.5 min-w-0 text-[13px] text-slate-600 dark:text-slate-300">
+                  {part.key === "share" && (
+                    <HiMiniUser className="shrink-0 text-violet-500 dark:text-violet-400" />
+                  )}
+                  <span className="truncate">{part.label}</span>
+                </span>
                 <NumberText className="shrink-0 text-[13px] text-slate-700 dark:text-slate-200">
                   {maskMoney(part.amount || 0, hidden)}
                 </NumberText>

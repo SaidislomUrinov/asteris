@@ -31,7 +31,7 @@ import { getTashkentNow, toMinutes } from "../../utils/schedule";
 import { api } from "../../utils/fetching";
 import { errorMsg } from "../../utils/alert";
 import { maskMoney } from "../../utils/moneyFormat";
-import IndBadge from "../../ui/IndBadge";
+import ShareChip from "../../ui/ShareChip";
 
 // Dars holati — chap rangli chegara va kichik yorliq uchun. Reception uchun
 // eng muhim savol "hozir nima bo'layapti", shuning uchun bo'layotgan dars
@@ -300,7 +300,7 @@ function ReceptionHome() {
                         <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">
                           {(g.isIndividual && g.studentName) || g.subjectName || subjectMap[g.subject] || "?"}
                         </span>
-                        {g.isIndividual && <IndBadge title={`${t("individual.badgeTitle")} · ${g.subjectName || ""}`} />}
+                        {g.isIndividual && <ShareChip individual title={`${t("individual.badgeTitle")} · ${g.subjectName || ""}`} />}
                       </span>
                       <span className="text-xs text-slate-400 dark:text-slate-500 truncate">
                         {g.teacherName || "—"} · {g.roomName || roomMap[g.room] || "—"}

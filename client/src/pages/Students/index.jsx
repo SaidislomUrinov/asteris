@@ -12,7 +12,7 @@ import {
   HiXMark,
 } from "react-icons/hi2";
 import Avatar from "../../ui/Avatar";
-import IndBadge from "../../ui/IndBadge";
+import ShareChip from "../../ui/ShareChip";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
 import Chip from "../../ui/Chip";
@@ -297,7 +297,7 @@ function Students() {
                 <p className="font-semibold text-slate-800 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate">
                   {row.fullName}
                 </p>
-                {row.isIndividual && <IndBadge title={individualTitle(row)} />}
+                {row.isIndividual && <ShareChip individual title={individualTitle(row)} />}
               </div>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{row.phone}</p>
             </div>
@@ -383,7 +383,7 @@ function Students() {
         >
           <Avatar user={{ _id: row._id, name: row.fullName, avatar: row.photo }} size={32} />
           <span className="whitespace-nowrap">{row.fullName}</span>
-          {row.isIndividual && <IndBadge title={individualTitle(row)} />}
+          {row.isIndividual && <ShareChip individual title={individualTitle(row)} />}
         </span>
       ),
     },

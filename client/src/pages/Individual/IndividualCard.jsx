@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { HiBookOpen, HiHome, HiOutlineClock, HiUser } from "react-icons/hi2";
 import Avatar from "../../ui/Avatar";
-import IndBadge from "../../ui/IndBadge";
+import ShareChip from "../../ui/ShareChip";
 import ProgressBar from "../../ui/ProgressBar";
 
 function Meta({ icon, children }) {
@@ -37,7 +37,7 @@ function IndividualCard({ group, subjectName, teacherName, roomName, showFinance
       onClick={onClick}
       className="group relative flex flex-col h-full w-full overflow-hidden rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-6px_rgba(15,23,42,0.12)] dark:hover:shadow-none hover:border-slate-300 dark:hover:border-night-600"
     >
-      <span className="absolute inset-y-0 left-0 w-1 bg-fuchsia-400" />
+      <span className="absolute inset-y-0 left-0 w-1 bg-violet-400 dark:bg-violet-500" />
 
       <div className="flex flex-col gap-3.5 p-5 pl-6 flex-1">
         <div className="flex items-start gap-3">
@@ -50,7 +50,7 @@ function IndividualCard({ group, subjectName, teacherName, roomName, showFinance
               <h3 className="text-lg font-bold leading-tight text-slate-900 dark:text-slate-100 truncate">
                 {student.fullName || "—"}
               </h3>
-              <IndBadge title={t("individual.badgeTitle")} />
+              <ShareChip individual />
             </div>
             <Meta icon={<HiBookOpen />}>{subjectName || "—"}</Meta>
           </div>
@@ -99,12 +99,7 @@ function IndividualCard({ group, subjectName, teacherName, roomName, showFinance
             {roomName && <Meta icon={<HiHome />}>{roomName}</Meta>}
           </div>
           {showFinance && group.teacherPercent != null && (
-            <span
-              title={t("individual.percentHint")}
-              className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold tabular-nums bg-slate-100 dark:bg-night-800 text-slate-600 dark:text-slate-300"
-            >
-              {group.teacherPercent}%
-            </span>
+            <ShareChip percent={group.teacherPercent} />
           )}
         </div>
       </div>

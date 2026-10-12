@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { HiCalendarDays, HiChevronRight, HiHome, HiUsers } from "react-icons/hi2";
 import { groupCode, lessonState } from "./lessonTime";
-import IndBadge from "../../ui/IndBadge";
+import ShareChip from "../../ui/ShareChip";
 
 const CARD = {
   ongoing: "border-blue-200 dark:border-blue-500/30 bg-blue-50/60 dark:bg-blue-500/15 hover:bg-blue-50 dark:hover:bg-blue-500/15",
@@ -83,7 +83,7 @@ function TodayLessons({ lessons, mins }) {
                       <span className="font-semibold text-slate-900 dark:text-slate-100 truncate">
                         {(g.isIndividual && g.studentName) || g.subject || g.label}
                       </span>
-                      {g.isIndividual && <IndBadge title={t("individual.badgeTitle")} />}
+                      {g.isIndividual && <ShareChip individual />}
                       {code && !g.isIndividual && (
                         <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-night-800 font-jet text-[11px] font-medium text-slate-500 dark:text-slate-400">
                           #{code}
