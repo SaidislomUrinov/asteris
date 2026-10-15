@@ -16,12 +16,24 @@ const actorSchema = new Schema(
   { _id: false },
 );
 
+// O'quvchining shu vazifa bo'yicha natijasi (API_CONTRACT_wecoin.md §1.1) —
+// o'qituvchi belgilaydi. Oy yakunida WECOIN hisobiga ham kiradi.
+const resultSchema = new Schema(
+  {
+    student: { type: Schema.Types.ObjectId, ref: "Student", required: true },
+    status: { type: String, enum: ["done", "partial", "missed"], required: true },
+    updatedAt: { type: Number, default: getNow },
+  },
+  { _id: false },
+);
+
 const schema = new Schema({
   client: { type: Schema.Types.ObjectId, ref: "Client", required: true },
   center: { type: Schema.Types.ObjectId, ref: "Center", required: true },
   group: { type: Schema.Types.ObjectId, ref: "Group", required: true },
   date: { type: String, required: true },
   text: { type: String, required: true, trim: true, maxlength: 2000 },
+  results: { type: [resultSchema], default: [] },
   // Kim yozgani — `collectedBy` naqshi (id + kind), refPath emas.
   createdBy: { type: actorSchema, default: () => ({}) },
   updatedBy: { type: actorSchema, default: () => ({}) },

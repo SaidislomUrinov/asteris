@@ -17,10 +17,10 @@ import { initials } from "../utils/format";
 import { haptic } from "../lib/telegram";
 import { photoSrc } from "../lib/studentPhoto";
 
-const MUTE_KEYS = ["attendance", "lessonFinished", "payment", "debt", "badge"];
+const MUTE_KEYS = ["attendance", "lessonFinished", "homeworkMissed", "payment", "debt", "badge"];
 // O'quvchiga davomat/to'lov/qarz xabarlari yuborilmaydi (kontrakt §5)
 // `badge` — yutuq nishonlari (TYPE_ROLES.badge = parent + student)
-const STUDENT_MUTE_KEYS = ["lessonFinished", "lessonReminder", "homework", "badge"];
+const STUDENT_MUTE_KEYS = ["lessonFinished", "lessonReminder", "homework", "homeworkMissed", "badge"];
 const ROLES = ["parent", "student"];
 const LANGS = [
   { value: "uz", label: "O'zbekcha" },

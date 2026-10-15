@@ -16,6 +16,7 @@ const PN_DEFAULT = {
   lessonFinished: { enabled: true, includeGrade: true },
   payment: { enabled: true },
   badge: { enabled: true },
+  homeworkMissed: { enabled: true },
   debt: { enabled: true, daysBefore: 3, daysAfter: [0, 3, 7, 14] },
   showGrades: true,
   quietHours: { from: "21:00", to: "08:00" },
@@ -32,6 +33,7 @@ const parentNotificationsDTO = (pn) => {
     },
     payment: { enabled: p.payment?.enabled ?? true },
     badge: { enabled: p.badge?.enabled ?? true },
+    homeworkMissed: { enabled: p.homeworkMissed?.enabled ?? true },
     debt: {
       enabled: p.debt?.enabled ?? true,
       daysBefore: p.debt?.daysBefore ?? PN_DEFAULT.debt.daysBefore,
@@ -65,6 +67,8 @@ const applyParentNotifications = (current, patch) => {
     next.attendance.enabled = pickBool(patch.attendance?.enabled, next.attendance.enabled);
   if (patch.payment !== undefined) next.payment.enabled = pickBool(patch.payment?.enabled, next.payment.enabled);
   if (patch.badge !== undefined) next.badge.enabled = pickBool(patch.badge?.enabled, next.badge.enabled);
+  if (patch.homeworkMissed !== undefined)
+    next.homeworkMissed.enabled = pickBool(patch.homeworkMissed?.enabled, next.homeworkMissed.enabled);
   if (patch.lessonFinished !== undefined) {
     next.lessonFinished.enabled = pickBool(patch.lessonFinished?.enabled, next.lessonFinished.enabled);
     next.lessonFinished.includeGrade = pickBool(patch.lessonFinished?.includeGrade, next.lessonFinished.includeGrade);

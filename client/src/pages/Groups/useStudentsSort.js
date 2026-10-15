@@ -16,9 +16,9 @@ export const SORT_OPTIONS = [
 ];
 
 // Saralash ishlaydigan tablar: "Umumiy", "Davomat" (oylik matritsa) va
-// "Baholar" — uchalasi ham bitta o'quvchilar ro'yxatini ko'rsatadi, shuning
+// "Baholar" (+ "Uyga vazifa" matritsasi) — hammasi ham bitta o'quvchilar ro'yxatini ko'rsatadi, shuning
 // uchun tanlangan tartib hammasida bir xil bo'lishi kerak.
-export const SORTABLE_TABS = ["general", "monthly", "grades"];
+export const SORTABLE_TABS = ["general", "monthly", "grades", "homework"];
 export const isSortableTab = (tab) => SORTABLE_TABS.includes(tab);
 
 /**

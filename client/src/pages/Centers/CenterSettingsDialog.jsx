@@ -43,6 +43,7 @@ const DEFAULT_PARENT_NOTIF = {
   lessonFinished: { enabled: true, includeGrade: true },
   payment: { enabled: true },
   badge: { enabled: true },
+  homeworkMissed: { enabled: true },
   debt: { enabled: true, daysBefore: 3, daysAfter: [0, 3, 7, 14] },
   showGrades: true,
   quietHours: { from: "21:00", to: "08:00" },
@@ -56,6 +57,7 @@ const mergeParentNotif = (raw = {}) => ({
   lessonFinished: { ...DEFAULT_PARENT_NOTIF.lessonFinished, ...raw.lessonFinished },
   payment: { ...DEFAULT_PARENT_NOTIF.payment, ...raw.payment },
   badge: { ...DEFAULT_PARENT_NOTIF.badge, ...raw.badge },
+  homeworkMissed: { ...DEFAULT_PARENT_NOTIF.homeworkMissed, ...raw.homeworkMissed },
   debt: { ...DEFAULT_PARENT_NOTIF.debt, ...raw.debt },
   quietHours: { ...DEFAULT_PARENT_NOTIF.quietHours, ...raw.quietHours },
 });
@@ -287,6 +289,13 @@ function CenterSettingsDialog({ open, onClose, centerId }) {
                   label={t("center.parentNotif.payment")}
                   checked={parentNotif.payment.enabled}
                   onChange={() => setPNSub("payment", { enabled: !parentNotif.payment.enabled })}
+                />
+                <SettingSwitch
+                  color="blue"
+                  disabled={pnOff}
+                  label={t("center.parentNotif.homeworkMissed")}
+                  checked={parentNotif.homeworkMissed.enabled}
+                  onChange={() => setPNSub("homeworkMissed", { enabled: !parentNotif.homeworkMissed.enabled })}
                 />
                 {hasFeature("gamification.badges") && (
                   <SettingSwitch

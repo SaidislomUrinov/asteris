@@ -4,6 +4,7 @@ const Homework = require("../models/Homework");
 const Group = require("../models/Group");
 const Staff = require("../models/Staff");
 const Client = require("../models/Client");
+const Student = require("../models/Student");
 const emit = require("../utils/emitter.util");
 const { log: auditLog } = require("../utils/audit.util");
 const { getNow, currentMonthString } = require("../utils/date.util");
@@ -49,10 +50,17 @@ const nameResolver = async (docs) => {
   return (by) => (by?.id ? map.get(String(by.id)) || "" : "");
 };
 
+const RESULT_STATUSES = ["done", "partial", "missed"];
+
+// `results[]` → { [studentId]: status } (frontend uchun qulay xarita).
+const resultsMap = (h) =>
+  Object.fromEntries((h.results || []).map((r) => [String(r.student), r.status]));
+
 const DTO = (h, nameOf) => ({
   _id: String(h._id),
   date: h.date,
   text: h.text,
+  results: resultsMap(h),
   updatedAt: h.updatedAt,
   updatedBy: {
     id: h.updatedBy?.id ? String(h.updatedBy.id) : null,
@@ -65,6 +73,83 @@ const DTO = (h, nameOf) => ({
 const actorRef = (actor) => ({ id: actor?.id || null, kind: actor?.kind === "staff" ? "staff" : "client" });
 
 module.exports = {
+  RESULT_STATUSES,
+
+  // PUT /homework/:groupId/:date/results (API_CONTRACT_wecoin.md §2.2) — har
+  // o'quvchiga Bajardi / Oxiriga yetkazmadi / Bajarmadi. `status: null` — olib tashlash.
+  setResults: async (clientId, groupId, date, body, actor, scope = {}) => {
+    if (!isValidDate(date)) throw new Error("homework.invalidDate");
+    if (date > moment.tz(TZ).format("YYYY-MM-DD")) throw new Error("homework.resultFuture");
+    const list = body?.results;
+    if (!Array.isArray(list) || !list.length || list.length > 500) throw new Error("homework.invalidResults");
+    const wanted = new Map();
+    for (const r of list) {
+      if (!r || !isValidObjectId(r.student)) throw new Error("homework.invalidResults");
+      if (r.status !== null && !RESULT_STATUSES.includes(r.status)) throw new Error("homework.invalidStatus");
+      wanted.set(String(r.student), r.status);
+    }
+
+    const group = await assertGroup(clientId, groupId, scope);
+    const doc = await Homework.findOne({ group: group._id, date, isDeleted: false });
+    if (!doc) throw new Error("homework.notFound");
+
+    // Faqat shu guruhda a'zoligi bor (yoki bo'lgan) o'quvchilar.
+    const ids = [...wanted.keys()];
+    const members = await Student.countDocuments({
+      _id: { $in: ids },
+      isDeleted: false,
+      groups: { $elemMatch: { group: group._id, client: clientId } },
+    });
+    if (members !== ids.length) throw new Error("homework.studentNotInGroup");
+
+    const before = resultsMap(doc);
+    const now = getNow();
+    const next = new Map((doc.results || []).map((r) => [String(r.student), r]));
+    for (const [id, status] of wanted) {
+      if (status === null) next.delete(id);
+      else if (next.get(id)?.status !== status) next.set(id, { student: id, status, updatedAt: now });
+    }
+    doc.results = [...next.values()];
+    await doc.save();
+    const after = resultsMap(doc);
+
+    const changes = ids
+      .filter((id) => (before[id] || null) !== (after[id] || null))
+      .map((id) => ({ field: `results.${id}`, from: before[id] || null, to: after[id] || null }));
+    if (changes.length) {
+      await auditLog({
+        actor,
+        client: clientId,
+        center: group.center,
+        action: "homework:results",
+        entity: { type: "Homework", id: doc._id, label: date },
+        changes,
+        meta: { groupId: String(group._id), date },
+      });
+      emit.toCenter(group.client, group.center, "homework:results", { groupId: String(group._id), date, results: after });
+      // "Bajarmadi"ga o'tganlar — ota-ona va o'quvchiga xabar (API_CONTRACT_homework_missed.md).
+      for (const id of ids) {
+        if (after[id] === "missed" && before[id] !== "missed")
+          void parentNotification.onHomeworkMissed({ homeworkId: String(doc._id), studentId: id });
+      }
+    }
+    return { date, results: after };
+  },
+
+  // GET /homework/:groupId/latest — guruh detalidagi "Oxirgi vazifa" kartasi
+  // (API_CONTRACT_group_latest_homework.md). Bugungi yoki undan oldingi eng
+  // so'nggi sana; oldindan yozilgan kelgusi kunlar hisobga olinmaydi.
+  latestByGroup: async (clientId, groupId, scope = {}) => {
+    await assertGroup(clientId, groupId, scope);
+    const today = moment.tz(TZ).format("YYYY-MM-DD");
+    const item = await Homework.findOne({ group: groupId, isDeleted: false, date: { $lte: today } })
+      .sort({ date: -1 })
+      .lean();
+    if (!item) return { item: null };
+    const nameOf = await nameResolver([item]);
+    return { item: DTO(item, nameOf) };
+  },
+
   // GET /homework/:groupId?month=YYYY-MM
   listByGroup: async (clientId, groupId, month, scope = {}) => {
     await assertGroup(clientId, groupId, scope);
@@ -116,7 +201,7 @@ module.exports = {
         meta: { groupId: String(group._id), date },
       });
       const nameOf = await nameResolver([existing]);
-      emit(`center:${group.center}`, "homework:updated", {
+      emit.toCenter(group.client, group.center, "homework:updated", {
         groupId: String(group._id),
         date,
         text: null,
@@ -173,7 +258,7 @@ module.exports = {
 
     const nameOf = await nameResolver([doc]);
     const item = DTO(doc, nameOf);
-    emit(`center:${group.center}`, "homework:updated", {
+    emit.toCenter(group.client, group.center, "homework:updated", {
       groupId: String(group._id),
       date,
       text,

@@ -38,6 +38,8 @@ const schema = new Schema({
     // O'quvchi roli uchun (darsdan 1 soat oldin eslatma, uyga vazifa).
     lessonReminder: { type: Boolean, default: false },
     homework: { type: Boolean, default: false },
+    // Vazifa "Bajarmadi" (ikkala rol, API_CONTRACT_homework_missed.md).
+    homeworkMissed: { type: Boolean, default: false },
     // Oylik yutuq nishonlari (ikkala rol).
     badge: { type: Boolean, default: false },
   },

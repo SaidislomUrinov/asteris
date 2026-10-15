@@ -19,10 +19,23 @@ router.use(teacherScope);
 router.use(requireTariffFeature("homework.manage"));
 
 router.get(
+  "/:groupId/latest",
+  requireTenantPermission("attendance:view"),
+  requireTeacherGroup(),
+  homeworkController.latestByGroup,
+);
+router.get(
   "/:groupId",
   requireTenantPermission("attendance:view"),
   requireTeacherGroup(),
   homeworkController.listByGroup,
+);
+// Natijalar (API_CONTRACT_wecoin.md §2.2) — `/:groupId/:date` dan OLDIN.
+router.put(
+  "/:groupId/:date/results",
+  requireTenantPermission("attendance:create"),
+  requireTeacherGroup(),
+  homeworkController.setResults,
 );
 router.put(
   "/:groupId/:date",

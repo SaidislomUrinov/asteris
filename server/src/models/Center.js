@@ -17,6 +17,8 @@ const parentNotificationsSchema = new Schema(
     payment: { enabled: { type: Boolean, default: true } },
     // Oylik yutuq nishonlari xabari (API_CONTRACT_badges_monthly_rank.md §C).
     badge: { enabled: { type: Boolean, default: true } },
+    // Vazifa "Bajarmadi" xabari (API_CONTRACT_homework_missed.md).
+    homeworkMissed: { enabled: { type: Boolean, default: true } },
     debt: {
       enabled: { type: Boolean, default: true },
       daysBefore: { type: Number, default: 3, min: 0, max: 14 },

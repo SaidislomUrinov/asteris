@@ -9,6 +9,16 @@ const scopeOf = (req) => ({
 });
 
 module.exports = {
+  // GET /homework/:groupId/latest
+  latestByGroup: async (req, res, next) => {
+    try {
+      const data = await homeworkService.latestByGroup(req.client._id, req.params.groupId, scopeOf(req));
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   // GET /homework/:groupId?month=YYYY-MM
   listByGroup: async (req, res, next) => {
     try {
@@ -31,6 +41,22 @@ module.exports = {
         scopeOf(req),
       );
       return res.send({ ok: true, data: item, msg: deleted ? "homework.deleted" : "homework.saved" });
+    } catch (error) {
+      next(error);
+    }
+  },
+  // PUT /homework/:groupId/:date/results — body { results: [{ student, status }] }
+  setResults: async (req, res, next) => {
+    try {
+      const data = await homeworkService.setResults(
+        req.client._id,
+        req.params.groupId,
+        req.params.date,
+        req.body,
+        buildActor(req),
+        scopeOf(req),
+      );
+      return res.send({ ok: true, data, msg: "homework.resultsSaved" });
     } catch (error) {
       next(error);
     }

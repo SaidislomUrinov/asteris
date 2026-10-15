@@ -68,10 +68,14 @@ import GradeCell from "./GradeCell";
 import useTodayGrades from "./useTodayGrades";
 import SyllabusTab from "./SyllabusTab";
 import HomeworkTab from "./HomeworkTab";
+import LatestHomeworkCard from "./LatestHomeworkCard";
+import GroupSectionTabs from "./GroupSectionTabs";
 import TodayLessonCard from "./TodayLessonCard";
 import GroupHeader from "./GroupHeader";
 import ShareChip from "../../ui/ShareChip";
 import TeacherShareDialog from "./TeacherShareDialog";
+import CoinsSwitchRow from "../Individual/CoinsSwitchRow";
+import useCoinCenters from "../../hooks/useCoinCenters";
 import HeaderCard from "./HeaderCard";
 import AttendanceStatusCell, { DebtPill } from "./AttendanceStatusCell";
 import { useLessonSchedule } from "./useLessonSchedule";
@@ -219,6 +223,8 @@ function GroupDetail({ groupId, live = false }) {
   // Individual guruh: o'qituvchi foizini tahrirlash oynasi (API_CONTRACT_individual_students.md §4).
   const [percentOpen, setPercentOpen] = useState(false);
   const [percentKey, setPercentKey] = useState(0);
+  const [coinsSaving, setCoinsSaving] = useState(false);
+  const coinCenters = useCoinCenters();
   const [activateKey, setActivateKey] = useState(0);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleKey, setScheduleKey] = useState(0);
@@ -843,6 +849,22 @@ function GroupDetail({ groupId, live = false }) {
   const isIndividual = group.kind === "individual";
   // Foiz — moliyaviy: faqat Boshliq/Resepshin (o'qituvchiga `null` keladi).
   const canEditPercent = isIndividual && !isTeacher && (authType === "owner" || can("group:update"));
+  // WECOIN switch — faqat filialda WECOIN ishlasa (tarif + sozlama).
+  const showCoinsSwitch = canEditPercent && coinCenters.has(group?.center);
+  const toggleCoins = async (coinsEnabled) => {
+    try {
+      setCoinsSaving(true);
+      const res = await api.patch(`/groups/${group._id}/individual`, { coinsEnabled });
+      const { ok, data, msg } = res.data;
+      if (!ok) throw new Error(msg);
+      setGroup((prev) => (prev ? { ...prev, coinsEnabled: !!data?.coinsEnabled } : prev));
+      successMsg("individual.coinsSaved");
+    } catch (error) {
+      errorMsg(error.message);
+    } finally {
+      setCoinsSaving(false);
+    }
+  };
   // O'quvchi a'zoligiga "O'qituvchi ulushi" — oddiy guruhda, Boshliq/Resepshin
   // (`group:update`), o'qituvchi/yordamchiga yo'q (moliyaviy).
   const canEditEntryPercent = !isIndividual && !isTeacher && (authType === "owner" || can("group:update"));
@@ -1031,6 +1053,7 @@ function GroupDetail({ groupId, live = false }) {
   const canAddStudents = group.status !== "finished" && can("student:create") && !isIndividual;
   const canGradeToday = canWriteStudy && can("attendance:create") && group.status === "active" && !!todayLesson;
   const VIEW_ICONS = {
+    general: HiUsers,
     monthly: HiTableCells,
     grades: HiStar,
     homework: HiClipboardDocumentList,
@@ -1038,7 +1061,12 @@ function GroupDetail({ groupId, live = false }) {
     stats: HiChartBarSquare,
   };
   // simpleView: ekranda faqat "Faollashtirish" + "O'quvchi qo'shish";
-  // "Tahrirlash", bo'limlar va import — "⋮" ichida, xavfli amallar oxirida.
+  // "Tahrirlash", Statistika va import — "⋮" ichida, xavfli amallar oxirida.
+  // Davomat/Baholar/Vazifa/Reja — sarlavha ostidagi tab qatorida.
+  const hasHomeworkTab = studentTabs.some((tab) => tab.key === "homework");
+  const sectionTabs = studentTabs
+    .filter((tab) => tab.key !== "stats" || activeTab === "stats")
+    .map((tab) => ({ ...tab, icon: VIEW_ICONS[tab.key] }));
   const shownPrimary = simpleView
     ? [
         ...primaryActions.filter((a) => a.key === "activate"),
@@ -1063,7 +1091,7 @@ function GroupDetail({ groupId, live = false }) {
     ? [
         ...topActions.filter((a) => a.key === "edit"),
         ...studentTabs
-          .filter((tab) => tab.key !== "general")
+          .filter((tab) => tab.key === "stats")
           .map((tab) => ({
             key: `view-${tab.key}`,
             icon: VIEW_ICONS[tab.key],
@@ -1163,6 +1191,11 @@ function GroupDetail({ groupId, live = false }) {
                 <HiPencilSquare className="text-sm" />
                 {t("individual.editShort")}
               </button>
+              {showCoinsSwitch && (
+                <div className="mt-1 pt-2 border-t border-slate-100 dark:border-night-700">
+                  <CoinsSwitchRow compact checked={!!group.coinsEnabled} disabled={coinsSaving} onChange={toggleCoins} />
+                </div>
+              )}
             </HeaderCard>
           ) : null
         }
@@ -1228,7 +1261,7 @@ function GroupDetail({ groupId, live = false }) {
               accent="emerald"
             />
           ) : showPlans ? (
-            <TodayLessonCard todayLesson={schedule.todayLesson} nextLesson={schedule.nextLesson} />
+            <TodayLessonCard todayLesson={schedule.todayLesson} nextLesson={schedule.nextLesson} group={group} />
           ) : null
         }
         canEditTelegram={canEditTelegram}
@@ -1240,22 +1273,10 @@ function GroupDetail({ groupId, live = false }) {
       {/* Yagona tab qatori: o'quvchilar ro'yxati, davomat, baholar, vazifa,
           dastur va statistika (avval ikki qavat edi: O'quvchilar|Statistika
           + ichki tablar). */}
+      {hasHomeworkTab && <LatestHomeworkCard groupId={id} onOpen={() => setStudentTab("homework")} />}
+
       {simpleView ? (
-        activeTab !== "general" && (
-          <div className="flex items-center gap-3 min-w-0 shrink-0">
-            <button
-              type="button"
-              onClick={() => setStudentTab("general")}
-              className="inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap h-9 pl-2.5 pr-3.5 rounded-xl bg-slate-100 dark:bg-night-800 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-night-700 cursor-pointer transition-colors"
-            >
-              <HiArrowLeft className="text-base shrink-0" />
-              {t("group.tabStudentsSection")}
-            </button>
-            <span className="font-space text-base font-bold text-slate-900 dark:text-slate-100 truncate">
-              {studentTabs.find((tab) => tab.key === activeTab)?.label}
-            </span>
-          </div>
-        )
+        <GroupSectionTabs tabs={sectionTabs} active={activeTab} onChange={setStudentTab} />
       ) : (
       <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-night-800 max-w-full overflow-x-auto self-start shrink-0">
         {studentTabs.map((tab) => (
@@ -1430,8 +1451,14 @@ function GroupDetail({ groupId, live = false }) {
           <HomeworkTab
             groupId={id}
             canWrite={can("attendance:create") && group.status === "active"}
+            canImport={can("lesson:view") && hasFeature("lesson.planning")}
             lessonByDate={schedule.lessonByDate}
             extendTo={schedule.extendTo}
+            students={sortedStudents}
+            ranks={ranks}
+            onPhotoUpdated={(studentId, photo) =>
+              setStudents((prev) => prev.map((st) => (st._id === studentId ? { ...st, photo } : st)))
+            }
           />
         ) : activeTab === "plan" ? (
           <SyllabusTab
@@ -2068,6 +2095,7 @@ function GroupDetail({ groupId, live = false }) {
           centers={centers}
           groups={allGroups}
           subjects={subjects}
+          teachers={teachers}
           onClose={() => setTransferTarget(null)}
           onSaved={() => {
             fetchStudents();
