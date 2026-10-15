@@ -180,6 +180,9 @@ export const workerApi = {
   // Uyga vazifa (tarif `homework.manage`). Bo'sh matn = o'chirish (server).
   homework: (groupId, month) => wreq("get", `/homework/${groupId}`, { params: { month } }),
   setHomework: (groupId, date, text) => wreq("put", `/homework/${groupId}/${date}`, { body: { text } }),
+  // Natijalar: [{ student, status: "done"|"partial"|"missed"|null }] — null = olib tashlash.
+  setHomeworkResults: (groupId, date, results) =>
+    wreq("put", `/homework/${groupId}/${date}/results`, { body: { results } }),
 
   // Yutuqlar (tarif `gamification.badges`) — o'qituvchida faqat o'z guruhlari.
   studentBadges: (studentId) => wreq("get", `/badges/student/${studentId}`),

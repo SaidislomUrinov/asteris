@@ -12,14 +12,18 @@ import { haptic } from "../../lib/telegram";
 import { useWorker } from "../useWorker";
 import { useScopedLive } from "../useScopedLive";
 import { workerApi } from "../api";
-import { asErr, errText, tashkentMonth } from "../utils";
+import { asErr, errText, tashkentDate, tashkentMonth } from "../utils";
 import { MonthSwitch } from "./MonthSwitch";
 import { DateStrip } from "./DateStrip";
 import { HomeworkItem } from "./HomeworkItem";
+import { HomeworkResults } from "./HomeworkResults";
 import { LockNote } from "./LockNote";
 import { pickDate } from "./pickDate";
 
 const MAX_TEXT = 2000; // server homework.service MAX_TEXT
+
+const withResults = (data, date, results) =>
+  data ? { ...data, items: data.items.map((i) => (i.date === date ? { ...i, results: results || {} } : i)) } : data;
 
 // Oy: vazifalar + dars kunlari (dam olish/o'tkazilgan kunlarsiz).
 const loadMonth = async (groupId, month) => {
@@ -39,7 +43,7 @@ const loadMonth = async (groupId, month) => {
 // o'chirish (server qoidasi, ConfirmDialog bilan). Server ~2 daqiqa
 // debounce bilan o'quvchilarga Telegram orqali yuboradi. Yakunlangan
 // guruhda yozish yopiq (`homework.groupFinished`).
-export const HomeworkTab = ({ group, canWrite }) => {
+export const HomeworkTab = ({ group, canWrite, students = [], studentsState }) => {
   const { t } = useTranslation();
   const { readOnly } = useWorker();
   const [month, setMonth] = useState(tashkentMonth);
@@ -50,10 +54,13 @@ export const HomeworkTab = ({ group, canWrite }) => {
 
   const gid = String(group._id);
   const load = useCallback(() => loadMonth(group._id, month), [group._id, month]);
-  const { data, loading, error, reload } = useScopedLive(load, [load], {
-    events: ["homework:updated", "group:changed"],
+  const { data, loading, error, reload, mutate } = useScopedLive(load, [load], {
+    events: ["homework:updated", "homework:results", "group:changed"],
     match: (_ev, p) => p?.groupId === gid,
+    // Natija — refetchsiz joyida (boshqa qurilma yoki o'zimiz).
+    patch: (ev, p) => (ev === "homework:results" && p?.date ? (d) => withResults(d, p.date, p.results) : null),
   });
+  const onResultsSaved = (d, results) => mutate((cur) => withResults(cur, d, results));
 
   const days = data?.days || [];
   const date = pickDate(days, data?.today, selected);
@@ -145,6 +152,17 @@ export const HomeworkTab = ({ group, canWrite }) => {
                   </>
                 )}
               </Card>
+              {item && date <= (data.today || tashkentDate()) && (
+                <HomeworkResults
+                  group={group}
+                  date={date}
+                  results={item.results}
+                  students={students}
+                  studentsState={studentsState}
+                  writable={canWrite && !readOnly}
+                  onSaved={onResultsSaved}
+                />
+              )}
             </>
           )}
           <SectionLabel>{t("worker.homework.history")}</SectionLabel>

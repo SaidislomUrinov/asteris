@@ -166,7 +166,16 @@ export const GroupDetail = () => {
           canDeleteAny={isOwner || role === "teacher"}
         />
       );
-    else if (active === "homework") body = <HomeworkTab key={g._id} group={g} canWrite={can("attendance:create")} />;
+    else if (active === "homework")
+      body = (
+        <HomeworkTab
+          key={g._id}
+          group={g}
+          canWrite={can("attendance:create")}
+          students={students}
+          studentsState={{ allowed: listAllowed, pending: listPending, error: studentsReq.data ? null : studentsReq.error, reload: studentsReq.reload }}
+        />
+      );
     else if (active === "plan") body = <PlanTab key={g._id} group={g} />;
   }
 
