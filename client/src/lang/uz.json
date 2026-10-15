@@ -200,7 +200,7 @@
     "myPlans": "Dars rejalarim",
     "videoLessons": "Video qo'llanmalar",
     "individual": "Individual",
-    "coins": "WECOIN"
+    "coins": "Gamifikatsiya"
   },
   "report": {
     "revenue": "Tushum",
@@ -315,7 +315,9 @@
     "staffInfoTitle": "Ish jarayoningiz endi tizimda",
     "staffInfoDesc": "Davomat, guruhlar va vazifalaringiz — hammasi sizga berilgan ruxsatlar doirasida, realtime yangilanadi.",
     "introSeen": "Tanishuv yakunlandi",
-    "loginPlaceholder": "login"
+    "loginPlaceholder": "login",
+    "poweredBy": "Platforma:",
+    "brandRequired": "Markaz manzili orqali kiring"
   },
   "client": {
     "blocked": "Mijoz bloklangan, tizimga kira olmaysiz",
@@ -402,7 +404,9 @@
     "pdfConfidentialNote": "Ushbu hujjatni maxfiy saqlang. Parolni faqat hodimning o'ziga bering.",
     "salaryTypeNotInTariff": "Tanlangan oylik turi joriy tarifingizda mavjud emas",
     "groupCoins": "WECOIN va do'kon",
-    "actionCoinManage": "Boshqarish (qoidalar, mahsulot, buyurtma)"
+    "actionCoinManage": "Boshqarish (qoidalar, mahsulot, buyurtma)",
+    "centers": "Filiallar",
+    "address": "Manzil"
   },
   "certificateTemplate": {
     "title": "Sertifikat shablonlari",
@@ -626,6 +630,7 @@
     "paymentPenaltyAction": "To'lov/Jarima",
     "payAction": "Oylikni berish",
     "paid": "To'langan",
+    "forMonth": "{{month}} oyligi uchun",
     "transactionsMenu": "Tranzaksiyalar",
     "txTypeLabel": "Tranzaksiya turi",
     "amount": "Summa (so'm)",
@@ -1195,7 +1200,10 @@
       "activeIdle": "Start berilgan",
       "activeNow": "Hozir dars bo'lyabdi",
       "finished": "Yakunlangan",
-      "upcoming": "Yaqin orada"
+      "upcoming": "Yaqin orada",
+      "startsAt": "{{time}} da boshlanadi",
+      "todayDone": "Bugun o'tdi",
+      "tomorrow": "Ertaga"
     },
     "statTotal": "Jami guruhlar",
     "statLive": "Dars ketyapti",
@@ -1353,7 +1361,12 @@
     "lessonDate": "Sana",
     "lessonTime": "Vaqt",
     "lessonTopic": "Mavzu",
-    "lessonDetails": "Batafsil"
+    "lessonDetails": "Batafsil",
+    "section": {
+      "live": "Hozir darsda",
+      "today": "Bugun",
+      "other": "Boshqa kunlar"
+    }
   },
   "notification": {
     "title": "Bildirishnomalar",
@@ -1832,11 +1845,13 @@
     },
     "video": {
       "title": "Video qo'llanmalar",
-      "description": "«?» menyusidagi «Joriy sahifa videosi» — ochiq sahifaga mos qisqa video. Barcha videolar esa chap menyudagi «Video qo'llanmalar» bo'limida tartib bilan turadi."
+      "description": "«?» menyusidagi «Joriy sahifa videosi» — ochiq sahifaga mos qisqa video. Barcha videolar esa chap menyudagi «Video qo'llanmalar» bo'limida tartib bilan turadi.",
+      "descriptionMobile": "Yuqori o'ngdagi menyu (4 ta kvadrat) → «Qanday ishlaydi?» → «Joriy sahifa videosi» — ochiq sahifaga mos qisqa video. Barcha videolar chap menyudagi «Video qo'llanmalar» bo'limida."
     },
     "chat": {
       "title": "Yordam chati",
-      "description": "Savol yoki muammo bo'lsa, «?» menyusidagi Yordam chati orqali bizga yozing — javob shu yerda keladi."
+      "description": "Savol yoki muammo bo'lsa, «?» menyusidagi Yordam chati orqali bizga yozing — javob shu yerda keladi.",
+      "descriptionMobile": "Savol yoki muammo bo'lsa, yuqori o'ngdagi menyu (4 ta kvadrat) → «Yordam chati» orqali bizga yozing — javob shu yerda keladi."
     }
   },
   "tariffFeatures": {
@@ -2056,7 +2071,9 @@
       "empty": "Bu oyda vazifa yuborilmagan",
       "emptyHint": "«Vazifa yuborish» tugmasi orqali birinchi vazifani bering",
       "rate": "Bajarilish"
-    }
+    },
+    "openTab": "Jadvalga o'tish",
+    "author": "Kim yozdi"
   },
   "rank": {
     "medal": "{{position}}-o'rin",
@@ -2411,5 +2428,32 @@
     "outOfStock": "Mahsulot tugagan",
     "studentOnly": "Faqat o'quvchi xarid qila oladi",
     "bought": "Xarid qilindi"
+  },
+  "centerSwitch": {
+    "current": "Hozirgi filial",
+    "blocked": "Bloklangan"
+  },
+  "brand": {
+    "title": "Markazingizga kirish",
+    "desc": "Markazingiz manzilini kiriting",
+    "address": "Markaz manzili",
+    "addressHint": "Masalan: markaz.wenet.uz",
+    "continue": "Davom etish",
+    "notFound": "«{{slug}}» manzilli markaz topilmadi",
+    "invalid": "Manzil faqat lotin harflari, raqam va chiziqchadan iborat bo'ladi",
+    "loadError": "Markaz ma'lumotlarini yuklab bo'lmadi",
+    "notExistTitle": "Bunday filial mavjud emas",
+    "notExistDesc": "«{{host}}» manzili bo'yicha markaz topilmadi. Manzilni tekshiring yoki biz bilan bog'laning.",
+    "contactTitle": "Bog'lanish",
+    "call": "Qo'ng'iroq qilish",
+    "enterAddress": "Boshqa manzilni kiritish"
+  },
+  "topMenu": {
+    "title": "Menyu",
+    "center": "Filial",
+    "howItWorks": "Qanday ishlaydi?",
+    "theme": "Ko'rinish",
+    "day": "Kun",
+    "night": "Tun"
   }
 }

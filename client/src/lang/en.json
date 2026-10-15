@@ -200,7 +200,7 @@
     "myPlans": "My lesson plans",
     "videoLessons": "Video guides",
     "individual": "Individual",
-    "coins": "WECOIN"
+    "coins": "Gamification"
   },
   "report": {
     "revenue": "Revenue",
@@ -315,7 +315,9 @@
     "staffInfoTitle": "Your workflow is now in the system",
     "staffInfoDesc": "Attendance, groups and your tasks — all within the permissions you were granted, updated in realtime.",
     "introSeen": "Intro completed",
-    "loginPlaceholder": "login"
+    "loginPlaceholder": "login",
+    "poweredBy": "Powered by",
+    "brandRequired": "Sign in via your center's address"
   },
   "client": {
     "blocked": "The client is blocked, you cannot sign in",
@@ -402,7 +404,9 @@
     "pdfConfidentialNote": "Keep this document confidential. Give the password only to the staff member.",
     "salaryTypeNotInTariff": "The selected salary type is not available in your current plan",
     "groupCoins": "WECOIN & shop",
-    "actionCoinManage": "Manage (rules, products, orders)"
+    "actionCoinManage": "Manage (rules, products, orders)",
+    "centers": "Branches",
+    "address": "Address"
   },
   "certificateTemplate": {
     "title": "Certificate templates",
@@ -626,6 +630,7 @@
     "paymentPenaltyAction": "Payment/Penalty",
     "payAction": "Pay salary",
     "paid": "Paid",
+    "forMonth": "For {{month}} salary",
     "transactionsMenu": "Transactions",
     "txTypeLabel": "Transaction type",
     "amount": "Amount (UZS)",
@@ -1195,7 +1200,10 @@
       "activeIdle": "Started",
       "activeNow": "Lesson in progress",
       "finished": "Finished",
-      "upcoming": "Soon"
+      "upcoming": "Soon",
+      "startsAt": "Starts at {{time}}",
+      "todayDone": "Done for today",
+      "tomorrow": "Tomorrow"
     },
     "statTotal": "Total groups",
     "statLive": "Lesson in progress",
@@ -1353,7 +1361,12 @@
     "lessonDate": "Date",
     "lessonTime": "Time",
     "lessonTopic": "Topic",
-    "lessonDetails": "Details"
+    "lessonDetails": "Details",
+    "section": {
+      "live": "In class now",
+      "today": "Today",
+      "other": "Other days"
+    }
   },
   "notification": {
     "title": "Notifications",
@@ -1834,11 +1847,13 @@
     },
     "video": {
       "title": "Video guides",
-      "description": "«This page's video» in the «?» menu plays a short video for the open page. All videos, in order, are in the «Video guides» section of the left menu."
+      "description": "«This page's video» in the «?» menu plays a short video for the open page. All videos, in order, are in the «Video guides» section of the left menu.",
+      "descriptionMobile": "Top-right menu (4 squares) → “How it works” → “This page's video” — a short video for the open page. All videos are in “Video guides” in the left menu."
     },
     "chat": {
       "title": "Support chat",
-      "description": "If you have a question or a problem, write to us via Support chat in the «?» menu — the reply arrives right here."
+      "description": "If you have a question or a problem, write to us via Support chat in the «?» menu — the reply arrives right here.",
+      "descriptionMobile": "Have a question or a problem? Write to us via the top-right menu (4 squares) → “Support chat” — the reply arrives right there."
     }
   },
   "tariffFeatures": {
@@ -2058,7 +2073,9 @@
       "empty": "No homework sent this month",
       "emptyHint": "Send the first one with the «Send homework» button",
       "rate": "Completion"
-    }
+    },
+    "openTab": "Open table",
+    "author": "Author"
   },
   "rank": {
     "medal": "#{{position}} place",
@@ -2413,5 +2430,32 @@
     "outOfStock": "Out of stock",
     "studentOnly": "Only the student can buy",
     "bought": "Purchased"
+  },
+  "centerSwitch": {
+    "current": "Current branch",
+    "blocked": "Blocked"
+  },
+  "brand": {
+    "title": "Sign in to your center",
+    "desc": "Enter your center's address",
+    "address": "Center address",
+    "addressHint": "For example: markaz.wenet.uz",
+    "continue": "Continue",
+    "notFound": "No center found at «{{slug}}»",
+    "invalid": "The address may contain only Latin letters, digits and hyphens",
+    "loadError": "Could not load the center",
+    "notExistTitle": "This branch doesn't exist",
+    "notExistDesc": "No center was found at «{{host}}». Check the address or contact us.",
+    "contactTitle": "Contact us",
+    "call": "Call",
+    "enterAddress": "Enter another address"
+  },
+  "topMenu": {
+    "title": "Menu",
+    "center": "Branch",
+    "howItWorks": "How it works",
+    "theme": "Appearance",
+    "day": "Day",
+    "night": "Night"
   }
 }

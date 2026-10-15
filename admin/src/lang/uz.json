@@ -422,7 +422,19 @@
     "noActiveSubscription": "Mijozning faol obunasi yo'q",
     "invalidMode": "Sana rejimi noto'g'ri tanlandi",
     "invalidEndDate": "Yakunlanish sanasi boshlanish sanasidan keyin bo'lishi kerak",
-    "invalidPrice": "Obuna narxi manfiy bo'lishi mumkin emas"
+    "invalidPrice": "Obuna narxi manfiy bo'lishi mumkin emas",
+    "logo": "Logotip",
+    "logoUpload": "Yuklash",
+    "logoChange": "Almashtirish",
+    "logoHint": "PNG/JPG/WEBP, 5 MB gacha — login sahifasida ko'rinadi",
+    "slug": "Manzil",
+    "slugHint": "Mijoz paneli manzili: nom.wenet.uz",
+    "slugChangeHint": "eski manzil yangisiga yo'naltiriladi",
+    "slugInvalid": "Manzil 3–32 belgi: lotin kichik harf, raqam va chiziqcha",
+    "slugReserved": "Bu manzil tizim uchun band",
+    "slugTaken": "Bu manzil boshqa mijozga berilgan",
+    "logoTooLarge": "Logotip 5 MB dan oshmasin",
+    "logoInvalid": "Rasm faylini o'qib bo'lmadi"
   },
   "audit": {
     "title": "Audit jurnali",
@@ -1082,7 +1094,7 @@
       "subjects": "Fanlar",
       "archive": "Arxiv",
       "auditLog": "Audit jurnali",
-      "coins": "WECOIN"
+      "coins": "Gamifikatsiya"
     }
   }
 }

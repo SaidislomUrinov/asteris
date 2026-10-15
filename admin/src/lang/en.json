@@ -422,7 +422,19 @@
     "noActiveSubscription": "The client has no active subscription",
     "invalidMode": "Invalid date mode selected",
     "invalidEndDate": "The end date must be later than the start date",
-    "invalidPrice": "The subscription price cannot be negative"
+    "invalidPrice": "The subscription price cannot be negative",
+    "logo": "Logo",
+    "logoUpload": "Upload",
+    "logoChange": "Replace",
+    "logoHint": "PNG/JPG/WEBP, up to 5 MB — shown on the sign-in page",
+    "slug": "Address",
+    "slugHint": "Client panel address: name.wenet.uz",
+    "slugChangeHint": "the old address will redirect to the new one",
+    "slugInvalid": "Address: 3–32 characters — lowercase Latin letters, digits and hyphens",
+    "slugReserved": "This address is reserved",
+    "slugTaken": "This address is already taken",
+    "logoTooLarge": "Logo must be under 5 MB",
+    "logoInvalid": "Could not read the image"
   },
   "audit": {
     "title": "Audit log",
@@ -1082,7 +1094,7 @@
       "subjects": "Subjects",
       "archive": "Archive",
       "auditLog": "Audit log",
-      "coins": "WECOIN"
+      "coins": "Gamification"
     }
   }
 }
