@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import usePrerequisite from "../../hooks/usePrerequisite";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -58,6 +59,7 @@ function Individual() {
   const [filterCenter, setFilterCenter] = useQueryState("filterCenter", "");
   const [filterTeacher, setFilterTeacher] = useQueryState("filterTeacher", "");
   const [loading, setLoading] = useState(true);
+  const requireFirst = usePrerequisite();
   const [error, setError] = useState(false);
 
   const [centers, setCenters] = useState([]);
@@ -132,14 +134,9 @@ function Individual() {
   useSocketEvent("group:changed", () => fetchRows());
 
   const openCreate = () => {
-    if (centers.length === 0) {
-      errorMsg("staff.noCentersYet");
-      return;
-    }
-    if (subjects.length === 0) {
-      errorMsg("group.fillTheRows");
-      return;
-    }
+    // Kerakli narsa yo'q — havola bilan "Avval ... qo'shing" (hooks/usePrerequisite).
+    if (centers.length === 0) return requireFirst("center");
+    if (subjects.length === 0) return requireFirst("subject");
     setDialogKey((k) => k + 1);
     setDialogOpen(true);
   };

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import usePrerequisite from "../../hooks/usePrerequisite";
 import useQueryState from "../../hooks/useQueryState";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -61,6 +62,7 @@ function Students() {
   const [filterStatus, setFilterStatus] = useQueryState("filterStatus", "");
   const [debtStatus, setDebtStatus] = useQueryState("debtStatus", "");
   const [loading, setLoading] = useState(true);
+  const requireFirst = usePrerequisite();
   const [error, setError] = useState(false);
 
   const [centers, setCenters] = useState([]);
@@ -241,10 +243,7 @@ function Students() {
   }, [fetchLookups]);
 
   const openCreate = () => {
-    if (groups.length === 0) {
-      errorMsg("student.noGroupsYet");
-      return;
-    }
+    if (groups.length === 0) return requireFirst("group");
     setDialogKey((k) => k + 1);
     setDialogOpen(true);
   };

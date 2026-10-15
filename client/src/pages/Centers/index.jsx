@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import useCreateFromQuery from "../../hooks/useCreateFromQuery";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -91,6 +92,10 @@ function Centers() {
     setDialogKey((k) => k + 1);
     setDialogOpen(true);
   };
+
+  // "Avval filial qo'shing" havolasidan kelinganda (`?create=1`) — tarif limiti
+  // ro'yxat yuklangach tekshiriladi, keyin oyna o'zi ochiladi.
+  useCreateFromQuery(openCreate, !loading);
 
   const openEdit = (center) => {
     setSelected(center);

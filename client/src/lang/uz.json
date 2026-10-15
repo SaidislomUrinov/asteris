@@ -2455,5 +2455,12 @@
     "theme": "Ko'rinish",
     "day": "Kun",
     "night": "Tun"
+  },
+  "prereq": {
+    "center": "filial",
+    "subject": "fan",
+    "group": "guruh",
+    "message": "Avval {{name}} qo'shing",
+    "askOwner": "Avval {{name}} qo'shilishi kerak — rahbaringizga murojaat qiling"
   }
 }

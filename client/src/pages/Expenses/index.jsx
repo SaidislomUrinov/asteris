@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import usePrerequisite from "../../hooks/usePrerequisite";
 import { useTranslation } from "react-i18next";
 import useQueryState from "../../hooks/useQueryState";
 import { HiBanknotes, HiMagnifyingGlass, HiPencil, HiPlus, HiTrash, HiXMark } from "react-icons/hi2";
@@ -56,6 +57,7 @@ function Expenses() {
   const [filterCategory, setFilterCategory] = useQueryState("filterCategory", "");
   const [filterMonth, setFilterMonth] = useQueryState("filterMonth", currentMonth());
   const [loading, setLoading] = useState(true);
+  const requireFirst = usePrerequisite();
   const [error, setError] = useState(false);
 
   const [centers, setCenters] = useState([]);
@@ -114,10 +116,7 @@ function Expenses() {
   useSocketEvent("expense:updated", fetchExpenses);
 
   const openCreate = () => {
-    if (centers.length === 0) {
-      errorMsg("staff.noCentersYet");
-      return;
-    }
+    if (centers.length === 0) return requireFirst("center");
     setSelected(null);
     setDialogKey((k) => k + 1);
     setDialogOpen(true);

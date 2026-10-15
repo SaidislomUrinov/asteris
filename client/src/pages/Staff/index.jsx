@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import usePrerequisite from "../../hooks/usePrerequisite";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
@@ -43,6 +44,7 @@ function Staff() {
   const [filterCenter, setFilterCenter] = useQueryState("filterCenter", "");
   const [filterRole, setFilterRole] = useQueryState("filterRole", "");
   const [loading, setLoading] = useState(true);
+  const requireFirst = usePrerequisite();
   const [error, setError] = useState(false);
 
   const [centers, setCenters] = useState([]);
@@ -137,10 +139,7 @@ function Staff() {
   }, [fetchSubjects]);
 
   const openCreate = () => {
-    if (centers.length === 0) {
-      errorMsg("staff.noCentersYet");
-      return;
-    }
+    if (centers.length === 0) return requireFirst("center");
     setSelected(null);
     setDialogKey((k) => k + 1);
     setDialogOpen(true);

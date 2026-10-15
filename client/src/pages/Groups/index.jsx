@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import usePrerequisite from "../../hooks/usePrerequisite";
+import useCreateFromQuery from "../../hooks/useCreateFromQuery";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { HiMagnifyingGlass, HiPlus, HiUserGroup, HiXMark } from "react-icons/hi2";
@@ -55,6 +57,8 @@ function Groups() {
   const [filterStatus, setFilterStatus] = useQueryState("filterStatus", "");
   const [filterDays, setFilterDays] = useQueryState("filterDays", []);
   const [loading, setLoading] = useState(true);
+  const requireFirst = usePrerequisite();
+  const [lookupsReady, setLookupsReady] = useState(false);
   const [error, setError] = useState(false);
 
   const [centers, setCenters] = useState([]);
@@ -184,6 +188,7 @@ function Groups() {
       setAssistants(assistantRes.value.data.data || []);
     if (roomsRes.status === "fulfilled" && roomsRes.value.data.ok)
       setRooms(roomsRes.value.data.data || []);
+    setLookupsReady(true);
   }, []);
 
   useEffect(() => {
@@ -216,17 +221,16 @@ function Groups() {
   });
 
   const openCreate = () => {
-    if (centers.length === 0) {
-      errorMsg("staff.noCentersYet");
-      return;
-    }
-    if (subjects.length === 0) {
-      errorMsg("group.fillTheRows");
-      return;
-    }
+    // Kerakli narsa yo'q — havola bilan "Avval ... qo'shing" (hooks/usePrerequisite).
+    if (centers.length === 0) return requireFirst("center");
+    if (subjects.length === 0) return requireFirst("subject");
     setDialogKey((k) => k + 1);
     setDialogOpen(true);
   };
+
+  // "Avval guruh qo'shing" havolasidan kelinganda (`?create=1`) — filial/fan
+  // ro'yxatlari yuklangach oyna o'zi ochiladi.
+  useCreateFromQuery(openCreate, lookupsReady);
 
   return (
     <div className="flex flex-col w-full h-full gap-4">

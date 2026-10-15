@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import usePrerequisite from "../../hooks/usePrerequisite";
+import useCreateFromQuery from "../../hooks/useCreateFromQuery";
 import { useTranslation } from "react-i18next";
 import {
   HiArchiveBox,
@@ -32,6 +34,8 @@ function Subjects() {
   const [search, setSearch] = useState("");
   const [filterCenter, setFilterCenter] = useState("");
   const [loading, setLoading] = useState(true);
+  const requireFirst = usePrerequisite();
+  const [centersReady, setCentersReady] = useState(false);
   const [error, setError] = useState(false);
 
   const [centers, setCenters] = useState([]);
@@ -72,6 +76,8 @@ function Subjects() {
       if (ok) setCenters(data || []);
     } catch {
       // markazlar ro'yxati faqat lookup uchun, xato bo'lsa jim o'tkazamiz
+    } finally {
+      setCentersReady(true);
     }
   }, []);
 
@@ -86,6 +92,8 @@ function Subjects() {
   }, [fetchCenters]);
 
   const openCreate = () => {
+    // Fan filialga bog'lanadi — filial yo'q bo'lsa dialog bo'sh tanlov bilan ochilardi.
+    if (centersReady && centers.length === 0) return requireFirst("center");
     setSelected(null);
     setDialogKey((k) => k + 1);
     setDialogOpen(true);
@@ -96,6 +104,9 @@ function Subjects() {
     setDialogKey((k) => k + 1);
     setDialogOpen(true);
   };
+
+  // "Avval fan qo'shing" havolasidan kelinganda (`?create=1`) — oyna o'zi ochiladi.
+  useCreateFromQuery(openCreate, centersReady);
 
   const openDuplicate = (subject) => {
     setSelected({ ...subject, _id: undefined });

@@ -2457,5 +2457,12 @@
     "theme": "Appearance",
     "day": "Day",
     "night": "Night"
+  },
+  "prereq": {
+    "center": "branch",
+    "subject": "subject",
+    "group": "group",
+    "message": "First add a {{name}}",
+    "askOwner": "A {{name}} must be added first — contact your manager"
   }
 }

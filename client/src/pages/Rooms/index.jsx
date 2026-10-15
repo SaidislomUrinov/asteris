@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import usePrerequisite from "../../hooks/usePrerequisite";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { HiArchiveBox, HiHome, HiMagnifyingGlass, HiPencil, HiPlus } from "react-icons/hi2";
@@ -29,6 +30,7 @@ function Rooms() {
   const [search, setSearch] = useQueryState("search", "");
   const [filterCenter, setFilterCenter] = useQueryState("filterCenter", "");
   const [loading, setLoading] = useState(true);
+  const requireFirst = usePrerequisite();
   const [error, setError] = useState(false);
 
   const [centers, setCenters] = useState([]);
@@ -145,10 +147,7 @@ function Rooms() {
   );
 
   const openCreate = () => {
-    if (centers.length === 0) {
-      errorMsg("staff.noCentersYet");
-      return;
-    }
+    if (centers.length === 0) return requireFirst("center");
     setSelected(null);
     setDialogKey((k) => k + 1);
     setDialogOpen(true);
