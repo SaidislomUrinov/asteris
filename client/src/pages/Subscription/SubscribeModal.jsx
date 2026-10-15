@@ -5,11 +5,16 @@ import { api } from "../../utils/fetching";
 import { errorMsg } from "../../utils/alert";
 import Dialog from "../../ui/Dialog";
 import Button from "../../ui/Button";
-import { DURATION_OPTIONS, calcAmount } from "./durationOptions";
+import { calcAmount, durationLabel, useDurationOptions } from "./durationOptions";
 
 function SubscribeModal({ open, onClose, tariff, onActivated }) {
   const { t } = useTranslation();
-  const [months, setMonths] = useState(DURATION_OPTIONS[0].months);
+  const { options, loading: optionsLoading } = useDurationOptions(open);
+  const [picked, setPicked] = useState(null);
+  // Tanlanmagan bo'lsa (yoki jadval o'zgarib tanlov yo'qolsa) — birinchi variant.
+  const months = options.some((o) => o.months === picked) ? picked : options[0]?.months ?? 1;
+  const setMonths = setPicked;
+  const percentOf = (m) => options.find((o) => o.months === m)?.percent || 0;
   const [loading, setLoading] = useState(false);
 
   const handleClose = () => {
@@ -51,7 +56,7 @@ function SubscribeModal({ open, onClose, tariff, onActivated }) {
           <Button variant="outlined" color="slate" onClick={handleClose} disabled={loading}>
             {t("common.cancel")}
           </Button>
-          <Button color="blue" onClick={handleProceed} loading={loading}>
+          <Button color="blue" onClick={handleProceed} loading={loading} disabled={options.length === 0}>
             {t("subscription.proceedToPayment")}
           </Button>
         </>
@@ -61,8 +66,11 @@ function SubscribeModal({ open, onClose, tariff, onActivated }) {
         {t("subscription.selectDuration")}
       </p>
       <div className="flex flex-col gap-2">
-        {DURATION_OPTIONS.map((opt) => {
-          const total = calcAmount(tariff?.price || 0, opt.months, opt.discount);
+        {optionsLoading &&
+          options.length === 0 &&
+          [0, 1, 2].map((i) => <div key={i} className="h-[66px] rounded-lg bg-slate-100 dark:bg-night-800 animate-pulse" />)}
+        {options.map((opt) => {
+          const total = calcAmount(tariff?.price || 0, opt.months, opt.percent);
           const selected = months === opt.months;
           return (
             <button
@@ -81,11 +89,11 @@ function SubscribeModal({ open, onClose, tariff, onActivated }) {
                 ) : (
                   <span className="w-[18px] h-[18px] rounded-full border border-slate-300 dark:border-night-600 shrink-0" />
                 )}
-                <span className="font-semibold text-slate-800 dark:text-slate-100">{t(opt.labelKey)}</span>
-                {opt.discount > 0 && (
+                <span className="font-semibold text-slate-800 dark:text-slate-100">{durationLabel(t, opt.months)}</span>
+                {opt.percent > 0 && (
                   <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                     {t("subscription.discountBadge", {
-                      percent: Math.round(opt.discount * 100),
+                      percent: opt.percent,
                     })}
                   </span>
                 )}
@@ -111,7 +119,7 @@ function SubscribeModal({ open, onClose, tariff, onActivated }) {
             {calcAmount(
               tariff?.price || 0,
               months,
-              DURATION_OPTIONS.find((o) => o.months === months)?.discount || 0,
+              percentOf(months),
             ).toLocaleString("uz-UZ")}{" "}
             {t("subscription.somSuffix")}
           </span>
@@ -120,7 +128,7 @@ function SubscribeModal({ open, onClose, tariff, onActivated }) {
               calcAmount(
                 tariff?.price || 0,
                 months,
-                DURATION_OPTIONS.find((o) => o.months === months)?.discount || 0,
+                percentOf(months),
               ) / months,
             ).toLocaleString("uz-UZ")}{" "}
             {t("subscription.perMonth")}

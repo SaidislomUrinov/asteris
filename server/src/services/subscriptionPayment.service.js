@@ -4,7 +4,8 @@ const Subscription = require("../models/Subscription");
 const SubscriptionPayment = require("../models/SubscriptionPayment");
 const clientService = require("./client.service");
 const inpayUtil = require("../utils/inpay.util");
-const { isValidDuration, calcAmount } = require("../utils/subscriptionPricing.util");
+const { calcAmount, discountsOf } = require("../utils/subscriptionPricing.util");
+const systemSettingService = require("./systemSetting.service");
 const { getNow, addDays, addMonths } = require("../utils/date.util");
 const envConfig = require("../configs/env.config");
 const emitter = require("../utils/emitter.util");
@@ -65,12 +66,13 @@ module.exports = {
     }
 
     const durationMonths = Number(months) || 1;
-    if (!isValidDuration(durationMonths)) {
+    // Chegirmalar Admin paneldan sozlanadi (docs/API_CONTRACT_tariff_discounts.md).
+    const discounts = discountsOf(await systemSettingService.getRaw());
+    const amount = calcAmount(tariff.price, durationMonths, discounts);
+    if (amount == null) {
       console.error("[subscriptionPayment] invalidDuration", durationMonths);
       throw new Error("subscription.invalidDuration");
     }
-
-    const amount = calcAmount(tariff.price, durationMonths);
     console.log("[subscriptionPayment] summa hisoblandi", { amount, durationMonths });
 
     console.log("[subscriptionPayment] inpayUtil.createPayment chaqirilmoqda");

@@ -1,6 +1,9 @@
 const Tariff = require("../models/Tariff");
 const { getNow } = require("../utils/date.util");
 const clientService = require("./client.service");
+const SystemSetting = require("../models/SystemSetting");
+const systemSettingService = require("./systemSetting.service");
+const { normalizeDiscounts, discountsOf } = require("../utils/subscriptionPricing.util");
 
 const DTO = (data) => ({
   _id: data?._id,
@@ -71,6 +74,28 @@ module.exports = {
   // yoqilgan tariflar va faqat ommaga ko'rsatiladigan maydonlar chiqadi
   // (ichki `allowedPermissions` ro'yxati ham beriladi, chunki sahifa
   // imkoniyatlar jadvalini shundan quradi).
+  // GET /tariffs/discounts — obuna muddati chegirmalari (barcha tariflar uchun
+  // umumiy, docs/API_CONTRACT_tariff_discounts.md). Keshdan (systemSetting).
+  getDiscounts: async () => ({ items: discountsOf(await systemSettingService.getRaw()) }),
+
+  // PUT /tariffs/discounts — Platform Admin (`tariff:update`).
+  updateDiscounts: async (body, adminId) => {
+    const items = normalizeDiscounts(body?.items);
+    await SystemSetting.findOneAndUpdate(
+      { key: "global" },
+      {
+        $set: {
+          "subscription.durationDiscounts": items,
+          updatedAt: getNow(),
+          ...(adminId ? { updatedBy: adminId } : {}),
+        },
+      },
+      { upsert: true },
+    );
+    await systemSettingService.invalidate();
+    return { items };
+  },
+
   publicList: async () => {
     const data = await Tariff.find({ isDeleted: false, isPublic: true }).sort({
       price: 1,

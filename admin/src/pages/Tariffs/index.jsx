@@ -10,6 +10,7 @@ import Chip from "../../ui/Chip";
 import Loading from "../../ui/Loading";
 import Dialog from "../../ui/Dialog";
 import TariffDialog from "./TariffDialog";
+import DurationDiscountsCard from "./DurationDiscountsCard";
 import { ALL_PERMISSIONS } from "./permissionCatalog";
 
 const TOTAL_PERMISSIONS = ALL_PERMISSIONS.length;
@@ -96,6 +97,8 @@ export default function Tariffs() {
           {t("tariff.new")}
         </Button>
       </div>
+
+      <DurationDiscountsCard />
 
       {loading ? (
         <Loading height="40vh" />

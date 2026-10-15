@@ -59,6 +59,21 @@ const schema = new Schema({
     lastStatus: { type: String, default: "" },
   },
 
+  // Obuna muddati chegirmalari — barcha tariflar uchun umumiy
+  // (docs/API_CONTRACT_tariff_discounts.md). Admin "Tariflar" sahifasidan.
+  subscription: {
+    durationDiscounts: {
+      type: [{ _id: false, months: { type: Number, required: true }, percent: { type: Number, default: 0 } }],
+      default: () => [
+        { months: 1, percent: 0 },
+        { months: 3, percent: 5 },
+        { months: 6, percent: 7 },
+        { months: 9, percent: 10 },
+        { months: 12, percent: 12 },
+      ],
+    },
+  },
+
   createdAt: {
     type: Number,
     default: getNow,

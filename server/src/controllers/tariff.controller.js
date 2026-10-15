@@ -10,6 +10,24 @@ module.exports = {
     }
   },
 
+  getDiscounts: async (req, res, next) => {
+    try {
+      const data = await tariffService.getDiscounts();
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  updateDiscounts: async (req, res, next) => {
+    try {
+      const data = await tariffService.updateDiscounts(req.body, req.admin?._id);
+      return res.send({ ok: true, data, msg: "tariff.discountsUpdated" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   publicList: async (req, res, next) => {
     try {
       const data = await tariffService.publicList();

@@ -1,10 +1,50 @@
-export const DURATION_OPTIONS = [
-  { months: 1, labelKey: "subscription.durationLabels.m1", discount: 0 },
-  { months: 3, labelKey: "subscription.durationLabels.m3", discount: 0.05 },
-  { months: 6, labelKey: "subscription.durationLabels.m6", discount: 0.07 },
-  { months: 9, labelKey: "subscription.durationLabels.m9", discount: 0.10 },
-  { months: 12, labelKey: "subscription.durationLabels.m12", discount: 0.12 },
-];
+import { useEffect, useState } from "react";
+import { api } from "../../utils/fetching";
 
-export const calcAmount = (monthlyPrice, months, discount) =>
-  Math.round(monthlyPrice * months * (1 - discount));
+// Obuna muddati chegirmalari Admin paneldan sozlanadi
+// (docs/API_CONTRACT_tariff_discounts.md) — `GET /tariffs/discounts`.
+// Server summani o'zi qayta hisoblaydi; bu yerda faqat ko'rsatish uchun.
+
+/** `percent` — 0..90 (foiz). */
+export const calcAmount = (monthlyPrice, months, percent) =>
+  Math.round(monthlyPrice * months * (1 - (percent || 0) / 100));
+
+/** "3 oy" / "1 yil" — 12 ga karrali muddat yilda. */
+export const durationLabel = (t, months) =>
+  months % 12 === 0
+    ? t("subscription.durationLabels.years", { count: months / 12 })
+    : t("subscription.durationLabels.months", { count: months });
+
+/**
+ * @param {boolean} enabled - oyna ochiq bo'lganda so'raladi
+ * @returns {{ options: {months: number, percent: number}[], loading: boolean }}
+ */
+export function useDurationOptions(enabled) {
+  const [options, setOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) return undefined;
+    let alive = true;
+    const run = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get("/tariffs/discounts");
+        if (!res.data.ok) throw new Error(res.data.msg);
+        if (alive) setOptions(res.data.data?.items || []);
+      } catch {
+        // Xato bo'lsa — faqat 1 oylik (chegirmasiz) variant; server baribir tekshiradi.
+        if (alive) setOptions([{ months: 1, percent: 0 }]);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    };
+    const id = setTimeout(run, 0);
+    return () => {
+      alive = false;
+      clearTimeout(id);
+    };
+  }, [enabled]);
+
+  return { options, loading };
+}
