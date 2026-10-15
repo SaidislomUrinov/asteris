@@ -92,6 +92,7 @@ export const Coins = () => {
             items={TABS.map((v) => ({ value: v, label: t(`coins.tabs.${v}`) }))}
             value={tab}
             onChange={setTab}
+            fit
           />
 
           {tab === "shop" && <ShopTab key={keyOf(wallet)} wallet={wallet} shop={shop} canBuy={isStudent} onBought={onBought} />}

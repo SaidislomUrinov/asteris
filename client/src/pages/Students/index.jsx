@@ -390,8 +390,11 @@ function Students() {
     {
       key: "phone",
       header: t("student.phone"),
+      // Telegram belgilari torda raqam ostiga tushadi — bir qatorda turganda
+      // jadval 1440px ga ham sig'masdi.
+      className: "!whitespace-normal",
       render: (row) => (
-        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 max-w-48 whitespace-nowrap">
           <span>{row.phone}</span>
           <TelegramStatusBadges student={row.studentTelegram} parent={row.parentTelegram} />
         </span>
@@ -400,6 +403,9 @@ function Students() {
     {
       key: "groups",
       header: t("student.activeGroups"),
+      // List katakchalari nowrap — guruh chiplari bir qatorga cho'zilib,
+      // 1440px da ham "Qarzdorlik" ustunini ekrandan chiqarib yuborardi.
+      className: "!whitespace-normal min-w-40 max-w-64",
       render: (row) => (
         <div className="flex flex-wrap gap-1">
           {activeGroupsOf(row).length ? (

@@ -8,8 +8,9 @@ function MoneyCard({ icon, label, value, suffix, hint, gradient, shadow }) {
     <div
       className={`relative overflow-hidden flex flex-col justify-between gap-4 p-5 rounded-2xl text-white bg-gradient-to-br ${gradient} shadow-lg ${shadow}`}
     >
-      {/* Fon dekoratsiyasi — ikonka suvbelgi sifatida */}
-      <span className="absolute -right-5 -bottom-6 text-[6.5rem] leading-none text-white/[0.07] pointer-events-none">
+      {/* Fon dekoratsiyasi — ikonka suvbelgi sifatida. Yuqori o'ng burchakda:
+          pastda turganda summa va "so'm" ustiga tushib, o'qishni xiralashtirardi. */}
+      <span className="absolute -right-4 -top-5 text-[5.5rem] leading-none text-white/[0.07] pointer-events-none">
         {icon}
       </span>
 

@@ -15,6 +15,7 @@ import SalaryTransactionsListDialog from "./SalaryTransactionsListDialog";
 import ExportExcelButton from "../../ui/ExportExcelButton";
 import MonthInput from "../../ui/MonthInput";
 import useCan from "../../hooks/useCan";
+import useMediaQuery from "../../hooks/useMediaQuery";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import useHideFinance from "../../hooks/useHideFinance";
 import { api } from "../../utils/fetching";
@@ -30,6 +31,7 @@ function Salary() {
   const { t } = useTranslation();
   const can = useCan();
   const canManage = can("salary:manage");
+  const isDesktop = useMediaQuery("(min-width: 640px)");
   const [hideFinance] = useHideFinance();
   const money = (v) => maskMoney(v, hideFinance);
 
@@ -200,6 +202,33 @@ function Salary() {
     },
   ];
 
+  // Mobil karta — jadvalda "Qolgan" va ⋮ amallar o'ngga surilib ko'rinmay
+  // qolardi. Katakchalar jadval ustunlaridagi render'lardan olinadi.
+  const cell = (key, row) => columns.find((c) => c.key === key).render(row);
+  const renderCard = (row) => (
+    <div className="flex flex-col gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">{cell("name", row)}</div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {typeChip(row)}
+          {cell("actions", row)}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+        {["base", "minus", "penalty", "bonus"].map((key) => (
+          <div key={key} className="flex flex-col gap-0.5 min-w-0">
+            <span className="text-xs text-slate-400 dark:text-slate-500">{columns.find((c) => c.key === key).header}</span>
+            {cell(key, row)}
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-slate-100 dark:border-night-700">
+        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("salary.final")}</span>
+        {cell("final", row)}
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex flex-col w-full h-full gap-4">
       <FilterBar
@@ -242,6 +271,9 @@ function Salary() {
           columns={columns}
           rows={rows}
           loading={loading}
+          view={isDesktop ? "table" : "grid"}
+          renderItem={renderCard}
+          gridClassName="grid grid-cols-1 gap-2 p-2"
           empty={t("salary.empty")}
           rowKey={(row) => row.staff._id}
           toolbar={

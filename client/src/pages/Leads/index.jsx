@@ -312,9 +312,12 @@ function Leads() {
         )}
         <div className="flex-1 min-w-0" onClick={() => selectable(row) && toggleRow(row)}>
           <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">{row.fullName}</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500">{row.phone}</p>
+          {/* Holat telefon yonida — ism qatorida turganda tor ekranda ismni kesib qo'yardi. */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
+            <p className="text-xs text-slate-400 dark:text-slate-500">{row.phone}</p>
+            {statusChip(row)}
+          </div>
         </div>
-        {statusChip(row)}
         {rowMenu(row).length > 0 && <DropMenu items={rowMenu(row)} />}
       </div>
       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">

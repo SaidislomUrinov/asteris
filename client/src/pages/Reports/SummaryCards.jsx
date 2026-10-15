@@ -176,7 +176,9 @@ function MiniStat({ icon, label, value, tone = "slate" }) {
         {icon}
       </span>
       <div className="flex flex-col min-w-0">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
+        {/* 6 ustunli qatorda (xl) "YANGI O'QUVCHILAR" kabi nomlar bir qatorga
+            sig'masdi — truncate o'rniga 2 qatorgacha o'raladi. */}
+        <span className="text-[11px] font-semibold uppercase tracking-wide leading-tight text-slate-400 dark:text-slate-500 line-clamp-2">
           {label}
         </span>
         <span className="font-jet font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">{value ?? 0}</span>

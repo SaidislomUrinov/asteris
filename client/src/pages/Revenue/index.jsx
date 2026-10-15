@@ -176,6 +176,30 @@ function Revenue() {
     },
   ];
 
+  // Mobil karta — jadval tor ekranda gorizontal surilib, summa/holat
+  // ko'rinmay qolardi. Katakchalar jadval ustunlaridagi render'lardan olinadi.
+  const cell = (key, row) => columns.find((c) => c.key === key).render(row);
+  const renderCard = (row) => (
+    <div className="flex flex-col gap-2.5 p-3.5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">{cell("student", row)}</div>
+        <div className="shrink-0">{cell("amount", row)}</div>
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {cell("type", row)}
+        {cell("status", row)}
+        {row.forMonth && cell("forMonth", row)}
+      </div>
+      <div className="flex items-end justify-between gap-3 pt-2.5 border-t border-slate-100 dark:border-night-700 text-sm">
+        <div className="min-w-0">{cell("collectedBy", row)}</div>
+        <div className="flex flex-col items-end shrink-0 text-right">
+          {cell("date", row)}
+          <span className="text-xs text-slate-400 dark:text-slate-500">{row.centerName || "—"}</span>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex flex-col w-full h-full gap-4">
       {/* Jamlanma — filtr doirasidagi natija bir qarashda ko'rinadi */}
@@ -377,6 +401,9 @@ function Revenue() {
           columns={columns}
           rows={rows}
           loading={loading}
+          view={isDesktop ? "table" : "grid"}
+          renderItem={renderCard}
+          gridClassName="grid grid-cols-1 gap-2 p-2"
           empty={t("revenue.empty")}
           page={meta.page}
           totalPages={meta.totalPages}

@@ -70,7 +70,12 @@ function TimelineChart({ rows = [], loading }) {
     const x = (i) => PAD.left + (n === 1 ? innerW / 2 : (innerW * i) / (n - 1));
     const y = (v) => PAD.top + innerH - ((((Number(v) || 0) - min) / span) * innerH);
 
-    const ticks = Array.from({ length: 5 }, (_, i) => min + (span * i) / 4);
+    // Ma'lumot yo'q (yoki juda kichik) bo'lsa yaxlitlangan yorliqlar
+    // takrorlanardi ("1, 1, 1, 0, 0") — har bir yaxlit qiymat bir marta.
+    const ticks =
+      rawMax === 0 && rawMin === 0
+        ? [0]
+        : [...new Map(Array.from({ length: 5 }, (_, i) => min + (span * i) / 4).map((v) => [Math.round(v), v])).values()];
 
     // X yorliqlari zichlashib ketmasin — ko'pi bilan 8 ta ko'rsatiladi
     const step = Math.max(1, Math.ceil(n / 8));
@@ -246,7 +251,8 @@ function TimelineChart({ rows = [], loading }) {
                   key={r.key || i}
                   x={geom.x(i)}
                   y={VH - 8}
-                  textAnchor="middle"
+                  // Chetdagi yorliqlar maydondan chiqib kesilmasin
+                  textAnchor={geom.n > 1 && i === geom.n - 1 ? "end" : geom.n > 1 && i === 0 ? "start" : "middle"}
                   fontSize="11"
                   fill="#94a3b8"
                 >

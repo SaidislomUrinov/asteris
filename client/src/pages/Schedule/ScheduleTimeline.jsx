@@ -466,7 +466,7 @@ function ScheduleTimeline({
             return (
               <div
                 key={day}
-                className={`flex-1 min-w-[8rem] px-3 py-2.5 border-l border-slate-300 dark:border-night-600 transition-colors ${
+                className={`flex-1 min-w-[8rem] xl:min-w-[6.5rem] px-3 py-2.5 border-l border-slate-300 dark:border-night-600 transition-colors ${
                   on ? "bg-blue-50/60 dark:bg-blue-500/15" : ""
                 }`}
               >
@@ -528,7 +528,7 @@ function ScheduleTimeline({
                   onMouseLeave={() => setHover((h) => (h?.day === day ? null : h))}
                   onClick={(e) => handleClick(day, e)}
                   onMouseUp={(e) => carrying && handleClick(day, e)}
-                  className={`relative flex-1 min-w-[8rem] border-l border-slate-300 dark:border-night-600 ${
+                  className={`relative flex-1 min-w-[8rem] xl:min-w-[6.5rem] border-l border-slate-300 dark:border-night-600 ${
                     target || dragTarget ? "bg-blue-50/25 dark:bg-blue-500/15" : ""
                   } ${canPlace && !drag ? "cursor-pointer" : ""}`}
                 >

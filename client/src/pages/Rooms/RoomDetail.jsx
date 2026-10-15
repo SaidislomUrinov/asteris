@@ -278,8 +278,10 @@ function RoomDetail() {
       )}
 
       <div className="flex flex-col flex-1 min-h-0 gap-3 p-4 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
-        <div className="flex items-center justify-between gap-3 shrink-0">
-          <div className="flex flex-col gap-0.5 min-w-0">
+        {/* flex-wrap: tor ekranda tugma izoh ostiga tushadi — aks holda izoh
+            tugma yonidagi tor ustunga siqilib 5-6 qatorga cho'zilardi. */}
+        <div className="flex flex-wrap items-center justify-between gap-3 shrink-0">
+          <div className="flex flex-col gap-0.5 flex-1 min-w-48">
             <p className="font-semibold text-slate-800 dark:text-slate-100">{t("room.weeklyScheduleTitle")}</p>
             <p className="text-xs text-slate-400 dark:text-slate-500">
               {t(canEditSchedule ? "room.weeklyScheduleHintEditable" : "room.weeklyScheduleHint")}

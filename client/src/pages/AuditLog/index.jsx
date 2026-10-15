@@ -15,6 +15,7 @@ import ExportExcelButton from "../../ui/ExportExcelButton";
 import ChangesDialog from "./ChangesDialog";
 import { ACTION_COLOR, verbOf } from "./actionColor";
 import useFeature from "../../hooks/useFeature";
+import useMediaQuery from "../../hooks/useMediaQuery";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { api } from "../../utils/fetching";
 import { errorMsg } from "../../utils/alert";
@@ -28,6 +29,7 @@ function AuditLog() {
   const feature = useFeature();
 
   const [rows, setRows] = useState([]);
+  const isDesktop = useMediaQuery("(min-width: 640px)");
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [page, setPage] = useQueryState("page", 1);
   const [search, setSearch] = useQueryState("search", "");
@@ -208,6 +210,24 @@ function AuditLog() {
     },
   ];
 
+  // Mobil karta — jadvalda obyekt/filial/sana va ko'rish tugmasi o'ngga
+  // surilib ko'rinmay qolardi. Katakchalar ustun render'laridan olinadi.
+  const cell = (key, row) => columns.find((c) => c.key === key).render(row);
+  const renderCard = (row) => (
+    <div className="flex flex-col gap-2.5 p-3.5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">{cell("actor", row)}</div>
+        <div className="shrink-0">{cell("detail", row)}</div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">{cell("action", row)}</div>
+      <div className="text-sm">{cell("entity", row)}</div>
+      <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-slate-100 dark:border-night-700 text-xs">
+        <span className="truncate">{cell("center", row)}</span>
+        <span className="shrink-0">{cell("date", row)}</span>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex flex-col w-full h-full gap-4">
       <FilterBar
@@ -296,6 +316,9 @@ function AuditLog() {
           columns={columns}
           rows={rows}
           loading={loading}
+          view={isDesktop ? "table" : "grid"}
+          renderItem={renderCard}
+          gridClassName="grid grid-cols-1 gap-2 p-2"
           empty={t("audit.empty")}
           page={meta.page}
           totalPages={meta.totalPages}

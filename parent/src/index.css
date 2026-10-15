@@ -2,6 +2,11 @@
 
 @import "tailwindcss";
 
+/* `dark:` OS temasini emas, Telegram temasini (lib/telegram.js qo'yadigan
+   data-theme) kuzatadi — aks holda OS tungi, Telegram ochiq bo'lganda och
+   fonda xira "tungi" ranglar chiqardi (masalan avatar harflari). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* Telegram themeParams → CSS o'zgaruvchilar (lib/telegram.js yozadi).
    Telegram bo'lmasa quyidagi default ochiq tema ishlaydi. */
 :root {

@@ -17,6 +17,7 @@ import DropMenu from "../../ui/DropMenu";
 import SubjectDialog from "./SubjectDialog";
 import ExportExcelButton from "../../ui/ExportExcelButton";
 import useCan from "../../hooks/useCan";
+import useMediaQuery from "../../hooks/useMediaQuery";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 
@@ -25,6 +26,7 @@ function Subjects() {
   const can = useCan();
 
   const [rows, setRows] = useState([]);
+  const isDesktop = useMediaQuery("(min-width: 640px)");
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -183,6 +185,27 @@ function Subjects() {
     },
   ];
 
+
+  // Mobil karta — jadvalda narx/muddat va ⋮ amallar o'ngga surilib
+  // ko'rinmay qolardi. Katakchalar jadval ustunlaridagi render'lardan olinadi.
+  const cell = (key, row) => columns.find((c) => c.key === key).render(row);
+  const renderCard = (row) => (
+    <div className="flex flex-col gap-2.5 p-3.5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 pt-1.5">{cell("name", row)}</div>
+        <div className="shrink-0">{cell("actions", row)}</div>
+      </div>
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <span className="font-jet font-semibold text-slate-800 dark:text-slate-100">{cell("price", row)}</span>
+        <span className="text-slate-500 dark:text-slate-400">{cell("durationMonths", row)}</span>
+      </div>
+      <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-slate-100 dark:border-night-700 text-xs text-slate-400 dark:text-slate-500">
+        <span className="truncate">{cell("center", row)}</span>
+        <span className="shrink-0">{row.date}</span>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex flex-col w-full h-full gap-4">
       <div className="flex flex-col sm:flex-row gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-sm dark:shadow-none shadow-slate-900/[0.02]">
@@ -240,6 +263,9 @@ function Subjects() {
           columns={columns}
           rows={rows}
           loading={loading}
+          view={isDesktop ? "table" : "grid"}
+          renderItem={renderCard}
+          gridClassName="grid grid-cols-1 gap-2 p-2"
           empty={t("subject.empty")}
           page={meta.page}
           totalPages={meta.totalPages}
