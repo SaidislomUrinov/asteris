@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HiBanknotes } from "react-icons/hi2";
+import { HiBanknotes, HiCalendarDays } from "react-icons/hi2";
 import Dialog from "../../ui/Dialog";
 import Button from "../../ui/Button";
 import Input from "../../ui/Input";
@@ -11,6 +11,7 @@ import { errorMsg, successMsg } from "../../utils/alert";
 import useFeature from "../../hooks/useFeature";
 import useHideFinance from "../../hooks/useHideFinance";
 import { maskMoney } from "../../utils/moneyFormat";
+import { formatBadgeMonth } from "../../utils/badges";
 
 const TX_TYPES = ["advance", "withdrawal", "payout", "bonus", "penalty"];
 
@@ -38,6 +39,7 @@ function SalaryTransactionDialog({ open, staff, month, preset, onClose, onSaved 
   const [hideFinance] = useHideFinance();
   const money = useCallback((v) => maskMoney(v, hideFinance), [hideFinance]);
   const isPastMonth = month < currentMonth();
+  const monthLabel = formatBadgeMonth(month, t("common.monthNames", { returnObjects: true }));
   const availableTypes = TX_TYPES.filter(
     (tp) =>
       (!TX_TARIFF_FLAG[tp] || hasFeature(TX_TARIFF_FLAG[tp])) &&
@@ -129,6 +131,18 @@ function SalaryTransactionDialog({ open, staff, month, preset, onClose, onSaved 
       }
     >
       <div onKeyDown={(k) => k.key === "Enter" && submit()} className="flex flex-col gap-4 w-full">
+        {/* Tranzaksiya qaysi oy oyligiga yozilishi — filtrdagi oy; o'tgan oy
+            bo'lsa sariq bilan ajratiladi, adashib boshqa oyga yozilmasin. */}
+        <div
+          className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold ${
+            isPastMonth
+              ? "bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300"
+              : "bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300"
+          }`}
+        >
+          <HiCalendarDays className="text-base shrink-0" />
+          {t("salary.forMonth", { month: monthLabel })}
+        </div>
         {statsLoading || !stats ? (
           <div className="flex items-center justify-center w-full h-20 text-slate-400 dark:text-slate-500 text-sm">
             {t("common.loading")}
