@@ -12,7 +12,7 @@ import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 import { maskMoney } from "../../utils/moneyFormat";
 
-const TX_COLOR = { advance: "orange", withdrawal: "red", bonus: "emerald", penalty: "red" };
+const TX_COLOR = { advance: "orange", withdrawal: "red", payout: "blue", bonus: "emerald", penalty: "red" };
 
 // "Tranzaksiyalar" — DropMenu'dan ochiladigan, faqat KO'RISH/bekor qilish
 // uchun modal (Salary/index.jsx). Yangi tranzaksiya qo'shish endi bu yerda
@@ -105,6 +105,12 @@ function SalaryTransactionsListDialog({ open, staff, month, onClose, onChanged }
               <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.withdrawal")}</span>
               <NumberText>{money(data.withdrawal)}</NumberText>
             </div>
+            {data.payout > 0 && (
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+                <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.payout")}</span>
+                <NumberText>{money(data.payout)}</NumberText>
+              </div>
+            )}
             <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
               <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.bonus")}</span>
               <NumberText className="text-emerald-600 dark:text-emerald-400">{money(data.bonus)}</NumberText>

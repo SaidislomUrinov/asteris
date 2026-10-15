@@ -104,6 +104,7 @@
       "expense:cancel": "Расход отменён",
       "salary:advance": "Выдан аванс",
       "salary:withdraw": "Выдано досрочно",
+      "salary:payout": "Выплачена зарплата",
       "salary:bonus": "Начислен бонус",
       "salary:penalty": "Начислен штраф",
       "salary:cancel": "Операция по зарплате отменена",
@@ -619,9 +620,12 @@
     "final": "Остаток",
     "advance": "Аванс",
     "withdrawal": "Взято авансом",
+    "payout": "Выплачена зарплата",
     "center": "Филиал",
     "addTransaction": "Добавить транзакцию",
     "paymentPenaltyAction": "Выплата/Штраф",
+    "payAction": "Выплатить зарплату",
+    "paid": "Выплачено",
     "transactionsMenu": "Транзакции",
     "txTypeLabel": "Тип транзакции",
     "amount": "Сумма (сум)",
@@ -640,6 +644,7 @@
     "txType": {
       "advance": "Аванс",
       "withdrawal": "Выдача авансом",
+      "payout": "Выплата зарплаты",
       "bonus": "Бонус",
       "penalty": "Штраф"
     }

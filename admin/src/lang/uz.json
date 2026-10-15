@@ -483,6 +483,7 @@
       "expense:cancel": "Xarajat bekor qilindi",
       "salary:advance": "Avans berildi",
       "salary:withdraw": "Oldindan pul olindi",
+      "salary:payout": "Oylik berildi",
       "salary:bonus": "Bonus berildi",
       "salary:penalty": "Jarima solindi",
       "salary:pay": "Oylik to'landi",

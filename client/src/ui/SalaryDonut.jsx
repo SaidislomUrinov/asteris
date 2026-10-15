@@ -15,13 +15,14 @@ const DEDUCT_COLOR = "#f43f5e"; // rose-500 — avans + oldindan olingan + jarim
  * @param {number} [props.bonus]
  * @param {number} [props.advance]
  * @param {number} [props.withdrawal]
+ * @param {number} [props.payout]
  * @param {number} [props.penalty]
  * @param {number} [props.final]
  */
-function SalaryDonut({ base = 0, bonus = 0, advance = 0, withdrawal = 0, penalty = 0, final = 0, hidden = false }) {
+function SalaryDonut({ base = 0, bonus = 0, advance = 0, withdrawal = 0, payout = 0, penalty = 0, final = 0, hidden = false }) {
   const { t } = useTranslation();
   const net = base + bonus;
-  const deducted = advance + withdrawal + penalty;
+  const deducted = advance + withdrawal + payout + penalty;
   const total = net + deducted;
 
   const data =

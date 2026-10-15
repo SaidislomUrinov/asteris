@@ -239,12 +239,12 @@ const computeStaffMonth = async (staff, month, features = null) => {
     month,
   }).sort({ createdAt: -1 });
 
-  const sums = { advance: 0, withdrawal: 0, bonus: 0, penalty: 0 };
+  const sums = { advance: 0, withdrawal: 0, payout: 0, bonus: 0, penalty: 0 };
   for (const t of transactions) {
     if (t.status === "active") sums[t.type] += t.amount;
   }
 
-  const final = base - sums.advance - sums.withdrawal + sums.bonus - sums.penalty;
+  const final = base - sums.advance - sums.withdrawal - sums.payout + sums.bonus - sums.penalty;
 
   return {
     staff: {
@@ -263,6 +263,7 @@ const computeStaffMonth = async (staff, month, features = null) => {
     customPercent,
     advance: sums.advance,
     withdrawal: sums.withdrawal,
+    payout: sums.payout,
     bonus: sums.bonus,
     penalty: sums.penalty,
     final,

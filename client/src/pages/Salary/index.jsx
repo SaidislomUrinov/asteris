@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import useQueryState from "../../hooks/useQueryState";
 import { useTranslation } from "react-i18next";
-import { HiBanknotes, HiClipboardDocumentList } from "react-icons/hi2";
+import { HiBanknotes, HiCheckCircle, HiClipboardDocumentList } from "react-icons/hi2";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
 import Select from "../../ui/Select";
@@ -41,6 +41,7 @@ function Salary() {
   const [error, setError] = useState(false);
 
   const [txStaff, setTxStaff] = useState(null);
+  const [txPreset, setTxPreset] = useState(null);
   const [txKey, setTxKey] = useState(0);
   const [listStaff, setListStaff] = useState(null);
   const [listKey, setListKey] = useState(0);
@@ -84,8 +85,10 @@ function Salary() {
   useSocketEvent("payment:created", fetchData);
   useSocketEvent("payment:updated", fetchData);
 
-  const openTransactionDialog = (row) => {
+  // preset — "Oylikni berish": tur `payout`, summa = shu oy qoldig'i.
+  const openTransactionDialog = (row, preset = null) => {
     setTxStaff(row.staff);
+    setTxPreset(preset);
     setTxKey((k) => k + 1);
   };
 
@@ -121,11 +124,11 @@ function Salary() {
     {
       key: "minus",
       header: t("salary.deductions"),
-      // Faqat haqiqatan hodimga BERILGAN summalar (avans + oldindan olingan)
-      // — jarima endi bu yig'indiga kirmaydi, alohida ustunda ko'rsatiladi.
+      // Faqat haqiqatan hodimga BERILGAN summalar (avans + oldindan olingan +
+      // berilgan oylik) — jarima bu yig'indiga kirmaydi, alohida ustunda.
       render: (row) => (
         <NumberText className="text-orange-600 dark:text-orange-400">
-          {money(row.advance + row.withdrawal)}
+          {money(row.advance + row.withdrawal + row.payout)}
         </NumberText>
       ),
     },
@@ -148,9 +151,13 @@ function Salary() {
     {
       key: "final",
       header: t("salary.final"),
-      render: (row) => (
-        <NumberText className={row.final < 0 ? "text-red-600 dark:text-red-400" : ""}>{money(row.final)}</NumberText>
-      ),
+      // Hisoblangan oylik to'liq berib bo'lingan bo'lsa — "To'langan" belgisi.
+      render: (row) =>
+        row.final === 0 && row.base > 0 ? (
+          <Chip value={t("salary.paid")} color="emerald" />
+        ) : (
+          <NumberText className={row.final < 0 ? "text-red-600 dark:text-red-400" : ""}>{money(row.final)}</NumberText>
+        ),
     },
     {
       key: "actions",
@@ -160,6 +167,16 @@ function Salary() {
         <div className="flex items-center justify-end">
           <DropMenu
             items={[
+              ...(canManage && row.final > 0
+                ? [
+                    {
+                      label: t("salary.payAction"),
+                      icon: HiCheckCircle,
+                      iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
+                      onClick: () => openTransactionDialog(row, { type: "payout", amount: row.final }),
+                    },
+                  ]
+                : []),
               ...(canManage
                 ? [
                     {
@@ -241,6 +258,7 @@ function Salary() {
         open={!!txStaff}
         staff={txStaff}
         month={month}
+        preset={txPreset}
         onClose={() => setTxStaff(null)}
         onSaved={fetchData}
       />

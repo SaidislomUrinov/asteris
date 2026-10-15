@@ -154,9 +154,9 @@ const expenseFilter = (clientId, center, fromUnix, toUnix) => {
   return filter;
 };
 
-// Haqiqatda TARQATILGAN pul: avans + oldindan olingan summa. Bonus/jarima
-// yakuniy oylikning tarkibiy qismi, alohida "to'langan pul" emas.
-const PAYOUT_TYPES = ["advance", "withdrawal"];
+// Haqiqatda TARQATILGAN pul: avans + oldindan olingan + berilgan oylik.
+// Bonus/jarima yakuniy oylikning tarkibiy qismi, alohida "to'langan pul" emas.
+const PAYOUT_TYPES = ["advance", "withdrawal", "payout"];
 
 const salaryFilter = (clientId, center, fromUnix, toUnix) => {
   const filter = {

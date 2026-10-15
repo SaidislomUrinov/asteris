@@ -26,7 +26,7 @@ const TABS = [
   { key: "transactions", labelKey: "finance.tabTransactions", icon: HiClipboardDocumentList },
 ];
 
-const txTypeColor = { advance: "blue", withdrawal: "orange", bonus: "emerald", penalty: "red" };
+const txTypeColor = { advance: "blue", withdrawal: "orange", payout: "violet", bonus: "emerald", penalty: "red" };
 
 // Hodimning shaxsiy "Moliya" sahifasi — StaffProfile'dan ajratilgan
 // ("Oyligim"/"Tranzaksiyalarim"), o'zgarishsiz ko'chirilgan (keyingi
@@ -116,6 +116,7 @@ function Finance() {
                   bonus={salary?.bonus}
                   advance={salary?.advance}
                   withdrawal={salary?.withdrawal}
+                  payout={salary?.payout}
                   penalty={salary?.penalty}
                   final={salary?.final}
                   hidden={hideFinance}
@@ -144,6 +145,9 @@ function Finance() {
                   tone="negative"
                   hidden={hideFinance}
                 />
+                {salary?.payout > 0 && (
+                  <LedgerRow label={t("salary.payout")} value={salary.payout} tone="negative" hidden={hideFinance} />
+                )}
                 <LedgerRow
                   label={t("salary.penalty")}
                   value={salary?.penalty}

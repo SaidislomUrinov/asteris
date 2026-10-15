@@ -1,7 +1,10 @@
 const { Schema, model } = require("mongoose");
 const { formatDate, getNow } = require("../utils/date.util");
 
-const TYPES = ["advance", "withdrawal", "bonus", "penalty"];
+// payout — oy uchun qolgan oylikni BERISH (odatda oy yopilgach, keyingi oy
+// boshida). withdrawal esa oy davomida oldindan olingan pul — ikkalasi ham
+// berilgan pul, lekin ma'nosi boshqa.
+const TYPES = ["advance", "withdrawal", "payout", "bonus", "penalty"];
 
 // Ish haqi tranzaksiyalari — moliyaviy yozuv, HECH QACHON o'chirilmaydi
 // (CLAUDE.md "Soft Delete va Moliyaviy yozuvlar"): bekor qilinsa faqat

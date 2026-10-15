@@ -483,6 +483,7 @@
       "expense:cancel": "Расход отменён",
       "salary:advance": "Выдан аванс",
       "salary:withdraw": "Выдано авансом",
+      "salary:payout": "Выплачена зарплата",
       "salary:bonus": "Выдан бонус",
       "salary:penalty": "Наложен штраф",
       "salary:pay": "Зарплата выплачена",

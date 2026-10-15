@@ -7,7 +7,13 @@ const SALARY_TYPE_LABELS = {
   percentage: "Foizli",
 };
 const ROLE_LABELS = { manager: "Menejer", reception: "Resepshin", teacher: "O'qituvchi" };
-const TX_TYPE_LABELS = { advance: "Avans", withdrawal: "Oldindan olish", bonus: "Bonus", penalty: "Jarima" };
+const TX_TYPE_LABELS = {
+  advance: "Avans",
+  withdrawal: "Oldindan olish",
+  payout: "Oylik berildi",
+  bonus: "Bonus",
+  penalty: "Jarima",
+};
 
 // Hodim so'rasa — faqat o'z filiali hodimlari (Owner uchun null = cheklovsiz).
 const staffCenter = (req) => (req.staff ? req.staff.center : null);
@@ -58,7 +64,7 @@ module.exports = {
               width: 18,
               align: "right",
               numFmt: "#,##0",
-              value: (r) => r.advance + r.withdrawal,
+              value: (r) => r.advance + r.withdrawal + r.payout,
             },
             { header: "Jarima (so'm)", width: 16, align: "right", numFmt: "#,##0", value: (r) => -r.penalty },
             { header: "Bonus (so'm)", width: 16, align: "right", numFmt: "#,##0", value: (r) => r.bonus },
@@ -92,6 +98,7 @@ module.exports = {
             { label: "Hisoblangan oylik", value: data.base },
             { label: "Avans", value: data.advance },
             { label: "Oldindan olingan", value: data.withdrawal },
+            { label: "Berilgan oylik", value: data.payout },
             { label: "Bonus", value: data.bonus },
             { label: "Jarima", value: -data.penalty },
             { label: "Qolgan", value: data.final },

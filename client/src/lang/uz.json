@@ -104,6 +104,7 @@
       "expense:cancel": "Xarajat bekor qilindi",
       "salary:advance": "Avans berildi",
       "salary:withdraw": "Oldindan pul berildi",
+      "salary:payout": "Oylik berildi",
       "salary:bonus": "Bonus berildi",
       "salary:penalty": "Jarima yozildi",
       "salary:cancel": "Oylik tranzaksiyasi bekor qilindi",
@@ -619,9 +620,12 @@
     "final": "Qolgan",
     "advance": "Avans",
     "withdrawal": "Oldindan olingan",
+    "payout": "Berilgan oylik",
     "center": "Filial",
     "addTransaction": "Tranzaksiya qo'shish",
     "paymentPenaltyAction": "To'lov/Jarima",
+    "payAction": "Oylikni berish",
+    "paid": "To'langan",
     "transactionsMenu": "Tranzaksiyalar",
     "txTypeLabel": "Tranzaksiya turi",
     "amount": "Summa (so'm)",
@@ -640,6 +644,7 @@
     "txType": {
       "advance": "Avans",
       "withdrawal": "Oldindan olish",
+      "payout": "Oylik berish",
       "bonus": "Bonus",
       "penalty": "Jarima"
     }

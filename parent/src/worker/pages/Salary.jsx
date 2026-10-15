@@ -80,7 +80,7 @@ export const Salary = () => {
           <StatGrid
             items={[
               { key: "base", label: t("worker.salary.base"), value: compactMoney(data?.base) },
-              { key: "adv", label: t("worker.salary.advance"), value: compactMoney((data?.advance || 0) + (data?.withdrawal || 0)) },
+              { key: "adv", label: t("worker.salary.advance"), value: compactMoney((data?.advance || 0) + (data?.withdrawal || 0) + (data?.payout || 0)) },
               { key: "bonus", label: t("worker.salary.bonus"), value: compactMoney(data?.bonus), tone: data?.bonus > 0 ? "ok" : undefined },
               { key: "pen", label: t("worker.salary.penalty"), value: compactMoney(data?.penalty), tone: data?.penalty > 0 ? "bad" : undefined },
             ]}

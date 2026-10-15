@@ -58,6 +58,7 @@ function SalaryPanel({ salary, loading, hidden, month, monthLabel, maxMonth, onM
                 bonus={salary.bonus}
                 advance={salary.advance}
                 withdrawal={salary.withdrawal}
+                payout={salary.payout}
                 penalty={salary.penalty}
                 final={salary.final}
               />
@@ -70,6 +71,7 @@ function SalaryPanel({ salary, loading, hidden, month, monthLabel, maxMonth, onM
               <LedgerRow label={t("salary.bonus")} value={salary.bonus} tone="positive" />
               <LedgerRow label={t("salary.advance")} value={salary.advance} tone="negative" />
               <LedgerRow label={t("salary.withdrawal")} value={salary.withdrawal} tone="negative" />
+              {salary.payout > 0 && <LedgerRow label={t("salary.payout")} value={salary.payout} tone="negative" />}
               <LedgerRow label={t("salary.penalty")} value={salary.penalty} tone="negative" />
             </div>
             {/* Yakuniy qoldiq — eng kuchli urg'u; avans oylikdan oshib ketgan

@@ -740,6 +740,7 @@
       "tx": {
         "advance": "Advance",
         "withdrawal": "Early withdrawal",
+        "payout": "Salary paid",
         "bonus": "Bonus",
         "penalty": "Penalty"
       }

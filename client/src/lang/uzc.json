@@ -104,6 +104,7 @@
       "expense:cancel": "Харажат бекор қилинди",
       "salary:advance": "Аванс берилди",
       "salary:withdraw": "Олдиндан пул берилди",
+      "salary:payout": "Ойлик берилди",
       "salary:bonus": "Бонус берилди",
       "salary:penalty": "Жарима ёзилди",
       "salary:cancel": "Ойлик транзакцияси бекор қилинди",
@@ -619,9 +620,12 @@
     "final": "Қолган",
     "advance": "Аванс",
     "withdrawal": "Олдиндан олинган",
+    "payout": "Берилган ойлик",
     "center": "Филиал",
     "addTransaction": "Транзакция қўшиш",
     "paymentPenaltyAction": "Тўлов/Жарима",
+    "payAction": "Ойликни бериш",
+    "paid": "Тўланган",
     "transactionsMenu": "Транзакциялар",
     "txTypeLabel": "Транзакция тури",
     "amount": "Сумма (сўм)",
@@ -640,6 +644,7 @@
     "txType": {
       "advance": "Аванс",
       "withdrawal": "Олдиндан олиш",
+      "payout": "Ойлик бериш",
       "bonus": "Бонус",
       "penalty": "Жарима"
     }

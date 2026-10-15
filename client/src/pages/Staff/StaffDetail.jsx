@@ -43,7 +43,7 @@ const currentMonth = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 };
 
-const TX_COLOR = { advance: "orange", withdrawal: "red", bonus: "emerald", penalty: "red" };
+const TX_COLOR = { advance: "orange", withdrawal: "red", payout: "blue", bonus: "emerald", penalty: "red" };
 
 function StaffDetail() {
   const { t } = useTranslation();
@@ -415,6 +415,12 @@ function StaffDetail() {
                 <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.withdrawal")}</span>
                 <NumberText>{money(salary.withdrawal)}</NumberText>
               </div>
+              {salary.payout > 0 && (
+                <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+                  <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.payout")}</span>
+                  <NumberText>{money(salary.payout)}</NumberText>
+                </div>
+              )}
               <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
                 <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.bonus")}</span>
                 <NumberText className="text-emerald-600 dark:text-emerald-400">{money(salary.bonus)}</NumberText>

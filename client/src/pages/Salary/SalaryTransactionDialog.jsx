@@ -12,7 +12,16 @@ import useFeature from "../../hooks/useFeature";
 import useHideFinance from "../../hooks/useHideFinance";
 import { maskMoney } from "../../utils/moneyFormat";
 
-const TX_TYPES = ["advance", "withdrawal", "bonus", "penalty"];
+const TX_TYPES = ["advance", "withdrawal", "payout", "bonus", "penalty"];
+
+// O'tgan (yopilgan) oy uchun avans/oldindan olish ma'nosiz — u oyning
+// qoldig'i "Oylik berish" bilan beriladi.
+const CURRENT_MONTH_ONLY = ["advance", "withdrawal"];
+
+const currentMonth = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
 
 // Premium turlar — tarif ochmagan bo'lsa tanlovdan chiqarib tashlanadi
 // (backend `salary.service.js#addTransaction` baribir yakuniy tekshiradi).
@@ -21,18 +30,29 @@ const TX_TARIFF_FLAG = { advance: "staff.salary.advance", bonus: "staff.bonus" }
 // "To'lov/Jarima" — DropMenu'dan alohida ochiladigan, faqat qo'shish uchun
 // modal (Salary/index.jsx). Tranzaksiyalar tarixi/bekor qilish endi bu yerda
 // emas, alohida "Tranzaksiyalar" modalida (SalaryTransactionsListDialog.jsx).
-function SalaryTransactionDialog({ open, staff, month, onClose, onSaved }) {
+// `preset` — { type, amount } bilan oldindan to'ldirilgan holda ochish
+// ("Oylikni berish": payout + shu oy qoldig'i).
+function SalaryTransactionDialog({ open, staff, month, preset, onClose, onSaved }) {
   const { t } = useTranslation();
   const hasFeature = useFeature();
   const [hideFinance] = useHideFinance();
   const money = useCallback((v) => maskMoney(v, hideFinance), [hideFinance]);
-  const availableTypes = TX_TYPES.filter((tp) => !TX_TARIFF_FLAG[tp] || hasFeature(TX_TARIFF_FLAG[tp]));
-  const [form, setForm] = useState({ type: "advance", amount: "", note: "" });
+  const isPastMonth = month < currentMonth();
+  const availableTypes = TX_TYPES.filter(
+    (tp) =>
+      (!TX_TARIFF_FLAG[tp] || hasFeature(TX_TARIFF_FLAG[tp])) &&
+      !(isPastMonth && CURRENT_MONTH_ONLY.includes(tp)),
+  );
+  const [form, setForm] = useState({
+    type: preset?.type || (isPastMonth ? "payout" : "advance"),
+    amount: preset?.amount ? String(preset.amount) : "",
+    note: "",
+  });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open || availableTypes.includes(form.type)) return;
-    const id = setTimeout(() => setForm((f) => ({ ...f, type: availableTypes[0] || "withdrawal" })), 0);
+    const id = setTimeout(() => setForm((f) => ({ ...f, type: availableTypes[0] || "payout" })), 0);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -82,7 +102,6 @@ function SalaryTransactionDialog({ open, staff, month, onClose, onSaved }) {
       const { ok, msg } = res.data;
       if (!ok) throw new Error(msg);
       successMsg(msg);
-      setForm({ type: "advance", amount: "", note: "" });
       onSaved?.();
       onClose();
     } catch (error) {
@@ -96,7 +115,7 @@ function SalaryTransactionDialog({ open, staff, month, onClose, onSaved }) {
     <Dialog
       open={open}
       onClose={onClose}
-      title={`${t("salary.addTransaction")} — ${staff?.name || ""}`}
+      title={`${t(preset?.type === "payout" ? "salary.payAction" : "salary.addTransaction")} — ${staff?.name || ""}`}
       actions={
         <>
           <Button color="black" variant="text" onClick={onClose}>
@@ -134,6 +153,12 @@ function SalaryTransactionDialog({ open, staff, month, onClose, onSaved }) {
               <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.withdrawal")}</span>
               <NumberText>{money(stats.withdrawal)}</NumberText>
             </div>
+            {stats.payout > 0 && (
+              <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
+                <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.payout")}</span>
+                <NumberText>{money(stats.payout)}</NumberText>
+              </div>
+            )}
             <div className="flex flex-col gap-1 p-3 rounded-lg bg-slate-50 dark:bg-night-800">
               <span className="text-xs text-slate-400 dark:text-slate-500">{t("salary.bonus")}</span>
               <NumberText className="text-emerald-600 dark:text-emerald-400">{money(stats.bonus)}</NumberText>

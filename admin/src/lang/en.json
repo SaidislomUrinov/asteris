@@ -483,6 +483,7 @@
       "expense:cancel": "Expense cancelled",
       "salary:advance": "Advance paid",
       "salary:withdraw": "Withdrawal taken",
+      "salary:payout": "Salary paid",
       "salary:bonus": "Bonus given",
       "salary:penalty": "Penalty applied",
       "salary:pay": "Salary paid",

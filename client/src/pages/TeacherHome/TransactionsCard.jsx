@@ -14,6 +14,7 @@ const TX_DOT = {
   bonus: "bg-emerald-500",
   advance: "bg-blue-400",
   withdrawal: "bg-violet-400",
+  payout: "bg-sky-400",
   penalty: "bg-rose-400",
 };
 

@@ -736,6 +736,7 @@
       "tx": {
         "advance": "Avans",
         "withdrawal": "Oldindan olish",
+        "payout": "Oylik berildi",
         "bonus": "Bonus",
         "penalty": "Jarima"
       }
