@@ -1,4 +1,5 @@
 const env = require("./src/configs/env.config");
+const { corsOrigin } = require("./src/utils/brand.util");
 
 const path = require("path");
 const http = require("http");
@@ -24,7 +25,8 @@ app.use(helmet());
 // exposedHeaders: Content-Disposition — Excel export fayl nomini frontend
 // (cross-origin, 5173→5000) o'qiy olishi uchun (aks holda brauzer bu
 // header'ni JS'dan yashiradi, fayl har doim "export.xlsx" bo'lib qoladi).
-app.use(cors({ origin: env.ORIGINS, credentials: true, exposedHeaders: ["Content-Disposition"] }));
+// origin: ORIGINS ro'yxati + brend subdomenlari `https://*.wenet.uz` (brand.util.js).
+app.use(cors({ origin: corsOrigin, credentials: true, exposedHeaders: ["Content-Disposition"] }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Global 10MB limit. Yangilik videosi (≤100MB) yuklanadigan yo'l bundan

@@ -315,7 +315,7 @@ const handleOrder = async (clientId, centerId, id, nextStatus, actor) => {
 const notifyStaff = async (order, student, centerName) => {
   const staffs = await Staff.find({
     client: order.client,
-    center: order.center,
+    centers: order.center,
     isDeleted: false,
     blocked: { $ne: true },
     $or: [{ permissions: "all" }, { permissions: "coin:manage" }],

@@ -13,6 +13,45 @@ const keyConfig = require("../configs/key.config");
 const jwtUtil = require("../utils/jwt.util");
 const redisUtil = require("../utils/redis.util");
 const emit = require("../utils/emitter.util");
+const { appUrlOf } = require("../utils/brand.util");
+const slugUtil = require("../utils/slug.util");
+const fileUtil = require("../utils/file.util");
+const { FOLDERS } = require("../configs/folder.config");
+const sharp = require("sharp");
+
+// ── Brend: slug + logotip (API_CONTRACT_multi_center.md §3.7) ──────────────
+const MAX_LOGO_BYTES = 5 * 1024 * 1024;
+
+// Slug band: joriy yoki avvalgi slug sifatida boshqa (o'chirilmagan) mijozda.
+const isSlugTaken = async (slug, exceptId = null) =>
+  !!(await Client.exists({
+    isDeleted: false,
+    $or: [{ slug }, { previousSlugs: slug }],
+    ...(exceptId ? { _id: { $ne: exceptId } } : {}),
+  }));
+
+const resolveSlug = async (value, exceptId = null) => {
+  const slug = slugUtil.assertSlug(value);
+  if (await isSlugTaken(slug, exceptId)) throw new Error("client.slugTaken");
+  return slug;
+};
+
+// Logotip — shaffoflik saqlanadi, 512px ichiga sig'diriladi (kattalashtirilmaydi).
+const saveBrandLogo = async (file) => {
+  if (!file?.data?.length) return null;
+  if (file.data.length > MAX_LOGO_BYTES) throw new Error("client.logoTooLarge");
+  let buffer;
+  try {
+    buffer = await sharp(file.data, { failOn: "none", limitInputPixels: 40_000_000 })
+      .rotate()
+      .resize(512, 512, { fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 85, alphaQuality: 100, effort: 5 })
+      .toBuffer();
+  } catch {
+    throw new Error("client.logoInvalid");
+  }
+  return await fileUtil.saveBuffer(buffer, FOLDERS.LOGOS, ".webp");
+};
 
 // Obuna admin tomonidan o'zgartirilganda Owner HAM Staff'ga signal —
 // ikkalasi ham `client:{clientId}` roomida (socket.config.js "joinRooms").
@@ -203,6 +242,9 @@ const DTO = (data) => ({
   clientId: data?.clientId,
   name: data?.name,
   phone: data?.phone,
+  slug: data?.slug || null,
+  logo: data?.logo || null,
+  appUrl: appUrlOf(data?.slug || null),
   lead: data?.lead,
   blocked: data?.blocked,
   subscription: subscriptionDTO(data?.subscription),
@@ -228,9 +270,59 @@ const snapshotTariff = (tariff) => ({
 module.exports = {
   DTO,
   snapshotTariff,
+
+  // Login/verify javobi uchun brend + filiallar (API_CONTRACT_multi_center.md §3.3).
+  // `centerIds` — Staff uchun o'z filiallari (Owner: null = barchasi);
+  // `excludeBlocked` — Staff bloklangan filialda ishlay olmaydi;
+  // `wanted` — frontend yuborgan faol filial (ro'yxatda bo'lsa saqlanadi).
+  sessionContext: async (clientId, { centerIds = null, excludeBlocked = false, wanted = null, primary = null } = {}) => {
+    const [client, centers] = await Promise.all([
+      Client.findOne({ _id: clientId }).select("slug name logo").lean(),
+      Center.find({
+        client: clientId,
+        isDeleted: false,
+        ...(centerIds ? { _id: { $in: centerIds } } : {}),
+        ...(excludeBlocked ? { status: { $ne: "blocked" } } : {}),
+      })
+        .select("name logo status")
+        .sort({ createdAt: 1 })
+        .lean(),
+    ]);
+    const list = centers.map((c) => ({ _id: String(c._id), name: c.name, logo: c.logo || null, status: c.status }));
+    const pick = (id) => (id && list.some((c) => c._id === String(id)) ? String(id) : null);
+    const firstActive = list.find((c) => c.status !== "blocked")?._id || list[0]?._id || null;
+    return {
+      brand: client ? { slug: client.slug || null, name: client.name, logo: client.logo || null } : null,
+      centers: list,
+      activeCenter: pick(wanted) || pick(primary) || firstActive,
+    };
+  },
   revokeSessions,
 
-  create: async (body) => {
+  // Brend slug taklifi — admin formasi nom yozilganda chaqiradi.
+  suggestSlug: async (name, exceptId = null) => ({
+    slug: await slugUtil.suggest(name || "", (s) => isSlugTaken(s, exceptId)),
+  }),
+
+  // Ochiq: login sahifasi uchun brend (API_CONTRACT_multi_center.md §3.1).
+  // Avvalgi slug bilan kirilsa — `redirect` (yangi slug).
+  brand: async (value) => {
+    const slug = slugUtil.normalize(value);
+    if (!slugUtil.isValid(slug)) throw new Error("brand.notFound");
+    const client = await Client.findOne({ isDeleted: false, $or: [{ slug }, { previousSlugs: slug }] })
+      .select("slug name logo blocked")
+      .lean();
+    if (!client || client.blocked) throw new Error("brand.notFound");
+    return {
+      slug: client.slug,
+      name: client.name,
+      logo: client.logo || null,
+      ...(client.slug !== slug ? { redirect: client.slug } : {}),
+    };
+  },
+
+  create: async (rawBody, files = null) => {
+    const body = rawBody || {};
     const { name, phone, password } = body;
     if (!name || !phone || !password) throw new Error("client.fillTheRows");
 
@@ -238,17 +330,33 @@ module.exports = {
     const exists = await Client.findOne({ phone: trimmedPhone, isDeleted: false });
     if (exists) throw new Error("client.phoneTaken");
 
+    // Slug berilmasa nomdan avtomatik (subdomen darhol ishlaydi — wildcard DNS/SSL).
+    const slug = body.slug
+      ? await resolveSlug(body.slug)
+      : (await slugUtil.suggest(name, (s) => isSlugTaken(s)));
+    const logo = await saveBrandLogo(files?.logo);
+
     // Shu raqamga mos, hali hech qaysi clientga bog'lanmagan eng so'nggi leadni topib biriktiramiz
     const matchedLead = await Lead.findOne({ phone: trimmedPhone, client: null }).sort({
       createdAt: -1,
     });
 
-    const client = await Client.create({
-      name: name.trim(),
-      phone: trimmedPhone,
-      password: await getHash(password.trim()),
-      lead: matchedLead?._id || null,
-    });
+    let client;
+    try {
+      client = await Client.create({
+        name: name.trim(),
+        phone: trimmedPhone,
+        slug,
+        logo,
+        password: await getHash(password.trim()),
+        lead: matchedLead?._id || null,
+      });
+    } catch (error) {
+      if (logo) await fileUtil.remove(logo);
+      // Parallel yaratishda unique indeks — tushunarli xabar.
+      if (error?.code === 11000 && error?.keyPattern?.slug) throw new Error("client.slugTaken");
+      throw error;
+    }
 
     if (matchedLead) {
       matchedLead.client = client._id;
@@ -391,9 +499,25 @@ module.exports = {
     return { active };
   },
 
-  update: async (id, body) => {
+  update: async (id, rawBody, files = null) => {
+    // Faqat fayl (logotip) yuborilganda multipart `req.body` bo'sh keladi.
+    const body = rawBody || {};
     const client = await Client.findOne({ _id: id, isDeleted: false });
     if (!client) throw new Error("client.notFound");
+
+    if (body.slug && slugUtil.normalize(body.slug) !== client.slug) {
+      const next = await resolveSlug(body.slug, client._id);
+      // Eski manzil yangisiga yo'naltirilishi uchun saqlanadi; o'zining avvalgi
+      // slug'iga qaytsa ro'yxatdan olinadi.
+      const prev = (client.previousSlugs || []).filter((s) => s !== next);
+      if (client.slug) prev.push(client.slug);
+      client.previousSlugs = [...new Set(prev)];
+      client.slug = next;
+    }
+
+    const oldLogo = client.logo;
+    if (files?.logo) client.logo = await saveBrandLogo(files.logo);
+    else if (body.removeLogo === "1" || body.removeLogo === true) client.logo = null;
 
     if (body.phone && body.phone.trim() !== client.phone) {
       const trimmedPhone = body.phone.trim();
@@ -410,6 +534,9 @@ module.exports = {
     if (body.password) client.password = await getHash(body.password.trim());
 
     await client.save();
+    if (oldLogo && oldLogo !== client.logo) await fileUtil.remove(oldLogo);
+    // Owner sessiya keshida DTO (slug/logo) — yangilansin.
+    await redisUtil.del(keyConfig.client(client._id));
     // Parolni admin almashtirdi — barcha sessiyalar (brauzer + Telegram) majburan yopiladi.
     if (body.password) await revokeSessions(client._id);
     await client.populate({ path: "subscription", populate: { path: "tariff" } });
@@ -586,7 +713,7 @@ module.exports = {
     const centerIds = centers.map((c) => c._id);
     const [groups, staffs, students] = await Promise.all([
       Group.find({ client: clientId, isDeleted: false, center: { $in: centerIds } }, { center: 1 }),
-      Staff.find({ client: clientId, isDeleted: false, center: { $in: centerIds } }, { center: 1 }),
+      Staff.find({ client: clientId, isDeleted: false, centers: { $in: centerIds } }, { center: 1, centers: 1 }),
       Student.find(
         { "groups.client": clientId, isDeleted: false },
         { groups: 1 },
@@ -597,7 +724,10 @@ module.exports = {
     for (const g of groups) groupCount[String(g.center)] = (groupCount[String(g.center)] || 0) + 1;
 
     const staffCount = {};
-    for (const s of staffs) staffCount[String(s.center)] = (staffCount[String(s.center)] || 0) + 1;
+    // Ko'p filialli hodim har filialida sanaladi.
+    for (const s of staffs) {
+      for (const c of Staff.centersOf(s)) staffCount[c] = (staffCount[c] || 0) + 1;
+    }
 
     const studentSets = {};
     for (const student of students) {
@@ -638,6 +768,10 @@ module.exports = {
 
     const client = await Client.findOne({ phone: phone.trim(), isDeleted: false });
     if (!client) throw new Error("auth.notFound");
+    // Brend subdomenidan kirilsa — raqam AYNAN shu mijozniki bo'lishi shart
+    // (boshqa markaz manzilida kirib qolmasin). Xabar ataylab bir xil.
+    const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : "";
+    if (slug && client.slug !== slug) throw new Error("auth.notFound");
     if (client.blocked) throw new Error("client.blocked");
 
     const checkPass = await compareHash(password?.trim(), client.password);

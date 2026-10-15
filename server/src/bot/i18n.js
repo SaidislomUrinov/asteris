@@ -110,6 +110,7 @@ const DICT = {
     reminderHeader: "Darsingizga 1 soat qoldi",
     reminderTimeLabel: "Vaqt",
     reminderRoomLabel: "Xona",
+    reminderCenterLabel: "Filial",
     reminderTopicLabel: "Mavzu",
     reminderNoTopic: "Mavzu biriktirilmagan",
     // Guruhdagi o'rin ko'tarildi (API_CONTRACT_badges_monthly_rank.md §B).
@@ -260,6 +261,7 @@ const DICT = {
     reminderHeader: "До урока остался 1 час",
     reminderTimeLabel: "Время",
     reminderRoomLabel: "Кабинет",
+    reminderCenterLabel: "Филиал",
     reminderTopicLabel: "Тема",
     reminderNoTopic: "Тема не назначена",
     pnRankUp: "Место в группе: {from} → {to} ⬆ (из {total})",
@@ -406,6 +408,7 @@ const DICT = {
     reminderHeader: "1 hour until your lesson",
     reminderTimeLabel: "Time",
     reminderRoomLabel: "Room",
+    reminderCenterLabel: "Branch",
     reminderTopicLabel: "Topic",
     reminderNoTopic: "No topic assigned",
     pnRankUp: "Group rank: {from} → {to} ⬆ (of {total})",

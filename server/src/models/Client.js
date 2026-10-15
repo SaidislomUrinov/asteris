@@ -17,6 +17,25 @@ const schema = new Schema({
     required: true,
     trim: true,
   },
+  // Brend subdomeni: `{slug}.wenet.uz` (API_CONTRACT_multi_center.md §1).
+  // Hodim logini shu mijoz ichida yagona, kirishda slug orqali mijoz topiladi.
+  slug: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    default: null,
+  },
+  // Avvalgi slug'lar — eski manzil yangisiga yo'naltiriladi va boshqa
+  // mijozga berilmaydi (hodimlardagi eski havolalar buzilmasin).
+  previousSlugs: {
+    type: [String],
+    default: [],
+  },
+  // Brend logotipi — login sahifasida ko'rinadi (/uploads/logos/*.webp).
+  logo: {
+    type: String,
+    default: null,
+  },
   password: {
     type: String,
     required: true,
@@ -81,6 +100,10 @@ const schema = new Schema({
 // Faqat aktiv (isDeleted:false) hujjatlar orasida unique — soft-delete qilingan
 // mijozning raqami keyinchalik qayta ro'yxatdan o'tkazilishi mumkin bo'lishi kerak.
 schema.index({ phone: 1 }, { unique: true, partialFilterExpression: { isDeleted: false } });
+schema.index(
+  { slug: 1 },
+  { unique: true, partialFilterExpression: { isDeleted: false, slug: { $type: "string" } } },
+);
 
 schema.pre("save", async function () {
   this.updatedAt = getNow();

@@ -22,6 +22,66 @@ const GROUP_SCOPE_FIELD = { teacher: "teacher", assistant: "assistant" };
 // bor (client/staff.service `signInTelegram`), brauzer tokenida yo'q.
 const authChannelOf = (payload) => (payload?.ch === "tg" ? "tg" : "web");
 
+// ── Faol filial (API_CONTRACT_multi_center.md §2) ─────────────────────────
+// Client ilovasi har so'rovda `x-center-id` yuboradi. Staff uchun — o'z
+// filiallaridan biri bo'lishi shart, Owner uchun — o'z mijozining filiali.
+const readCenterHeader = (req) => {
+  const value = req?.headers?.["x-center-id"];
+  return typeof value === "string" && isValidObjectId(value) ? value : null;
+};
+
+// Express 5: `req.query` — getter, faqat own-property bilan almashtiriladi
+// (tenantAuth'dagi izohga qarang).
+const forceQueryCenter = (req, centerId) => {
+  Object.defineProperty(req, "query", {
+    value: { ...req.query, center: centerId },
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
+};
+
+// Owner header'ini tekshirish keshi — har so'rovda bazaga bormaslik uchun.
+// Filial o'chirilsa 60 soniya ichida kesh eskiradi (o'chirilgan filial
+// ma'lumotlari baribir `isDeleted` filtrlari bilan yopiq).
+const OWNER_CENTER_CACHE = new Map();
+const OWNER_CENTER_TTL = 60 * 1000;
+const ownerCenterValid = async (clientId, centerId) => {
+  const key = `${clientId}:${centerId}`;
+  const hit = OWNER_CENTER_CACHE.get(key);
+  if (hit && hit.at > Date.now() - OWNER_CENTER_TTL) return hit.ok;
+  const ok = !!(await Center.exists({ _id: centerId, client: clientId, isDeleted: false }));
+  if (OWNER_CENTER_CACHE.size > 5000) OWNER_CENTER_CACHE.clear();
+  OWNER_CENTER_CACHE.set(key, { ok, at: Date.now() });
+  return ok;
+};
+
+// Owner faol filiali: ro'yxat so'rovlari (`req.query.center`) shu filialga
+// cheklanadi, `req.centerScope` qo'yiladi. `req.body` tegilmaydi — Owner
+// filiallararo amallarni (o'quvchini boshqa filial guruhiga ko'chirish)
+// bajara olishi kerak. Header yo'q bo'lsa eski xatti-harakat.
+const applyOwnerCenter = async (req) => {
+  const centerId = readCenterHeader(req);
+  if (!centerId || !(await ownerCenterValid(String(req.client._id), centerId))) return;
+  forceQueryCenter(req, centerId);
+  req.centerScope = centerId;
+  req.activeCenter = centerId;
+};
+
+// Staff faol filiali: header ruxsat etilgan (o'chirilmagan, bloklanmagan)
+// filiallardan biri bo'lsa o'sha, aks holda asosiy, aks holda birinchisi.
+const resolveStaffCenter = async (staff, wanted) => {
+  const own = Staff.centersOf(staff);
+  const rows = await Center.find({ _id: { $in: own }, isDeleted: false }).select("status").lean();
+  const usable = own.filter((id) => rows.some((r) => String(r._id) === id && r.status !== "blocked"));
+  if (!usable.length) {
+    throw new Error(rows.length ? "center.blocked" : "auth.failed");
+  }
+  const primary = String(staff.center);
+  const active = wanted && usable.includes(wanted) ? wanted : usable.includes(primary) ? primary : usable[0];
+  return { active, usable, primary };
+};
+
 module.exports = {
   adminAuth: async (req, res, next) => {
     try {
@@ -220,14 +280,15 @@ module.exports = {
         req.staff = data;
       }
 
-      // Tarif pasayganda markaz bloklanadi (API_CONTRACT.md §7.1.2) —
-      // o'sha markazning hodimlari platformaga KIRA OLMAYDI. Tekshiruv
-      // shu yerda: Redis'dagi staff sessiyasi keshlangan bo'lsa ham
-      // markaz holati JONLI o'qiladi, aks holda bloklangan filial hodimi
-      // sessiyasi tugaguncha ishlab yuraverardi. `select("status")` —
-      // yengil so'rov, faqat bitta maydon.
-      const staffCenter = await Center.findById(req.staff.center).select("status");
-      if (staffCenter?.status === "blocked") throw new Error("center.blocked");
+      // Faol filial (API_CONTRACT_multi_center.md §2). Tarif pasayganda
+      // markaz bloklanadi (API_CONTRACT.md §7.1.2) — bloklangan filialda
+      // ishlab bo'lmaydi, hodimning BARCHA filiallari bloklangan bo'lsa
+      // platformaga kira olmaydi. Holat har so'rovda JONLI o'qiladi (Redis
+      // sessiya keshi eskirgan bo'lishi mumkin). `req.staff.center` — FAOL
+      // filial: barcha mavjud filial tekshiruvlari o'zgarishsiz ishlaydi.
+      const { active, usable, primary } = await resolveStaffCenter(req.staff, readCenterHeader(req));
+      req.staff = { ...req.staff, center: active, primaryCenter: primary, centers: usable };
+      req.activeCenter = active;
 
       await Promise.all([
         redisUtil.touch(key, envConfig.STAFF_SESSION_TTL),
@@ -283,13 +344,32 @@ module.exports = {
     }
   },
 
+  // clientAuth+fullClientAuth'dan keyin (Owner-only route'lar, masalan /staffs):
+  // faol filial bo'yicha ro'yxat cheklovi — tenantAuth owner tarmog'i bilan bir xil.
+  ownerCenterScope: async (req, res, next) => {
+    try {
+      await applyOwnerCenter(req);
+      next();
+    } catch (error) {
+      next(error);
+    }
+  },
+
   tenantAuth: async (req, res, next) => {
     const mw = module.exports;
 
     if (req?.headers?.["x-client-auth-token"]) {
       return mw.clientAuth(req, res, (err) => {
         if (err) return next(err);
-        mw.fullClientAuth(req, res, next);
+        mw.fullClientAuth(req, res, async (err2) => {
+          if (err2) return next(err2);
+          try {
+            await applyOwnerCenter(req);
+            next();
+          } catch (error) {
+            next(error);
+          }
+        });
       });
     }
 

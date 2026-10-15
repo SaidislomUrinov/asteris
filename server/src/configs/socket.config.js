@@ -78,11 +78,25 @@ const authenticateClientSocket = async (socket, next) => {
       const staff = await Staff.findOne({ _id: payload._id, isDeleted: false });
       if (!staff || staff.blocked) return next(new Error("Unauthorized"));
 
+      // Faol filial (API_CONTRACT_multi_center.md §4): handshake `centerId`
+      // hodimning o'chirilmagan/bloklanmagan filiallaridan biri bo'lsa o'sha,
+      // aks holda asosiy filial — REST `fullStaffAuth` bilan bir xil qoida.
+      const Center = require("../models/Center");
+      const own = Staff.centersOf(staff);
+      const rows = await Center.find({ _id: { $in: own }, isDeleted: false, status: { $ne: "blocked" } })
+        .select("_id")
+        .lean();
+      const usable = rows.map((r) => String(r._id));
+      const wanted = String(socket.handshake.auth?.centerId || "");
+      const primary = String(staff.center);
+      const centerId = usable.includes(wanted) ? wanted : usable.includes(primary) ? primary : usable[0];
+      if (!centerId) return next(new Error("Unauthorized"));
+
       socket.data.role = staff.role;
       socket.data.permissions = staff.permissions || [];
       socket.data.userId = payload._id;
       socket.data.clientId = staff.client;
-      socket.data.centerId = staff.center;
+      socket.data.centerId = centerId;
     }
 
     next();
@@ -168,7 +182,7 @@ const initIo = async (httpServer) => {
 
   rootIo = new Server(httpServer, {
     cors: {
-      origin: env.ORIGINS,
+      origin: require("../utils/brand.util").corsOrigin,
       credentials: true,
       methods: ["GET", "POST"],
     },

@@ -12,6 +12,7 @@ router.use(adminAuth, fullAdminAuth);
 
 router.post("/", requirePermission("client:create"), clientController.create);
 router.get("/", requirePermission("client:view"), clientController.list);
+router.get("/slug-suggest", requirePermission("client:create"), clientController.suggestSlug);
 router.get("/:id", requirePermission("client:view"), clientController.getOne);
 router.patch("/:id", requirePermission("client:update"), clientController.update);
 router.delete("/:id", requirePermission("client:delete"), clientController.remove);

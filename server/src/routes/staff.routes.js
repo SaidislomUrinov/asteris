@@ -4,6 +4,7 @@ const {
   clientAuth,
   fullClientAuth,
   tenantAuth,
+  ownerCenterScope,
   requireTariffFeature,
   requireActiveSubscription,
 } = require("../middlewares/authenticator.middleware");
@@ -23,7 +24,7 @@ router.get("/lookup", tenantAuth, staffController.lookup);
 
 // Qolgan hammasi — faqat Client Owner (yaratish/tahrirlash/o'chirish/bloklash,
 // TO'LIQ ro'yxat/detail — maosh va permissionlar bilan)
-router.use(clientAuth, fullClientAuth);
+router.use(clientAuth, fullClientAuth, ownerCenterScope);
 router.use(requireActiveSubscription);
 
 router.post("/", staffController.create);

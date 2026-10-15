@@ -50,7 +50,7 @@ module.exports = {
         req.params.groupId,
         scopeOf(req),
         // Staff faqat o'z filiali guruhlaridan import qiladi.
-        req.staff?.center || "",
+        req.centerScope || "",
       );
       return res.send({ ok: true, data });
     } catch (error) {
@@ -65,7 +65,7 @@ module.exports = {
         req.params.groupId,
         scopeOf(req),
         // Staff faqat o'z filiali o'qituvchilarining rejalarini ko'radi.
-        req.staff?.center || "",
+        req.centerScope || "",
         req.staff || null,
       );
       return res.send({ ok: true, data });

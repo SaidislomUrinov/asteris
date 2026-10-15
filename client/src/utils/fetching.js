@@ -21,6 +21,32 @@ const AUTH_PREFIX = {
 };
 
 export const getAuthType = () => localStorage.getItem("authType");
+
+// Faol filial (docs/API_CONTRACT_multi_center.md §2) — har so'rov `x-center-id`
+// bilan ketadi, backend ro'yxatlarni shu filialga cheklaydi. Filial
+// almashtirish — components/CenterSwitcher.jsx (to'liq reload bilan).
+const ACTIVE_CENTER_KEY = "activeCenter";
+export const getActiveCenter = () => {
+  try {
+    return localStorage.getItem(ACTIVE_CENTER_KEY) || "";
+  } catch {
+    return "";
+  }
+};
+// Filiallar ro'yxati o'zgardi (yaratildi/o'chirildi/qayta ochildi) — App
+// `verify`ni qayta chaqiradi: almashtirgich yangilanadi, faol filial
+// o'chirilgan bo'lsa boshqasiga o'tib reload bo'ladi.
+export const CENTERS_CHANGED_EVENT = "wenet:centers-changed";
+export const notifyCentersChanged = () => window.dispatchEvent(new Event(CENTERS_CHANGED_EVENT));
+
+export const setActiveCenter = (id) => {
+  try {
+    if (id) localStorage.setItem(ACTIVE_CENTER_KEY, id);
+    else localStorage.removeItem(ACTIVE_CENTER_KEY);
+  } catch {
+    // localStorage yo'q — header yuborilmaydi, backend asosiy filialni oladi
+  }
+};
 export const setSession = (authType, access) => {
   localStorage.setItem("authType", authType);
   localStorage.setItem("access", access);
@@ -32,6 +58,10 @@ api.interceptors.request.use((config) => {
   if (token && authType && AUTH_HEADERS[authType]) {
     config.headers[AUTH_HEADERS[authType]] = `${AUTH_PREFIX[authType]} ${token}`;
   }
+  // So'rov o'zi `x-center-id` bergan bo'lsa (masalan "" — barcha filiallar
+  // kerak bo'lgan Owner lookup'i, Hodim dialogi fanlari) — tegilmaydi.
+  const center = getActiveCenter();
+  if (center && config.headers["x-center-id"] === undefined) config.headers["x-center-id"] = center;
   return config;
 });
 

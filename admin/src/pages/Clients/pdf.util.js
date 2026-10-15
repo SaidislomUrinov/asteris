@@ -2,7 +2,8 @@ import { jsPDF } from "jspdf";
 
 // Mijoz yaratilgach uning kirish rekvizitlarini (ism, telefon, parol) chiroyli
 // PDF sifatida avtomatik yuklab beradi — parol faqat shu paytda oq-qora ko'rinadi.
-export function downloadClientCredentialsPdf({ name, phone, password, clientId }) {
+// `url` — mijoz paneli manzili (`https://prime.wenet.uz`), hodimlar ham shu manzildan kiradi.
+export function downloadClientCredentialsPdf({ name, phone, password, clientId, url = "" }) {
   const doc = new jsPDF({ unit: "pt", format: "a5" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 40;
@@ -30,6 +31,7 @@ export function downloadClientCredentialsPdf({ name, phone, password, clientId }
 
   const rows = [
     ["Ism", name],
+    ...(url ? [["Manzil", url.replace(/^https?:\/\//, "")]] : []),
     ["Telefon", phone],
     ["Parol", password],
   ];

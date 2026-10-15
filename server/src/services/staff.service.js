@@ -1,3 +1,4 @@
+const { isValidObjectId } = require("mongoose");
 const Staff = require("../models/Staff");
 const Center = require("../models/Center");
 const Subject = require("../models/Subject");
@@ -29,17 +30,22 @@ const TEACHING_ROLES = ["teacher", "assistant"];
 // qilmasdi (QA 2026-10-02).
 const dropSessionCache = (staffId) => redisUtil.del(keyConfig.staff(staffId));
 
-const DTO = (data) => ({
+// `centerId` — qaysi filial kontekstida (oylik qiymati shu filialniki);
+// berilmasa asosiy filial. `center` — ASOSIY filial (sessiya keshi ham shu
+// shaklda; faol filialni middleware har so'rovda alohida qo'yadi).
+const DTO = (data, centerId = null) => ({
   _id: data?._id,
   staffId: data?.staffId,
   client: data?.client,
   center: data?.center,
+  centers: Staff.centersOf(data),
   name: data?.name,
   login: data?.login,
   role: data?.role,
   permissions: data?.permissions,
   subjects: (data?.subjects || []).map((s) => String(s)),
-  salaryValue: data?.salaryValue,
+  salaryValue: Staff.salaryValueOf(data, centerId || data?.center),
+  salaryValues: (data?.salaryValues || []).map((r) => ({ center: String(r.center), value: r.value ?? null })),
   blocked: data?.blocked,
   introSeen: data?.introSeen || false,
   date: data?.date,
@@ -51,14 +57,15 @@ const DTO = (data) => ({
 // tashlab yuboriladi — Group.service'dagi `sameSubjectIds` naqshiga o'xshab
 // qat'iy xato emas, chunki bu yerda checkbox ro'yxati allaqachon filial bilan
 // cheklangan bo'ladi frontendda).
-const resolveSubjects = async (clientId, centerId, role, subjectIds) => {
+const resolveSubjects = async (clientId, centerIds, role, subjectIds) => {
   if (!TEACHING_ROLES.includes(role)) return [];
   if (!Array.isArray(subjectIds) || !subjectIds.length) return [];
 
   const valid = await Subject.find({
     _id: { $in: subjectIds },
     client: clientId,
-    center: centerId,
+    // Ko'p filialli hodim — fan uning istalgan filialidan bo'lishi mumkin.
+    center: { $in: [].concat(centerIds) },
     isDeleted: false,
   }).select("_id");
 
@@ -112,6 +119,46 @@ const assertSalaryTypeAllowed = async (clientId, nextPermissions, prevPermission
   if (!allowed) throw new Error("staff.salaryTypeNotInTariff");
 };
 
+// Body'dagi filiallar (API_CONTRACT_multi_center.md §3.5): `centerIds` yoki
+// eski `centerId`. Hammasi shu mijozning o'chirilmagan filiali bo'lishi shart.
+// Birinchisi — asosiy filial (tahrirda avvalgi asosiy saqlansa o'sha qoladi).
+const resolveCenters = async (clientId, body) => {
+  const raw = Array.isArray(body?.centerIds) && body.centerIds.length ? body.centerIds : body?.centerId ? [body.centerId] : [];
+  const ids = [...new Set(raw.map(String))];
+  if (!ids.length) return null;
+  if (!ids.every((id) => isValidObjectId(id))) throw new Error("center.notFound");
+  const found = await Center.find({ _id: { $in: ids }, client: clientId, isDeleted: false }).select("_id");
+  if (found.length !== ids.length) throw new Error("center.notFound");
+  return ids;
+};
+
+// Filial bo'yicha oylik qiymatlari — faqat hodimning filiallari uchun.
+// Eski shakl (`salaryValue` bitta son) — barcha tanlangan filiallarga emas,
+// faqat yagona/asosiy filialga yoziladi (eski frontend bitta filial bilan ishlaydi).
+const resolveSalaryValues = (body, centerIds, prev = []) => {
+  const allowed = new Set(centerIds.map(String));
+  const check = (v) => {
+    if (v === null || v === undefined || v === "") return null;
+    const n = Number(v);
+    if (Number.isNaN(n) || n < 0) throw new Error("staff.invalidSalaryValue");
+    return n;
+  };
+  if (Array.isArray(body?.salaryValues)) {
+    const map = new Map();
+    for (const row of body.salaryValues) {
+      const key = String(row?.center || "");
+      if (allowed.has(key)) map.set(key, check(row.value));
+    }
+    return centerIds.map((c) => ({ center: c, value: map.has(String(c)) ? map.get(String(c)) : null }));
+  }
+  const prevMap = new Map(prev.map((r) => [String(r.center), r.value ?? null]));
+  const rows = centerIds.map((c) => ({ center: c, value: prevMap.has(String(c)) ? prevMap.get(String(c)) : null }));
+  if (body?.salaryValue !== undefined) rows[0].value = check(body.salaryValue);
+  return rows;
+};
+
+const sameIds = (a, b) => a.length === b.length && a.every((id, i) => String(id) === String(b[i]));
+
 module.exports = {
   dropSessionCache,
   revokeSessions,
@@ -119,16 +166,15 @@ module.exports = {
 
   // ---- CRUD (Client Owner tomonidan boshqariladi, clientId bo'yicha tenant isolation) ----
   create: async (clientId, body, actor = null) => {
-    const { centerId, name, login, password, role, permissions, salaryValue, subjects } = body;
-    if (!centerId || !name || !login || !password) throw new Error("staff.fillTheRows");
+    const { name, login, password, role, permissions, subjects } = body;
+    const centerIds = await resolveCenters(clientId, body);
+    if (!centerIds || !name || !login || !password) throw new Error("staff.fillTheRows");
     if (!Staff.ROLES.includes(role)) throw new Error("staff.invalidRole");
-    if (salaryValue != null && salaryValue < 0) throw new Error("staff.invalidSalaryValue");
+    const salaryValues = resolveSalaryValues(body, centerIds);
 
-    const center = await Center.findOne({ _id: centerId, client: clientId, isDeleted: false });
-    if (!center) throw new Error("center.notFound");
-
+    // Login MIJOZ ichida yagona (brend subdomeni orqali kiriladi).
     const trimmedLogin = login.trim();
-    const exists = await Staff.findOne({ login: trimmedLogin, isDeleted: false });
+    const exists = await Staff.findOne({ client: clientId, login: trimmedLogin, isDeleted: false });
     if (exists) throw new Error("staff.loginTaken");
 
     const isTeaching = TEACHING_ROLES.includes(role);
@@ -150,14 +196,15 @@ module.exports = {
 
     const staff = await Staff.create({
       client: clientId,
-      center: center._id,
+      center: centerIds[0],
+      centers: centerIds,
       name: name.trim(),
       login: trimmedLogin,
       password: await getHash(password.trim()),
       role,
       permissions: sanitizeStaffPermissions(role, permissions),
-      subjects: await resolveSubjects(clientId, center._id, role, subjects),
-      salaryValue: salaryValue ?? null,
+      subjects: await resolveSubjects(clientId, centerIds, role, subjects),
+      salaryValues,
     });
 
     void audit.log({
@@ -166,7 +213,7 @@ module.exports = {
       center: staff.center,
       action: "staff:create",
       entity: { type: "staff", id: staff._id, label: staff.name },
-      meta: { role: staff.role, login: staff.login },
+      meta: { role: staff.role, login: staff.login, centers: centerIds },
     });
 
     return { ...DTO(staff), plainPassword: password.trim() };
@@ -177,19 +224,22 @@ module.exports = {
   // maosh/login/permission kabi nozik maydonlar YO'Q — faqat _id/name/role.
   lookup: async (clientId, { center = "", role = "" }) => {
     const filter = { client: clientId, isDeleted: false, blocked: false };
-    if (center) filter.center = center;
+    if (center) filter.centers = center;
     if (role && Staff.ROLES.includes(role)) filter.role = role;
 
     // `center` SHART: Guruh dialogi ro'yxatni filial bo'yicha filtrlaydi
     // (`s.center === form.center`) — u bo'lmasa tanlov ro'yxati bo'sh chiqadi.
     // `subjects` — Guruh dialogida teacher/assistant ro'yxati tanlangan fan
     // bo'yicha ham filtrlanadi (o'sha fanni o'qitmaydigan hodim ko'rinmaydi).
-    const staffs = await Staff.find(filter).select("name role center subjects").sort({ name: 1 });
+    // Ko'p filialli hodim: `center` — so'ralgan filial (dialog shu bo'yicha
+    // filtrlaydi), `centers` — barcha filiallari.
+    const staffs = await Staff.find(filter).select("name role center centers subjects").sort({ name: 1 });
     return staffs.map((s) => ({
       _id: s._id,
       name: s.name,
       role: s.role,
-      center: String(s.center),
+      center: center ? String(center) : String(s.center),
+      centers: Staff.centersOf(s),
       subjects: (s.subjects || []).map((id) => String(id)),
     }));
   },
@@ -197,7 +247,8 @@ module.exports = {
   list: async (clientId, { page = 1, search = "", center = "", role = "" }) => {
     const trimmedSearch = search?.trim();
     const baseFilter = { client: clientId, isDeleted: false };
-    if (center) baseFilter.center = center;
+    if (center) baseFilter.centers = center;
+    const dto = (s) => DTO(s, center || null);
     if (role && Staff.ROLES.includes(role)) baseFilter.role = role;
 
     if (trimmedSearch) {
@@ -208,7 +259,7 @@ module.exports = {
       }).sort({ createdAt: -1 });
 
       return {
-        data: data.map(DTO),
+        data: data.map(dto),
         meta: { page: 1, limit: data.length, total: data.length, totalPages: 1 },
       };
     }
@@ -222,7 +273,7 @@ module.exports = {
     ]);
 
     return {
-      data: data.map(DTO),
+      data: data.map(dto),
       meta: {
         page: pageNum,
         limit: PAGE_SIZE,
@@ -232,10 +283,10 @@ module.exports = {
     };
   },
 
-  getOne: async (clientId, id) => {
+  getOne: async (clientId, id, centerId = null) => {
     const staff = await Staff.findOne({ _id: id, client: clientId, isDeleted: false });
     if (!staff) throw new Error("staff.notFound");
-    return DTO(staff);
+    return DTO(staff, centerId);
   },
 
   // Excel export — list() bilan bir xil filtr, sahifalashsiz, Filial nomi
@@ -243,7 +294,7 @@ module.exports = {
   exportList: async (clientId, { search = "", center = "", role = "" }) => {
     const trimmedSearch = search?.trim();
     const baseFilter = { client: clientId, isDeleted: false };
-    if (center) baseFilter.center = center;
+    if (center) baseFilter.centers = center;
     if (role && Staff.ROLES.includes(role)) baseFilter.role = role;
     if (trimmedSearch) {
       const regex = new RegExp(trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
@@ -251,20 +302,20 @@ module.exports = {
     }
 
     const staffs = await Staff.find(baseFilter).sort({ createdAt: -1 });
-    const centerIds = [...new Set(staffs.map((s) => String(s.center)))];
+    const centerIds = [...new Set(staffs.flatMap((s) => Staff.centersOf(s)))];
     const centers = await Center.find({ _id: { $in: centerIds } }, { name: 1 });
     const centerMap = Object.fromEntries(centers.map((c) => [String(c._id), c.name]));
 
     return staffs.map((s) => ({
       name: s.name,
       login: s.login,
-      centerName: centerMap[String(s.center)] || "—",
+      centerName: Staff.centersOf(s).map((id) => centerMap[id]).filter(Boolean).join(", ") || "—",
       role: s.role,
       blocked: s.blocked,
     }));
   },
 
-  update: async (clientId, id, body, actor = null) => {
+  update: async (clientId, id, body, actor = null, centerId = null) => {
     const staff = await Staff.findOne({ _id: id, client: clientId, isDeleted: false });
     if (!staff) throw new Error("staff.notFound");
     // Audit uchun — ayniqsa ruxsatlar o'zgarishi (kim kimga nima berdi).
@@ -274,12 +325,14 @@ module.exports = {
       role: staff.role,
       permissions: [...(staff.permissions || [])],
       center: staff.center ? String(staff.center) : null,
-      salaryValue: staff.salaryValue,
+      centers: Staff.centersOf(staff),
+      salaryValues: (staff.salaryValues || []).map((r) => `${r.center}:${r.value ?? ""}`),
     };
 
     if (body.login && body.login.trim() !== staff.login) {
       const trimmedLogin = body.login.trim();
       const exists = await Staff.findOne({
+        client: clientId,
         login: trimmedLogin,
         isDeleted: false,
         _id: { $ne: id },
@@ -301,24 +354,23 @@ module.exports = {
     // Rol o'zgargan bo'lsa ham qayta tozalanadi — resepshin -> o'qituvchi
     // bo'lganda eski "to'lov olish" kabi ruxsatlar qolib ketmasin.
     staff.permissions = sanitizeStaffPermissions(staff.role, staff.permissions);
-    if (body.salaryValue !== undefined) {
-      if (body.salaryValue != null && body.salaryValue < 0) {
-        throw new Error("staff.invalidSalaryValue");
-      }
-      staff.salaryValue = body.salaryValue;
+    // Filiallar (API_CONTRACT_multi_center.md §3.5). Avvalgi asosiy filial
+    // ro'yxatda qolsa — asosiy bo'lib qoladi, aks holda birinchisi.
+    const prevCenters = Staff.centersOf(staff);
+    const nextCenters = (await resolveCenters(clientId, body)) || prevCenters;
+    const primary = nextCenters.includes(String(staff.center)) ? String(staff.center) : nextCenters[0];
+    const ordered = [primary, ...nextCenters.filter((c) => c !== primary)];
+    if (!sameIds(ordered, prevCenters) || body.salaryValues || body.salaryValue !== undefined) {
+      const prevValues = (staff.salaryValues || []).length
+        ? staff.salaryValues
+        : [{ center: staff.center, value: staff.salaryValue ?? null }];
+      staff.salaryValues = resolveSalaryValues(body, ordered, prevValues);
     }
-    if (body.centerId) {
-      const center = await Center.findOne({
-        _id: body.centerId,
-        client: clientId,
-        isDeleted: false,
-      });
-      if (!center) throw new Error("center.notFound");
-      staff.center = center._id;
-    }
+    staff.center = primary;
+    staff.centers = ordered;
     // Rol resepshinga o'tsa (yoki `subjects` umuman yuborilmasa lekin rol
     // teaching bo'lmasa) ro'yxat tozalanadi — permissions bilan bir xil qoida.
-    staff.subjects = await resolveSubjects(clientId, staff.center, staff.role, body.subjects);
+    staff.subjects = await resolveSubjects(clientId, staff.centers, staff.role, body.subjects);
 
     await staff.save();
     // Parolni Owner almashtirdi — hodimning barcha sessiyalari (brauzer +
@@ -332,7 +384,8 @@ module.exports = {
       role: staff.role,
       permissions: [...(staff.permissions || [])],
       center: staff.center ? String(staff.center) : null,
-      salaryValue: staff.salaryValue,
+      centers: Staff.centersOf(staff),
+      salaryValues: (staff.salaryValues || []).map((r) => `${r.center}:${r.value ?? ""}`),
     });
     if (body.password) changes.push({ field: "password", from: null, to: "••••" });
     if (changes.length) {
@@ -345,7 +398,7 @@ module.exports = {
         changes,
       });
     }
-    return DTO(staff);
+    return DTO(staff, centerId);
   },
 
   // Arxivlash — API_CONTRACT_archive.md. `blocked` TEGILMAYDI: bloklash
@@ -392,11 +445,19 @@ module.exports = {
   },
 
   // ---- Staff auth (client panel — Hodim login) ----
+  // Login mijoz ichida yagona — brend slug'i (subdomen) orqali mijoz topiladi
+  // (API_CONTRACT_multi_center.md §3.2).
   signIn: async (body) => {
     const { login, password } = body;
     if (!login || !password) throw new Error("auth.fillTheRows");
+    const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : "";
+    if (!slug) throw new Error("auth.brandRequired");
 
-    const staff = await Staff.findOne({ login: login.trim(), isDeleted: false });
+    const client = await Client.findOne({ slug, isDeleted: false }).select("_id blocked");
+    if (!client) throw new Error("auth.notFound");
+    if (client.blocked) throw new Error("client.blocked");
+
+    const staff = await Staff.findOne({ client: client._id, login: login.trim(), isDeleted: false });
     if (!staff) throw new Error("auth.notFound");
     if (staff.blocked) throw new Error("staff.blocked");
 

@@ -1,3 +1,4 @@
+const { isValidObjectId } = require("mongoose");
 const clientService = require("../services/client.service");
 const tariffService = require("../services/tariff.service");
 const subscriptionPaymentService = require("../services/subscriptionPayment.service");
@@ -6,8 +7,27 @@ const SubscriptionPayment = require("../models/SubscriptionPayment");
 module.exports = {
   create: async (req, res, next) => {
     try {
-      const data = await clientService.create(req.body);
+      const data = await clientService.create(req.body, req.files);
       return res.send({ ok: true, data, msg: "client.created" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  suggestSlug: async (req, res, next) => {
+    try {
+      const except = isValidObjectId(req.query.except) ? req.query.except : null;
+      const data = await clientService.suggestSlug(String(req.query.name || ""), except);
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  brand: async (req, res, next) => {
+    try {
+      const data = await clientService.brand(req.params.slug);
+      return res.send({ ok: true, data });
     } catch (error) {
       next(error);
     }
@@ -34,7 +54,7 @@ module.exports = {
 
   update: async (req, res, next) => {
     try {
-      const data = await clientService.update(req.params.id, req.body);
+      const data = await clientService.update(req.params.id, req.body, req.files);
       return res.send({ ok: true, data, msg: "client.updated" });
     } catch (error) {
       next(error);
@@ -98,15 +118,17 @@ module.exports = {
   signIn: async (req, res, next) => {
     try {
       const { data, access } = await clientService.signIn(req.body);
-      return res.send({ ok: true, data, access, msg: "auth.success" });
+      const context = await clientService.sessionContext(data._id, { wanted: req.headers["x-center-id"] });
+      return res.send({ ok: true, data: { ...data, ...context }, access, msg: "auth.success" });
     } catch (error) {
       next(error);
     }
   },
 
-  verify: (req, res, next) => {
+  verify: async (req, res, next) => {
     try {
-      return res.send({ ok: true, data: req.client });
+      const context = await clientService.sessionContext(req.client._id, { wanted: req.headers["x-center-id"] });
+      return res.send({ ok: true, data: { ...req.client, ...context } });
     } catch (error) {
       next(error);
     }

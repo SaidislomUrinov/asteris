@@ -46,7 +46,15 @@ function Staff() {
   const [error, setError] = useState(false);
 
   const [centers, setCenters] = useState([]);
-  const centerMap = Object.fromEntries(centers.map((c) => [c._id, c.name]));
+  // Hodim bir nechta filialda ishlashi mumkin — dialog va "Filial" ustuni uchun
+  // BARCHA filiallar (ro'yxat va filtr esa faol filial bo'yicha).
+  const [allCenters, setAllCenters] = useState([]);
+  const centerMap = Object.fromEntries(allCenters.map((c) => [c._id, c.name]));
+  const centerNamesOf = (row) =>
+    (row.centers?.length ? row.centers : [row.center])
+      .map((id) => centerMap[id])
+      .filter(Boolean)
+      .join(", ") || "—";
   const [subjects, setSubjects] = useState([]);
   // Bitta filialga biriktirilgan hodim (Staff) uchun Filial filtri ma'nosiz —
   // faqat bir nechta filial ko'rinadigan (Client Owner) hollarda chiqadi.
@@ -88,9 +96,12 @@ function Staff() {
 
   const fetchCenters = useCallback(async () => {
     try {
-      const res = await api.get("/centers", { params: { page: 1 } });
-      const { ok, data } = res.data;
-      if (ok) setCenters(data || []);
+      const [activeRes, allRes] = await Promise.all([
+        api.get("/centers", { params: { page: 1 } }),
+        api.get("/centers", { params: { page: 1, scope: "all" } }),
+      ]);
+      if (activeRes.data.ok) setCenters(activeRes.data.data || []);
+      if (allRes.data.ok) setAllCenters(allRes.data.data || []);
     } catch {
       // markazlar ro'yxati faqat lookup uchun, xato bo'lsa jim o'tkazamiz
     }
@@ -110,7 +121,9 @@ function Staff() {
     try {
       // O'qituvchi/Yordamchi qo'shishda fan checkboxlari uchun — filial
       // bo'yicha filtr StaffDialog ichida (Group dialogidagi naqsh bilan bir xil).
-      const res = await api.get("/subjects", { params: { page: 1 } });
+      // Barcha filiallar fanlari (ko'p filialli o'qituvchi) — faol filial
+      // headeri o'chiriladi, dialog tanlangan filiallar bo'yicha filtrlaydi.
+      const res = await api.get("/subjects", { params: { page: 1 }, headers: { "x-center-id": "" } });
       const { ok, data } = res.data;
       if (ok) setSubjects(data || []);
     } catch {
@@ -189,7 +202,7 @@ function Staff() {
     {
       key: "center",
       header: t("staff.center"),
-      render: (row) => centerMap[row.center] || "—",
+      render: (row) => centerNamesOf(row),
     },
     {
       key: "role",
@@ -252,6 +265,33 @@ function Staff() {
       ),
     },
   ];
+
+  // Mobil karta — jadval tor ekranda gorizontal suriladi va lavozim/holat/⋮
+  // ko'rinmay qolardi (/students bilan bir xil naqsh). Amallar menyusi
+  // jadval ustunidagi bilan aynan bir xil.
+  const renderActions = columns.at(-1).render;
+  const renderCard = (row) => (
+    <div className="flex flex-col gap-2.5 p-3.5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 cursor-pointer" onClick={() => navigate(`/staff/${row._id}`)}>
+          <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">{row.name}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">{row.login}</p>
+        </div>
+        <div className="shrink-0">{renderActions(row)}</div>
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Chip value={t(`role.${row.role}`)} color="slate" variant="ghost" />
+        {row.blocked ? (
+          <Chip value={t("staff.statusBlocked")} color="red" />
+        ) : (
+          <Chip value={t("staff.active")} color="emerald" />
+        )}
+      </div>
+      <p className="pt-2.5 border-t border-slate-100 dark:border-night-700 text-sm text-slate-500 dark:text-slate-400 truncate">
+        {centerNamesOf(row)}
+      </p>
+    </div>
+  );
 
   return (
     <div className="flex flex-col w-full h-full gap-4">
@@ -440,6 +480,9 @@ function Staff() {
           columns={columns}
           rows={rows}
           loading={loading}
+          view={isDesktop ? "table" : "grid"}
+          renderItem={renderCard}
+          gridClassName="grid grid-cols-1 gap-2 p-2"
           empty={t("staff.empty")}
           page={meta.page}
           totalPages={meta.totalPages}
@@ -458,7 +501,7 @@ function Staff() {
         key={dialogKey}
         open={dialogOpen}
         staff={selected}
-        centers={centers}
+        centers={allCenters}
         subjects={subjects}
         onClose={() => setDialogOpen(false)}
         onSaved={fetchStaff}

@@ -51,6 +51,49 @@ export const bootTelegram = () => {
 
 export const getInitData = () => tg()?.initData || "";
 
+// Telegram CloudStorage (Bot API 6.9+) — foydalanuvchining Telegram hisobiga
+// bog'langan xotira: WebApp yopilsa ham, boshqa qurilmada ochilsa ham saqlanadi.
+// Brauzerda yoki eski Telegram'da javob kelmasligi mumkin — shuning uchun
+// muddat bilan: ilova hech qachon kutib osilib qolmaydi.
+const cloud = () => {
+  const app = tg();
+  if (!app?.CloudStorage) return null;
+  try {
+    if (app.isVersionAtLeast && !app.isVersionAtLeast("6.9")) return null;
+  } catch {
+    return null;
+  }
+  return app.CloudStorage;
+};
+
+const withTimeout = (run, fallback, ms) =>
+  new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(fallback), ms);
+    try {
+      run((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      });
+    } catch {
+      clearTimeout(timer);
+      resolve(fallback);
+    }
+  });
+
+/** @returns {Promise<string|null>} */
+export const cloudGet = (key, ms = 1500) => {
+  const cs = cloud();
+  if (!cs) return Promise.resolve(null);
+  return withTimeout((done) => cs.getItem(key, (err, value) => done(err ? null : value || null)), null, ms);
+};
+
+/** @returns {Promise<boolean>} saqlandimi */
+export const cloudSet = (key, value, ms = 1500) => {
+  const cs = cloud();
+  if (!cs) return Promise.resolve(false);
+  return withTimeout((done) => cs.setItem(key, value || "", (err, ok) => done(!err && !!ok)), false, ms);
+};
+
 let backHandler = null;
 export const setBackButton = (visible, onClick) => {
   const bb = tg()?.BackButton;

@@ -7,6 +7,7 @@ const Room = require("../models/Room");
 const { getTodayLesson } = require("../utils/lessonSchedule.util");
 const GroupHoliday = require("../models/GroupHoliday");
 const CenterHoliday = require("../models/CenterHoliday");
+const Center = require("../models/Center");
 const parentNotification = require("../services/parentNotification.service");
 const notificationService = require("../services/notification.service");
 const telegramService = require("../services/telegram.service");
@@ -114,8 +115,20 @@ const run = async () => {
   );
 
   const staffIds = [...new Set(due.flatMap((g) => [g.teacher, g.assistant].filter(Boolean).map(String)))];
-  const staffDocs = await Staff.find({ _id: { $in: staffIds }, isDeleted: false, blocked: false }).select("_id");
+  const staffDocs = await Staff.find({ _id: { $in: staffIds }, isDeleted: false, blocked: false }).select(
+    "_id center centers",
+  );
   const activeStaff = new Set(staffDocs.map((s) => String(s._id)));
+  // Ko'p filialli hodimga eslatmada filial nomi ham yoziladi (qaysi binoga borish).
+  const multiCenterStaff = new Set(staffDocs.filter((s) => Staff.centersOf(s).length > 1).map((s) => String(s._id)));
+  const centerNames = multiCenterStaff.size
+    ? Object.fromEntries(
+        (await Center.find({ _id: { $in: [...new Set(due.map((g) => String(g.center)))] } }).select("name")).map((c) => [
+          String(c._id),
+          c.name,
+        ]),
+      )
+    : {};
 
   const subjectIds = [...new Set(due.map((g) => String(g.subject)))];
   const roomIds = [...new Set(due.filter((g) => g.room).map((g) => String(g.room)))];
@@ -166,6 +179,9 @@ const run = async () => {
             `<b>${escapeHtml(subjectMap[String(g.subject)] || "?")} - ${g.activeId}</b>`,
             `${t(lang, "reminderTimeLabel")}: ${g.startTime}`,
           ];
+          if (multiCenterStaff.has(staffId) && centerNames[String(g.center)]) {
+            lines.push(`${t(lang, "reminderCenterLabel")}: ${escapeHtml(centerNames[String(g.center)])}`);
+          }
           if (g.room) lines.push(`${t(lang, "reminderRoomLabel")}: ${escapeHtml(roomMap[String(g.room)] || "")}`);
           lines.push(
             `${t(lang, "reminderTopicLabel")}: ${topic ? escapeHtml(topic) : t(lang, "reminderNoTopic")}`,

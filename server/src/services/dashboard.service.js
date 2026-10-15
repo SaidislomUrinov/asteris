@@ -36,7 +36,7 @@ module.exports = {
     if (center) groupFilter.center = center;
 
     const staffFilter = { client: clientId, isDeleted: false };
-    if (center) staffFilter.center = center;
+    if (center) staffFilter.centers = center; // ko'p filialli hodim har filialida sanaladi
 
     const entryFilter = { "groups.client": clientId };
     if (center) entryFilter["groups.center"] = center;

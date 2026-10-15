@@ -6,6 +6,7 @@ import { getToken, setToken, ROLE_MISMATCH_EVENT } from "../api/http";
 import { getInitData } from "../lib/telegram";
 import {
   workerApi, getWorkerToken, setWorkerSession, clearWorkerSession, isWorkerKind, WORKER_SESSION_LOST,
+  restoreWorkerCenter,
 } from "../worker/api";
 
 const AuthCtx = createContext(null);
@@ -64,7 +65,15 @@ export const AuthProvider = ({ children }) => {
         // eski server, ota-ona oqimi o'zgarishsiz.
         if (isWorkerKind(res?.kind)) {
           setWorkerSession(res.access, res.kind);
-          enterWorker(res.worker || (await workerApi.me()));
+          let w = res.worker || (await workerApi.me());
+          // Ko'p filialli hodim: oxirgi tanlangan filial (Telegram CloudStorage).
+          // Login javobi asosiy filial bilan keladi — boshqa filial saqlangan
+          // bo'lsa `me` shu filial bilan qayta olinadi (server tekshiradi).
+          if (res.kind === "staff" && (w?.centers?.length || 0) > 1) {
+            const saved = await restoreWorkerCenter(w._id);
+            if (saved && saved !== w.center?._id) w = await workerApi.me().catch(() => w);
+          }
+          enterWorker(w);
           return;
         }
         clearWorkerSession();

@@ -490,7 +490,7 @@ module.exports = {
     const p = resolvePeriod(query);
 
     const staffFilter = { client: clientId, isDeleted: false, role: { $in: ["teacher", "assistant"] } };
-    if (center) staffFilter.center = center;
+    if (center) staffFilter.centers = center;
 
     const [teachers, groups, students] = await Promise.all([
       Staff.find(staffFilter, { name: 1, role: 1 }).sort({ createdAt: -1 }),

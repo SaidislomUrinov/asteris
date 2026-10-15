@@ -74,7 +74,7 @@ module.exports = {
         req.client._id,
         req.params.studentId,
         reset,
-        req.staff?.center || null,
+        req.centerScope || null,
       );
       return res.send({ ok: true, data });
     } catch (error) {
@@ -89,7 +89,7 @@ module.exports = {
         req.client._id,
         req.params.studentId,
         req.files?.card,
-        req.staff?.center || null,
+        req.centerScope || null,
         buildActor(req),
       );
       return res.send({ ok: true, data, msg: "attendance.qrCardSent" });
@@ -100,7 +100,7 @@ module.exports = {
 
   getGroupQrCards: async (req, res, next) => {
     try {
-      const data = await attendanceService.getGroupQrCards(req.client._id, req.params.groupId, req.staff?.center || null);
+      const data = await attendanceService.getGroupQrCards(req.client._id, req.params.groupId, req.centerScope || null);
       return res.send({ ok: true, data });
     } catch (error) {
       next(error);
@@ -115,7 +115,7 @@ module.exports = {
       const data = await attendanceService.scanQr(
         req.client._id,
         req.body,
-        req.staff?.center || null,
+        req.centerScope || null,
         field ? { field, staffId: req.staff._id } : null,
       );
       const msg = data.duplicate ? "attendance.alreadyMarked" : "attendance.marked";

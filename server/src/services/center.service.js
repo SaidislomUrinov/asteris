@@ -1,5 +1,8 @@
 const Center = require("../models/Center");
 const Client = require("../models/Client");
+const Staff = require("../models/Staff");
+const redisUtil = require("../utils/redis.util");
+const keyConfig = require("../configs/key.config");
 const { getNow } = require("../utils/date.util");
 const fileUtil = require("../utils/file.util");
 const emit = require("../utils/emitter.util");
@@ -114,6 +117,22 @@ const DTO = (data) => ({
   lastUpdate: data?.lastUpdate,
 });
 
+// Arxivlangan filial ko'p filialli hodimlardan olib tashlanadi (asosiy filial
+// bo'lsa — qolganlarning birinchisi asosiy bo'ladi). Yagona filiali shu bo'lgan
+// hodim o'zgarishsiz qoladi (avvalgidek — filial qaytarilsa ishlayveradi).
+// Moliyaviy yozuvlar (SalaryTransaction.center) tegilmaydi.
+const detachFromStaff = async (clientId, centerId) => {
+  const id = String(centerId);
+  const staffs = await Staff.find({ client: clientId, centers: centerId, "centers.1": { $exists: true } });
+  for (const staff of staffs) {
+    staff.centers = staff.centers.filter((c) => String(c) !== id);
+    staff.salaryValues = (staff.salaryValues || []).filter((r) => String(r.center) !== id);
+    if (String(staff.center) === id) staff.center = staff.centers[0];
+    await staff.save();
+    await redisUtil.del(keyConfig.staff(staff._id));
+  }
+};
+
 // Client'ning faol obunasidan (Tariff jonli hujjatidan yoki snapshot'dan) centerLimit'ni
 // aniqlaydi — xuddi client.service.js'dagi liveTariffSnapshot mantig'i kabi.
 const getCenterLimit = async (clientId) => {
@@ -222,7 +241,9 @@ module.exports = {
   list: async (clientId, { page = 1, search = "", onlyCenter = null }) => {
     const trimmedSearch = search?.trim();
     const baseFilter = { client: clientId, isDeleted: false };
-    if (onlyCenter) baseFilter._id = onlyCenter; // staff faqat o'z markazi
+    // Bitta id yoki ro'yxat (hodimning filiallari) — API_CONTRACT_multi_center.md §3.4.
+    if (Array.isArray(onlyCenter)) baseFilter._id = { $in: onlyCenter };
+    else if (onlyCenter) baseFilter._id = onlyCenter;
 
     if (trimmedSearch) {
       const regex = new RegExp(trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
@@ -321,6 +342,7 @@ module.exports = {
     center.isDeleted = true;
     center.deletedAt = getNow();
     await center.save();
+    await detachFromStaff(clientId, center._id);
 
     audit.log({
       actor,

@@ -1,276 +1,69 @@
-import { useRef, useState } from "react";
-import { errorMsg, successMsg } from "../../utils/alert";
-import { api, setSession } from "../../utils/fetching";
-import { useDispatch } from "react-redux";
-import { updateUser } from "../../contexts/user";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import UpdateLang from "../../components/UpdateLang";
-import Input from "../../ui/Input";
-import {
-  HiBriefcase,
-  HiDevicePhoneMobile,
-  HiEye,
-  HiEyeSlash,
-  HiUser,
-  HiUserGroup,
-} from "react-icons/hi2";
+import { HiBuildingOffice2 } from "react-icons/hi2";
+import { api } from "../../utils/fetching";
+import { brandUrl, getBrandSlug } from "../../utils/brand";
+import Loading from "../../ui/Loading";
 import Button from "../../ui/Button";
+import LoginForm from "./LoginForm";
+import BrandPicker from "./BrandPicker";
+import BrandNotFound from "./BrandNotFound";
 
-// Bitta panel — Client Owner ("Boshliq") va Staff ("Hodim") shu yerdan tanlab
-// kiradi. Ikkalasi ham backendda mustaqil auth zanjiri (/client-auth va
-// /staff-auth) — tanlovga qarab boshqa endpoint chaqiriladi.
-const ROLES = [
-  { value: "owner", key: "auth.roleOwner", endpoint: "/client-auth/signin" },
-  { value: "staff", key: "auth.roleStaff", endpoint: "/staff-auth/signin" },
-];
-
-// Chap paneldagi tushuntirish — tanlangan rolga qarab icon/rang/matn almashadi.
-const ROLE_INFO = {
-  owner: {
-    icon: HiBriefcase,
-    gradient: "from-blue-500 to-blue-950",
-    tabActiveText: "text-blue-600 dark:text-blue-400",
-    titleKey: "auth.ownerInfoTitle",
-    descKey: "auth.ownerInfoDesc",
-  },
-  staff: {
-    icon: HiUserGroup,
-    gradient: "from-violet-500 via-purple-700 to-purple-950",
-    tabActiveText:
-      "bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent",
-    titleKey: "auth.staffInfoTitle",
-    descKey: "auth.staffInfoDesc",
-  },
-};
-
-// Hozircha faqat O'zbekiston (+998, 9 ta raqam — jami 13 ta ishora "+" bilan
-// hisoblaganda). Kelajakda chet davlatlari qo'shilganda bu qattiq kodlangan
-// prefiks/uzunlik o'rniga davlat tanlovi (dial code + mask) ga almashtiriladi.
-const PHONE_PREFIX = "998";
-const PHONE_DIGITS_LEN = 9;
-
-const formatPhone = (raw) => {
-  let digits = raw.replace(/\D/g, "");
-  if (digits.startsWith(PHONE_PREFIX)) digits = digits.slice(PHONE_PREFIX.length);
-  digits = digits.slice(0, PHONE_DIGITS_LEN);
-  return `+${PHONE_PREFIX}${digits}`;
-};
-
-// Kiritilgan Raqam/Login rolga qarab alohida saqlanadi (owner — telefon,
-// staff — login, ikkalasi butunlay boshqa format) — keyingi safar shu
-// panelga qaytilganda avtomatik to'ldirilishi uchun. Parol xavfsizlik
-// nuqtai nazaridan saqlanmaydi.
-const identifierStorageKey = (authType) => `asteris:auth:identifier:${authType}`;
-const loadSavedIdentifier = (authType) => localStorage.getItem(identifierStorageKey(authType)) || "";
-
+/**
+ * Kirish nuqtasi (docs/API_CONTRACT_multi_center.md §5):
+ *  - umumiy manzil (app.wenet.uz) — markaz manzilini so'raydi (`BrandPicker`);
+ *  - brend subdomeni — brendni yuklab, shu mijozning login formasi;
+ *  - eski slug — yangi manzilga yo'naltiradi.
+ */
 function Auth() {
-  const [authType, setAuthType] = useState("owner");
-  const [form, setForm] = useState({
-    identifier: loadSavedIdentifier("owner") || formatPhone(""),
-    password: "",
-  });
-  const [disabled, setDisabled] = useState(false);
-  const [showPass, setShowPass] = useState(false);
-  const dp = useDispatch();
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  // Faqat React state (`disabled`) yetarli emas — Enter tugmasi (div'dagi
-  // onKeyDown) va tugma bosilishi bir vaqtda ikkita submit() chaqirsa, ikkala
-  // chaqiruv HAM "disabled hali false" holatida boshlanib ketishi mumkin
-  // (state yangilanishi async). Ikkita parallel signIn — ikkalasi ham
-  // Redis/DB'da bir xil "oxirgi access" kalitini yozadi, lekin frontend
-  // localStorage'ga qaysi javob KEYINROQ kelsa o'shani yozadi — agar tezroq
-  // yuborilgan so'rov sekinroq javob qaytarsa, localStorage ESKIRGAN
-  // (Redis'dagidan farqli) tokenni saqlab qoladi va keyingi so'rovda darhol
-  // "auth.failed" (productionda ENFORCE_SINGLE_DEVICE_SESSION orqali) bilan
-  // chiqarib yuboriladi. Shu sabab submit — synchronous ref bilan qulflanadi.
-  const submittingRef = useRef(false);
+  const slug = getBrandSlug();
+  const [state, setState] = useState(slug ? "loading" : "picker");
+  const [brand, setBrand] = useState(null);
 
-  const info = ROLE_INFO[authType];
-  const InfoIcon = info.icon;
+  useEffect(() => {
+    if (!slug) return undefined;
+    let alive = true;
+    (async () => {
+      try {
+        const res = await api.get(`/client-auth/brand/${slug}`);
+        const { ok, data } = res.data;
+        if (!alive) return;
+        if (!ok) return setState("notFound");
+        if (data.redirect) {
+          window.location.replace(`${brandUrl(data.redirect)}${window.location.pathname}`);
+          return;
+        }
+        setBrand(data);
+        setState("ready");
+      } catch {
+        if (alive) setState("error");
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [slug]);
 
-  const submit = async () => {
-    if (submittingRef.current) return;
-    try {
-      const identifierFilled =
-        authType === "owner"
-          ? form.identifier.length === PHONE_DIGITS_LEN + PHONE_PREFIX.length + 1
-          : !!form.identifier;
-      if (!identifierFilled || !form.password)
-        throw new Error("auth.fillTheRows");
-      submittingRef.current = true;
-      setDisabled(true);
-
-      const endpoint = ROLES.find((r) => r.value === authType).endpoint;
-      const body =
-        authType === "owner"
-          ? { phone: form.identifier, password: form.password }
-          : { login: form.identifier, password: form.password };
-      const res = await api.post(endpoint, body);
-      const { ok, data, access, msg } = res.data;
-      if (!ok) throw new Error(msg);
-      setSession(authType, access);
-      successMsg(msg);
-      dp(updateUser({ ...data, authType }));
-      // Login bo'lgach har doim `/dashboard`ga yo'naltiriladi — Client Owner
-      // ham, Staff (Manager/Reception/Teacher/Assistant) ham, joriy URL
-      // qanday bo'lishidan qat'i nazar.
-      navigate("/dashboard", { replace: true });
-    } catch (error) {
-      errorMsg(error.message);
-      setDisabled(false);
-      submittingRef.current = false;
-    }
-  };
+  if (state === "picker") return <BrandPicker />;
+  if (state === "notFound") return <BrandNotFound slug={slug} />;
+  if (state === "ready") return <LoginForm brand={brand} />;
 
   return (
-    <div
-      onKeyDown={(k) => k.key === "Enter" && submit()}
-      className="flex w-full h-screen"
-    >
-      {/* Chap panel — ro'l tanlanganiga asoslangan tushuntirish */}
-      <div
-        className={`hidden lg:flex flex-col justify-between flex-1 p-12 text-white bg-gradient-to-br ${info.gradient} duration-500 relative overflow-hidden`}
-      >
-        <p className="text-2xl font-space font-semibold z-10">WENET</p>
-
-        <div key={authType} className="flex flex-col gap-5 z-10 max-w-md">
-          <div className="w-14 h-14 rounded-2xl bg-white/15 dark:bg-night-900/15 flex items-center justify-center text-2xl animate-rise-in [animation-delay:0ms]">
-            <InfoIcon />
-          </div>
-          <p className="text-3xl font-space font-semibold leading-tight animate-rise-in [animation-delay:80ms]">
-            {t(info.titleKey)}
-          </p>
-          <p className="text-white/70 animate-rise-in [animation-delay:160ms]">
-            {t(info.descKey)}
-          </p>
-        </div>
-
-        <p className="text-white/40 text-xs z-10">
-          © {new Date().getFullYear()} WENET
-        </p>
-      </div>
-
-      {/* O'ng panel — tizimga kirish containeri */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4">
-        <p className="lg:hidden text-[40px] font-space font-semibold animate-rise-in [animation-delay:0ms]">
-          <span className="font-space text-blue-500">WE</span>NET
-        </p>
-        <div className="flex flex-col w-full sm:w-110 bg-white dark:bg-night-900 border border-slate-200 dark:border-night-700 rounded-xl overflow-hidden">
-          {/* Header */}
-          <div className="relative z-20 flex flex-col gap-1 p-5 border-b border-slate-100 dark:border-night-700 animate-rise-in [animation-delay:0ms]">
-            <div className="flex items-center justify-between w-full">
-              <p className="font-semibold font-space text-[22px]">
-                {t("auth.title")}
-              </p>
-              <UpdateLang />
-            </div>
-            <p className="text-zinc-500 dark:text-slate-400 text-sm">{t("auth.desc")}</p>
-          </div>
-
-          {/* Body */}
-          <div className="flex flex-col gap-3 p-5">
-            <div className="flex items-center justify-center w-full gap-2 bg-slate-100 dark:bg-night-800 rounded-xl p-1 animate-rise-in [animation-delay:80ms]">
-              {ROLES.map((r) => (
-                <button
-                  key={r.value}
-                  type="button"
-                  onClick={() => {
-                    setAuthType(r.value);
-                    const saved = loadSavedIdentifier(r.value);
-                    setForm((prev) => ({
-                      ...prev,
-                      identifier: saved || (r.value === "owner" ? formatPhone("") : ""),
-                    }));
-                  }}
-                  className={`flex-1 py-2 rounded-lg text-sm font-semibold duration-150 cursor-pointer ${
-                    authType === r.value
-                      ? "bg-white dark:bg-night-900 shadow-sm dark:shadow-none"
-                      : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
-                  }`}
-                >
-                  <span
-                    className={
-                      authType === r.value ? ROLE_INFO[r.value].tabActiveText : ""
-                    }
-                  >
-                    {t(r.key)}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <div className="w-full animate-rise-in [animation-delay:160ms]">
-              {authType === "owner" ? (
-                <Input
-                  key="phone"
-                  label={t("auth.phone")}
-                  placeholder="+998901234567"
-                  required
-                  icon={<HiDevicePhoneMobile />}
-                  onChange={(e) => {
-                    const identifier = formatPhone(e.target.value);
-                    setForm((prev) => ({ ...prev, identifier }));
-                    localStorage.setItem(identifierStorageKey("owner"), identifier);
-                  }}
-                  value={form.identifier}
-                />
-              ) : (
-                <Input
-                  key="login"
-                  label={t("auth.login")}
-                  placeholder={t("auth.loginPlaceholder")}
-                  required
-                  icon={<HiUser />}
-                  onChange={(e) => {
-                    const identifier = e.target.value.trim();
-                    setForm((prev) => ({ ...prev, identifier }));
-                    localStorage.setItem(identifierStorageKey("staff"), identifier);
-                  }}
-                  value={form.identifier}
-                />
-              )}
-            </div>
-
-            <div className="w-full animate-rise-in [animation-delay:220ms]">
-              <Input
-                label={t(`auth.password`)}
-                placeholder="******"
-                required
-                type={showPass ? "text" : "password"}
-                icon={
-                  !showPass ? (
-                    <HiEyeSlash
-                      onClick={() => setShowPass((prev) => !prev)}
-                      className="cursor-pointer"
-                    />
-                  ) : (
-                    <HiEye
-                      onClick={() => setShowPass((prev) => !prev)}
-                      className="cursor-pointer"
-                    />
-                  )
-                }
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    password: e.target.value.trim(),
-                  }))
-                }
-                value={form.password}
-              />
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="p-5 border-t border-slate-100 dark:border-night-700 animate-rise-in [animation-delay:280ms]">
-            <Button fullWith loading={disabled} onClick={submit}>
-              {t("common.confirm")}
-            </Button>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col items-center justify-center gap-4 w-full h-screen p-4 text-center">
+      {state === "loading" ? (
+        <Loading />
+      ) : (
+        <>
+          <span className="grid place-items-center size-14 rounded-2xl bg-slate-100 dark:bg-night-800 text-2xl text-slate-400">
+            <HiBuildingOffice2 />
+          </span>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t("brand.loadError")}</p>
+          <Button variant="outlined" color="black" onClick={() => window.location.reload()}>
+            {t("common.retry")}
+          </Button>
+        </>
+      )}
     </div>
   );
 }

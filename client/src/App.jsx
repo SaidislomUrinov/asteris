@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { api, getAuthType } from "./utils/fetching";
+import { api, CENTERS_CHANGED_EVENT, getActiveCenter, getAuthType, setActiveCenter } from "./utils/fetching";
 import { updateUser } from "./contexts/user";
 import { setTutorialVideos } from "./contexts/tutorialVideos";
 import { useSocketEvent } from "./hooks/useSocketEvent";
@@ -81,6 +81,7 @@ function App() {
   const can = useCan();
   const hasFeature = useFeature();
   const [load, setLoad] = useState(false);
+  const loadedRef = useRef(false);
   const { pathname, search } = useLocation();
 
   // Admin tarif biriktirsa/o'zgartirsa (`subscription:updated` socket
@@ -94,10 +95,25 @@ function App() {
 
       const res = await api.get(endpoint);
       const { ok, data } = res.data;
-      if (ok) dp(updateUser({ ...data, authType }));
+      if (ok) {
+        // Faol filial (docs/API_CONTRACT_multi_center.md §3.3): backend
+        // tekshirgan qiymat ustun. Sahifalar allaqachon eski filial bilan
+        // yuklangan bo'lsa (masalan filial bloklandi yoki hodimdan olindi) —
+        // aralash ma'lumot qolmasligi uchun to'liq reload.
+        const next = data.activeCenter || "";
+        if (next !== getActiveCenter()) {
+          setActiveCenter(next);
+          if (loadedRef.current) {
+            window.location.reload();
+            return;
+          }
+        }
+        dp(updateUser({ ...data, authType }));
+      }
     } catch {
       // token yaroqsiz/tarmoq xatosi — Auth sahifasi ko'rsatiladi
     } finally {
+      loadedRef.current = true;
       setLoad(true);
     }
   }, [dp]);
@@ -121,6 +137,12 @@ function App() {
   }, [dp]);
 
   useSocketEvent("subscription:updated", verifyUser, !!_id);
+  // Filial bloklandi/ochildi — filiallar ro'yxati va faol filial qayta olinadi.
+  useSocketEvent("center:statusChanged", verifyUser, !!_id);
+  useEffect(() => {
+    window.addEventListener(CENTERS_CHANGED_EVENT, verifyUser);
+    return () => window.removeEventListener(CENTERS_CHANGED_EVENT, verifyUser);
+  }, [verifyUser]);
 
   // Sertifikat QR tekshiruvi — LOGIN talab qilmaydi (ish stolidan tashqarida
   // istalgan tashrif buyuruvchi skanerlaydi), shuning uchun auth holatini

@@ -91,7 +91,8 @@ const sendCenterReports = async (dayCode) => {
     // Shu markazning Resepshinlari — xuddi Owner bilan bir xil kontent
     // (moliyaviy ma'lumot yo'q, shuning uchun cheklashning hojati yo'q).
     const receptions = await Staff.find({
-      center: center._id,
+      // Ko'p filialli resepshin har filiali hisobotini alohida oladi.
+      centers: center._id,
       role: "reception",
       isDeleted: false,
       blocked: false,
@@ -111,7 +112,7 @@ const sendTeacherReports = async (dayCode) => {
     isDeleted: false,
     blocked: false,
     "telegram.chatId": { $ne: null },
-  }).select("_id");
+  }).select("_id center centers");
   if (!teachers.length) return;
 
   for (const staff of teachers) {
@@ -123,17 +124,22 @@ const sendTeacherReports = async (dayCode) => {
       isDeleted: false,
       days: dayCode,
     })
-      .select("subject room startTime endTime activeId")
+      .select("subject room center startTime endTime activeId")
       .sort({ startTime: 1 });
 
+    // Ko'p filialli o'qituvchi — har darsda qaysi filialda ekani yoziladi
+    // (API_CONTRACT_multi_center.md §6); bitta filialda ortiqcha matn yo'q.
+    const multiCenter = Staff.centersOf(staff).length > 1;
     const subjectIds = uniq(groups.map((g) => g.subject));
     const roomIds = uniq(groups.map((g) => g.room));
-    const [subjects, rooms] = await Promise.all([
+    const [subjects, rooms, centers] = await Promise.all([
       require("../models/Subject").find({ _id: { $in: subjectIds } }).select("name"),
       require("../models/Room").find({ _id: { $in: roomIds } }).select("name"),
+      multiCenter ? Center.find({ _id: { $in: uniq(groups.map((g) => g.center)) } }).select("name") : [],
     ]);
     const subjectMap = Object.fromEntries(subjects.map((s) => [String(s._id), s.name]));
     const roomMap = Object.fromEntries(rooms.map((r) => [String(r._id), r.name]));
+    const centerMap = Object.fromEntries(centers.map((c) => [String(c._id), c.name]));
 
     await telegramService
       .sendIfLinked("staff", staff._id, (lang) => {
@@ -150,6 +156,9 @@ const sendTeacherReports = async (dayCode) => {
                   [`${g.startTime}-${g.endTime}`, g.room ? escapeHtml(roomMap[String(g.room)] || "") : ""]
                     .filter(Boolean)
                     .join(" · "),
+                  ...(multiCenter && centerMap[String(g.center)]
+                    ? [`${t(lang, "reminderCenterLabel")}: ${escapeHtml(centerMap[String(g.center)])}`]
+                    : []),
                 ],
               })),
             ),
@@ -181,4 +190,5 @@ const start = () => {
   console.log(`Morning report scheduler started (soat ${HOUR}:00–${HOUR}:59)`);
 };
 
-module.exports = { start, run };
+// `sendTeacherReports` — tekshiruv skriptlari uchun (soat sharti chetlab o'tiladi).
+module.exports = { start, run, sendTeacherReports };

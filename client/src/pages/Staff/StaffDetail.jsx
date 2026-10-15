@@ -109,7 +109,9 @@ function StaffDetail() {
 
   const fetchCenters = useCallback(async () => {
     try {
-      const res = await api.get("/centers", { params: { page: 1 } });
+      // Hodim bir nechta filialda ishlashi mumkin — nomlar va tahrir dialogi
+      // uchun BARCHA filiallar.
+      const res = await api.get("/centers", { params: { page: 1, scope: "all" } });
       const { ok, data } = res.data;
       if (ok) setCenters(data || []);
     } catch {
@@ -293,7 +295,11 @@ function StaffDetail() {
 
   if (!staff) return null;
 
-  const centerName = centers.find((c) => c._id === staff.center)?.name || "—";
+  const centerName =
+    (staff.centers?.length ? staff.centers : [staff.center])
+      .map((cid) => centers.find((c) => c._id === cid)?.name)
+      .filter(Boolean)
+      .join(", ") || "—";
 
   return (
     <div className="flex flex-col w-full h-full gap-4">

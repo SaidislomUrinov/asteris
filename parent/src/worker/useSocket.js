@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { API } from "../api/http";
-import { getWorkerToken, reauthWorker } from "./api";
+import { getWorkerCenter, getWorkerToken, reauthWorker } from "./api";
 
 // Client paneli bilan bir xil namespace (`/client`). `API` = ".../api" —
 // socket server ildizida, shuning uchun `/api` qismi olib tashlanadi.
@@ -20,7 +20,7 @@ const getSocket = () => {
       transports: ["websocket"],
       // Token FUNKSIYA — har qayta ulanishda eng yangi token o'qiladi
       // (bug_socket_auth_stale_token: statik obyekt eskirgan tokenda qolardi).
-      auth: (cb) => cb({ token: getWorkerToken() }),
+      auth: (cb) => cb({ token: getWorkerToken(), centerId: getWorkerCenter() }),
     });
   }
   return socket;

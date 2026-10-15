@@ -1,7 +1,7 @@
 import axios from "axios";
 import { API, ApiError } from "../api/http";
 import { authTelegram } from "../api/parent";
-import { getInitData } from "../lib/telegram";
+import { cloudGet, cloudSet, getInitData } from "../lib/telegram";
 
 // Ishchi (Boshliq / Hodim) rejimi — docs/API_CONTRACT_worker_webapp.md §1, §5.
 // Ota-ona tokenidan ALOHIDA saqlanadi: bitta brauzer tabida ikki rejim
@@ -36,6 +36,34 @@ export const setWorkerSession = (token, kind) => {
 };
 export const clearWorkerSession = () => setWorkerSession(null, null);
 
+// Ko'p filialli hodimning faol filiali (docs/API_CONTRACT_multi_center.md §6) —
+// har so'rov va socket shu filial bilan. Owner bu yerda ishlatmaydi (u
+// filialni so'rov parametri bilan tanlaydi, "Barcha filiallar" ham bor).
+const CENTER_KEY = "worker_center";
+export const getWorkerCenter = () => read(CENTER_KEY) || "";
+export const setWorkerCenter = (id) => write(CENTER_KEY, id || null);
+
+// Tanlov Telegram CloudStorage'da ham saqlanadi — WebApp yopib qayta ochilsa
+// (yoki boshqa qurilmadagi Telegram'da) o'sha filial ochiladi. Kalit hodim
+// bo'yicha: bitta Telegram hisobi boshqa hodimga ulansa aralashmaydi.
+// Yaroqliligini server tekshiradi (filial olib tashlangan/bloklangan bo'lsa
+// asosiy filial ochiladi).
+const cloudCenterKey = (staffId) => `worker_center_${staffId}`;
+
+/** CloudStorage'dagi filialni sessiyaga tiklaydi. @returns {Promise<string|null>} */
+export const restoreWorkerCenter = async (staffId) => {
+  if (!staffId) return null;
+  const saved = await cloudGet(cloudCenterKey(staffId));
+  if (saved) setWorkerCenter(saved);
+  return saved;
+};
+
+/** Tanlovni sessiyaga va CloudStorage'ga yozadi (reload'dan oldin kutiladi). */
+export const rememberWorkerCenter = async (staffId, centerId) => {
+  setWorkerCenter(centerId);
+  if (staffId) await cloudSet(cloudCenterKey(staffId), centerId);
+};
+
 // Header kind'ga qarab — mavjud Client/Staff JWT zanjiri (§0).
 const authHeader = () => {
   const token = getWorkerToken();
@@ -49,6 +77,8 @@ const http = axios.create({ baseURL: API });
 http.interceptors.request.use((config) => {
   const h = authHeader();
   if (h) config.headers[h[0]] = h[1];
+  const center = getWorkerKind() === "staff" ? getWorkerCenter() : "";
+  if (center) config.headers["x-center-id"] = center;
   return config;
 });
 

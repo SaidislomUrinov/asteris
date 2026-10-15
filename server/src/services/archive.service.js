@@ -555,7 +555,7 @@ module.exports = {
     const staff = await Staff.findOne({ _id: id, client: clientId, isDeleted: true });
     if (!staff) throw new Error("archive.notFound");
 
-    const loginTaken = await Staff.findOne({ login: staff.login, isDeleted: false }).select("_id");
+    const loginTaken = await Staff.findOne({ client: clientId, login: staff.login, isDeleted: false }).select("_id");
     if (loginTaken) throw new Error("staff.loginTaken");
 
     staff.isDeleted = false;

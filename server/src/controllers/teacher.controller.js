@@ -11,6 +11,7 @@ module.exports = {
       const data = await teacherService.dashboard(req.client._id, staffId, {
         month: req.query.month,
         scopeField: req.staff?.role === "assistant" ? "assistant" : "teacher",
+        centerId: req.centerScope || null,
       });
       return res.send({ ok: true, data });
     } catch (error) {
@@ -24,7 +25,7 @@ module.exports = {
       if (!staffId) throw new Error("staff.notFound");
 
       const scopeField = req.staff?.role === "assistant" ? "assistant" : "teacher";
-      const data = await teacherService.currentLesson(req.client._id, staffId, scopeField);
+      const data = await teacherService.currentLesson(req.client._id, staffId, scopeField, req.centerScope || null);
       return res.send({ ok: true, data, msg: data ? null : "lesson.none" });
     } catch (error) {
       next(error);

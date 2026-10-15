@@ -292,7 +292,7 @@ const validateTeacher = async (clientId, centerId, teacherId) => {
   const teacher = await Staff.findOne({
     _id: teacherId,
     client: clientId,
-    center: centerId,
+    centers: centerId,
     role: "teacher",
     isDeleted: false,
   });
@@ -306,7 +306,7 @@ const validateAssistant = async (clientId, centerId, assistantId) => {
   const assistant = await Staff.findOne({
     _id: assistantId,
     client: clientId,
-    center: centerId,
+    centers: centerId,
     role: "assistant",
     isDeleted: false,
   });

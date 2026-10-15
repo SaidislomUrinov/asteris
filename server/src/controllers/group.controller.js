@@ -15,7 +15,7 @@ module.exports = {
   // boradi — API_CONTRACT_group_schedule_per_group.md.
   scheduleData: async (req, res, next) => {
     try {
-      const data = await groupService.scheduleData(req.client._id, req.staff?.center || "");
+      const data = await groupService.scheduleData(req.client._id, req.centerScope || "");
       return res.send({ ok: true, data });
     } catch (error) {
       next(error);

@@ -8,6 +8,7 @@ const { calcAmount, discountsOf } = require("../utils/subscriptionPricing.util")
 const systemSettingService = require("./systemSetting.service");
 const { getNow, addDays, addMonths } = require("../utils/date.util");
 const envConfig = require("../configs/env.config");
+const { appUrlOf } = require("../utils/brand.util");
 const emitter = require("../utils/emitter.util");
 const redisUtil = require("../utils/redis.util");
 const keyConfig = require("../configs/key.config");
@@ -80,7 +81,8 @@ module.exports = {
       amount,
       description: `WENET obuna — ${tariff.name} (${durationMonths} oy)`,
       callbackUrl: `${envConfig.SERVER_URL}/api/inpay/callback`,
-      returnUrl: `${envConfig.CLIENT_APP_URL}/subscription`,
+      // To'lovdan keyin mijozning o'z brend manziliga qaytadi (sessiya o'sha originda).
+      returnUrl: `${appUrlOf(client.slug)}/subscription`,
       phone: client.phone,
     });
     console.log("[subscriptionPayment] inpayUtil.createPayment natija", { payUrl, orderId });

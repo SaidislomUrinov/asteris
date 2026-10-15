@@ -19,12 +19,16 @@ module.exports = {
 
   list: async (req, res, next) => {
     try {
-      const { page, search } = req.query;
-      const { data, meta } = await centerService.list(req.client._id, {
-        page,
-        search,
-        onlyCenter: req.staff?.center, // staff faqat o'z markazini ko'radi
-      });
+      const { page, search, scope } = req.query;
+      // API_CONTRACT_multi_center.md §3.4: `scope=all` — filial almashtirgich va
+      // Filiallar sahifasi (Owner: barchasi, Staff: o'z filiallari). Aks holda
+      // faol filial konteksti bo'lsa FAQAT shu filial — sahifalardagi filial
+      // filtrlari o'zi yashirinadi, dialoglar faol filialni o'zi tanlaydi.
+      let onlyCenter = null;
+      if (scope === "all") onlyCenter = req.staff ? req.staff.centers : null;
+      else if (req.staff) onlyCenter = req.staff.center;
+      else if (req.centerScope) onlyCenter = req.centerScope;
+      const { data, meta } = await centerService.list(req.client._id, { page, search, onlyCenter });
       return res.send({ ok: true, data, meta });
     } catch (error) {
       next(error);
@@ -33,7 +37,7 @@ module.exports = {
 
   getOne: async (req, res, next) => {
     try {
-      if (req.staff && String(req.staff.center) !== req.params.id)
+      if (req.staff && !(req.staff.centers || [String(req.staff.center)]).map(String).includes(req.params.id))
         throw new Error("auth.forbidden");
       const data = await centerService.getOne(req.client._id, req.params.id);
       return res.send({ ok: true, data });

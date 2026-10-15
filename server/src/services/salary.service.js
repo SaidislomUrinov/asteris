@@ -47,8 +47,11 @@ const txDTO = (t) => ({
 // Individual guruhlar bu havzaga KIRMAYDI — o'qituvchi uchun ular alohida
 // (`individualOf`), Reception/Yordamchi esa ulardan foiz olmaydi
 // (API_CONTRACT_individual_students.md §0.3).
-const scopedGroupFilter = (staff) => {
-  const filter = { client: staff.client, center: staff.center, isDeleted: false, kind: { $ne: "individual" } };
+// `centerId` — hisob qaysi filial uchun (ko'p filialli hodim: har filial alohida,
+// API_CONTRACT_multi_center.md §0.6). Shu yerdan pastdagi barcha guruh so'rovlari
+// AYNAN bitta filial bilan cheklanadi — N va X filial oyliklari aralashmaydi.
+const scopedGroupFilter = (staff, centerId) => {
+  const filter = { client: staff.client, center: centerId, isDeleted: false, kind: { $ne: "individual" } };
   if (staff.role === "teacher") filter.teacher = staff._id;
   if (staff.role === "assistant") filter.assistant = staff._id;
   return filter;
@@ -116,9 +119,9 @@ const sumMonthPaymentsByGroup = async (groupIds, month) => {
 // `teacherPercent`i bilan, guruh foizidan MUSTAQIL. Arxivlangan (isDeleted)
 // guruhlar ham olinadi: to'langan oy oyligida summa joyida qoladi, keyingi
 // oylarda to'lov bo'lmagani uchun o'zi tushib qoladi (paymentSalaryDelta).
-const individualOf = async (staff, month) => {
+const individualOf = async (staff, month, centerId) => {
   const groups = await Group.find(
-    { client: staff.client, center: staff.center, kind: "individual", teacher: staff._id },
+    { client: staff.client, center: centerId, kind: "individual", teacher: staff._id },
     { _id: 1, teacherPercent: 1, isDeleted: 1 },
   );
   const sums = await sumMonthPaymentsByGroup(groups.map((g) => g._id), month);
@@ -159,9 +162,9 @@ const groupLabelOf = (g) => {
 // foizi bilan, oylik turidan qat'i nazar `base` ustiga qo'shiladi. Pul
 // guruhning JORIY o'qituvchisiga tushadi. Oy qoidasi `sumMonthPayments`
 // bilan aynan bir xil (paymentSalaryDelta + rollover). Hech narsa bo'lmasa null.
-const customPercentOf = async (staff, month) => {
+const customPercentOf = async (staff, month, centerId) => {
   const groups = await Group.find(
-    { client: staff.client, center: staff.center, isDeleted: false, kind: { $ne: "individual" }, teacher: staff._id },
+    { client: staff.client, center: centerId, isDeleted: false, kind: { $ne: "individual" }, teacher: staff._id },
     { _id: 1, name: 1, status: 1, activeId: 1, pendingId: 1, subject: 1 },
   ).populate("subject", "name");
   if (!groups.length) return null;
@@ -201,9 +204,13 @@ const customPercentOf = async (staff, month) => {
   };
 };
 
-// Bitta hodimning bitta oy uchun jonli hisob-kitobi.
+// Bitta hodimning bitta oy uchun, BITTA filial bo'yicha jonli hisob-kitobi.
 // `features` — joriy tarif flaglari (bitta so'rovda bir marta olinadi).
-const computeStaffMonth = async (staff, month, features = null) => {
+// `center` — filial (berilmasa asosiy); qiymat, guruhlar va tranzaksiyalar
+// faqat shu filialniki.
+const computeStaffMonth = async (staff, month, features = null, center = null) => {
+  const centerId = String(center || staff.center);
+  const salaryValue = Staff.salaryValueOf(staff, centerId);
   const type = salaryTypeOf(staff);
   const typeKey = salaryTypeKeyOf(staff.permissions);
   // Tarif pasaygandan keyin hodimda qolib ketgan (endi tarifda yo'q) oylik
@@ -216,12 +223,12 @@ const computeStaffMonth = async (staff, month, features = null) => {
   let meta = {};
 
   if (type === "fixed") {
-    base = staff.salaryValue || 0;
+    base = salaryValue || 0;
   } else if (type === "percentage") {
-    const groups = await Group.find(scopedGroupFilter(staff), { _id: 1 });
+    const groups = await Group.find(scopedGroupFilter(staff, centerId), { _id: 1 });
     const paymentsTotal = await sumMonthPayments(groups.map((g) => g._id), month);
-    base = Math.round((paymentsTotal * (staff.salaryValue || 0)) / 100);
-    meta = { paymentsTotal, percent: staff.salaryValue || 0 };
+    base = Math.round((paymentsTotal * (salaryValue || 0)) / 100);
+    meta = { paymentsTotal, percent: salaryValue || 0 };
   }
 
   // Asosiy qism (fiks yoki guruh foizi) — UI "Hisoblangan oylik"ni tarkibi
@@ -229,13 +236,14 @@ const computeStaffMonth = async (staff, month, features = null) => {
   const mainBase = base;
 
   // O'qituvchi — individual ulush har qanday oylik turi ustiga qo'shiladi.
-  const individual = staff.role === "teacher" ? await individualOf(staff, month) : null;
+  const individual = staff.role === "teacher" ? await individualOf(staff, month, centerId) : null;
   if (individual) base += individual.amount;
-  const customPercent = staff.role === "teacher" ? await customPercentOf(staff, month) : null;
+  const customPercent = staff.role === "teacher" ? await customPercentOf(staff, month, centerId) : null;
   if (customPercent) base += customPercent.amount;
 
   const transactions = await SalaryTransaction.find({
     staff: staff._id,
+    center: centerId,
     month,
   }).sort({ createdAt: -1 });
 
@@ -251,8 +259,9 @@ const computeStaffMonth = async (staff, month, features = null) => {
       _id: staff._id,
       name: staff.name,
       role: staff.role,
-      salaryValue: staff.salaryValue,
+      salaryValue,
     },
+    center: centerId,
     month,
     salaryType: type,
     salaryTypeInTariff,
@@ -276,11 +285,13 @@ module.exports = {
   summary: async (clientId, { month = "", center = "" }) => {
     const m = month || currentMonthString();
     const filter = { client: clientId, isDeleted: false };
-    if (center) filter.center = center;
+    if (center) filter.centers = center;
 
     const staffs = await Staff.find(filter).sort({ createdAt: -1 });
     const features = await clientService.getTariffFeatures(clientId);
-    const data = await Promise.all(staffs.map((s) => computeStaffMonth(s, m, features)));
+    // Filial berilsa — har hodim SHU filial bo'yicha (boshqa filialdagi oyligi
+    // qo'shilmaydi); berilmasa (eski so'rov) — asosiy filiali bo'yicha.
+    const data = await Promise.all(staffs.map((s) => computeStaffMonth(s, m, features, center || null)));
 
     return { month: m, data };
   },
@@ -288,17 +299,19 @@ module.exports = {
   // Bitta hodimning batafsil hisobi (hodim o'zinikini ham ko'ra oladi)
   // `centerId` — hodim so'raganda o'z filiali bilan cheklanadi (boshqa filial
   // hodimi `staff.notFound`); Owner uchun null.
+  // `centerId` — faol filial (Owner: `req.centerScope`, Staff: `req.staff.center`);
+  // hodim shu filialga biriktirilmagan bo'lsa `staff.notFound`.
   detail: async (clientId, staffId, { month = "" }, centerId = null) => {
     const staff = await Staff.findOne({
       _id: staffId,
       client: clientId,
       isDeleted: false,
-      ...(centerId && { center: centerId }),
+      ...(centerId && { centers: centerId }),
     });
     if (!staff) throw new Error("staff.notFound");
 
     const features = await clientService.getTariffFeatures(clientId);
-    return computeStaffMonth(staff, month || currentMonthString(), features);
+    return computeStaffMonth(staff, month || currentMonthString(), features, centerId);
   },
 
   // Avans / oldindan pul olish / bonus / jarima qo'shish
@@ -318,13 +331,15 @@ module.exports = {
       _id: staffId,
       client: clientId,
       isDeleted: false,
-      ...(centerId && { center: centerId }),
+      ...(centerId && { centers: centerId }),
     });
     if (!staff) throw new Error("staff.notFound");
+    // Tranzaksiya FAOL filialniki — shu filial oyligidan ayiriladi/qo'shiladi.
+    const txCenter = centerId || staff.center;
 
     const tx = await SalaryTransaction.create({
       client: clientId,
-      center: staff.center,
+      center: txCenter,
       staff: staff._id,
       month: month || currentMonthString(),
       type,
@@ -332,11 +347,11 @@ module.exports = {
       note: note?.trim() || "",
     });
 
-    emit(`client:${clientId}`, "salary:updated", { staff: String(staff._id), month: tx.month });
+    emit(`client:${clientId}`, "salary:updated", { staff: String(staff._id), month: tx.month, center: String(txCenter) });
     void audit.log({
       actor,
       client: clientId,
-      center: staff.center,
+      center: txCenter,
       // admin lang fayllaridagi mavjud kalit nomlari bilan bir xil (salary:withdraw).
       action: type === "withdrawal" ? "salary:withdraw" : `salary:${type}`,
       entity: { type: "salary", id: tx._id, label: staff.name },
@@ -364,7 +379,7 @@ module.exports = {
     tx.cancelledAt = getNow();
     await tx.save();
 
-    emit(`client:${clientId}`, "salary:updated", { staff: String(tx.staff), month: tx.month });
+    emit(`client:${clientId}`, "salary:updated", { staff: String(tx.staff), month: tx.month, center: String(tx.center) });
     void audit.log({
       actor,
       client: clientId,

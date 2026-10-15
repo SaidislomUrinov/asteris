@@ -12,7 +12,8 @@ const pdfT = (key) => {
 // PDF sifatida avtomatik yuklab beradi — parol faqat shu paytda oq-qora
 // ko'rinadi (bir martalik). admin/src/pages/Clients/pdf.util.js bilan bir
 // xil vizual naqsh (alohida ilova bo'lgani uchun bu yerda takrorlanadi).
-export function downloadStaffCredentialsPdf({ name, login, password }) {
+// `url` — markaz manzili (`prime.wenet.uz`): login faqat shu manzilda ishlaydi.
+export function downloadStaffCredentialsPdf({ name, login, password, url = "" }) {
   const doc = new jsPDF({ unit: "pt", format: "a5" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 40;
@@ -39,6 +40,7 @@ export function downloadStaffCredentialsPdf({ name, login, password }) {
   doc.text(name || "", margin, y);
 
   const rows = [
+    ...(url ? [[pdfT("staff.address"), url]] : []),
     [pdfT("auth.login"), login],
     [pdfT("auth.password"), password],
   ];

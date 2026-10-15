@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { HiSignal, HiSignalSlash } from "react-icons/hi2";
 import socket from "../socket";
+import { getActiveCenter } from "../utils/fetching";
 
 // Ulanish holati uchun ranglar — sidebar qorong'i fonda turgani uchun
 // to'ldirish o'rniga yumshoq tint + chegara ishlatiladi.
@@ -44,7 +45,9 @@ export default function SocketStatus() {
     // fonda yangilab localStorage'ga yozadi; statik obyekt bo'lsa socket har
     // reconnect urinishida ESKI tokenni yuborib, abadiy "reconnecting"
     // holatida qolib ketardi.
-    socket.auth = (cb) => cb({ token: localStorage.getItem("access") });
+    // `centerId` — faol filial: hodim shu filial xonasiga qo'shiladi
+    // (filial almashganda sahifa reload bo'ladi va socket qayta ulanadi).
+    socket.auth = (cb) => cb({ token: localStorage.getItem("access"), centerId: getActiveCenter() });
     if (!socket.connected) socket.connect();
 
     const onConn = () => setStatus("online");

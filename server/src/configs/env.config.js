@@ -49,6 +49,9 @@ module.exports = {
   // Obuna to'lovlari uchun (Client Owner -> platforma), inPAY orqali
   SERVER_URL: env.SERVER_URL || "http://localhost:5000",
   CLIENT_APP_URL: env.CLIENT_APP_URL || "http://localhost:5174",
+  // Brend subdomenlari: `{slug}.{ROOT_DOMAIN}` (API_CONTRACT_multi_center.md §8).
+  // Dev'da `{slug}.localhost:{port}` — CLIENT_APP_URL localhost bo'lsa avtomatik.
+  ROOT_DOMAIN: env.ROOT_DOMAIN || "wenet.uz",
   INPAY_BASE_URL: env.INPAY_BASE_URL || "https://inpay.uz/api/v1",
   INPAY_MERCHANT_ID: env.INPAY_MERCHANT_ID,
   INPAY_MERCHANT_TOKEN: env.INPAY_MERCHANT_TOKEN,

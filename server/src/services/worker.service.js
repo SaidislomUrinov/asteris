@@ -171,7 +171,7 @@ const centerLessons = async (clientId, centerId, today, dayStart, now) => {
 // O'qituvchi/yordamchi: `teacherService.dashboard` (TeacherHome bilan bir xil
 // manba — guruh doirasi `scopeField`, oylik `salaryService.detail`).
 const teachingLessons = async (clientId, staff, today, dayStart, now) => {
-  const dash = await teacherService.dashboard(clientId, staff._id, { scopeField: staff.role });
+  const dash = await teacherService.dashboard(clientId, staff._id, { scopeField: staff.role, centerId: staff.center });
   const ids = dash.todayLessons.map((l) => l._id);
   const [groups, attendance] = await Promise.all([
     Group.find({ _id: { $in: ids } }).select("name"),
@@ -222,13 +222,21 @@ module.exports = {
     let lang;
     let name;
     if (staff) {
-      const [centerDoc, staffDoc] = await Promise.all([
-        Center.findOne({ _id: staff.center, client: clientId, isDeleted: false }).select("name"),
+      // Ko'p filialli hodim (API_CONTRACT_multi_center.md §6): `center` — faol
+      // filial (`x-center-id`), `centers` — ishlay oladigan barcha filiallari.
+      const allowed = staff.centers?.length ? staff.centers : [staff.center];
+      const [centerDocs, staffDoc] = await Promise.all([
+        // Bloklangan filialda ishlab bo'lmaydi (fullStaffAuth) — chip ham chiqmaydi.
+        Center.find({ _id: { $in: allowed }, client: clientId, isDeleted: false, status: { $ne: "blocked" } })
+          .select("name")
+          .sort({ createdAt: 1 }),
         Staff.findById(staff._id).select("name telegram.lang"),
       ]);
+      // Login javobida (middleware'siz) asosiy filial bloklangan bo'lishi mumkin — keyingisi.
+      const centerDoc = centerDocs.find((c) => String(c._id) === String(staff.center)) || centerDocs[0];
       if (!centerDoc) throw new Error("worker.centerNotFound");
       center = { _id: String(centerDoc._id), name: centerDoc.name };
-      centers = [center];
+      centers = centerDocs.map((c) => ({ _id: String(c._id), name: c.name }));
       lang = staffDoc?.telegram?.lang;
       name = staffDoc?.name || staff.name;
     } else {

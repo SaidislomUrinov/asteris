@@ -15,11 +15,14 @@ const moment = require("moment-timezone");
 module.exports = {
   // `scopeField` — "teacher" yoki "assistant" (yordamchi o'qituvchi ham
   // shu dashboardni ko'radi, faqat o'ziga biriktirilgan guruhlar bo'yicha).
-  dashboard: async (clientId, staffId, { month = "", scopeField = "teacher" } = {}) => {
+  // `centerId` — faol filial (ko'p filialli o'qituvchi: guruhlar va oylik
+  // faqat shu filialniki, API_CONTRACT_multi_center.md §0.5).
+  dashboard: async (clientId, staffId, { month = "", scopeField = "teacher", centerId = null } = {}) => {
     const targetMonth = month || currentMonthString();
 
     const groups = await Group.find({
       client: clientId,
+      ...(centerId ? { center: centerId } : {}),
       [scopeField]: staffId,
       isDeleted: false,
       status: { $in: ["pending", "active"] },
@@ -40,7 +43,7 @@ module.exports = {
             { $group: { _id: "$groups.group", students: { $addToSet: "$_id" } } },
           ])
         : [],
-      salaryService.detail(clientId, staffId, { month: targetMonth }).catch(() => null),
+      salaryService.detail(clientId, staffId, { month: targetMonth }, centerId).catch(() => null),
     ]);
 
     const subjectMap = Object.fromEntries(subjects.map((s) => [String(s._id), s.name]));
@@ -117,12 +120,13 @@ module.exports = {
   // days.includes(bugun) && startTime<=hozir<=endTime` shartiga mos
   // birinchisini (bir nechtasi mos kelsa startTime bo'yicha eng yaqinini)
   // topadi. Topilmasa `null`.
-  currentLesson: async (clientId, staffId, scopeField = "teacher") => {
+  currentLesson: async (clientId, staffId, scopeField = "teacher", centerId = null) => {
     const dayCode = todayDayCode();
     const nowHHmm = moment.tz("Asia/Tashkent").format("HH:mm");
 
     const groups = await Group.find({
       client: clientId,
+      ...(centerId ? { center: centerId } : {}),
       [scopeField]: staffId,
       status: "active",
       isDeleted: false,

@@ -154,6 +154,24 @@ export default function Clients() {
       render: (c) => c.phone,
     },
     {
+      key: "slug",
+      header: t("client.slug"),
+      render: (c) =>
+        c.slug ? (
+          <a
+            href={c.appUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-blue-600 hover:underline"
+          >
+            {c.appUrl.replace(/^https?:\/\//, "")}
+          </a>
+        ) : (
+          "—"
+        ),
+    },
+    {
       key: "status",
       header: t("client.status"),
       render: (c) =>

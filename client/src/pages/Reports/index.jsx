@@ -6,7 +6,6 @@ import FilterBar from "../../ui/FilterBar";
 import DateRangeInput from "../../ui/DateRangeInput";
 import SummaryCards from "./SummaryCards";
 import TimelineChart from "./TimelineChart";
-import ByCenterTab from "./ByCenterTab";
 import ByTeacherTab from "./ByTeacherTab";
 import ByCollectorTab from "./ByCollectorTab";
 import ByGroupTab from "./ByGroupTab";
@@ -92,7 +91,8 @@ function Reports() {
   useSocketEvent("attendance:marked", refetchAll);
 
   const tabs = [
-    hasFinance && { key: "center", label: t("report.tabCenter"), Component: ByCenterTab },
+    // "Filiallar bo'yicha" tabi olib tashlandi: hisobotlar faqat Top'da
+    // tanlangan BITTA filial bo'yicha (API_CONTRACT_multi_center.md §0.5).
     hasFinance &&
       hasFeature("teacher.performance") && { key: "teacher", label: t("report.tabTeacher"), Component: ByTeacherTab },
     hasFinance && { key: "collector", label: t("report.tabCollector"), Component: ByCollectorTab },

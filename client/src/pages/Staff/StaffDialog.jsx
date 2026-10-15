@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import {
   HiBanknotes,
   HiBookOpen,
+  HiBuildingOffice2,
   HiIdentification,
   HiKey,
   HiLockClosed,
@@ -19,6 +20,7 @@ import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 import { featureLabelKey } from "../Subscription/permissionLabels";
 import { downloadStaffCredentialsPdf } from "./pdf.util";
+import { brandHost, brandUrl } from "../../utils/brand";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const ROLE_OPTIONS = [
@@ -219,13 +221,22 @@ const EMPTY_FORM = {
   name: "",
   login: "",
   password: "",
-  centerId: "",
+  centerIds: [],
   role: "reception",
   unlimited: false,
   permissions: [],
   subjects: [],
   salaryType: "",
-  salaryValue: "",
+  // Oylik qiymati FILIAL kesimida: { [centerId]: "35" } (API_CONTRACT_multi_center.md §3.5).
+  salaryValues: {},
+};
+
+// Tahrirda — hodimning saqlangan filial qiymatlari (eski hujjatda faqat
+// `salaryValue` — asosiy filialga).
+const initialSalaryValues = (staff) => {
+  const rows = Array.isArray(staff.salaryValues) ? staff.salaryValues : [];
+  if (rows.length) return Object.fromEntries(rows.map((r) => [r.center, r.value ?? ""]));
+  return staff.center ? { [staff.center]: staff.salaryValue ?? "" } : {};
 };
 
 // Create/Edit uchun bitta dialog — `staff` prop bo'lsa edit rejimi (PATCH),
@@ -236,6 +247,8 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
   const { t } = useTranslation();
   const isEdit = !!staff?._id;
 
+  const activeCenter = useSelector((e) => e.user.activeCenter);
+  const brandSlug = useSelector((e) => e.user.brand?.slug);
   const allowedTariffPermissions =
     useSelector((e) => e.user.subscription?.tariffSnapshot?.allowedPermissions) || [];
   // Hodimda allaqachon saqlangan oylik turi — tarif pasaygan bo'lsa ham
@@ -258,7 +271,10 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
           name: staff.name || "",
           login: staff.login || "",
           password: "",
-          centerId: staff.center || "",
+          // Asosiy filial birinchi — backend shu tartibni saqlaydi.
+          centerIds: [
+            ...new Set([staff.center, ...(Array.isArray(staff.centers) ? staff.centers : [])].filter(Boolean)),
+          ],
           role: staff.role || "reception",
           unlimited: Array.isArray(staff.permissions)
             ? staff.permissions.includes("all")
@@ -271,24 +287,36 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
             (Array.isArray(staff.permissions) &&
               staff.permissions.find((p) => SALARY_TYPE_OPTIONS.includes(p))) ||
             "",
-          salaryValue: staff.salaryValue ?? "",
+          salaryValues: initialSalaryValues(staff),
         }
-      : EMPTY_FORM,
+      : // Yangi hodim — faol filialda (bitta filial bo'lsa o'sha).
+        { ...EMPTY_FORM, centerIds: [activeCenter || (centers?.length === 1 ? centers[0]._id : "")].filter(Boolean) },
   );
   const [disabled, setDisabled] = useState(false);
   const [credentials, setCredentials] = useState(null);
   const [copied, setCopied] = useState(false);
 
-  const centerOptions = (centers || []).map((c) => ({
-    value: c._id,
-    label: c.name,
-  }));
+  const centerList = centers || [];
+  const centerName = (id) => centerList.find((c) => c._id === id)?.name || "—";
+  // Tanlangan filiallar ro'yxat tartibida (asosiy birinchi).
+  const selectedCenters = form.centerIds.filter((id) => centerList.some((c) => c._id === id));
+  const manyCenters = selectedCenters.length > 1;
 
-  // Faqat tanlangan filialga tegishli fanlar — GroupDialog'dagi
+  const toggleCenter = (id) =>
+    setForm((prev) => {
+      const centerIds = prev.centerIds.includes(id)
+        ? prev.centerIds.filter((c) => c !== id)
+        : [...prev.centerIds, id];
+      // Olib tashlangan filial fanlari ham tanlovdan chiqadi.
+      const allowedSubjects = new Set((subjects || []).filter((s) => centerIds.includes(s.center)).map((s) => s._id));
+      return { ...prev, centerIds, subjects: prev.subjects.filter((s) => allowedSubjects.has(s)) };
+    });
+
+  // Faqat tanlangan filiallarga tegishli fanlar — GroupDialog'dagi
   // `centerSubjects` bilan bir xil naqsh.
   const centerSubjects = useMemo(
-    () => (subjects || []).filter((s) => s.center === form.centerId),
-    [subjects, form.centerId],
+    () => (subjects || []).filter((s) => form.centerIds.includes(s.center)),
+    [subjects, form.centerIds],
   );
 
   // Rol o'zgarganda ruxsat ro'yxati ham, formadagi tanlov ham darhol
@@ -355,18 +383,20 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
       if (
         !form.name.trim() ||
         !form.login.trim() ||
-        !form.centerId ||
+        !selectedCenters.length ||
         (!isEdit && !form.password.trim())
       )
         throw new Error("staff.fillTheRows");
 
-      if (needsSalaryValue && isTariffAllowed(form.salaryType)) {
-        const val = Number(form.salaryValue);
-        if (form.salaryValue === "" || Number.isNaN(val) || val < 0) {
-          throw new Error("staff.fillTheRows");
-        }
-        if (form.salaryType === "staff.salary.percentage" && val > 100) {
-          throw new Error("staff.invalidSalaryValue");
+      const withValue = needsSalaryValue && isTariffAllowed(form.salaryType);
+      if (withValue) {
+        for (const id of selectedCenters) {
+          const raw = form.salaryValues[id] ?? "";
+          const val = Number(raw);
+          if (raw === "" || Number.isNaN(val) || val < 0) throw new Error("staff.fillTheRows");
+          if (form.salaryType === "staff.salary.percentage" && val > 100) {
+            throw new Error("staff.invalidSalaryValue");
+          }
         }
       }
       setDisabled(true);
@@ -397,16 +427,17 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
       }
 
       const body = {
-        centerId: form.centerId,
+        centerIds: selectedCenters,
         name: form.name.trim(),
         login: form.login.trim(),
         role: form.role,
         permissions,
         subjects: isTeachingRole ? form.subjects : [],
-        salaryValue:
-          needsSalaryValue && isTariffAllowed(form.salaryType)
-            ? Number(form.salaryValue)
-            : null,
+        // Har filial o'z oyligi bilan — N va X filial oyliklari aralashmaydi.
+        salaryValues: selectedCenters.map((id) => ({
+          center: id,
+          value: withValue ? Number(form.salaryValues[id]) : null,
+        })),
       };
       if (form.password.trim()) body.password = form.password.trim();
 
@@ -424,6 +455,7 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
           name: data.name,
           login: data.login,
           password: data.plainPassword,
+          url: brandSlug ? brandHost(brandSlug) : "",
         });
         setCredentials({ login: data.login, password: data.plainPassword });
       } else {
@@ -440,7 +472,13 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
     if (!credentials) return;
     try {
       await navigator.clipboard.writeText(
-        `${t("staff.login")}: ${credentials.login}\n${t("staff.password")}: ${credentials.password}`,
+        [
+          brandSlug && `${t("staff.address")}: ${brandUrl(brandSlug)}`,
+          `${t("staff.login")}: ${credentials.login}`,
+          `${t("staff.password")}: ${credentials.password}`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
       );
       setCopied(true);
       successMsg("staff.copied");
@@ -461,6 +499,12 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
         }
       >
         <div className="flex flex-col gap-3 w-full">
+          {brandSlug && (
+            <div className="flex flex-col gap-1 p-3 rounded-xl bg-slate-100 dark:bg-night-800">
+              <span className="text-xs text-slate-500 dark:text-slate-400">{t("staff.address")}</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-100 break-all">{brandHost(brandSlug)}</span>
+            </div>
+          )}
           <div className="flex flex-col gap-1 p-3 rounded-xl bg-slate-100 dark:bg-night-800">
             <span className="text-xs text-slate-500 dark:text-slate-400">{t("staff.login")}</span>
             <span className="font-semibold text-slate-800 dark:text-slate-100">
@@ -525,7 +569,7 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 sm:col-span-2">
             <Input
               label={t("staff.password")}
               placeholder={isEdit ? t("staff.passwordHint") : t("staff.password")}
@@ -543,15 +587,32 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
               </p>
             )}
           </div>
-          <Select
-            label={t("staff.center")}
-            required
-            placeholder={t("staff.center")}
-            options={centerOptions}
-            value={form.centerId}
-            onChange={(v) => setForm((prev) => ({ ...prev, centerId: v }))}
-          />
         </div>
+
+        {/* Ko'p filialli hodim (API_CONTRACT_multi_center.md §3.5): rol va
+            ruxsatlar barcha filiallarda bir xil, oylik — har filialda alohida.
+            Bitta filial bo'lsa tanlov ko'rsatilmaydi. */}
+        {centerList.length > 1 && (
+          <div className="flex flex-col gap-2 pt-2 border-t border-slate-100 dark:border-night-700">
+            <span className="pl-2 text-sm text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+              <HiBuildingOffice2 className="text-base" />
+              <span>
+                {t("staff.centers")}
+                <span className="text-red-500">*</span>
+              </span>
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pl-2">
+              {centerList.map((c) => (
+                <Checkbox
+                  key={c._id}
+                  label={c.name}
+                  checked={form.centerIds.includes(c._id)}
+                  onChange={() => toggleCenter(c._id)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         <Select
           label={t("staff.role")}
@@ -568,7 +629,7 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
               <HiBookOpen className="text-base" />
               {t("staff.subjects")}
             </span>
-            {!form.centerId ? (
+            {!selectedCenters.length ? (
               <p className="pl-2 text-xs text-slate-400 dark:text-slate-500">{t("staff.selectCenterFirst")}</p>
             ) : centerSubjects.length === 0 ? (
               <p className="pl-2 text-xs text-slate-400 dark:text-slate-500">{t("staff.noSubjectsInCenter")}</p>
@@ -577,7 +638,7 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
                 {centerSubjects.map((s) => (
                   <Checkbox
                     key={s._id}
-                    label={s.name}
+                    label={manyCenters ? `${s.name} · ${centerName(s.center)}` : s.name}
                     checked={form.subjects.includes(s._id)}
                     onChange={() => toggleSubject(s._id)}
                   />
@@ -607,7 +668,7 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
                   key={perm}
                   onClick={() =>
                     allowed &&
-                    setForm((prev) => ({ ...prev, salaryType: perm, salaryValue: "" }))
+                    setForm((prev) => ({ ...prev, salaryType: perm, salaryValues: {} }))
                   }
                   className={`flex items-start gap-2.5 p-3 rounded-xl border-2 duration-150 ${
                     allowed ? "cursor-pointer" : "cursor-not-allowed opacity-50"
@@ -648,24 +709,32 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
             })}
           </div>
 
-          {needsSalaryValue && isTariffAllowed(form.salaryType) && (
-            <Input
-              label={
-                form.salaryType === "staff.salary.percentage"
-                  ? t("staff.salaryPercentLabel")
-                  : t("staff.salaryAmountLabel")
-              }
-              placeholder={
-                form.salaryType === "staff.salary.percentage" ? "0-100" : "0"
-              }
-              type="number"
-              required
-              icon={<HiBanknotes />}
-              value={form.salaryValue}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, salaryValue: e.target.value }))
-              }
-            />
+          {needsSalaryValue && isTariffAllowed(form.salaryType) && selectedCenters.length > 0 && (
+            <div className={`grid gap-3 ${manyCenters ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
+              {selectedCenters.map((id) => {
+                const base =
+                  form.salaryType === "staff.salary.percentage"
+                    ? t("staff.salaryPercentLabel")
+                    : t("staff.salaryAmountLabel");
+                return (
+                  <Input
+                    key={id}
+                    label={manyCenters ? `${base} · ${centerName(id)}` : base}
+                    placeholder={form.salaryType === "staff.salary.percentage" ? "0-100" : "0"}
+                    type="number"
+                    required
+                    icon={<HiBanknotes />}
+                    value={form.salaryValues[id] ?? ""}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        salaryValues: { ...prev.salaryValues, [id]: e.target.value },
+                      }))
+                    }
+                  />
+                );
+              })}
+            </div>
           )}
         </div>
 

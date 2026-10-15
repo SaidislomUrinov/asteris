@@ -18,11 +18,21 @@ const schema = new Schema({
     ref: "Client",
     required: true,
   },
+  // ASOSIY filial — har doim `centers` ichida (API_CONTRACT_multi_center.md §1).
+  // So'rov paytidagi FAOL filial `req.staff.center` ga middleware qo'yadi.
   center: {
     type: Schema.Types.ObjectId,
     ref: "Center",
     required: true,
   },
+  // Hodim ishlaydigan barcha filiallar (kamida bitta). Rol va ruxsatlar
+  // barcha filiallarda bir xil.
+  centers: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Center",
+    },
+  ],
   name: {
     type: String,
     required: true,
@@ -55,10 +65,20 @@ const schema = new Schema({
   ],
   // Oylik hisoblash qiymati — "staff.salary.percentage" bo'lsa foiz (0-100),
   // "staff.salary.fixed" bo'lsa summa (so'm).
+  // ESKI (bitta filial davri) — migratsiyadan keyin faqat fallback.
   salaryValue: {
     type: Number,
     default: null,
   },
+  // Oylik QIYMATI filial kesimida — N va X filial oyliklari aralashmaydi.
+  // Turi (fixed/percentage) esa hodim darajasida (`permissions`).
+  salaryValues: [
+    {
+      _id: false,
+      center: { type: Schema.Types.ObjectId, ref: "Center", required: true },
+      value: { type: Number, default: null },
+    },
+  ],
   // Shaxsiy Telegram bog'lanishi — Client'dagi bilan bir xil naqsh
   // (API_CONTRACT.md "Telegram bog'lash").
   telegram: {
@@ -93,12 +113,17 @@ const schema = new Schema({
   },
 });
 
-// Faqat aktiv (isDeleted:false) hujjatlar orasida unique — soft-delete qilingan
-// hodimning raqami keyinchalik qayta ishlatilishi mumkin bo'lishi kerak.
-schema.index({ login: 1 }, { unique: true, partialFilterExpression: { isDeleted: false } });
+// Login MIJOZ ichida yagona (brend subdomeni — API_CONTRACT_multi_center.md §1),
+// faqat aktiv hujjatlar orasida: arxivlangan hodimning logini qayta berilishi mumkin.
+// Eski global `{ login: 1 }` indeksi scripts/migrate-multi-center.js da o'chiriladi.
+schema.index({ client: 1, login: 1 }, { unique: true, partialFilterExpression: { isDeleted: false } });
 
 schema.pre("save", async function () {
   this.updatedAt = getNow();
+  // Invariant: asosiy filial har doim `centers` ichida.
+  if (this.center && !(this.centers || []).some((c) => String(c) === String(this.center))) {
+    this.centers = [this.center, ...(this.centers || [])];
+  }
   if (this.isNew && this.staffId == null) {
     this.staffId = await Counter.next("staff");
   }
@@ -114,7 +139,27 @@ schema.virtual("lastUpdate").get(function () {
 
 schema.statics.ROLES = ROLES;
 
+// Hodimning filiallari (migratsiyadan oldingi hujjatda `centers` bo'sh — asosiy filial).
+const centersOf = (staff) => {
+  const list = (staff?.centers || []).map(String).filter(Boolean);
+  if (!list.length && staff?.center) list.push(String(staff.center));
+  return [...new Set(list)];
+};
+
+// Shu filialdagi oylik qiymati; yozuv bo'lmasa asosiy filial uchun eski `salaryValue`.
+const salaryValueOf = (staff, centerId) => {
+  const key = String(centerId || staff?.center || "");
+  const row = (staff?.salaryValues || []).find((r) => String(r.center) === key);
+  if (row) return row.value ?? null;
+  if (!(staff?.salaryValues || []).length && key === String(staff?.center || "")) return staff?.salaryValue ?? null;
+  return null;
+};
+
+schema.statics.centersOf = centersOf;
+schema.statics.salaryValueOf = salaryValueOf;
+
 // Tenant izolyatsiyasi indeksi — API_CONTRACT_performance.md §1
 schema.index({ client: 1, center: 1, isDeleted: 1, role: 1 });
+schema.index({ client: 1, centers: 1, isDeleted: 1, role: 1 });
 
 module.exports = model("Staff", schema);

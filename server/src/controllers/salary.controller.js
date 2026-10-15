@@ -15,8 +15,9 @@ const TX_TYPE_LABELS = {
   penalty: "Jarima",
 };
 
-// Hodim so'rasa — faqat o'z filiali hodimlari (Owner uchun null = cheklovsiz).
-const staffCenter = (req) => (req.staff ? req.staff.center : null);
+// Faol filial (API_CONTRACT_multi_center.md §3.6): hodim — o'z faol filiali,
+// Owner — tanlangan filial (`x-center-id`). Oylik har doim shu filial bo'yicha.
+const staffCenter = (req) => req.centerScope || (req.staff ? req.staff.center : null);
 
 // Hodim boshqa hodimning hisobini ko'ra olmaydi. Istisno — `salary:view`
 // ruxsatiga ega hodim (masalan to'liq huquqli `["all"]`): u o'z filiali

@@ -37,7 +37,7 @@ module.exports = {
 
   getOne: async (req, res, next) => {
     try {
-      const data = await staffService.getOne(req.client._id, req.params.id);
+      const data = await staffService.getOne(req.client._id, req.params.id, req.centerScope || null);
       return res.send({ ok: true, data });
     } catch (error) {
       next(error);
@@ -71,7 +71,7 @@ module.exports = {
 
   update: async (req, res, next) => {
     try {
-      const data = await staffService.update(req.client._id, req.params.id, req.body, buildActor(req));
+      const data = await staffService.update(req.client._id, req.params.id, req.body, buildActor(req), req.centerScope || null);
       return res.send({ ok: true, data, msg: "staff.updated" });
     } catch (error) {
       next(error);
@@ -110,14 +110,20 @@ module.exports = {
       const { data, access } = await staffService.signIn(req.body);
       // `verify` bilan bir xil payload — aks holda login'dan keyin premium
       // bo'limlar (QR davomat) faqat sahifa yangilangach paydo bo'lardi.
-      const [{ active }, tariffFeatures, tariffName] = await Promise.all([
+      const [{ active }, tariffFeatures, tariffName, context] = await Promise.all([
         clientService.getSubscriptionStatus(data.client),
         clientService.getTariffFeatures(data.client),
         clientService.getTariffName(data.client),
+        clientService.sessionContext(data.client, {
+          centerIds: data.centers,
+          excludeBlocked: true,
+          wanted: req.headers["x-center-id"],
+          primary: data.center,
+        }),
       ]);
       return res.send({
         ok: true,
-        data: { ...data, subscriptionActive: active, tariffFeatures, tariffName },
+        data: { ...data, subscriptionActive: active, tariffFeatures, tariffName, ...context },
         access,
         msg: "auth.success",
       });
@@ -131,14 +137,20 @@ module.exports = {
       // Tarif flaglari ham qo'shiladi — hodim panelida premium bo'limlar
       // (masalan "QR davomat") shu ro'yxatga qarab ko'rsatiladi
       // (docs/API_CONTRACT_qr_attendance_staff.md).
-      const [{ active }, tariffFeatures, tariffName] = await Promise.all([
+      const [{ active }, tariffFeatures, tariffName, context] = await Promise.all([
         clientService.getSubscriptionStatus(req.staff.client),
         clientService.getTariffFeatures(req.staff.client),
         clientService.getTariffName(req.staff.client),
+        // Faol filialni middleware allaqachon hisoblagan (`req.staff.center`).
+        clientService.sessionContext(req.staff.client, {
+          centerIds: req.staff.centers,
+          excludeBlocked: true,
+          wanted: req.staff.center,
+        }),
       ]);
       return res.send({
         ok: true,
-        data: { ...req.staff, subscriptionActive: active, tariffFeatures, tariffName },
+        data: { ...req.staff, subscriptionActive: active, tariffFeatures, tariffName, ...context },
       });
     } catch (error) {
       next(error);

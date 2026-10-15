@@ -21,7 +21,7 @@ import LazyImage from "../../ui/LazyImage";
 import Loading from "../../ui/Loading";
 import DropMenu from "../../ui/DropMenu";
 import CenterDialog from "./CenterDialog";
-import { api, API } from "../../utils/fetching";
+import { api, API, notifyCentersChanged } from "../../utils/fetching";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { errorMsg, successMsg } from "../../utils/alert";
 import useQueryState from "../../hooks/useQueryState";
@@ -59,7 +59,8 @@ function Centers() {
     try {
       setLoading(true);
       setError(false);
-      const res = await api.get("/centers", { params: { page, search } });
+      // Boshqaruv sahifasi — faol filialdan qat'i nazar BARCHA filiallar.
+      const res = await api.get("/centers", { params: { page, search, scope: "all" } });
       const { ok, data, meta: m, msg } = res.data;
       if (!ok) throw new Error(msg);
       setRows(data || []);
@@ -107,6 +108,7 @@ function Centers() {
       successMsg(msg);
       setDeleteTarget(null);
       fetchCenters();
+      notifyCentersChanged();
     } catch (error) {
       errorMsg(error.message);
     } finally {
@@ -124,6 +126,7 @@ function Centers() {
       successMsg(msg);
       setUnblockTarget(null);
       fetchCenters();
+      notifyCentersChanged();
     } catch (error) {
       errorMsg(error.message);
     } finally {
@@ -345,7 +348,10 @@ function Centers() {
         open={dialogOpen}
         center={selected}
         onClose={() => setDialogOpen(false)}
-        onSaved={fetchCenters}
+        onSaved={() => {
+          fetchCenters();
+          notifyCentersChanged();
+        }}
       />
 
       <Dialog

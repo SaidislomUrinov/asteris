@@ -28,6 +28,8 @@ const profileLimiter = rateLimit({
 });
 
 router.post("/signin", signInLimiter, clientController.signIn);
+// Ochiq: brend subdomeni login sahifasi uchun nom + logotip (API_CONTRACT_multi_center.md §3.1).
+router.get("/brand/:slug", rateLimit({ windowMs: 60 * 1000, limit: 60 }), clientController.brand);
 router.get("/verify", clientAuth, fullClientAuth, clientController.verify);
 router.patch("/profile", profileLimiter, clientAuth, fullClientAuth, clientController.updateOwnProfile);
 router.patch("/intro-seen", clientAuth, fullClientAuth, clientController.markIntroSeen);

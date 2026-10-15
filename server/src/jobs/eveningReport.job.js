@@ -150,7 +150,8 @@ const sendCenterReports = async (date, dayCode, now) => {
       .catch(() => {});
 
     const receptions = await Staff.find({
-      center: center._id,
+      // Ko'p filialli resepshin har filiali hisobotini alohida oladi.
+      centers: center._id,
       role: "reception",
       isDeleted: false,
       blocked: false,
@@ -174,7 +175,7 @@ const sendTeacherReports = async (date, dayCode, now) => {
     isDeleted: false,
     blocked: false,
     "telegram.chatId": { $ne: null },
-  }).select("_id");
+  }).select("_id center centers");
   if (!staffList.length) return;
 
   for (const staff of staffList) {
@@ -184,7 +185,7 @@ const sendTeacherReports = async (date, dayCode, now) => {
       isDeleted: false,
       days: dayCode,
     })
-      .select("subject activeId startTime endTime")
+      .select("subject center activeId startTime endTime")
       .sort({ startTime: 1 });
     // Bugun darsi bo'lmagan o'qituvchiga kechqurun umuman xabar yuborilmaydi
     // (ertalabki hisobotdan farqli — u yerda "bugun dars yo'q" ma'noli, bu
@@ -194,11 +195,15 @@ const sendTeacherReports = async (date, dayCode, now) => {
     if (!lastLessonEnded(groups, date, now)) continue;
     if (!(await acquireOnce(`staff:${staff._id}`, date))) continue;
 
-    const [{ byGroup, totals }, subjects] = await Promise.all([
+    // Ko'p filialli o'qituvchi — har darsda filial nomi (API_CONTRACT_multi_center.md §6).
+    const multiCenter = Staff.centersOf(staff).length > 1;
+    const [{ byGroup, totals }, subjects, centers] = await Promise.all([
       collectAttendance(groups, date),
       Subject.find({ _id: { $in: uniq(groups.map((g) => g.subject)) } }).select("name"),
+      multiCenter ? Center.find({ _id: { $in: uniq(groups.map((g) => g.center)) } }).select("name") : [],
     ]);
     const subjectMap = Object.fromEntries(subjects.map((s) => [String(s._id), s.name]));
+    const centerMap = Object.fromEntries(centers.map((c) => [String(c._id), c.name]));
 
     const lessonBlocks = (lang) =>
       groups.map((g) => {
@@ -207,6 +212,9 @@ const sendTeacherReports = async (date, dayCode, now) => {
           title: escapeHtml(`${subjectMap[String(g.subject)] || "?"} - ${g.activeId}`),
           lines: [
             `${g.startTime}-${g.endTime}`,
+            ...(multiCenter && centerMap[String(g.center)]
+              ? [`${t(lang, "reminderCenterLabel")}: ${escapeHtml(centerMap[String(g.center)])}`]
+              : []),
             `${t(lang, "eveningPresent")}: ${stat.present} · ${t(lang, "eveningAbsent")}: ${stat.absent}`,
           ],
         };
@@ -240,4 +248,5 @@ const start = () => {
   console.log("Evening report scheduler started (har filial darslari tugagach)");
 };
 
-module.exports = { start, run };
+// `sendTeacherReports` — tekshiruv skriptlari uchun (soat sharti chetlab o'tiladi).
+module.exports = { start, run, sendTeacherReports };
