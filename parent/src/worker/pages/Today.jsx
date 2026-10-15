@@ -39,7 +39,12 @@ export const Today = () => {
   const load = useCallback(() => workerApi.today(centerId), [centerId]);
   const { data, loading, error, reload } = useLive(load, [load]);
 
-  const events = [...(data?.events || [])].sort((a, b) => (a.at || 0) - (b.at || 0));
+  // Bosh sahifada faqat darslar (guruhlar). Vazifa/baho eslatmalari, to'lov,
+  // lid va boshqa voqealar guruh kartasiga o'xshab chalkashtirgani uchun
+  // olib tashlandi — ular o'z bo'limlarida (guruh detali, Moliya, Lidlar).
+  const events = (data?.events || [])
+    .filter((e) => e.type === "lesson")
+    .sort((a, b) => (a.at || 0) - (b.at || 0));
   // "Hozir" chizig'i — boshlanish vaqti hozirdan keyin bo'lgan birinchi voqeadan
   // oldin. Davom etayotgan dars (10:00 da boshlangan, hozir 11:16) chiziqdan
   // YUQORIDA qoladi — aks holda 11:16 belgisi 10:00 dan oldin turib, vaqt

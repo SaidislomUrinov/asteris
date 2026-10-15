@@ -65,9 +65,11 @@ export default function Navbar() {
 
   return (
     <>
+      {/* `h-dvh`, `h-screen` emas: mobil brauzerda 100vh adres paneli bilan
+          birga hisoblanadi va pastdagi Chiqish ekrandan tashqarida qolardi. */}
       <div
         data-intro="navbar"
-        className={`flex z-3 items-start justify-start duration-300 w-62.5 h-screen bg-gradient-to-b from-[#0b2050] to-[#06122c] border-r border-white/7 flex-col fixed top-0 ${
+        className={`flex z-3 items-start justify-start duration-300 w-62.5 h-dvh bg-gradient-to-b from-[#0b2050] to-[#06122c] border-r border-white/7 flex-col fixed top-0 ${
           open ? "left-0" : "-left-62.5 lg:left-0"
         }`}
       >
@@ -116,7 +118,7 @@ export default function Navbar() {
             sobit pastki qismi. Shu sababli bo'lim ochilib ro'yxat uzayganda
             ham u joyidan qimirlamaydi (ilgari ro'yxat ichida edi va ochilish
             animatsiyasi paytida pastga suriladi). */}
-        <div className="flex flex-col w-full gap-1 shrink-0 p-3 border-t border-white/7">
+        <div className="flex flex-col w-full gap-1 shrink-0 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-white/7">
           <NavLink to="#logout">
             <HiLogout className="text-[20px]" />
             {t("nav.logout")}
@@ -133,7 +135,7 @@ export default function Navbar() {
           paytida tab-bar overlay'ning USTIDA qolib, uni yopmasdan
           bosib bo'lardi. */}
       <div
-        className={`h-screen fixed backdrop-blur-sm top-0 left-0 z-2 duration-300 bg-slate-800/30 ${
+        className={`h-dvh fixed backdrop-blur-sm top-0 left-0 z-2 duration-300 bg-slate-800/30 ${
           open ? "w-full" : "w-0"
         } cursor-pointer lg:hidden`}
         onClick={() => setOpen(false)}

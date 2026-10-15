@@ -14,7 +14,6 @@ import Avatar from "../../ui/Avatar";
 import MoneyCard from "../../components/dashboard/MoneyCard";
 import StatCard from "../../components/dashboard/StatCard";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
-import HideFinanceToggle from "../../components/HideFinanceToggle";
 import useHideFinance from "../../hooks/useHideFinance";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { api } from "../../utils/fetching";
@@ -54,7 +53,7 @@ function TeacherHome() {
   // Yordamchi o'qituvchi ham shu panelni ko'radi — matnlar rolga moslanadi.
   const isAssistant = user.role === "assistant";
 
-  const [hideFinance, toggleHideFinance] = useHideFinance();
+  const [hideFinance] = useHideFinance();
   const [month, setMonth] = useState(currentMonth);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -146,7 +145,6 @@ function TeacherHome() {
         leading={<Avatar user={user} size={44} />}
         title={t("teacherHome.greeting", { name: user.name })}
         subtitle={t(isAssistant ? "teacherHome.greetingDescAssistant" : "teacherHome.greetingDesc")}
-        toggle={<HideFinanceToggle hidden={hideFinance} onToggle={toggleHideFinance} />}
       >
         <div className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-full border border-slate-200/70 dark:border-night-700/70 bg-white dark:bg-night-900 text-xs font-medium text-slate-600 dark:text-slate-300 capitalize">
           <HiCalendarDays className="text-slate-400 dark:text-slate-500" aria-hidden="true" />

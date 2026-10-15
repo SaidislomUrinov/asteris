@@ -36,7 +36,8 @@ export default function Top() {
         <p className="font-semibold font-space uppercase text-white text-[18px] lg:text-[28px] truncate">
           {resolvedKey ? t(resolvedKey) : "WENET"}
         </p>
-        {p === "/dashboard" && <HideFinanceToggle dark hidden={hideFinance} onToggle={toggleHideFinance} />}
+        {/* Barcha sahifalarda — bitta umumiy holat (useHideFinance), sahifalar shu qiymat bilan niqoblaydi. */}
+        <HideFinanceToggle dark hidden={hideFinance} onToggle={toggleHideFinance} />
       </div>
       <div className="flex items-center gap-0.5 sm:gap-2 shrink-0">
         <ThemeToggle />

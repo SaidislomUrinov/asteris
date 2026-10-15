@@ -1,20 +1,21 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { HiVideoCamera } from "react-icons/hi2";
 import VideoLessonsModal from "../../components/VideoLessonsModal";
 import VideoLessonCard from "./VideoLessonCard";
 import { videoSectionLabelKey } from "../../utils/navSections";
+import useVisibleVideos from "../../hooks/useVisibleVideos";
 
 /**
  * Video qo'llanmalar (`/video-lessons`) — admin belgilagan tartibda barcha
  * videolar grid ko'rinishida, "#N Sarlavha". "Ko'rish" → modal + autoplay
  * (docs/API_CONTRACT_tutorial_videos_v2.md § 4). Ro'yxat ilova ochilishida
- * bir marta yuklanadi (App.jsx), bu yerda qayta so'rov yo'q.
+ * bir marta yuklanadi (App.jsx), bu yerda qayta so'rov yo'q. Hodimga faqat
+ * o'zi kira oladigan bo'limlar videolari (useVisibleVideos).
  */
 function VideoLessons() {
   const { t } = useTranslation();
-  const videos = useSelector((s) => s.tutorialVideos);
+  const videos = useVisibleVideos();
   const [active, setActive] = useState(null); // { video, index }
 
   const titleOf = (video) => video.title || t(videoSectionLabelKey(video.sectionKey));

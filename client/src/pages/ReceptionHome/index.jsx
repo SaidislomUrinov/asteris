@@ -22,7 +22,6 @@ import Avatar from "../../ui/Avatar";
 import Loading from "../../ui/Loading";
 import PaymentDonut from "../Groups/PaymentDonut";
 import RevenueChart from "../Groups/RevenueChart";
-import HideFinanceToggle from "../../components/HideFinanceToggle";
 import HiddenFinancePanel from "../../components/HiddenFinancePanel";
 import useHideFinance from "../../hooks/useHideFinance";
 import useCan from "../../hooks/useCan";
@@ -70,7 +69,7 @@ function ReceptionHome() {
   const canViewStudents = can("student:view");
   // Moliya kartalari va grafiklar — `/dashboard` (backendda `dashboard:view`).
   const canViewStats = can("dashboard:view");
-  const [hideFinance, toggleHideFinance] = useHideFinance();
+  const [hideFinance] = useHideFinance();
 
   const [groups, setGroups] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -214,7 +213,6 @@ function ReceptionHome() {
       <DashboardHeader
         icon={<HiChartPie />}
         title={t("dashboard.title")}
-        toggle={<HideFinanceToggle hidden={hideFinance} onToggle={toggleHideFinance} />}
       />
 
       {/* Moliya — gradient kartalar. Moliyani yashirish tugmasi sarlavhada. */}
