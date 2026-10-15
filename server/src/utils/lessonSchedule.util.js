@@ -105,7 +105,9 @@ const getGroupSchedule = async (group, { horizonDays = 120, today = todayKey() }
     today,
   });
 
-  const doneCount = clampDone(attendanceDates.length + (group.lessonOffset || 0));
+  // Bugungi dars o'tilgan emas, joriy (syllabusProgress.util#countDoneLessons).
+  const doneBefore = attendanceDates.filter((d) => d < today).length;
+  const doneCount = clampDone(doneBefore + (group.lessonOffset || 0));
   return {
     modules,
     lessons,

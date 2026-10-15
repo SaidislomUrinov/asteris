@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HiAcademicCap } from "react-icons/hi2";
+import { HiAcademicCap, HiArrowsPointingOut } from "react-icons/hi2";
 import HeaderCard from "./HeaderCard";
+import TodayLessonDialog from "./TodayLessonDialog";
 
 /**
  * "Bugungi dars" — guruh detali tepasidagi kartochkalar qatorining o'ng
@@ -15,9 +17,11 @@ import HeaderCard from "./HeaderCard";
  *
  * @param {Object|null} props.todayLesson - { date, lesson } bugungi dars kuni
  * @param {Object|null} props.nextLesson  - { date, lesson } eng yaqin keyingi
+ * @param {Object} [props.group] - "Batafsil" modali uchun (vaqt, xona)
  */
-function TodayLessonCard({ todayLesson, nextLesson }) {
+function TodayLessonCard({ todayLesson, nextLesson, group }) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
 
   const entry = todayLesson || nextLesson;
   const lesson = entry?.lesson || null;
@@ -54,6 +58,19 @@ function TodayLessonCard({ todayLesson, nextLesson }) {
         // Dars kuni bor, ammo kurs dasturidan mavzu tushmagan.
         <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("syllabus.unassigned")}</p>
       )}
+      {/* "Batafsil" — sarlavha yonida emas, mazmun ostida: tor kartada (xl, 4 ustun)
+          sarlavhani kesib qo'yardi. GroupDetail'dagi "O'zgartirish" havolasi uslubi. */}
+      {entry && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="self-start mt-1 inline-flex items-center gap-1 h-6 px-2 rounded-md bg-amber-50 dark:bg-amber-500/15 ring-1 ring-inset ring-amber-200 dark:ring-amber-400/30 text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/25 cursor-pointer whitespace-nowrap transition-colors"
+        >
+          <HiArrowsPointingOut className="text-sm shrink-0" />
+          {t("group.lessonDetails")}
+        </button>
+      )}
+      <TodayLessonDialog open={open} onClose={() => setOpen(false)} entry={entry} isToday={isToday} group={group} />
     </HeaderCard>
   );
 }

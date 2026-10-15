@@ -1,12 +1,23 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HiArrowsRightLeft, HiBanknotes, HiBuildingOffice2, HiUserGroup } from "react-icons/hi2";
+import {
+  HiArrowsRightLeft,
+  HiBanknotes,
+  HiBuildingOffice2,
+  HiCalendarDays,
+  HiClock,
+  HiMapPin,
+  HiUser,
+  HiUserGroup,
+} from "react-icons/hi2";
 import Dialog from "../../ui/Dialog";
 import Input from "../../ui/Input";
 import Select from "../../ui/Select";
 import Button from "../../ui/Button";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
+
+const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
 // O'quvchini boshqa filial/guruhga o'tkazish — bitta atomar endpoint
 // (API_CONTRACT_student_transfer.md §3). Oldingi baholar, davomat va
@@ -20,6 +31,7 @@ function TransferStudentDialog({
   centers = [],
   groups = [],
   subjects = [],
+  teachers = [],
   onSaved,
 }) {
   const { t } = useTranslation();
@@ -33,6 +45,34 @@ function TransferStudentDialog({
     `${subjectMap[g.subject] || "?"} - ${g.status === "pending" ? g.pendingId : g.activeId}${
       g.status === "pending" ? ` - ${t("group.pendingSuffix")}` : ""
     }`;
+
+  const teacherMap = useMemo(() => Object.fromEntries(teachers.map((s) => [s._id, s.name])), [teachers]);
+
+  // Ro'yxatdagi ikkinchi qator: o'qituvchi · kunlar · HH:mm - HH:mm · xona.
+  // Ma'lumoti yo'q bo'lak ko'rsatilmaydi.
+  const groupDescription = (g) => {
+    const parts = [
+      g.teacher && teacherMap[g.teacher] && { key: "teacher", icon: <HiUser />, text: teacherMap[g.teacher] },
+      g.days?.length && {
+        key: "days",
+        icon: <HiCalendarDays />,
+        text: DAY_ORDER.filter((d) => g.days.includes(d)).map((d) => t(`group.dayShort.${d}`)).join("-"),
+      },
+      g.startTime && g.endTime && { key: "time", icon: <HiClock />, text: `${g.startTime} - ${g.endTime}` },
+      g.roomName && { key: "room", icon: <HiMapPin />, text: g.roomName },
+    ].filter(Boolean);
+    if (!parts.length) return null;
+    return (
+      <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+        {parts.map((p) => (
+          <span key={p.key} className="inline-flex items-center gap-1 whitespace-nowrap">
+            <span className="text-slate-400 dark:text-slate-500">{p.icon}</span>
+            {p.text}
+          </span>
+        ))}
+      </span>
+    );
+  };
 
   // Hodim (Staff) bitta filialga biriktirilgan — maydon yashiriladi va qiymat
   // avtomatik qo'yiladi (maqsad guruhlar ro'yxati `form.center` ga bog'liq).
@@ -111,7 +151,11 @@ function TransferStudentDialog({
             const groupPrice = selected ? subjectPriceMap[selected.subject] : undefined;
             setForm((prev) => ({ ...prev, group: v, price: groupPrice ?? prev.price }));
           }}
-          options={targetGroups.map((g) => ({ value: g._id, label: groupLabel(g) }))}
+          options={targetGroups.map((g) => ({
+            value: g._id,
+            label: groupLabel(g),
+            description: groupDescription(g),
+          }))}
         />
         <Input
           type="number"

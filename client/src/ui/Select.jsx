@@ -205,7 +205,15 @@ function Select({
                 }`}
               >
                 {option.icon && <span>{option.icon}</span>}
-                <span>{option.label}</span>
+                {/* `description` — ixtiyoriy ikkinchi qator (faqat ro'yxatda). */}
+                {option.description ? (
+                  <span className="flex flex-col gap-0.5 min-w-0">
+                    <span>{option.label}</span>
+                    <span className="text-xs font-normal text-slate-500 dark:text-slate-400">{option.description}</span>
+                  </span>
+                ) : (
+                  <span>{option.label}</span>
+                )}
               </div>
             ))}
           </div>,

@@ -32,8 +32,12 @@ const flattenLessons = (modules = []) => {
   return lessons;
 };
 
-// O'tilgan darslar soni = shu guruh bo'yicha davomat belgilangan UNIKAL
-// sanalar soni + guruhning boshlanish nuqtasi (lessonOffset).
+// O'tilgan darslar soni = shu guruh bo'yicha BUGUNDAN OLDIN davomat
+// belgilangan UNIKAL sanalar soni + guruhning boshlanish nuqtasi (lessonOffset).
+// Bugungi dars (davomati belgilangan bo'lsa ham) — "joriy" dars, o'tilgan
+// emas: aks holda davomat belgilangach "Joriy dars" bittaga sakrab, yuqoridagi
+// "Bugungi dars" kartochkasi bilan mos kelmay qolardi (11 vs 12). Bu
+// `offsetForCurrentLesson` formulasi bilan bir xil qoida.
 //
 // Dam olish kunida davomat belgilanmaydi → o'sha kun o'zi tashlab ketiladi,
 // alohida holiday logikasi shart emas. O'tgan kun keyinroq belgilansa ham
@@ -42,7 +46,11 @@ const flattenLessons = (modules = []) => {
 // `lessonOffset` MANFIY ham bo'lishi mumkin (reja guruh boshlanganidan keyin
 // biriktirilgan) — shu sabab natija 0 bilan qisiladi (API_CONTRACT_teaching_plans.md §3).
 const countDoneLessons = async (clientId, groupId, lessonOffset = 0) => {
-  const marked = await Attendance.countDocuments({ client: clientId, group: groupId });
+  const marked = await Attendance.countDocuments({
+    client: clientId,
+    group: groupId,
+    date: { $lt: todayString() },
+  });
   return clampDone(marked + (Number(lessonOffset) || 0));
 };
 
@@ -83,7 +91,8 @@ const getDoneDates = async (clientId, groupId) => {
 const countDoneMap = async (clientId, groupIds = []) => {
   if (!groupIds.length) return {};
   const rows = await Attendance.aggregate([
-    { $match: { client: oid(clientId), group: { $in: groupIds.map(oid) } } },
+    // Bugungi dars o'tilgan hisoblanmaydi (countDoneLessons izohiga qarang).
+    { $match: { client: oid(clientId), group: { $in: groupIds.map(oid) }, date: { $lt: todayString() } } },
     { $group: { _id: "$group", count: { $sum: 1 } } },
   ]);
   return Object.fromEntries(rows.map((r) => [String(r._id), r.count]));
