@@ -13,7 +13,7 @@ import StudentContactFields from "./StudentContactFields";
 import { EMPTY_CONTACT_FORM, buildContactPayload } from "./studentContact.util";
 import StudentPhotoCapture from "./StudentPhotoCapture";
 import StartDateField from "./StartDateField";
-import { assertStartDate, tashkentDay } from "./startDate.util";
+import { assertStartDate, startDateMinOf, tashkentDay } from "./startDate.util";
 import { uploadStudentPhoto } from "../../utils/studentPhoto";
 import { EMPTY_OPENING, buildOpeningPayload } from "./openingDebts.util";
 import { assertTelegramForm } from "../../utils/telegramPhone";
@@ -70,7 +70,7 @@ function StudentDialog({
   const [startDate, setStartDate] = useState(() => tashkentDay());
   const selectedGroup = fixedGroup || groups.find((g) => g._id === form.group) || null;
   const showStartDate = selectedGroup?.status === "active";
-  const startDateMin = selectedGroup?.activatedAt ? tashkentDay(selectedGroup.activatedAt) : undefined;
+  const startDateMin = startDateMinOf(selectedGroup?.activatedAt);
 
   const centerGroups = useMemo(
     () =>

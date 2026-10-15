@@ -134,6 +134,12 @@ const groupEntrySchema = new Schema(
     // turgan oylar uchun ham qarz yozilardi.
     archivedPeriods: { type: [archivedPeriodSchema], default: [] },
     joinedAt: { type: Number, default: getNow },
+    // "O'qishni boshlagan sana" guruh boshlanishidan OLDIN qo'yilgan (yangi
+    // ulangan markaz eski o'quvchilarini ko'chirmoqda). Shunda billing sikllari
+    // guruh `activatedAt`idan emas, shu `joinedAt`dan boshlanadi. Pending
+    // guruhga qo'shilgan o'quvchida ham `joinedAt < activatedAt`, lekin u
+    // faollashguncha to'lamaydi — farqni aynan shu bayroq beradi.
+    startedBeforeGroup: { type: Boolean, default: false },
     leftAt: { type: Number, default: null },
     payments: { type: [paymentSchema], default: [] },
     credits: { type: [creditSchema], default: [] },

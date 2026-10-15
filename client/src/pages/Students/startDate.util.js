@@ -14,6 +14,19 @@ export function tashkentDay(unixSeconds) {
   return DAY_FMT.format(date);
 }
 
+// Server `START_DATE_MAX_BACK_MONTHS` bilan bir xil: guruh boshlanishidan
+// OLDINGI sana ham mumkin (yangi ulangan markaz eski o'quvchilari), faqat
+// shu chegaradan eski emas.
+const MAX_BACK_MONTHS = 36;
+
+/** Guruh `activatedAt` (unix soniya) → eng erta ruxsat etilgan sana "YYYY-MM-DD". */
+export function startDateMinOf(activatedAt) {
+  if (!activatedAt) return undefined;
+  const date = new Date(activatedAt * 1000);
+  date.setMonth(date.getMonth() - MAX_BACK_MONTHS);
+  return tashkentDay(Math.floor(date.getTime() / 1000));
+}
+
 /**
  * Sana chegaralarini tekshiradi — xato bo'lsa i18n kalitini tashlaydi
  * (server bilan bir xil kalitlar). Bo'sh qiymat — "bugun" degani, xato emas.
@@ -22,5 +35,5 @@ export function assertStartDate(value, min) {
   if (!value) return;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error("student.startDateInvalid");
   if (value > tashkentDay()) throw new Error("student.startDateFuture");
-  if (min && value < min) throw new Error("student.startDateBeforeGroup");
+  if (min && value < min) throw new Error("student.startDateTooOld");
 }

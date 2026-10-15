@@ -1,5 +1,9 @@
 const path = require("path");
 const sharp = require("sharp");
+// "Dekompressiya bombasi"dan himoya: 10MB'li siqilgan PNG ichida 16k×16k
+// piksel bo'lishi mumkin (~1GB RAM). 40 megapiksel — har qanday telefon
+// kamerasi uchun yetarli (sharp default'i 268M edi).
+const MAX_INPUT_PIXELS = 40_000_000;
 const { Types } = require("mongoose");
 const Student = require("../models/Student");
 const Staff = require("../models/Staff");
@@ -171,6 +175,27 @@ const priceAt = (priceHistory, unix, fallbackPrice) => {
 // ikkalasi ham shu YAGONA ro'yxatga tayanadi — ikki xil formula ikki xil
 // natija bermasligi uchun.
 const MAX_CYCLES = 1200; // ~100 yil — cheksiz sikl hosil bo'lmasligi uchun xavfsizlik chegarasi
+
+// A'zolik billingi qachondan boshlanadi: odatda guruh `activatedAt`i, lekin
+// o'qishni guruhdan OLDIN boshlagan (`startedBeforeGroup`) a'zolikda — uning
+// `joinedAt`i (ko'chirilgan markazning o'tgan oylari to'lanishi uchun).
+const earlyStartOf = (entry, group) =>
+  entry?.startedBeforeGroup &&
+  group?.activatedAt &&
+  formatDay(entry.joinedAt || 0) < formatDay(group.activatedAt)
+    ? entry.joinedAt
+    : null;
+const billingStartOf = (entry, group) => earlyStartOf(entry, group) ?? group.activatedAt;
+
+// `activatedAt`ga langarlangan sikllardan `t` tushgani — indeksi (`t`
+// guruhdan oldin bo'lsa manfiy). Chegaralar doim ASL `activatedAt`dan
+// hisoblanadi (31 → 28 → 31 langar siljimasligi uchun).
+const anchorIndexAt = (activatedAt, t) => {
+  if (t >= activatedAt) return monthsBetween(activatedAt, t);
+  let i = -1;
+  while (i > -MAX_CYCLES && addMonths(activatedAt, i) > t) i -= 1;
+  return i;
+};
 const buildCycles = (entry, group, cycleMode, effectiveNow) => {
   const price = entry.price || 0;
   const priceHistory = entry.priceHistory || [];
@@ -248,13 +273,18 @@ const buildCycles = (entry, group, cycleMode, effectiveNow) => {
     return isCurrent;
   };
 
+  const earlyStart = earlyStartOf(entry, group);
+
   if (cycleMode === "calendarMonth") {
-    const daysInActMonth = daysInMonth(group.activatedAt);
-    const firstCycleDays = daysInActMonth - dayOfMonth(group.activatedAt) + 1;
-    const firstCyclePriceBase = priceAt(priceHistory, group.activatedAt, price);
+    // Guruhdan oldin boshlagan a'zolik — o'sha oy boshidan to'liq sikllar;
+    // `joinedAt`gacha bo'lgan kunlar qo'shilish kreditlari bilan ayiriladi.
+    const calStart = earlyStart != null ? startOfMonth(earlyStart) : group.activatedAt;
+    const daysInActMonth = daysInMonth(calStart);
+    const firstCycleDays = daysInActMonth - dayOfMonth(calStart) + 1;
+    const firstCyclePriceBase = priceAt(priceHistory, calStart, price);
     const firstCyclePrice = Math.round((firstCyclePriceBase * firstCycleDays) / daysInActMonth);
-    const firstCycleEnd = addMonths(startOfMonth(group.activatedAt), 1);
-    if (addCycle(group.activatedAt, firstCycleEnd, firstCyclePrice, firstCyclePriceBase)) return cycles;
+    const firstCycleEnd = addMonths(startOfMonth(calStart), 1);
+    if (addCycle(calStart, firstCycleEnd, firstCyclePrice, firstCyclePriceBase)) return cycles;
 
     let cursor = firstCycleEnd;
     for (let i = 0; i < MAX_CYCLES; i++) {
@@ -273,7 +303,8 @@ const buildCycles = (entry, group, cycleMode, effectiveNow) => {
   // Bu `currentCycleStartOf` bilan ham mos keladi — u allaqachon
   // `addMonths(activatedAt, n)` naqshini ishlatadi, ikkalasi bir xil
   // sikl chegarasini bermasa yangi o'quvchi proratasi noto'g'ri chiqardi.
-  for (let i = 0; i < MAX_CYCLES; i++) {
+  const firstIndex = earlyStart != null ? anchorIndexAt(group.activatedAt, earlyStart) : 0;
+  for (let i = firstIndex; i < MAX_CYCLES; i++) {
     const cycleStart = addMonths(group.activatedAt, i);
     const cycleEnd = addMonths(group.activatedAt, i + 1);
     if (addCycle(cycleStart, cycleEnd, priceAt(priceHistory, cycleStart, price))) break;
@@ -286,13 +317,14 @@ const buildCycles = (entry, group, cycleMode, effectiveNow) => {
 // mid-sikl proration uchun kerak (to'liq sikl ro'yxati emas, bitta sana).
 const currentCycleStartOf = (group, cycleMode, effectiveNow) => {
   if (cycleMode === "calendarMonth") {
+    // Guruhdan oldingi sana (o'qishni oldin boshlagan a'zolik) — o'sha oy boshi.
+    if (effectiveNow < group.activatedAt) return startOfMonth(effectiveNow);
     const calMonthsElapsed = calendarMonthsBetween(startOfMonth(group.activatedAt), effectiveNow);
     return calMonthsElapsed === 0
       ? group.activatedAt
       : addMonths(startOfMonth(group.activatedAt), calMonthsElapsed);
   }
-  const monthsElapsed = monthsBetween(group.activatedAt, effectiveNow);
-  return addMonths(group.activatedAt, monthsElapsed);
+  return addMonths(group.activatedAt, anchorIndexAt(group.activatedAt, effectiveNow));
 };
 
 // Sikl o'rtasida guruhga qo'shilish — shu sikldan hozirgacha o'tgan HAR BIR
@@ -315,6 +347,7 @@ const joinCreditsFor = async (group, cycleMode, startUnix) => {
 };
 
 const START_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const START_DATE_MAX_BACK_MONTHS = 36;
 
 // "O'qishni boshlagan sana" (`"YYYY-MM-DD"`, Asia/Tashkent) → a'zolikning
 // `joinedAt` unix vaqti (§B.1). Guruh `active` bo'lishi shart.
@@ -332,7 +365,11 @@ const resolveStartDate = (startDate, group, cycleMode) => {
   }
   if (group?.status !== "active" || !group.activatedAt) throw new Error("student.startDateUnavailable");
   if (startDate > todayString()) throw new Error("student.startDateFuture");
-  if (startDate < formatDay(group.activatedAt)) throw new Error("student.startDateBeforeGroup");
+  // Guruh boshlanishidan oldingi sana ham mumkin (yangi ulangan markazda eski
+  // o'quvchilar) — faqat xato kiritilgan juda eski sanadan himoya.
+  if (startUnix < addMonths(group.activatedAt, -START_DATE_MAX_BACK_MONTHS)) {
+    throw new Error("student.startDateTooOld");
+  }
 
   const dayEnd = addDays(startUnix, 1) - 1;
   const cycleStart = currentCycleStartOf(group, cycleMode, dayEnd);
@@ -441,7 +478,7 @@ const assertPayableMonth = async (entry, forMonth) => {
   const openingMonths = openingItemsOf(entry).items.map((o) => o.month).filter(Boolean);
   if (typeof forMonth === "string" && openingMonths.includes(forMonth)) return;
   const group = await Group.findById(entry.group).select("activatedAt");
-  checkPayableMonth(forMonth, openingMonths, group?.activatedAt ? formatMonth(group.activatedAt) : null);
+  checkPayableMonth(forMonth, openingMonths, group?.activatedAt ? formatMonth(billingStartOf(entry, group)) : null);
 };
 
 // Kiruvchi `{ openingDebts, openingBalance }`ni tekshiradi va saqlashga tayyor
@@ -665,11 +702,12 @@ const computeBilling = (entry, group, cycleMode = "anchor") => {
 
   // Faollashtirilgan, lekin darslar boshlanishi kelajakdagi sanaga
   // belgilangan bo'lsa — o'sha sana kelmagunicha sikl qarzdorligi yo'q.
-  if (effectiveNow < group.activatedAt) {
+  const billingStart = billingStartOf(entry, group);
+  if (effectiveNow < billingStart) {
     return withoutCycles({
       currentCyclePrice: entry.price || 0,
-      courseStartMonth: formatMonth(group.activatedAt),
-      currentCycleMonth: formatMonth(group.activatedAt),
+      courseStartMonth: formatMonth(billingStart),
+      currentCycleMonth: formatMonth(billingStart),
       nextDueDate: addMonths(group.activatedAt, 1),
     });
   }
@@ -733,7 +771,7 @@ const computeBilling = (entry, group, cycleMode = "anchor") => {
     })),
     // Oy kesimida due/paid/debt — Guruh detali oy filtri (§A.1).
     billingMonths: billingMonthsOf(allocated),
-    courseStartMonth: formatMonth(group.activatedAt),
+    courseStartMonth: formatMonth(billingStart),
     currentCycleMonth: current.month,
     // A'zolik tugagan — keyingi to'lov sanasi yo'q.
     nextDueDate: membershipEnd != null ? null : current.cycleEnd,
@@ -752,7 +790,7 @@ const settleEntry = (entry, group, cycleMode) => {
   let cycles = [];
   if (group && group.status !== "pending" && group.activatedAt) {
     const effectiveNow = group.status === "finished" && group.finishedAt ? group.finishedAt : getNow();
-    if (effectiveNow >= group.activatedAt) {
+    if (effectiveNow >= billingStartOf(entry, group)) {
       cycles = buildCycles(entry, group, cycleMode, effectiveNow).map((c) =>
         c.isCurrent ? { ...c, fullDue: c.elapsedDue } : c,
       );
@@ -1383,7 +1421,9 @@ module.exports = {
         : await joinCreditsOf(group, billingSetting.cycleMode);
 
     student.groups.push({
-      ...(startUnix != null ? { joinedAt: startUnix } : {}),
+      ...(startUnix != null
+        ? { joinedAt: startUnix, startedBeforeGroup: formatDay(startUnix) < formatDay(group.activatedAt) }
+        : {}),
       group: group._id,
       center: center._id,
       client: clientId,
@@ -2069,7 +2109,7 @@ module.exports = {
     // Haqiqiy tekshiruv — sharp dekodlay olishi (kengaytmaga ishonilmaydi).
     let buffer;
     try {
-      buffer = await sharp(file.data, { failOn: "none" })
+      buffer = await sharp(file.data, { failOn: "none", limitInputPixels: MAX_INPUT_PIXELS })
         .rotate()
         .resize(PHOTO_SIZE, PHOTO_SIZE, { fit: "cover", position: "attention" })
         .webp({ quality: 70, effort: 6 })
@@ -2336,6 +2376,7 @@ module.exports = {
     const joinCredits = await joinCreditsFor(group, cycleMode, startUnix);
     entry.credits = mergeStartCredits(entry.credits, oldDay, newDay, joinCredits);
     entry.joinedAt = startUnix;
+    entry.startedBeforeGroup = formatDay(startUnix) < formatDay(group.activatedAt);
     await student.save();
 
     void audit.log({

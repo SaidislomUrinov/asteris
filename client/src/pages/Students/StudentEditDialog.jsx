@@ -15,7 +15,7 @@ import { errorMsg, successMsg } from "../../utils/alert";
 import { maskMoney } from "../../utils/moneyFormat";
 import useCan from "../../hooks/useCan";
 import StartDateField from "./StartDateField";
-import { assertStartDate, tashkentDay } from "./startDate.util";
+import { assertStartDate, startDateMinOf, tashkentDay } from "./startDate.util";
 
 const PHONE_PREFIX = "+998";
 
@@ -48,7 +48,7 @@ const cycleKey = (entryId, cycleStart) => `${entryId}:${cycleStart}`;
 // O'tgan (yopilgan) sikllar — yangisi tepada.
 const pastCyclesOf = (en) => (en.cycles || []).filter((c) => !c.isCurrent).reverse();
 const canEditStartDate = (en) => en.groupStatus === "active" && !!en.joinedAt;
-const startMinOf = (en) => (en.activatedAt ? tashkentDay(en.activatedAt) : undefined);
+const startMinOf = (en) => startDateMinOf(en.activatedAt);
 
 function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
   const { t } = useTranslation();

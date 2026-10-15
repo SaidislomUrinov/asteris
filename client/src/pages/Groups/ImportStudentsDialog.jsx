@@ -27,7 +27,7 @@ import Button from "../../ui/Button";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 import StartDateField from "../Students/StartDateField";
-import { assertStartDate, tashkentDay } from "../Students/startDate.util";
+import { assertStartDate, startDateMinOf, tashkentDay } from "../Students/startDate.util";
 import {
   cleanTelegramValue,
   isValidTelegramPhone,
@@ -355,7 +355,7 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
 
   // "O'qishni boshlagan sana" (kontrakt §E) — faqat faol guruhda.
   const startDateOn = group?.status === "active";
-  const startDateMin = group?.activatedAt ? tashkentDay(group.activatedAt) : undefined;
+  const startDateMin = startDateMinOf(group?.activatedAt);
   const [startDate, setStartDate] = useState(() => tashkentDay());
   const startDateErrKey = startDateOn ? startDateErrorKey(startDate, startDateMin) : null;
 
@@ -545,7 +545,7 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
       if (!isValidTelegramPhone(r.parentTelegramPhone))
         errs.parentTelegramPhone = t("telegramPhone.invalidShort");
       if (groupStatus === "active" && r.startDate) {
-        const min = groupActivatedAt ? tashkentDay(groupActivatedAt) : undefined;
+        const min = startDateMinOf(groupActivatedAt);
         const key = startDateErrorKey(r.startDate, min);
         if (key) errs.startDate = t(key);
       }
