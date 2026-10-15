@@ -1264,6 +1264,11 @@ function GroupDetail({ groupId, live = false }) {
             <TodayLessonCard todayLesson={schedule.todayLesson} nextLesson={schedule.nextLesson} group={group} />
           ) : null
         }
+        homework={
+          hasHomeworkTab ? (
+            <LatestHomeworkCard groupId={id} studentsCount={studentsCount} onOpen={() => setStudentTab("homework")} />
+          ) : null
+        }
         canEditTelegram={canEditTelegram}
         onTelegramSaved={(data) =>
           setGroup((prev) => (prev ? { ...prev, telegramLink: data?.telegramLink ?? null } : prev))
@@ -1273,7 +1278,6 @@ function GroupDetail({ groupId, live = false }) {
       {/* Yagona tab qatori: o'quvchilar ro'yxati, davomat, baholar, vazifa,
           dastur va statistika (avval ikki qavat edi: O'quvchilar|Statistika
           + ichki tablar). */}
-      {hasHomeworkTab && <LatestHomeworkCard groupId={id} onOpen={() => setStudentTab("homework")} />}
 
       {simpleView ? (
         <GroupSectionTabs tabs={sectionTabs} active={activeTab} onChange={setStudentTab} />

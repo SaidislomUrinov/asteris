@@ -1,23 +1,26 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HiChevronRight, HiClipboardDocumentList } from "react-icons/hi2";
+import { HiArrowsPointingOut, HiClipboardDocumentList } from "react-icons/hi2";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { api } from "../../utils/fetching";
-
-// "YYYY-MM-DD" → "13.10.2026"
-const fmtDay = (d) => (d ? `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}` : "");
+import HeaderCard from "./HeaderCard";
+import LatestHomeworkDialog from "./LatestHomeworkDialog";
+import { RESULT_OPTIONS, formatHomeworkDate } from "./homeworkResults";
 
 /**
- * Guruh detali — guruh ma'lumotlari ostidagi "Oxirgi vazifa" kartasi
- * (docs/API_CONTRACT_group_latest_homework.md). Bosilsa "Uyga vazifa" tabi.
- * Boshqa xodim vazifa yozsa (`homework:updated`) qayta so'raladi.
+ * Guruh detali — tepadagi kartalar qatoridagi "Oxirgi vazifa" kartasi
+ * (docs/API_CONTRACT_group_latest_homework.md). "Batafsil" — to'liq matn va
+ * natijalar modali, undan "Uyga vazifa" tabiga o'tiladi. Boshqa xodim vazifa
+ * yozsa yoki natija qo'ysa (`homework:updated|results`) qayta so'raladi.
  *
  * @param {Object} props
  * @param {string} props.groupId
  * @param {() => void} props.onOpen
+ * @param {number} [props.studentsCount] - "Belgilanmagan" sonini hisoblash uchun
  */
-function LatestHomeworkCard({ groupId, onOpen }) {
+function LatestHomeworkCard({ groupId, onOpen, studentsCount }) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
   const [item, setItem] = useState(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -39,49 +42,75 @@ function LatestHomeworkCard({ groupId, onOpen }) {
     return () => clearTimeout(id);
   }, [load]);
 
-  useSocketEvent(
-    "homework:updated",
+  const onChanged = useCallback(
     (p) => {
       if (p?.groupId === groupId) load();
     },
-    !!groupId,
+    [groupId, load],
   );
+  useSocketEvent("homework:updated", onChanged, !!groupId);
+  useSocketEvent("homework:results", onChanged, !!groupId);
 
   if (!loaded) {
-    return <div className="h-[58px] max-sm:h-[52px] shrink-0 rounded-2xl bg-slate-100 dark:bg-night-800 animate-pulse" />;
+    return <div className="max-sm:col-span-2 min-h-[58px] rounded-2xl bg-slate-100 dark:bg-night-800 animate-pulse" />;
   }
 
+  const results = Object.values(item?.results || {});
+  const counts = Object.fromEntries(RESULT_OPTIONS.map((o) => [o.key, results.filter((r) => r === o.key).length]));
+  counts.unmarked = Math.max(0, (studentsCount || 0) - results.length);
+  const marked = results.length > 0;
+
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group relative overflow-hidden flex items-center gap-2.5 w-full shrink-0 p-3 pl-4 max-sm:p-2.5 max-sm:pl-3.5 rounded-2xl text-left bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none hover:border-amber-300 dark:hover:border-amber-500/40 cursor-pointer transition-colors"
+    <HeaderCard
+      className="max-sm:col-span-2"
+      icon={<HiClipboardDocumentList />}
+      title={t("homework.latest")}
+      subtitle={item ? formatHomeworkDate(t, item.date) : null}
+      accent="amber"
     >
-      <span className="absolute inset-y-0 left-0 w-1 bg-amber-400" />
-      <span className="flex items-center justify-center w-8 h-8 max-sm:hidden shrink-0 rounded-lg bg-amber-50 dark:bg-amber-500/15 text-amber-500 text-base">
-        <HiClipboardDocumentList />
-      </span>
-      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
-            {t("homework.latest")}
-          </span>
-          {item && (
-            <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 whitespace-nowrap">
-              {fmtDay(item.date)}
+      {item ? (
+        <p className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-line break-words line-clamp-2 max-sm:line-clamp-1">
+          {item.text}
+        </p>
+      ) : (
+        <p className="text-sm text-slate-400 dark:text-slate-500">{t("homework.latestEmpty")}</p>
+      )}
+      {/* "Batafsil" — TodayLessonCard bilan bir xil: mazmun ostida, chapda.
+          O'ngda natijalar xulosasi (belgilangan bo'lsa). */}
+      {item && (
+        <div className="flex items-center gap-2 mt-auto pt-1 min-w-0">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="shrink-0 inline-flex items-center gap-1 h-6 px-2 rounded-md bg-amber-50 dark:bg-amber-500/15 ring-1 ring-inset ring-amber-200 dark:ring-amber-400/30 text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/25 cursor-pointer whitespace-nowrap transition-colors"
+          >
+            <HiArrowsPointingOut className="text-sm shrink-0" />
+            {t("group.lessonDetails")}
+          </button>
+          {marked && (
+            <span className="ml-auto flex items-center gap-2 min-w-0 overflow-hidden">
+              {RESULT_OPTIONS.map((o) => (
+                <span
+                  key={o.key}
+                  title={t(`homework.results.${o.key}`)}
+                  className={`inline-flex items-center gap-0.5 text-[11px] font-semibold tabular-nums ${o.text}`}
+                >
+                  <o.icon className="text-xs shrink-0" />
+                  {counts[o.key]}
+                </span>
+              ))}
             </span>
           )}
         </div>
-        {item ? (
-          <p className="text-sm text-slate-800 dark:text-slate-100 whitespace-pre-line break-words line-clamp-2">
-            {item.text}
-          </p>
-        ) : (
-          <p className="text-sm text-slate-400 dark:text-slate-500">{t("homework.latestEmpty")}</p>
-        )}
-      </div>
-      <HiChevronRight className="text-lg shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-amber-500 transition-colors" />
-    </button>
+      )}
+      <LatestHomeworkDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        item={item}
+        counts={counts}
+        onOpenTab={onOpen}
+      />
+    </HeaderCard>
   );
 }
 

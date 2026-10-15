@@ -55,9 +55,19 @@ function TelegramRow({ label, children }) {
  * @param {React.ReactNode} [props.extra] - 3-karta
  * @param {React.ReactNode} [props.titleBadge] - sarlavha yonidagi belgi (masalan IND)
  * @param {React.ReactNode} [props.studentsCard] - berilsa o'quvchilar soni kartasi o'rniga
+ * @param {React.ReactNode} [props.homework] - "Oxirgi vazifa" kartasi (Telegram oldidan)
  * @param {boolean} [props.canEditTelegram]
  * @param {(group: Object) => void} [props.onTelegramSaved]
  */
+// Keng ekranda ustunlar: nom · o'quvchilar · [3-karta] · [vazifa] · Telegram.
+// Kalit: `${extra}${homework}`. Tailwind klasslari to'liq yozilishi shart.
+const XL_COLS = {
+  "11": "xl:grid-cols-[minmax(0,1.25fr)_minmax(0,0.7fr)_minmax(0,0.9fr)_minmax(0,1.1fr)_minmax(0,1.1fr)]",
+  "10": "xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.15fr)]",
+  "01": "xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.8fr)_minmax(0,1.1fr)_minmax(0,1.15fr)]",
+  "00": "xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.8fr)_minmax(0,1.15fr)]",
+};
+
 function GroupHeader({
   group,
   label,
@@ -68,6 +78,7 @@ function GroupHeader({
   extra,
   titleBadge,
   studentsCard,
+  homework,
   canEditTelegram = false,
   onTelegramSaved,
 }) {
@@ -81,9 +92,7 @@ function GroupHeader({
   return (
     <div
       className={`grid grid-cols-2 gap-3 max-sm:gap-2 ${
-        extra
-          ? "xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.15fr)]"
-          : "xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.8fr)_minmax(0,1.15fr)]"
+        XL_COLS[`${extra ? 1 : 0}${homework ? 1 : 0}`]
       }`}
     >
       <HeaderCard
@@ -142,8 +151,11 @@ function GroupHeader({
 
       {extra}
 
+      {homework}
+
       <HeaderCard
-        className="col-span-2 xl:col-span-1"
+        // Vazifa kartasi bo'lsa planshetda ikkalasi yonma-yon, telefonda ustma-ust.
+        className={homework ? "max-sm:col-span-2" : "col-span-2 xl:col-span-1"}
         icon={<FaTelegram />}
         title="Telegram"
         accent="cyan"
