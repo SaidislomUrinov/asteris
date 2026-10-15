@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HiChatBubbleLeftRight, HiPlayCircle, HiQuestionMarkCircle } from "react-icons/hi2";
+import { HiChatBubbleLeftRight, HiPlayCircle, HiQuestionMarkCircle, HiSquares2X2 } from "react-icons/hi2";
 import Button from "../../ui/Button";
+import { isPhoneIntro } from "./steps";
 
 const MAX_TOOLTIP_WIDTH = 384; // px — w-96 (kattaroq, o'qishga qulay)
 // Telefonda (390px) 384px sig'maydi — chetlardan 12px qoldiriladi.
@@ -133,8 +134,8 @@ function IntroductionOverlay({ step, index, total, isFirst, isLast, onNext, onBa
         style={{ top: tooltip.top, bottom: tooltip.bottom, left: tooltip.left, width: TOOLTIP_WIDTH }}
       >
         <p className="text-lg font-semibold text-slate-800 dark:text-slate-100">{t(step.titleKey)}</p>
-        <p className="text-[15px] text-slate-500 dark:text-slate-400 leading-relaxed">{t(step.descriptionKey)}</p>
-        {step.preview && <HelpMenuPreview active={step.preview} />}
+        <p className="text-[15px] text-slate-500 dark:text-slate-400 leading-relaxed">{t(typeof step.descriptionKey === "function" ? step.descriptionKey() : step.descriptionKey)}</p>
+        {step.preview && <HelpMenuPreview active={step.preview} mobile={isPhoneIntro()} />}
         <div className="flex items-center justify-between mt-2">
           <span className="text-sm text-slate-400 dark:text-slate-500 tabular-nums">
             {index + 1}/{total}
@@ -163,13 +164,14 @@ const PREVIEW_ITEMS = [
   { key: "chat", group: "chat", icon: HiChatBubbleLeftRight, labelKey: "help.chat", iconClass: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
 ];
 
-function HelpMenuPreview({ active }) {
+// `mobile` — telefonda bandlar 4 kvadratli menyuning "Qanday ishlaydi?" bo'limida.
+function HelpMenuPreview({ active, mobile = false }) {
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-night-800 border border-slate-100 dark:border-night-700" aria-hidden="true">
       <span className="flex items-center gap-1.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-        <HiQuestionMarkCircle className="text-sm" />
-        {t("help.title")}
+        {mobile ? <HiSquares2X2 className="text-sm" /> : <HiQuestionMarkCircle className="text-sm" />}
+        {mobile ? t("topMenu.howItWorks") : t("help.title")}
       </span>
       {PREVIEW_ITEMS.map((item) => {
         const on = item.group === active;
