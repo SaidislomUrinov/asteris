@@ -3,7 +3,8 @@
     "home": "Asosiy",
     "payments": "To'lovlar",
     "notifications": "Xabarlar",
-    "settings": "Sozlama"
+    "settings": "Sozlama",
+    "coins": "WECOIN"
   },
   "common": {
     "retry": "Qayta urinish",
@@ -213,7 +214,10 @@
       "debt": "Qarz",
       "homework": "Vazifa",
       "lessonReminder": "Eslatma",
-      "badge": "Yutuq"
+      "badge": "Yutuq",
+      "coin": "WECOIN",
+      "shop": "Do'kon",
+      "homeworkMissed": "Vazifa qilinmadi"
     },
     "today": "Bugun",
     "yesterday": "Kecha",
@@ -229,7 +233,8 @@
       "debt": "Qarzdorlik eslatmasi",
       "lessonReminder": "Dars oldidan eslatma (1 soat)",
       "homework": "Yangi uyga vazifa",
-      "badge": "Yangi yutuq nishonlari"
+      "badge": "Yangi yutuq nishonlari",
+      "homeworkMissed": "Vazifa qilinmaganda"
     },
     "notifHint": "Xabarlar barcha farzandlar va markazlar uchun bir xil. Markazning o'zi o'chirgan turlar kelmaydi.",
     "lang": "Til",
@@ -289,7 +294,12 @@
     "empty": "Bu oyda vazifa yo'q",
     "emptyText": "O'qituvchi uyga vazifa yozganda shu yerda ko'rinadi.",
     "past": "O'tgan",
-    "updatedShort": "Yangilandi: {{t}}"
+    "updatedShort": "Yangilandi: {{t}}",
+    "status": {
+      "done": "Bajarildi",
+      "partial": "Chala",
+      "missed": "Bajarilmadi"
+    }
   },
   "student": {
     "rank": {
@@ -378,7 +388,10 @@
     "photoTake": "Suratga olish",
     "photoGallery": "Galereyadan",
     "photoRetake": "Qayta olish",
-    "photoSaveFailed": "O'quvchi qo'shildi, lekin rasm saqlanmadi. Rasmni keyinroq o'quvchi menyusidan qo'shishingiz mumkin."
+    "photoSaveFailed": "O'quvchi qo'shildi, lekin rasm saqlanmadi. Rasmni keyinroq o'quvchi menyusidan qo'shishingiz mumkin.",
+    "coins": {
+      "thisMonthTitle": "Bu oy yig'ayotgan tangalaringiz"
+    }
   },
   "rankCard": {
     "title": "Guruhdagi o'rin",
@@ -892,7 +905,21 @@
       "deleteTitle": "Vazifani o'chirasizmi?",
       "deleteText": "Matn bo'sh — shu kundagi vazifa o'chiriladi.",
       "history": "Oxirgi vazifalar",
-      "empty": "Bu oyda vazifa yo'q"
+      "empty": "Bu oyda vazifa yo'q",
+      "result": {
+        "title": "Qabul qilish",
+        "done": "Bajardi",
+        "partial": "Chala",
+        "missed": "Bajarmadi",
+        "count": {
+          "done": "{{count}} bajardi",
+          "partial": "{{count}} chala",
+          "missed": "{{count}} bajarmadi",
+          "unmarked": "{{count}} belgilanmagan"
+        },
+        "markRest": "Qolganlari bajardi ({{count}})",
+        "allSaved": "Natijalar saqlandi"
+      }
     },
     "search": {
       "title": "Qidiruv",
@@ -1246,5 +1273,83 @@
   },
   "validation": {
     "month": "Oy noto'g'ri formatda (YYYY-MM)"
+  },
+  "coins": {
+    "tabs": {
+      "shop": "Do'kon",
+      "earn": "Qanday topiladi",
+      "history": "Tarix"
+    },
+    "soldOut": "Tugagan",
+    "left": "{{n}} ta qoldi",
+    "needMore": "Yana {{n}} tanga kerak",
+    "buy": "Olish",
+    "enough": "Tanga yetarli",
+    "shopEmpty": "Do'kon hali bo'sh",
+    "shopEmptyText": "Filial sovg'alar qo'shganda shu yerda ko'rinadi.",
+    "confirmTitle": "«{{name}}» olasizmi?",
+    "confirmText": "Balansdan {{price}} WECOIN yechiladi, {{left}} qoladi. Sovg'ani filialdan olasiz.",
+    "successTitle": "Buyurtma qabul qilindi!",
+    "successText": "«{{name}}» sizni kutmoqda. Filialga borib oling — topshirilganda xabar keladi.",
+    "toHistory": "Tarixni ko'rish",
+    "great": "Zo'r!",
+    "historyEmpty": "Tarix hali bo'sh",
+    "historyEmptyText": "Tangalar va xaridlar shu yerda ko'rinadi.",
+    "myOrders": "Xaridlar",
+    "movements": "Tangalar harakati",
+    "orderStatus": {
+      "pending": "Topshirish kutilmoqda",
+      "delivered": "Topshirildi",
+      "refunded": "Qaytarildi"
+    },
+    "tx": {
+      "earn": "{{month}} natijalari",
+      "spend": "Do'kondan xarid",
+      "refund": "Xarid qaytarildi"
+    },
+    "part": {
+      "grades": "Baholar",
+      "homework": "Uyga vazifa",
+      "attendance": "Davomat",
+      "medals": "Medallar"
+    },
+    "count": {
+      "grades": "{{n}} ta baho",
+      "homework": "{{n}} ta vazifa",
+      "attendance": "{{n}} ta dars",
+      "medals": "{{n}} ta medal"
+    },
+    "rule": {
+      "grade": "{{value}} baho",
+      "present": "Darsga kelish",
+      "place": "Oylik reytingda {{n}}-o'rin"
+    },
+    "thisMonthTitle": "Farzandingiz bu oy yig'ayotgan tangalar",
+    "howToEarn": "Qanday topiladi",
+    "noRules": "Filial hali qoidalarni belgilamagan",
+    "monthEndNote": "Tangalar har oy yakunida balansga qo'shiladi.",
+    "notEnabled": "WECOIN hali yoqilmagan",
+    "notEnabledText": "O'quv markazingiz WECOIN'ni yoqqanda tangalar va do'kon shu yerda paydo bo'ladi.",
+    "thisMonthEarning": "Bu oy +{{n}}",
+    "paidOn": "{{month}} boshida beriladi",
+    "pendingOrders": "{{n}} ta buyurtma kutilmoqda",
+    "toShop": "Do'kon",
+    "monthTotal": "bu oy",
+    "goal": {
+      "next": "Keyingi sovg'a",
+      "ready": "Sovg'a olish mumkin",
+      "readyText": "{{n}} ta sovg'aga tanga yetadi",
+      "left": "Yana {{n}} tanga kerak"
+    }
+  },
+  "coin": {
+    "notAvailable": "WECOIN bu filialda yoqilmagan"
+  },
+  "shop": {
+    "notEnoughCoins": "Tangalar yetarli emas",
+    "outOfStock": "Afsus, mahsulot tugab qoldi",
+    "productNotFound": "Mahsulot topilmadi",
+    "studentOnly": "Faqat o'quvchi xarid qila oladi",
+    "bought": "Xarid qilindi"
   }
 }

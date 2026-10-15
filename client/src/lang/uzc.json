@@ -53,7 +53,10 @@
       "homework": "Уйга вазифа",
       "teachingPlan": "Дарс режа",
       "Group": "Гуруҳ",
-      "grade": "Баҳо"
+      "grade": "Баҳо",
+      "CoinSetting": "WECOIN",
+      "ShopProduct": "Маҳсулот",
+      "ShopOrder": "Буюртма"
     },
     "actions": {
       "center:create": "Филиал яратилди",
@@ -115,7 +118,14 @@
       "student:leftGroup": "Ўқувчи гуруҳдан чиқди",
       "grade:removed": "Баҳо ўчирилди",
       "groupHoliday:removed": "Гуруҳ дам олиш куни олиб ташланди",
-      "centerHoliday:removed": "Филиал дам олиш куни олиб ташланди"
+      "centerHoliday:removed": "Филиал дам олиш куни олиб ташланди",
+      "homework:results": "Вазифа натижаси",
+      "coin:settings": "WECOIN қоидалари",
+      "shop:productCreate": "Маҳсулот қўшилди",
+      "shop:productUpdate": "Маҳсулот таҳрирланди",
+      "shop:productDelete": "Маҳсулот ўчирилди",
+      "shop:orderDeliver": "Буюртма топширилди",
+      "shop:orderRefund": "Буюртма қайтарилди"
     },
     "fields": {
       "name": "Номи",
@@ -188,7 +198,8 @@
     "leads": "Лидлар",
     "myPlans": "Дарс режаларим",
     "videoLessons": "Видео қўлланмалар",
-    "individual": "Индивидуал"
+    "individual": "Индивидуал",
+    "coins": "WECOIN"
   },
   "report": {
     "revenue": "Тушум",
@@ -388,7 +399,9 @@
     "salaryDescFixed": "Ҳар ой ўзгармас, олдиндан белгиланган сумма ойлик ҳисобланади.",
     "pdfTitle": "Ходим кириш реквизитлари",
     "pdfConfidentialNote": "Ушбу ҳужжатни махфий сақланг. Паролни фақат ходимнинг ўзига беринг.",
-    "salaryTypeNotInTariff": "Танланган ойлик тури жорий тарифингизда мавжуд эмас"
+    "salaryTypeNotInTariff": "Танланган ойлик тури жорий тарифингизда мавжуд эмас",
+    "groupCoins": "WECOIN ва дўкон",
+    "actionCoinManage": "Бошқариш (қоидалар, маҳсулот, буюртма)"
   },
   "certificateTemplate": {
     "title": "Сертификат шаблонлари",
@@ -689,7 +702,8 @@
       "quietHours": "Тинч соатлар",
       "quietHoursHint": "Фақат режалаштирилган (қарз) хабарларга тегишли — бу оралиқда юборилмайди.",
       "quietFrom": "Дан",
-      "quietTo": "Гача"
+      "quietTo": "Гача",
+      "homeworkMissed": "Вазифа қилинмади — ўқитувчи \"Бажармади\" белгилаганда"
     },
     "title": "Филиаллар",
     "name": "Филиал номи",
@@ -953,7 +967,7 @@
     "startDateHint": "Марказда олдинроқ ўқишни бошлаган бўлса — шу санани танланг, тўлов шу кундан ҳисобланади",
     "startDateInvalid": "Сана нотўғри киритилган",
     "startDateFuture": "Ўқишни бошлаган сана бугундан кейин бўлиши мумкин эмас",
-    "startDateBeforeGroup": "Сана гуруҳ бошланган кундан олдин бўлиши мумкин эмас",
+    "startDateTooOld": "Сана гуруҳ бошланишидан 3 йилдан кўпроқ олдин бўлиши мумкин эмас",
     "startDateUnavailable": "Ўқишни бошлаган санани фақат фаол гуруҳда ўзгартириш мумкин",
     "entryNotActive": "Ўқувчи бу гуруҳда фаол эмас"
   },
@@ -1268,7 +1282,11 @@
     "telegramRemove": "Узиш",
     "invalidTelegramLink": "Telegram ҳаволаси нотўғри. Масалан: https://t.me/+AbCd ёки @guruh",
     "telegramUpdated": "Telegram гуруҳ манзили янгиланди",
-    "notIndividual": "Бу индивидуал гуруҳ эмас"
+    "notIndividual": "Бу индивидуал гуруҳ эмас",
+    "lessonDate": "Сана",
+    "lessonTime": "Вақт",
+    "lessonTopic": "Мавзу",
+    "lessonDetails": "Батафсил"
   },
   "notification": {
     "title": "Билдиришномалар",
@@ -1508,11 +1526,8 @@
     "activatedTitle": "Табриклаймиз!",
     "paymentFailed": "Тўлов амалга ошмади ёки бекор қилинди",
     "durationLabels": {
-      "m1": "1 ой",
-      "m3": "3 ой",
-      "m6": "6 ой",
-      "m9": "9 ой",
-      "m12": "1 йил"
+      "months": "{{count}} ой",
+      "years": "{{count}} йил"
     }
   },
   "tariff": {
@@ -1733,7 +1748,8 @@
     "finance_report": "Молиявий ҳисобот",
     "ai_report": "AI ҳисобот",
     "ai_advice": "AI тавсия",
-    "gamification_badges": "Ютуқ нишонлари"
+    "gamification_badges": "Ютуқ нишонлари",
+    "gamification_coins": "WECOIN тангалари ва дўкон"
   },
   "import": {
     "buttonLabel": "Excel'дан импорт",
@@ -1986,6 +2002,9 @@
     "saved": "Марказлар сақланди"
   },
   "homework": {
+    "dateLabel": "{{weekday}}, {{day}}-{{month}}",
+    "latest": "Охирги вазифа",
+    "latestEmpty": "Ҳали вазифа берилмаган",
     "tab": "Уйга вазифа",
     "empty": "Бу ойда дарс кунлари йўқ",
     "today": "Бугун",
@@ -2000,7 +2019,39 @@
     "invalidDate": "Сана нотўғри форматда",
     "tooLong": "Вазифа матни 2000 белгидан ошмаслиги керак",
     "groupFinished": "Якунланган гуруҳга вазифа ёзиб бўлмайди",
-    "invalidText": "Вазифа матни нотўғри"
+    "invalidText": "Вазифа матни нотўғри",
+    "results": {
+      "title": "Натижалар",
+      "done": "Бажарди",
+      "partial": "Чала",
+      "missed": "Бажармади",
+      "markAllDone": "Қолганлари бажарди",
+      "noStudents": "Гуруҳда фаол ўқувчи йўқ",
+      "edit": "Ўзгартириш",
+      "mark": "Белгилаш",
+      "unmarked": "Белгиланмаган",
+      "clear": "Белгини олиб ташлаш"
+    },
+    "resultsSaved": "Натижа сақланди",
+    "notFound": "Бу кунга вазифа берилмаган",
+    "resultFuture": "Келгуси кун учун натижа қўйиб бўлмайди",
+    "invalidResults": "Натижалар нотўғри юборилди",
+    "invalidStatus": "Натижа тури нотўғри",
+    "studentNotInGroup": "Ўқувчи бу гуруҳда эмас",
+    "send": {
+      "button": "Вазифа юбориш",
+      "title": "Вазифа юбориш",
+      "submit": "Юбориш",
+      "import": "Дастурдан импорт",
+      "syllabusEmpty": "Курс дастурида уйга вазифали дарс йўқ",
+      "forThisDay": "Шу кун",
+      "confirmDelete": "Ростдан ўчирилсинми?"
+    },
+    "matrix": {
+      "empty": "Бу ойда вазифа юборилмаган",
+      "emptyHint": "«Вазифа юбориш» тугмаси орқали биринчи вазифани беринг",
+      "rate": "Бажарилиш"
+    }
   },
   "rank": {
     "monthLabel": "{{month}} рейтинги",
@@ -2242,7 +2293,9 @@
     "editShort": "Ўзгартириш",
     "invalidPercent": "Ўқитувчи улуши 0 дан 100 гача бўлиши керак",
     "occupied": "Бу индивидуал гуруҳда аллақачон ўқувчи бор",
-    "updated": "Ўқитувчи улуши сақланди"
+    "updated": "Ўқитувчи улуши сақланди",
+    "coins": "WECOIN бериш",
+    "coinsSaved": "WECOIN созламаси сақланди"
   },
   "entryPercent": {
     "updated": "Ўқитувчи улуши сақланди",
@@ -2259,5 +2312,99 @@
     "chipTooltip": "Ўқитувчи улуши: тўловнинг {{p}}%и",
     "salaryLine_one": "Ўқитувчи улуши · {{count}} та",
     "salaryLine_other": "Ўқитувчи улуши · {{count}} та"
+  },
+  "coins": {
+    "tabs": {
+      "orders": "Буюртмалар",
+      "shop": "Дўкон",
+      "students": "Ўқувчилар",
+      "settings": "Қоидалар"
+    },
+    "orderStatus": {
+      "pending": "Кутилмоқда",
+      "delivered": "Топширилди",
+      "refunded": "Қайтарилди"
+    },
+    "ordersEmpty": {
+      "pending": "Янги буюртмалар йўқ",
+      "delivered": "Топширилган буюртмалар йўқ",
+      "refunded": "Қайтарилган буюртмалар йўқ"
+    },
+    "deliver": "Топширилди",
+    "refund": "Қайтариш",
+    "refundTitle": "Буюртмани қайтариш",
+    "refundText": "{{name}} — «{{product}}». {{price}} WECOIN ўқувчи балансига қайтарилади.",
+    "loadMore": "Яна юклаш",
+    "addProduct": "Маҳсулот қўшиш",
+    "editProduct": "Маҳсулотни таҳрирлаш",
+    "photo": "Расм",
+    "removePhoto": "Расмни олиб ташлаш",
+    "productName": "Номи",
+    "priceCoins": "Нархи (WECOIN)",
+    "stock": "Қолдиқ",
+    "stockUnlimited": "Чекланмаган",
+    "showInShop": "Дўконда кўринсин",
+    "productsEmpty": "Дўконда ҳали маҳсулот йўқ",
+    "soldOut": "Тугаган",
+    "hidden": "Яширин",
+    "soldCount": "Сотилди: {{n}}",
+    "stockLeft": "қолди: {{n}}",
+    "deleteProduct": "Маҳсулотни ўчириш",
+    "deleteProductText": "«{{name}}» дўкондан олиб ташланади. Аввалги буюртмалар тарихда қолади.",
+    "searchStudent": "Ўқувчини қидириш",
+    "totalBalance": "Жами баланс",
+    "thisMonth": "Бу ой йиғилмоқда",
+    "thisMonthShort": "Бу ой",
+    "student": "Ўқувчи",
+    "balance": "Баланс",
+    "earnedSpent": "Топган {{earned}} · сарфлаган {{spent}}",
+    "studentsEmpty": "Ўқувчилар топилмади",
+    "enable": "WECOIN режими",
+    "enableHint": "Тангалар ҳар ой якунида автоматик тарқатилади",
+    "rules": {
+      "grades": "Баҳо учун (ҳар бир баҳо)",
+      "grade": "{{value}} баҳо",
+      "homework": "Уйга вазифа учун",
+      "attendance": "Давомат учун",
+      "present": "Дарсга келди",
+      "medals": "Ойлик рейтинг медали",
+      "place": "{{position}}-ўрин"
+    },
+    "noCenter": "Аввал филиал қўшинг",
+    "newOrderToast": "Янги буюртма: {{product}}",
+    "open": "Очиш",
+    "monthPlus": "Бу ой +{{n}} йиғилмоқда",
+    "sum": {
+      "pending": "Кутилаётган буюртмалар",
+      "products": "Фаол маҳсулотлар",
+      "disabled": "WECOIN бу филиалда ўчиқ",
+      "disabledText": "Тангалар тарқатилмайди, ўқувчилар дўкондан харид қила олмайди.",
+      "goRules": "Қоидаларга ўтиш"
+    }
+  },
+  "coin": {
+    "settingsSaved": "Қоидалар сақланди",
+    "invalidRules": "Қоидалар нотўғри (0–1000 танга)",
+    "notAvailable": "WECOIN бу филиалда ёқилмаган",
+    "invalidMonth": "Ой нотўғри"
+  },
+  "shop": {
+    "productCreated": "Маҳсулот қўшилди",
+    "productUpdated": "Маҳсулот сақланди",
+    "productDeleted": "Маҳсулот ўчирилди",
+    "orderDelivered": "Буюртма топширилди",
+    "orderRefunded": "Буюртма қайтарилди, тангалар қайтди",
+    "invalidName": "Маҳсулот номини киритинг (80 белгигача)",
+    "invalidPrice": "Нарх 1 дан 100 000 гача бўлиши керак",
+    "invalidStock": "Қолдиқ нотўғри",
+    "productNotFound": "Маҳсулот топилмади",
+    "orderNotFound": "Буюртма топилмади",
+    "orderNotPending": "Буюртма аллақачон кўриб чиқилган",
+    "photoInvalid": "Расмни ўқиб бўлмади",
+    "photoTooLarge": "Расм 10 МБ дан ошмасин",
+    "notEnoughCoins": "Тангалар етарли эмас",
+    "outOfStock": "Маҳсулот тугаган",
+    "studentOnly": "Фақат ўқувчи харид қила олади",
+    "bought": "Харид қилинди"
   }
 }

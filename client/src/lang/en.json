@@ -53,7 +53,10 @@
       "homework": "Homework",
       "teachingPlan": "Lesson plan",
       "Group": "Group",
-      "grade": "Grade"
+      "grade": "Grade",
+      "CoinSetting": "WECOIN",
+      "ShopProduct": "Product",
+      "ShopOrder": "Order"
     },
     "actions": {
       "center:create": "Center created",
@@ -115,7 +118,14 @@
       "student:leftGroup": "Student left the group",
       "grade:removed": "Grade removed",
       "groupHoliday:removed": "Group day off removed",
-      "centerHoliday:removed": "Branch day off removed"
+      "centerHoliday:removed": "Branch day off removed",
+      "homework:results": "Homework result",
+      "coin:settings": "WECOIN rules",
+      "shop:productCreate": "Product added",
+      "shop:productUpdate": "Product edited",
+      "shop:productDelete": "Product deleted",
+      "shop:orderDeliver": "Order handed over",
+      "shop:orderRefund": "Order refunded"
     },
     "fields": {
       "name": "Name",
@@ -188,7 +198,8 @@
     "leads": "Leads",
     "myPlans": "My lesson plans",
     "videoLessons": "Video guides",
-    "individual": "Individual"
+    "individual": "Individual",
+    "coins": "WECOIN"
   },
   "report": {
     "revenue": "Revenue",
@@ -388,7 +399,9 @@
     "salaryDescFixed": "A fixed, predefined amount is paid as the salary every month.",
     "pdfTitle": "Staff login credentials",
     "pdfConfidentialNote": "Keep this document confidential. Give the password only to the staff member.",
-    "salaryTypeNotInTariff": "The selected salary type is not available in your current plan"
+    "salaryTypeNotInTariff": "The selected salary type is not available in your current plan",
+    "groupCoins": "WECOIN & shop",
+    "actionCoinManage": "Manage (rules, products, orders)"
   },
   "certificateTemplate": {
     "title": "Certificate templates",
@@ -689,7 +702,8 @@
       "quietHours": "Quiet hours",
       "quietHoursHint": "Only for scheduled (debt) messages — not sent within this range.",
       "quietFrom": "From",
-      "quietTo": "To"
+      "quietTo": "To",
+      "homeworkMissed": "Homework missed — when the teacher marks \"Missed\""
     },
     "title": "Centers",
     "name": "Center name",
@@ -953,7 +967,7 @@
     "startDateHint": "If the student started at the center earlier, pick that date — payment is counted from that day",
     "startDateInvalid": "Invalid date",
     "startDateFuture": "Study start date cannot be later than today",
-    "startDateBeforeGroup": "Date cannot be earlier than the group's start day",
+    "startDateTooOld": "Date cannot be more than 3 years before the group's start",
     "startDateUnavailable": "Study start date can only be changed in an active group",
     "entryNotActive": "Student is not active in this group"
   },
@@ -1330,7 +1344,11 @@
     "telegramRemove": "Disconnect",
     "invalidTelegramLink": "Invalid Telegram link. E.g. https://t.me/+AbCd or @group",
     "telegramUpdated": "Telegram group link updated",
-    "notIndividual": "This is not an individual group"
+    "notIndividual": "This is not an individual group",
+    "lessonDate": "Date",
+    "lessonTime": "Time",
+    "lessonTopic": "Topic",
+    "lessonDetails": "Details"
   },
   "notification": {
     "title": "Notifications",
@@ -1570,11 +1588,10 @@
       "expired": "Expired"
     },
     "durationLabels": {
-      "m1": "1 month",
-      "m3": "3 months",
-      "m6": "6 months",
-      "m9": "9 months",
-      "m12": "1 year"
+      "months_one": "{{count}} month",
+      "months_other": "{{count}} months",
+      "years_one": "{{count}} year",
+      "years_other": "{{count}} years"
     }
   },
   "tariff": {
@@ -1842,7 +1859,8 @@
     "finance_report": "Financial report",
     "ai_report": "AI report",
     "ai_advice": "AI advice",
-    "gamification_badges": "Achievement badges"
+    "gamification_badges": "Achievement badges",
+    "gamification_coins": "WECOIN coins & shop"
   },
   "lead": {
     "invalidTelegramPhone": "Invalid Telegram number",
@@ -1986,6 +2004,9 @@
     "notFound": "Payment not found"
   },
   "homework": {
+    "dateLabel": "{{weekday}}, {{month}} {{day}}",
+    "latest": "Latest homework",
+    "latestEmpty": "No homework yet",
     "tab": "Homework",
     "empty": "No lesson days this month",
     "today": "Today",
@@ -2000,7 +2021,39 @@
     "invalidDate": "Invalid date format",
     "tooLong": "Homework text must not exceed 2000 characters",
     "groupFinished": "Homework can't be added to a finished group",
-    "invalidText": "Invalid homework text"
+    "invalidText": "Invalid homework text",
+    "results": {
+      "title": "Results",
+      "done": "Done",
+      "partial": "Partial",
+      "missed": "Not done",
+      "markAllDone": "Rest are done",
+      "noStudents": "No active students in the group",
+      "edit": "Edit",
+      "mark": "Mark",
+      "unmarked": "Not marked",
+      "clear": "Clear mark"
+    },
+    "resultsSaved": "Result saved",
+    "notFound": "No homework for this day",
+    "resultFuture": "Can't set a result for a future day",
+    "invalidResults": "Invalid results",
+    "invalidStatus": "Invalid result type",
+    "studentNotInGroup": "Student is not in this group",
+    "send": {
+      "button": "Send homework",
+      "title": "Send homework",
+      "submit": "Send",
+      "import": "Import from syllabus",
+      "syllabusEmpty": "No syllabus lessons with homework",
+      "forThisDay": "This day",
+      "confirmDelete": "Really delete?"
+    },
+    "matrix": {
+      "empty": "No homework sent this month",
+      "emptyHint": "Send the first one with the «Send homework» button",
+      "rate": "Completion"
+    }
   },
   "rank": {
     "medal": "#{{position}} place",
@@ -2242,7 +2295,9 @@
     "editShort": "Change",
     "invalidPercent": "Teacher share must be between 0 and 100",
     "occupied": "This individual group already has a student",
-    "updated": "Teacher share saved"
+    "updated": "Teacher share saved",
+    "coins": "Award WECOIN",
+    "coinsSaved": "WECOIN setting saved"
   },
   "entryPercent": {
     "updated": "Teacher share saved",
@@ -2259,5 +2314,99 @@
     "chipTooltip": "Teacher share: {{p}}% of payments",
     "salaryLine_one": "Teacher share · {{count}}",
     "salaryLine_other": "Teacher share · {{count}}"
+  },
+  "coins": {
+    "tabs": {
+      "orders": "Orders",
+      "shop": "Shop",
+      "students": "Students",
+      "settings": "Rules"
+    },
+    "orderStatus": {
+      "pending": "Pending",
+      "delivered": "Handed over",
+      "refunded": "Refunded"
+    },
+    "ordersEmpty": {
+      "pending": "No new orders",
+      "delivered": "No handed-over orders",
+      "refunded": "No refunded orders"
+    },
+    "deliver": "Handed over",
+    "refund": "Refund",
+    "refundTitle": "Refund order",
+    "refundText": "{{name}} — “{{product}}”. {{price}} WECOIN will be returned to the student's balance.",
+    "loadMore": "Load more",
+    "addProduct": "Add product",
+    "editProduct": "Edit product",
+    "photo": "Photo",
+    "removePhoto": "Remove photo",
+    "productName": "Name",
+    "priceCoins": "Price (WECOIN)",
+    "stock": "Stock",
+    "stockUnlimited": "Unlimited",
+    "showInShop": "Show in shop",
+    "productsEmpty": "No products in the shop yet",
+    "soldOut": "Sold out",
+    "hidden": "Hidden",
+    "soldCount": "Sold: {{n}}",
+    "stockLeft": "left: {{n}}",
+    "deleteProduct": "Delete product",
+    "deleteProductText": "“{{name}}” will be removed from the shop. Past orders stay in history.",
+    "searchStudent": "Search student",
+    "totalBalance": "Total balance",
+    "thisMonth": "Earning this month",
+    "thisMonthShort": "This month",
+    "student": "Student",
+    "balance": "Balance",
+    "earnedSpent": "Earned {{earned}} · spent {{spent}}",
+    "studentsEmpty": "No students found",
+    "enable": "WECOIN mode",
+    "enableHint": "Coins are distributed automatically at the end of each month",
+    "rules": {
+      "grades": "Per grade",
+      "grade": "Grade {{value}}",
+      "homework": "Per homework",
+      "attendance": "Per attendance",
+      "present": "Attended",
+      "medals": "Monthly ranking medal",
+      "place": "Place {{position}}"
+    },
+    "noCenter": "Add a branch first",
+    "newOrderToast": "New order: {{product}}",
+    "open": "Open",
+    "monthPlus": "+{{n}} this month",
+    "sum": {
+      "pending": "Pending orders",
+      "products": "Active products",
+      "disabled": "WECOIN is off in this branch",
+      "disabledText": "Coins are not awarded and students cannot buy from the shop.",
+      "goRules": "Go to rules"
+    }
+  },
+  "coin": {
+    "settingsSaved": "Rules saved",
+    "invalidRules": "Invalid rules (0–1000 coins)",
+    "notAvailable": "WECOIN is not enabled for this branch",
+    "invalidMonth": "Invalid month"
+  },
+  "shop": {
+    "productCreated": "Product added",
+    "productUpdated": "Product saved",
+    "productDeleted": "Product deleted",
+    "orderDelivered": "Order handed over",
+    "orderRefunded": "Order refunded, coins returned",
+    "invalidName": "Enter a name (up to 80 characters)",
+    "invalidPrice": "Price must be 1 to 100,000",
+    "invalidStock": "Invalid stock",
+    "productNotFound": "Product not found",
+    "orderNotFound": "Order not found",
+    "orderNotPending": "Order already processed",
+    "photoInvalid": "Couldn't read the photo",
+    "photoTooLarge": "Photo must be under 10 MB",
+    "notEnoughCoins": "Not enough coins",
+    "outOfStock": "Out of stock",
+    "studentOnly": "Only the student can buy",
+    "bought": "Purchased"
   }
 }

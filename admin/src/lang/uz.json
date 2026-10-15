@@ -228,6 +228,15 @@
     "docsResponsesNote": "HTTP status har doim <1>200</1>, muvaffaqiyat <1>ok</1> maydoni orqali aniqlanadi. To'liq javob namunalari o'ng paneldagi <2>Success</2> / <2>Error</2> tablarida."
   },
   "tariff": {
+    "discountsTitle": "Muddat chegirmalari",
+    "discountMonths": "Muddat (oy)",
+    "discountMonthsShort": "oy",
+    "discountPercent": "Chegirma (%)",
+    "discountAdd": "Muddat qo'shish",
+    "discountsUpdated": "Chegirmalar saqlandi",
+    "discountsInvalid": "Muddat 1–36 oy, chegirma 0–90% bo'lishi kerak",
+    "discountsDuplicate": "Bir xil muddat ikki marta kiritilgan",
+    "discountsEmpty": "Kamida bitta muddat bo'lishi kerak",
     "title": "Tariflar",
     "new": "Yangi tarif",
     "edit": "Tarifni tahrirlash",
@@ -359,6 +368,10 @@
       "finance_report": {
         "label": "Moliyaviy hisobot",
         "description": "Daromad va xarajatlar bo'yicha umumiy moliyaviy hisobot yaratadi."
+      },
+      "gamification_coins": {
+        "label": "WECOIN tangalari va do'kon",
+        "description": "O'quvchilar baho, uyga vazifa, davomat va reyting uchun oy yakunida tanga oladi va filial do'konidan sovg'a xarid qiladi."
       }
     }
   },
@@ -1067,7 +1080,8 @@
       "roomsDetail": "Xona detali",
       "subjects": "Fanlar",
       "archive": "Arxiv",
-      "auditLog": "Audit jurnali"
+      "auditLog": "Audit jurnali",
+      "coins": "WECOIN"
     }
   }
 }

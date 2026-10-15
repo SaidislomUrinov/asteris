@@ -228,6 +228,15 @@
     "docsResponsesNote": "The HTTP status is always <1>200</1>; success is determined by the <1>ok</1> field. Full response examples are in the <2>Success</2> / <2>Error</2> tabs of the right panel."
   },
   "tariff": {
+    "discountsTitle": "Duration discounts",
+    "discountMonths": "Duration (months)",
+    "discountMonthsShort": "mo",
+    "discountPercent": "Discount (%)",
+    "discountAdd": "Add duration",
+    "discountsUpdated": "Discounts saved",
+    "discountsInvalid": "Duration must be 1–36 months, discount 0–90%",
+    "discountsDuplicate": "The same duration is entered twice",
+    "discountsEmpty": "At least one duration is required",
     "title": "Tariffs",
     "new": "New tariff",
     "edit": "Edit tariff",
@@ -359,6 +368,10 @@
       "finance_report": {
         "label": "Financial report",
         "description": "Generates an overall financial report on income and expenses."
+      },
+      "gamification_coins": {
+        "label": "WECOIN coins & shop",
+        "description": "Students earn coins at month end for grades, homework, attendance and ranking, and redeem them for rewards in the branch shop."
       }
     }
   },
@@ -1067,7 +1080,8 @@
       "roomsDetail": "Room detail",
       "subjects": "Subjects",
       "archive": "Archive",
-      "auditLog": "Audit log"
+      "auditLog": "Audit log",
+      "coins": "WECOIN"
     }
   }
 }

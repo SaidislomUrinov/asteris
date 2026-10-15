@@ -53,7 +53,10 @@
       "homework": "Домашнее задание",
       "teachingPlan": "План уроков",
       "Group": "Группа",
-      "grade": "Оценка"
+      "grade": "Оценка",
+      "CoinSetting": "WECOIN",
+      "ShopProduct": "Товар",
+      "ShopOrder": "Заказ"
     },
     "actions": {
       "center:create": "Филиал создан",
@@ -115,7 +118,14 @@
       "student:leftGroup": "Ученик вышел из группы",
       "grade:removed": "Оценка удалена",
       "groupHoliday:removed": "Снят выходной группы",
-      "centerHoliday:removed": "Снят выходной филиала"
+      "centerHoliday:removed": "Снят выходной филиала",
+      "homework:results": "Результат задания",
+      "coin:settings": "Правила WECOIN",
+      "shop:productCreate": "Товар добавлен",
+      "shop:productUpdate": "Товар изменён",
+      "shop:productDelete": "Товар удалён",
+      "shop:orderDeliver": "Заказ выдан",
+      "shop:orderRefund": "Заказ возвращён"
     },
     "fields": {
       "name": "Название",
@@ -188,7 +198,8 @@
     "leads": "Лиды",
     "myPlans": "Мои планы уроков",
     "videoLessons": "Видеоуроки",
-    "individual": "Индивидуальные"
+    "individual": "Индивидуальные",
+    "coins": "WECOIN"
   },
   "report": {
     "revenue": "Выручка",
@@ -388,7 +399,9 @@
     "salaryDescFixed": "Ежемесячно начисляется неизменная, заранее установленная сумма.",
     "pdfTitle": "Данные для входа сотрудника",
     "pdfConfidentialNote": "Храните этот документ в тайне. Передавайте пароль только самому сотруднику.",
-    "salaryTypeNotInTariff": "Выбранный тип зарплаты недоступен в вашем текущем тарифе"
+    "salaryTypeNotInTariff": "Выбранный тип зарплаты недоступен в вашем текущем тарифе",
+    "groupCoins": "WECOIN и магазин",
+    "actionCoinManage": "Управление (правила, товары, заказы)"
   },
   "certificateTemplate": {
     "title": "Шаблоны сертификатов",
@@ -689,7 +702,8 @@
       "quietHours": "Тихие часы",
       "quietHoursHint": "Только для запланированных (долг) сообщений — в этом интервале не отправляются.",
       "quietFrom": "С",
-      "quietTo": "До"
+      "quietTo": "До",
+      "homeworkMissed": "Задание не выполнено — когда учитель отметил «Не выполнил»"
     },
     "title": "Филиалы",
     "name": "Название филиала",
@@ -953,7 +967,7 @@
     "startDateHint": "Если ученик начал заниматься в центре раньше — выберите эту дату, оплата считается с этого дня",
     "startDateInvalid": "Неверная дата",
     "startDateFuture": "Дата начала обучения не может быть позже сегодняшнего дня",
-    "startDateBeforeGroup": "Дата не может быть раньше дня запуска группы",
+    "startDateTooOld": "Дата не может быть раньше запуска группы более чем на 3 года",
     "startDateUnavailable": "Дату начала обучения можно изменить только в активной группе",
     "entryNotActive": "Ученик не активен в этой группе"
   },
@@ -1330,7 +1344,11 @@
     "telegramRemove": "Отключить",
     "invalidTelegramLink": "Неверная ссылка Telegram. Например: https://t.me/+AbCd или @group",
     "telegramUpdated": "Ссылка на Telegram-группу обновлена",
-    "notIndividual": "Это не индивидуальная группа"
+    "notIndividual": "Это не индивидуальная группа",
+    "lessonDate": "Дата",
+    "lessonTime": "Время",
+    "lessonTopic": "Тема",
+    "lessonDetails": "Подробнее"
   },
   "notification": {
     "title": "Уведомления",
@@ -1570,11 +1588,14 @@
       "expired": "Срок истёк"
     },
     "durationLabels": {
-      "m1": "1 месяц",
-      "m3": "3 месяца",
-      "m6": "6 месяцев",
-      "m9": "9 месяцев",
-      "m12": "1 год"
+      "months_one": "{{count}} месяц",
+      "months_few": "{{count}} месяца",
+      "months_many": "{{count}} месяцев",
+      "months_other": "{{count}} месяца",
+      "years_one": "{{count}} год",
+      "years_few": "{{count}} года",
+      "years_many": "{{count}} лет",
+      "years_other": "{{count}} года"
     }
   },
   "tariff": {
@@ -1842,7 +1863,8 @@
     "finance_report": "Финансовый отчёт",
     "ai_report": "AI-отчёт",
     "ai_advice": "AI-рекомендации",
-    "gamification_badges": "Значки достижений"
+    "gamification_badges": "Значки достижений",
+    "gamification_coins": "Монеты WECOIN и магазин"
   },
   "lead": {
     "invalidTelegramPhone": "Неверный номер Telegram",
@@ -1986,6 +2008,9 @@
     "notFound": "Платёж не найден"
   },
   "homework": {
+    "dateLabel": "{{weekday}}, {{day}} {{month}}",
+    "latest": "Последнее задание",
+    "latestEmpty": "Заданий пока нет",
     "tab": "Домашнее задание",
     "empty": "В этом месяце нет учебных дней",
     "today": "Сегодня",
@@ -2000,7 +2025,39 @@
     "invalidDate": "Неверный формат даты",
     "tooLong": "Текст задания не должен превышать 2000 символов",
     "groupFinished": "В завершённую группу нельзя добавить задание",
-    "invalidText": "Неверный текст задания"
+    "invalidText": "Неверный текст задания",
+    "results": {
+      "title": "Результаты",
+      "done": "Выполнил",
+      "partial": "Частично",
+      "missed": "Не выполнил",
+      "markAllDone": "Остальные выполнили",
+      "noStudents": "В группе нет активных учеников",
+      "edit": "Изменить",
+      "mark": "Отметить",
+      "unmarked": "Не отмечено",
+      "clear": "Снять отметку"
+    },
+    "resultsSaved": "Результат сохранён",
+    "notFound": "На этот день задание не задано",
+    "resultFuture": "Нельзя ставить результат на будущий день",
+    "invalidResults": "Неверные данные результатов",
+    "invalidStatus": "Неверный тип результата",
+    "studentNotInGroup": "Ученик не состоит в этой группе",
+    "send": {
+      "button": "Отправить задание",
+      "title": "Отправить задание",
+      "submit": "Отправить",
+      "import": "Импорт из программы",
+      "syllabusEmpty": "В программе курса нет уроков с домашним заданием",
+      "forThisDay": "Этот день",
+      "confirmDelete": "Точно удалить?"
+    },
+    "matrix": {
+      "empty": "В этом месяце заданий не было",
+      "emptyHint": "Отправьте первое задание кнопкой «Отправить задание»",
+      "rate": "Выполнение"
+    }
   },
   "rank": {
     "medal": "{{position}}-е место",
@@ -2242,7 +2299,9 @@
     "editShort": "Изменить",
     "invalidPercent": "Доля преподавателя должна быть от 0 до 100",
     "occupied": "В этой индивидуальной группе уже есть ученик",
-    "updated": "Доля преподавателя сохранена"
+    "updated": "Доля преподавателя сохранена",
+    "coins": "Начислять WECOIN",
+    "coinsSaved": "Настройка WECOIN сохранена"
   },
   "entryPercent": {
     "updated": "Доля преподавателя сохранена",
@@ -2261,5 +2320,99 @@
     "salaryLine_few": "Доля преподавателя · {{count}}",
     "salaryLine_many": "Доля преподавателя · {{count}}",
     "salaryLine_other": "Доля преподавателя · {{count}}"
+  },
+  "coins": {
+    "tabs": {
+      "orders": "Заказы",
+      "shop": "Магазин",
+      "students": "Ученики",
+      "settings": "Правила"
+    },
+    "orderStatus": {
+      "pending": "Ожидает",
+      "delivered": "Выдан",
+      "refunded": "Возвращён"
+    },
+    "ordersEmpty": {
+      "pending": "Новых заказов нет",
+      "delivered": "Выданных заказов нет",
+      "refunded": "Возвращённых заказов нет"
+    },
+    "deliver": "Выдан",
+    "refund": "Вернуть",
+    "refundTitle": "Вернуть заказ",
+    "refundText": "{{name}} — «{{product}}». {{price}} WECOIN вернутся на баланс ученика.",
+    "loadMore": "Загрузить ещё",
+    "addProduct": "Добавить товар",
+    "editProduct": "Редактировать товар",
+    "photo": "Фото",
+    "removePhoto": "Удалить фото",
+    "productName": "Название",
+    "priceCoins": "Цена (WECOIN)",
+    "stock": "Остаток",
+    "stockUnlimited": "Без ограничений",
+    "showInShop": "Показывать в магазине",
+    "productsEmpty": "В магазине пока нет товаров",
+    "soldOut": "Закончился",
+    "hidden": "Скрыт",
+    "soldCount": "Продано: {{n}}",
+    "stockLeft": "осталось: {{n}}",
+    "deleteProduct": "Удалить товар",
+    "deleteProductText": "«{{name}}» будет убран из магазина. Прошлые заказы останутся в истории.",
+    "searchStudent": "Поиск ученика",
+    "totalBalance": "Общий баланс",
+    "thisMonth": "Копится в этом месяце",
+    "thisMonthShort": "Этот месяц",
+    "student": "Ученик",
+    "balance": "Баланс",
+    "earnedSpent": "Заработал {{earned}} · потратил {{spent}}",
+    "studentsEmpty": "Ученики не найдены",
+    "enable": "Режим WECOIN",
+    "enableHint": "Монеты начисляются автоматически в конце каждого месяца",
+    "rules": {
+      "grades": "За оценки (за каждую)",
+      "grade": "Оценка {{value}}",
+      "homework": "За домашнее задание",
+      "attendance": "За посещаемость",
+      "present": "Пришёл на урок",
+      "medals": "Медаль месячного рейтинга",
+      "place": "{{position}}-е место"
+    },
+    "noCenter": "Сначала добавьте филиал",
+    "newOrderToast": "Новый заказ: {{product}}",
+    "open": "Открыть",
+    "monthPlus": "В этом месяце +{{n}}",
+    "sum": {
+      "pending": "Ожидающие заказы",
+      "products": "Активные товары",
+      "disabled": "WECOIN в этом филиале выключен",
+      "disabledText": "Монеты не начисляются, ученики не могут покупать в магазине.",
+      "goRules": "Перейти к правилам"
+    }
+  },
+  "coin": {
+    "settingsSaved": "Правила сохранены",
+    "invalidRules": "Неверные правила (0–1000 монет)",
+    "notAvailable": "WECOIN не включён в этом филиале",
+    "invalidMonth": "Неверный месяц"
+  },
+  "shop": {
+    "productCreated": "Товар добавлен",
+    "productUpdated": "Товар сохранён",
+    "productDeleted": "Товар удалён",
+    "orderDelivered": "Заказ выдан",
+    "orderRefunded": "Заказ возвращён, монеты вернулись",
+    "invalidName": "Введите название (до 80 символов)",
+    "invalidPrice": "Цена от 1 до 100 000",
+    "invalidStock": "Неверный остаток",
+    "productNotFound": "Товар не найден",
+    "orderNotFound": "Заказ не найден",
+    "orderNotPending": "Заказ уже обработан",
+    "photoInvalid": "Не удалось прочитать фото",
+    "photoTooLarge": "Фото не больше 10 МБ",
+    "notEnoughCoins": "Недостаточно монет",
+    "outOfStock": "Товар закончился",
+    "studentOnly": "Покупать может только ученик",
+    "bought": "Покупка оформлена"
   }
 }

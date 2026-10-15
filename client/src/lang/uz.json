@@ -53,7 +53,10 @@
       "homework": "Uyga vazifa",
       "teachingPlan": "Dars reja",
       "Group": "Guruh",
-      "grade": "Baho"
+      "grade": "Baho",
+      "CoinSetting": "WECOIN",
+      "ShopProduct": "Mahsulot",
+      "ShopOrder": "Buyurtma"
     },
     "actions": {
       "center:create": "Filial yaratildi",
@@ -115,7 +118,14 @@
       "student:leftGroup": "O'quvchi guruhdan chiqdi",
       "grade:removed": "Baho o'chirildi",
       "groupHoliday:removed": "Guruh dam olish kuni olib tashlandi",
-      "centerHoliday:removed": "Filial dam olish kuni olib tashlandi"
+      "centerHoliday:removed": "Filial dam olish kuni olib tashlandi",
+      "homework:results": "Vazifa natijasi",
+      "coin:settings": "WECOIN qoidalari",
+      "shop:productCreate": "Mahsulot qo'shildi",
+      "shop:productUpdate": "Mahsulot tahrirlandi",
+      "shop:productDelete": "Mahsulot o'chirildi",
+      "shop:orderDeliver": "Buyurtma topshirildi",
+      "shop:orderRefund": "Buyurtma qaytarildi"
     },
     "fields": {
       "name": "Nomi",
@@ -188,7 +198,8 @@
     "leads": "Lidlar",
     "myPlans": "Dars rejalarim",
     "videoLessons": "Video qo'llanmalar",
-    "individual": "Individual"
+    "individual": "Individual",
+    "coins": "WECOIN"
   },
   "report": {
     "revenue": "Tushum",
@@ -388,7 +399,9 @@
     "salaryDescFixed": "Har oy o'zgarmas, oldindan belgilangan summa oylik hisoblanadi.",
     "pdfTitle": "Hodim kirish rekvizitlari",
     "pdfConfidentialNote": "Ushbu hujjatni maxfiy saqlang. Parolni faqat hodimning o'ziga bering.",
-    "salaryTypeNotInTariff": "Tanlangan oylik turi joriy tarifingizda mavjud emas"
+    "salaryTypeNotInTariff": "Tanlangan oylik turi joriy tarifingizda mavjud emas",
+    "groupCoins": "WECOIN va do'kon",
+    "actionCoinManage": "Boshqarish (qoidalar, mahsulot, buyurtma)"
   },
   "certificateTemplate": {
     "title": "Sertifikat shablonlari",
@@ -689,7 +702,8 @@
       "quietHours": "Tinch soatlar",
       "quietHoursHint": "Faqat rejalashtirilgan (qarz) xabarlarga tegishli — bu oraliqda yuborilmaydi.",
       "quietFrom": "Dan",
-      "quietTo": "Gacha"
+      "quietTo": "Gacha",
+      "homeworkMissed": "Vazifa qilinmadi — o'qituvchi \"Bajarmadi\" belgilaganda"
     },
     "title": "Filiallar",
     "name": "Filial nomi",
@@ -953,7 +967,7 @@
     "startDateHint": "Markazda oldinroq o'qishni boshlagan bo'lsa — shu sanani tanlang, to'lov shu kundan hisoblanadi",
     "startDateInvalid": "Sana noto'g'ri kiritilgan",
     "startDateFuture": "O'qishni boshlagan sana bugundan keyin bo'lishi mumkin emas",
-    "startDateBeforeGroup": "Sana guruh boshlangan kundan oldin bo'lishi mumkin emas",
+    "startDateTooOld": "Sana guruh boshlanishidan 3 yildan ko'proq oldin bo'lishi mumkin emas",
     "startDateUnavailable": "O'qishni boshlagan sanani faqat faol guruhda o'zgartirish mumkin",
     "entryNotActive": "O'quvchi bu guruhda faol emas"
   },
@@ -1330,7 +1344,11 @@
     "telegramRemove": "Uzish",
     "invalidTelegramLink": "Telegram havolasi noto'g'ri. Masalan: https://t.me/+AbCd yoki @guruh",
     "telegramUpdated": "Telegram guruh manzili yangilandi",
-    "notIndividual": "Bu individual guruh emas"
+    "notIndividual": "Bu individual guruh emas",
+    "lessonDate": "Sana",
+    "lessonTime": "Vaqt",
+    "lessonTopic": "Mavzu",
+    "lessonDetails": "Batafsil"
   },
   "notification": {
     "title": "Bildirishnomalar",
@@ -1570,11 +1588,8 @@
       "expired": "Muddati tugagan"
     },
     "durationLabels": {
-      "m1": "1 oy",
-      "m3": "3 oy",
-      "m6": "6 oy",
-      "m9": "9 oy",
-      "m12": "1 yil"
+      "months": "{{count}} oy",
+      "years": "{{count}} yil"
     }
   },
   "tariff": {
@@ -1842,7 +1857,8 @@
     "finance_report": "Moliyaviy hisobot",
     "ai_report": "AI hisobot",
     "ai_advice": "AI tavsiya",
-    "gamification_badges": "Yutuq nishonlari"
+    "gamification_badges": "Yutuq nishonlari",
+    "gamification_coins": "WECOIN tangalari va do'kon"
   },
   "lead": {
     "invalidTelegramPhone": "Telegram raqami noto'g'ri",
@@ -1986,6 +2002,9 @@
     "notFound": "To'lov topilmadi"
   },
   "homework": {
+    "dateLabel": "{{weekday}}, {{day}}-{{month}}",
+    "latest": "Oxirgi vazifa",
+    "latestEmpty": "Hali vazifa berilmagan",
     "tab": "Uyga vazifa",
     "empty": "Bu oyda dars kunlari yo'q",
     "today": "Bugun",
@@ -2000,7 +2019,39 @@
     "invalidDate": "Sana noto'g'ri formatda",
     "tooLong": "Vazifa matni 2000 belgidan oshmasligi kerak",
     "groupFinished": "Yakunlangan guruhga vazifa yozib bo'lmaydi",
-    "invalidText": "Vazifa matni noto'g'ri"
+    "invalidText": "Vazifa matni noto'g'ri",
+    "results": {
+      "title": "Natijalar",
+      "done": "Bajardi",
+      "partial": "Chala",
+      "missed": "Bajarmadi",
+      "markAllDone": "Qolganlari bajardi",
+      "noStudents": "Guruhda faol o'quvchi yo'q",
+      "edit": "O'zgartirish",
+      "mark": "Belgilash",
+      "unmarked": "Belgilanmagan",
+      "clear": "Belgini olib tashlash"
+    },
+    "resultsSaved": "Natija saqlandi",
+    "notFound": "Bu kunga vazifa berilmagan",
+    "resultFuture": "Kelgusi kun uchun natija qo'yib bo'lmaydi",
+    "invalidResults": "Natijalar noto'g'ri yuborildi",
+    "invalidStatus": "Natija turi noto'g'ri",
+    "studentNotInGroup": "O'quvchi bu guruhda emas",
+    "send": {
+      "button": "Vazifa yuborish",
+      "title": "Vazifa yuborish",
+      "submit": "Yuborish",
+      "import": "Dasturdan import",
+      "syllabusEmpty": "Kurs dasturida uyga vazifali dars yo'q",
+      "forThisDay": "Shu kun",
+      "confirmDelete": "Rostdan o'chirilsinmi?"
+    },
+    "matrix": {
+      "empty": "Bu oyda vazifa yuborilmagan",
+      "emptyHint": "«Vazifa yuborish» tugmasi orqali birinchi vazifani bering",
+      "rate": "Bajarilish"
+    }
   },
   "rank": {
     "medal": "{{position}}-o'rin",
@@ -2242,7 +2293,9 @@
     "editShort": "O'zgartirish",
     "invalidPercent": "O'qituvchi ulushi 0 dan 100 gacha bo'lishi kerak",
     "occupied": "Bu individual guruhda allaqachon o'quvchi bor",
-    "updated": "O'qituvchi ulushi saqlandi"
+    "updated": "O'qituvchi ulushi saqlandi",
+    "coins": "WECOIN berish",
+    "coinsSaved": "WECOIN sozlamasi saqlandi"
   },
   "entryPercent": {
     "updated": "O'qituvchi ulushi saqlandi",
@@ -2259,5 +2312,99 @@
     "chipTooltip": "O'qituvchi ulushi: to'lovning {{p}}%i",
     "salaryLine_one": "O'qituvchi ulushi · {{count}} ta",
     "salaryLine_other": "O'qituvchi ulushi · {{count}} ta"
+  },
+  "coins": {
+    "tabs": {
+      "orders": "Buyurtmalar",
+      "shop": "Do'kon",
+      "students": "O'quvchilar",
+      "settings": "Qoidalar"
+    },
+    "orderStatus": {
+      "pending": "Kutilmoqda",
+      "delivered": "Topshirildi",
+      "refunded": "Qaytarildi"
+    },
+    "ordersEmpty": {
+      "pending": "Yangi buyurtmalar yo'q",
+      "delivered": "Topshirilgan buyurtmalar yo'q",
+      "refunded": "Qaytarilgan buyurtmalar yo'q"
+    },
+    "deliver": "Topshirildi",
+    "refund": "Qaytarish",
+    "refundTitle": "Buyurtmani qaytarish",
+    "refundText": "{{name}} — «{{product}}». {{price}} WECOIN o'quvchi balansiga qaytariladi.",
+    "loadMore": "Yana yuklash",
+    "addProduct": "Mahsulot qo'shish",
+    "editProduct": "Mahsulotni tahrirlash",
+    "photo": "Rasm",
+    "removePhoto": "Rasmni olib tashlash",
+    "productName": "Nomi",
+    "priceCoins": "Narxi (WECOIN)",
+    "stock": "Qoldiq",
+    "stockUnlimited": "Cheklanmagan",
+    "showInShop": "Do'konda ko'rinsin",
+    "productsEmpty": "Do'konda hali mahsulot yo'q",
+    "soldOut": "Tugagan",
+    "hidden": "Yashirin",
+    "soldCount": "Sotildi: {{n}}",
+    "stockLeft": "qoldi: {{n}}",
+    "deleteProduct": "Mahsulotni o'chirish",
+    "deleteProductText": "«{{name}}» do'kondan olib tashlanadi. Avvalgi buyurtmalar tarixda qoladi.",
+    "searchStudent": "O'quvchini qidirish",
+    "totalBalance": "Jami balans",
+    "thisMonth": "Bu oy yig'ilmoqda",
+    "thisMonthShort": "Bu oy",
+    "student": "O'quvchi",
+    "balance": "Balans",
+    "earnedSpent": "Topgan {{earned}} · sarflagan {{spent}}",
+    "studentsEmpty": "O'quvchilar topilmadi",
+    "enable": "WECOIN rejimi",
+    "enableHint": "Tangalar har oy yakunida avtomatik tarqatiladi",
+    "rules": {
+      "grades": "Baho uchun (har bir baho)",
+      "grade": "{{value}} baho",
+      "homework": "Uyga vazifa uchun",
+      "attendance": "Davomat uchun",
+      "present": "Darsga keldi",
+      "medals": "Oylik reyting medali",
+      "place": "{{position}}-o'rin"
+    },
+    "noCenter": "Avval filial qo'shing",
+    "newOrderToast": "Yangi buyurtma: {{product}}",
+    "open": "Ochish",
+    "monthPlus": "Bu oy +{{n}} yig'ilmoqda",
+    "sum": {
+      "pending": "Kutilayotgan buyurtmalar",
+      "products": "Faol mahsulotlar",
+      "disabled": "WECOIN bu filialda o'chiq",
+      "disabledText": "Tangalar tarqatilmaydi, o'quvchilar do'kondan xarid qila olmaydi.",
+      "goRules": "Qoidalarga o'tish"
+    }
+  },
+  "coin": {
+    "settingsSaved": "Qoidalar saqlandi",
+    "invalidRules": "Qoidalar noto'g'ri (0–1000 tanga)",
+    "notAvailable": "WECOIN bu filialda yoqilmagan",
+    "invalidMonth": "Oy noto'g'ri"
+  },
+  "shop": {
+    "productCreated": "Mahsulot qo'shildi",
+    "productUpdated": "Mahsulot saqlandi",
+    "productDeleted": "Mahsulot o'chirildi",
+    "orderDelivered": "Buyurtma topshirildi",
+    "orderRefunded": "Buyurtma qaytarildi, tangalar qaytdi",
+    "invalidName": "Mahsulot nomini kiriting (80 belgigacha)",
+    "invalidPrice": "Narx 1 dan 100 000 gacha bo'lishi kerak",
+    "invalidStock": "Qoldiq noto'g'ri",
+    "productNotFound": "Mahsulot topilmadi",
+    "orderNotFound": "Buyurtma topilmadi",
+    "orderNotPending": "Buyurtma allaqachon ko'rib chiqilgan",
+    "photoInvalid": "Rasmni o'qib bo'lmadi",
+    "photoTooLarge": "Rasm 10 MB dan oshmasin",
+    "notEnoughCoins": "Tangalar yetarli emas",
+    "outOfStock": "Mahsulot tugagan",
+    "studentOnly": "Faqat o'quvchi xarid qila oladi",
+    "bought": "Xarid qilindi"
   }
 }

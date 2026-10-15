@@ -3,7 +3,8 @@
     "home": "Home",
     "payments": "Payments",
     "notifications": "Messages",
-    "settings": "Settings"
+    "settings": "Settings",
+    "coins": "WECOIN"
   },
   "common": {
     "retry": "Retry",
@@ -213,7 +214,10 @@
       "debt": "Debt",
       "homework": "Homework",
       "lessonReminder": "Reminder",
-      "badge": "Badges"
+      "badge": "Badges",
+      "coin": "WECOIN",
+      "shop": "Shop",
+      "homeworkMissed": "Homework missed"
     },
     "today": "Today",
     "yesterday": "Yesterday",
@@ -229,7 +233,8 @@
       "debt": "Debt reminder",
       "lessonReminder": "Lesson reminder (1 hour before)",
       "homework": "New homework",
-      "badge": "New badges"
+      "badge": "New badges",
+      "homeworkMissed": "Missed homework"
     },
     "notifHint": "Settings apply to all children and centers. Types disabled by the center itself are not sent.",
     "lang": "Language",
@@ -289,7 +294,12 @@
     "empty": "No homework this month",
     "emptyText": "Homework from your teacher will appear here.",
     "past": "Past",
-    "updatedShort": "Updated: {{t}}"
+    "updatedShort": "Updated: {{t}}",
+    "status": {
+      "done": "Done",
+      "partial": "Partial",
+      "missed": "Not done"
+    }
   },
   "student": {
     "rank": {
@@ -378,7 +388,10 @@
     "photoTake": "Take photo",
     "photoGallery": "From gallery",
     "photoRetake": "Retake",
-    "photoSaveFailed": "Student added, but the photo was not saved. You can add it later from the student menu."
+    "photoSaveFailed": "Student added, but the photo was not saved. You can add it later from the student menu.",
+    "coins": {
+      "thisMonthTitle": "Your coins this month"
+    }
   },
   "rankCard": {
     "title": "Place in group",
@@ -896,7 +909,21 @@
       "deleteTitle": "Delete homework?",
       "deleteText": "The text is empty — homework for this day will be deleted.",
       "history": "Recent homework",
-      "empty": "No homework this month"
+      "empty": "No homework this month",
+      "result": {
+        "title": "Check homework",
+        "done": "Done",
+        "partial": "Partial",
+        "missed": "Missed",
+        "count": {
+          "done": "{{count}} done",
+          "partial": "{{count}} partial",
+          "missed": "{{count}} missed",
+          "unmarked": "{{count}} unmarked"
+        },
+        "markRest": "Mark the rest done ({{count}})",
+        "allSaved": "Results saved"
+      }
     },
     "search": {
       "title": "Search",
@@ -1250,5 +1277,83 @@
   },
   "validation": {
     "month": "Invalid month format (YYYY-MM)"
+  },
+  "coins": {
+    "tabs": {
+      "shop": "Shop",
+      "earn": "How to earn",
+      "history": "History"
+    },
+    "soldOut": "Sold out",
+    "left": "{{n}} left",
+    "needMore": "{{n}} more needed",
+    "buy": "Get it",
+    "enough": "Enough coins",
+    "shopEmpty": "The shop is empty for now",
+    "shopEmptyText": "Rewards will appear here once the branch adds them.",
+    "confirmTitle": "Get “{{name}}”?",
+    "confirmText": "{{price}} WECOIN will be deducted, {{left}} will remain. Pick up your reward at the branch.",
+    "successTitle": "Order placed!",
+    "successText": "“{{name}}” is waiting for you. Pick it up at the branch — you'll be notified once it's handed over.",
+    "toHistory": "View history",
+    "great": "Great!",
+    "historyEmpty": "No history yet",
+    "historyEmptyText": "Your coins and purchases will show up here.",
+    "myOrders": "Purchases",
+    "movements": "Coin activity",
+    "orderStatus": {
+      "pending": "Awaiting pickup",
+      "delivered": "Handed over",
+      "refunded": "Refunded"
+    },
+    "tx": {
+      "earn": "{{month}} results",
+      "spend": "Shop purchase",
+      "refund": "Purchase refunded"
+    },
+    "part": {
+      "grades": "Grades",
+      "homework": "Homework",
+      "attendance": "Attendance",
+      "medals": "Medals"
+    },
+    "count": {
+      "grades": "{{n}} grades",
+      "homework": "{{n}} homework",
+      "attendance": "{{n}} lessons",
+      "medals": "{{n}} medals"
+    },
+    "rule": {
+      "grade": "Grade {{value}}",
+      "present": "Attending a lesson",
+      "place": "Place {{n}} in the monthly ranking"
+    },
+    "thisMonthTitle": "Your child's coins this month",
+    "howToEarn": "How to earn",
+    "noRules": "The branch hasn't set the rules yet",
+    "monthEndNote": "Coins are added to the balance at the end of each month.",
+    "notEnabled": "WECOIN isn't enabled yet",
+    "notEnabledText": "Once your learning center enables WECOIN, coins and the shop will appear here.",
+    "thisMonthEarning": "This month +{{n}}",
+    "paidOn": "Paid out early {{month}}",
+    "pendingOrders": "{{n}} orders pending",
+    "toShop": "Shop",
+    "monthTotal": "this month",
+    "goal": {
+      "next": "Next gift",
+      "ready": "You can get a gift",
+      "readyText": "You have enough coins for {{n}} gift(s)",
+      "left": "{{n}} more coins to go"
+    }
+  },
+  "coin": {
+    "notAvailable": "WECOIN is not enabled for this branch"
+  },
+  "shop": {
+    "notEnoughCoins": "Not enough coins",
+    "outOfStock": "Sorry, it's sold out",
+    "productNotFound": "Product not found",
+    "studentOnly": "Only the student can buy",
+    "bought": "Purchased"
   }
 }
