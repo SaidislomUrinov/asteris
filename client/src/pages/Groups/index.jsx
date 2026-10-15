@@ -13,6 +13,7 @@ import GroupDialog from "./GroupDialog";
 import GroupTelegramDialog from "./GroupTelegramDialog";
 import useClosingValue from "../../hooks/useClosingValue";
 import GroupCard from "./GroupCard";
+import GroupStatusTabs from "./GroupStatusTabs";
 import ExportExcelButton from "../../ui/ExportExcelButton";
 import useCan from "../../hooks/useCan";
 import { useSelector } from "react-redux";
@@ -62,15 +63,20 @@ function Groups() {
   const showCenterFilter = centers.length > 1;
 
   // Mobil "Filterlash" tugmasidagi belgi uchun — nechta filtr tanlangan.
+  // Holat tablari doim ko'rinib turadi, shuning uchun bu songa kirmaydi.
   const activeFilterCount =
-    [filterCenter, filterTeacher, filterStatus].filter(Boolean).length + (filterDays.length ? 1 : 0);
+    [filterCenter, filterTeacher].filter(Boolean).length + (filterDays.length ? 1 : 0);
 
+
+  const changeStatus = (v) => {
+    setPage(1);
+    setFilterStatus(v);
+  };
 
   const resetFilters = () => {
     setPage(1);
     setFilterCenter("");
     setFilterTeacher("");
-    setFilterStatus("");
     setFilterDays([]);
   };
   const [subjects, setSubjects] = useState([]);
@@ -100,6 +106,26 @@ function Groups() {
   // joriy sahifa ichida (PAGE_SIZE 50 — odatda filialning barcha guruhlari).
   const startOf = (g) => (g.startTime ? toMinutes(g.startTime) : Infinity);
   const sortedRows = [...rows].sort((a, b) => startOf(a) - startOf(b));
+
+  // Kartalar bo'limlarga ajraladi: hozir darsda → bugun → boshqa kunlar →
+  // yig'ilmoqda → yakunlangan. Har bo'lim ichida tartib — boshlanish soati.
+  const sectionOf = (g) => {
+    const state = liveMap[g._id]?.state;
+    if (state === GROUP_STATE.LIVE) return "live";
+    if (state === GROUP_STATE.PENDING) return "pending";
+    if (state === GROUP_STATE.FINISHED) return "finished";
+    return g.days?.includes(nowTick.day) && g.startTime ? "today" : "other";
+  };
+  const SECTION_LABEL = {
+    live: t("group.section.live"),
+    today: t("group.section.today"),
+    other: t("group.section.other"),
+    pending: t("group.cardStatus.pending"),
+    finished: t("group.cardStatus.finished"),
+  };
+  const sections = Object.keys(SECTION_LABEL)
+    .map((key) => ({ key, rows: sortedRows.filter((g) => sectionOf(g) === key) }))
+    .filter((sec) => sec.rows.length);
 
   const groupLabel = (row) =>
     `${row.subjectName || subjectMap[row.subject] || "?"} - ${row.status === "pending" ? row.pendingId : row.activeId}${
@@ -209,16 +235,18 @@ function Groups() {
           {/* Filtr qatori konvensiyasi: maydonlar flex-1 (tor ekranda yangi
               qatorga o'tadi), amallar bitta guruhda ml-auto bilan o'ngda. */}
           <div className="flex flex-wrap items-center gap-2.5 [&>*]:flex-1 [&>*]:min-w-[200px]">
-            <Input
-              placeholder={t("common.search")}
-              icon={<HiMagnifyingGlass />}
-              variant="slate"
-              value={search}
-              onChange={(e) => {
-                setPage(1);
-                setSearch(e.target.value);
-              }}
-            />
+            <div className="!flex-[2]">
+              <Input
+                placeholder={t("common.search")}
+                icon={<HiMagnifyingGlass />}
+                variant="slate"
+                value={search}
+                onChange={(e) => {
+                  setPage(1);
+                  setSearch(e.target.value);
+                }}
+              />
+            </div>
             {showCenterFilter && (
               <Select
                 placeholder={t("group.center")}
@@ -249,21 +277,6 @@ function Groups() {
                 ]}
               />
             )}
-            <Select
-              placeholder={t("group.status")}
-              variant="slate"
-              value={filterStatus}
-              onChange={(v) => {
-                setPage(1);
-                setFilterStatus(v);
-              }}
-              options={[
-                { value: "", label: t("common.all") },
-                { value: "pending", label: t("group.statusPending") },
-                { value: "active", label: t("group.statusActive") },
-                { value: "finished", label: t("group.statusFinished") },
-              ]}
-            />
             <div className="flex items-center gap-2 !flex-none !min-w-0 ml-auto">
               {!isTeacher && can("group:view") && (
                 <ExportExcelButton
@@ -285,36 +298,37 @@ function Groups() {
               )}
             </div>
           </div>
-          {/* 2-qator: hafta kunlari doim ko'rinib turadi (chapda), "Tozalash"
-              o'ngda — tanlangan filtr bo'lmasa o'chirilgan holatda. */}
-          <div className="flex items-end gap-2.5 pt-2.5 border-t border-slate-100 dark:border-night-700">
-            <div className="w-full max-w-md">
-              <DayPicker
-                placeholder={t("group.days")}
-                value={filterDays}
-                onChange={(days) => {
-                  setPage(1);
-                  setFilterDays(days);
-                }}
-              />
-            </div>
-            <div className="shrink-0">
-              <Button
-                variant="outlined"
-                color="red"
-                onClick={resetFilters}
-                disabled={activeFilterCount === 0}
-                className="gap-1.5"
-              >
-                <HiXMark className="text-base" />
-                {t("common.resetFilters")}
-              </Button>
+          {/* 2-qator: holat tablari (chapda), hafta kunlari va "Tozalash" o'ngda. */}
+          <div className="flex flex-wrap items-center gap-2.5 pt-2.5 border-t border-slate-100 dark:border-night-700">
+            <GroupStatusTabs value={filterStatus} onChange={changeStatus} count={loading ? null : meta.total} />
+            <div className="flex items-center gap-2.5 ml-auto min-w-0">
+              <div className="w-80 max-w-full">
+                <DayPicker
+                  value={filterDays}
+                  onChange={(days) => {
+                    setPage(1);
+                    setFilterDays(days);
+                  }}
+                />
+              </div>
+              <div className="shrink-0">
+                <Button
+                  variant="outlined"
+                  color="red"
+                  onClick={resetFilters}
+                  disabled={activeFilterCount === 0}
+                  className="gap-1.5"
+                >
+                  <HiXMark className="text-base" />
+                  {t("common.resetFilters")}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       ) : (
         <FilterBar
-          cols={showCenterFilter ? 4 : 3}
+          cols={showCenterFilter ? 3 : 2}
           activeCount={activeFilterCount}
           onReset={resetFilters}
           search={
@@ -382,22 +396,7 @@ function Groups() {
               ]}
             />
           )}
-          <Select
-            placeholder={t("group.status")}
-            variant="slate"
-            value={filterStatus}
-            onChange={(v) => {
-              setPage(1);
-              setFilterStatus(v);
-            }}
-            options={[
-              { value: "", label: t("common.all") },
-              { value: "pending", label: t("group.statusPending") },
-              { value: "active", label: t("group.statusActive") },
-              { value: "finished", label: t("group.statusFinished") },
-            ]}
-          />
-          <div className={showCenterFilter ? "sm:col-span-4" : "sm:col-span-3"}>
+          <div className={showCenterFilter ? "sm:col-span-3" : "sm:col-span-2"}>
             <DayPicker
               placeholder={t("group.days")}
               value={filterDays}
@@ -408,6 +407,9 @@ function Groups() {
             />
           </div>
         </FilterBar>
+      )}
+      {!isDesktop && (
+        <GroupStatusTabs value={filterStatus} onChange={changeStatus} count={loading ? null : meta.total} />
       )}
 
       {error ? (
@@ -421,23 +423,37 @@ function Groups() {
       ) : (
         <List
           view="grid"
-          rows={sortedRows}
+          rows={sections}
+          rowKey={(sec) => sec.key}
           /* Kartalar o'zlari "karta" ko'rinishida — yana bir oq/chegarali
-             konteynerga solish qatlamni takrorlagan bo'lardi (/rooms bilan bir xil). */
-          className="!bg-transparent !border-0"
-          gridClassName="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 items-stretch"
-          renderItem={(row) => (
-            <GroupCard
-              group={row}
-              label={groupLabel(row)}
-              centerName={centerMap[row.center]}
-              teacherName={teacherMap[row.teacher]}
-              roomName={row.roomName || roomMap[row.room]}
-              live={liveMap[row._id] || { state: GROUP_STATE.ACTIVE, current: null, next: null }}
-              onClick={() => navigate(`/groups/${row._id}`)}
-              canEditTelegram={canEditTelegram}
-              onTelegramEdit={() => setTelegramTarget(row)}
-            />
+             konteynerga solish qatlamni takrorlagan bo'lardi (/rooms bilan bir xil).
+             Radius ham olib tashlanadi — aks holda burchakdagi bo'lim sarlavhasi
+             ("BUGUN") rounded+overflow-hidden bilan kesilib qoladi. */
+          className="!bg-transparent !border-0 !rounded-none"
+          gridClassName="flex flex-col gap-5"
+          renderItem={(sec) => (
+            <section className="flex flex-col gap-2.5">
+              <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 after:content-[''] after:flex-1 after:h-px after:bg-slate-200 dark:after:bg-night-700">
+                {SECTION_LABEL[sec.key]}
+                <span className="font-jet font-semibold text-slate-500 dark:text-slate-400">{sec.rows.length}</span>
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 items-stretch">
+                {sec.rows.map((row) => (
+                  <GroupCard
+                    key={row._id}
+                    group={row}
+                    label={groupLabel(row)}
+                    centerName={centerMap[row.center]}
+                    teacherName={teacherMap[row.teacher]}
+                    roomName={row.roomName || roomMap[row.room]}
+                    live={liveMap[row._id] || { state: GROUP_STATE.ACTIVE, current: null, next: null }}
+                    onClick={() => navigate(`/groups/${row._id}`)}
+                    canEditTelegram={canEditTelegram}
+                    onTelegramEdit={() => setTelegramTarget(row)}
+                  />
+                ))}
+              </div>
+            </section>
           )}
           loading={loading}
           empty={t("group.empty")}

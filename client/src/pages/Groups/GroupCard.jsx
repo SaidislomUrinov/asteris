@@ -120,7 +120,23 @@ function GroupCard({
           </div>
           <div className="flex flex-col gap-1 min-w-0 flex-1">
             <h3 className="text-lg font-bold leading-tight text-slate-900 dark:text-slate-100 truncate">{label}</h3>
-            <Meta icon={<HiBuildingOffice2 />} value={centerName || "—"} />
+            {/* Holat belgisi — ixcham, filial nomi qatorida (alohida qator
+                egallamaydi). Oddiy faol holat ("Start berilgan") belgilanmaydi —
+                faqat farqli holatlar: dars ketyapti, yaqin orada, yig'ilmoqda,
+                yakunlangan. */}
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="min-w-0">
+                <Meta icon={<HiBuildingOffice2 />} value={centerName || "—"} />
+              </div>
+              {live.state !== GROUP_STATE.ACTIVE && (
+                <span
+                  className={`inline-flex shrink-0 items-center gap-1 px-1.5 py-0.5 rounded-md text-[10.5px] font-semibold leading-none whitespace-nowrap ${s.badge}`}
+                >
+                  <span className={`w-1 h-1 rounded-full ${s.dot}`} />
+                  {t(s.labelKey)}
+                </span>
+              )}
+            </div>
           </div>
           <GroupTelegramBadge
             link={group.telegramLink}
@@ -129,12 +145,6 @@ function GroupCard({
           />
         </div>
 
-        <span
-          className={`inline-flex self-start items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1 ${s.badge}`}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-          {t(s.labelKey)}
-        </span>
 
         {/* Jonli blok — dars ketayotganda progress, aks holda jadval */}
         {current ? (
