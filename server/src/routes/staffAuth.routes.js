@@ -5,13 +5,18 @@ const { staffAuth, fullStaffAuth } = require("../middlewares/authenticator.middl
 
 const router = Router();
 
-// Brute-force himoyasi — bir IP'dan 15 daqiqada 10 martadan ko'p urinish rad etiladi.
-const signInLimiter = rateLimit({
+// Brute-force himoyasi, ikki qavat (Redis'da, barcha worker'lar uchun umumiy):
+// 1) bitta HISOBGA bir IP'dan 15 daqiqada 10 urinish — parol tanlash to'xtaydi;
+// 2) bitta IP'dan jami 60 urinish — ko'p hisobni aylanib "spray" qilish to'xtaydi.
+// Avval faqat IP bo'yicha 10 edi: bitta NAT ortidagi markazda ertalab 10+
+// hodim kirganda qolganlari bloklanib qolardi.
+const accountLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
+  keyGenerator: (req) => `${rateLimit.ipKey(req)}:${String(req.body?.login || "").trim().toLowerCase().slice(0, 64)}`,
 });
+const ipLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 60 });
+const signInLimiter = [ipLimiter, accountLimiter];
 
 // Profil (parol almashtirish `currentPassword` bilan) — parolni tanlab
 // ko'rishdan himoya; signin hisoblagichidan alohida.

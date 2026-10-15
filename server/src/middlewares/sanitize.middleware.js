@@ -14,7 +14,8 @@ const clean = (value, depth = 0) => {
   // Buffer/Date/fayl obyektlari (express-fileupload) — tegilmaydi.
   if (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) return value;
   for (const key of Object.keys(value)) {
-    if (key.startsWith("$")) delete value[key];
+    // `__proto__`/`constructor`/`prototype` — prototype pollution (Object.assign/merge'da).
+    if (key.startsWith("$") || key === "__proto__" || key === "constructor" || key === "prototype") delete value[key];
     else value[key] = clean(value[key], depth + 1);
   }
   return value;

@@ -173,6 +173,9 @@ const initIo = async (httpServer) => {
       methods: ["GET", "POST"],
     },
     transports: ["websocket"],
+    // Mijozlar faqat kichik eventlar yuboradi — 1MB default o'rniga 64KB
+    // (katta payload bilan xotira/CPU'ni band qilishdan himoya).
+    maxHttpBufferSize: 64 * 1024,
   });
 
   // Adapter o'z ulanishlarida: u `publish`ni kutmasdan chaqiradi, shuning

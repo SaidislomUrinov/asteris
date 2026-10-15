@@ -13,7 +13,8 @@ module.exports = {
   // hisoblab, har noto'g'ri tokenda Telegram server-xato alertini yuborardi.
   verify: (token, secret) => {
     try {
-      return jwt.verify(token, secret);
+      // Algoritm qat'iy — boshqa alg (masalan "none"/RS↔HS almashtirish) bilan imzolangan token qabul qilinmaydi.
+      return jwt.verify(token, secret, { algorithms: ["HS256"] });
     } catch {
       throw new Error("auth.failed");
     }

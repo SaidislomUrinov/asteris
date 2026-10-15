@@ -15,7 +15,9 @@ const callbackLimiter = rateLimit({
 
 router.post("/callback", callbackLimiter, async (req, res, next) => {
   try {
-    const orderId = req.body?.order_id || req.query?.order_id;
+    // Faqat satr — obyekt/massiv (`{"order_id":{...}}`) Mongo so'roviga tushmasin.
+    const raw = req.body?.order_id || req.query?.order_id;
+    const orderId = typeof raw === "string" || typeof raw === "number" ? String(raw).slice(0, 100) : "";
     if (!orderId) return res.status(400).send({ ok: false, msg: "inpay.missingOrderId" });
     await subscriptionPaymentService.verifyAndActivate(orderId);
     return res.send({ ok: true });

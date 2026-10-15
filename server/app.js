@@ -33,7 +33,9 @@ app.use(express.urlencoded({ extended: true }));
 // 10MB'dan katta videoni route'ga yetmasdan 413 bilan kesib tashlardi.
 const NEWS_MEDIA_PATH = "/api/admin/news/media";
 const globalFileUpload = fileUpload({
-  limits: { fileSize: 10 * 1024 * 1024 },
+  // `files`/`fields` — bitta so'rovda yuzlab fayl/maydon yuborib xotirani
+  // to'ldirishdan himoya (fayllar xotirada saqlanadi).
+  limits: { fileSize: 10 * 1024 * 1024, files: 10, fields: 200 },
   abortOnLimit: true,
   // 413 oddiy matn ("File size limit has been reached") o'rniga JSON.
   limitHandler: (req, res) => res.send({ ok: false, msg: "common.fileTooLarge" }),
@@ -62,6 +64,16 @@ app.use(
 // "rolling counter" yozadi; `/api/health` va `/uploads` o'lchanmaydi (shovqin).
 app.use(require("./src/middlewares/metrics.middleware"));
 
+// DDoS/suiiste'mol himoyasi (Redis'da, barcha worker'lar uchun umumiy) —
+// bitta IP'dan daqiqasiga 1200 so'rov. Bir NAT ortida o'nlab hodim ishlaydigan
+// markaz uchun ham yetarli zaxira; bundan oshishi — skript/hujum. Taqsimlangan
+// (ko'p IP'li) hujumdan nginx/Cloudflare darajasida himoyalanadi.
+const rateLimit = require("./src/utils/rateLimit.util");
+app.use("/api", rateLimit({ name: "api", windowMs: 60 * 1000, limit: 1200 }));
+// Excel eksport — og'ir (butun ro'yxat + exceljs, CPU). Daqiqasiga 20 ta.
+const exportLimiter = rateLimit({ name: "export", windowMs: 60 * 1000, limit: 20 });
+app.use("/api", (req, res, next) => (/\/export\/?$/.test(req.path) ? exportLimiter(req, res, next) : next()));
+
 app.use("/api", router);
 
 app.use(errorHandler);
@@ -76,8 +88,19 @@ process.on("unhandledRejection", (reason) => {
 
 const start = async () => {
   const server = http.createServer(app);
+  // Slowloris kabi sekin ulanishlardan himoya: sarlavhalar 20 s ichida kelishi
+  // shart. `requestTimeout` 10 daqiqa — 100MB yangilik videosi sekin internetda
+  // ham yuklanib ulgursin (qolgan so'rovlar bundan ancha tez tugaydi).
+  server.headersTimeout = 20 * 1000;
+  server.requestTimeout = 10 * 60 * 1000;
+  server.keepAliveTimeout = 65 * 1000;
 
   ensureFolders();
+  // sharp: keshsiz va cluster'da worker boshiga 1 oqim — aks holda har worker
+  // CPU yadrolari sonicha libvips oqimi ochib, rasm yuklanganda RAM/CPU portlardi.
+  const sharp = require("sharp");
+  sharp.cache(false);
+  if (env.NODE_ENV === "production") sharp.concurrency(1);
   await connectDB();
   await initIo(server);
 
@@ -114,7 +137,9 @@ const start = async () => {
 // Faqat productionda: dev'da bitta protsess qulayroq (nodemon qayta ishga
 // tushirishi, log'lar aralashmasligi, debugger ulanishi).
 if (env.NODE_ENV === "production" && cluster.isPrimary) {
-  const count = env.CLUSTER_WORKERS || availableParallelism();
+  // Har worker ~190MB RAM: default 4 tadan oshmaydi (8 yadroli serverda
+  // 8 worker ~1.5GB edi). Ko'proq kerak bo'lsa CLUSTER_WORKERS bilan.
+  const count = env.CLUSTER_WORKERS || Math.min(availableParallelism(), 4);
   console.log(`Primary ${process.pid} starting ${count} workers`);
 
   for (let i = 0; i < count; i++) cluster.fork();
