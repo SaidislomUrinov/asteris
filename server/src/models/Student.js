@@ -2,9 +2,11 @@ const { Schema, model } = require("mongoose");
 const { normalizePhone, normalizeTelegramPhone, setTelegramPhone } = require("../utils/phone.util");
 const { formatDate, getNow } = require("../utils/date.util");
 
-// O'quvchi telefon raqam asosida yagona hujjat (CLAUDE.md "Ma'lumotlar
-// modeli") — `client` maydoni hujjat darajasida YO'Q, bir kishi ko'p
-// Client/Center/Group'ga `groups[]` orqali bog'lanadi. Har bir `groups[]`
+// O'quvchi MIJOZ (brend) darajasida (docs/API_CONTRACT_student_per_client.md):
+// har mijozning o'z hujjati (`client`), mijoz ichidagi filiallar va guruhlar
+// `groups[]` orqali bog'lanadi. Bir kishi bir nechta brendda o'qisa — har
+// brendda alohida hujjat; ota-ona WebApp'i ularni telefon+ism bo'yicha
+// bitta "shaxs"ga birlashtiradi (parent.service). Har bir `groups[]`
 // elementi bitta guruhga yozilishni, shu guruh uchun kelishilgan narxni va
 // bo'lib-bo'lib to'lovlar tarixini (`payments[]`) alohida saqlaydi — CLAUDE.md
 // "To'lov (Payment)": moliyaviy yozuvlar hech qachon o'chirilmaydi, faqat
@@ -215,6 +217,18 @@ const groupEntrySchema = new Schema(
 );
 
 const schema = new Schema({
+  // Egasi — mijoz (brend). Migratsiyadan oldingi guruhsiz eski hujjatda null.
+  client: {
+    type: Schema.Types.ObjectId,
+    ref: "Client",
+    default: null,
+  },
+  // Migratsiyada bir nechta mijozga bo'lingan bo'lsa — asl hujjat _id'si
+  // (src/scripts/migrate-student-clients.js). Tarix va audit uchun.
+  splitFrom: {
+    type: Schema.Types.ObjectId,
+    default: null,
+  },
   // Bitta o'quvchi bir nechta farzand uchun bitta ota-ona telefon raqamidan
   // foydalanishi mumkin (API_CONTRACT.md §2) — endi UNIQUE emas, faqat
   // qidiruv tezligi uchun oddiy index. Eski unique index Mongo'da hali
@@ -279,6 +293,8 @@ const schema = new Schema({
   // Partial index faqat STRING qiymatlarni indekslaydi, tokensiz
   // o'quvchilar qancha bo'lsa ham to'qnashmaydi (Client.phone bilan
   // bir xil naqsh).
+  // ESKI: bitta umumiy QR (barcha markazlar uchun). 2026-10-16 dan faqat
+  // migratsiya manbai — yangi kod o'qimaydi/yozmaydi (`qrTokens`ga qarang).
   qrToken: {
     type: String,
     default: null,
@@ -286,6 +302,20 @@ const schema = new Schema({
       unique: true,
       partialFilterExpression: { qrToken: { $type: "string" } },
     },
+  },
+  // QR davomat kartasi MIJOZ (brend) bo'yicha alohida: har markaz o'z kartasini
+  // beradi, kod faqat o'sha markaz skanerida ishlaydi va "yangilash" faqat o'z
+  // kartasini bekor qiladi. Migratsiyada eski `qrToken` o'quvchining barcha
+  // mijozlariga boshlang'ich qiymat sifatida ko'chiriladi (eski kartalar ishlaydi).
+  qrTokens: {
+    type: [
+      {
+        _id: false,
+        client: { type: Schema.Types.ObjectId, ref: "Client", required: true },
+        token: { type: String, required: true },
+      },
+    ],
+    default: [],
   },
   groups: {
     type: [groupEntrySchema],
@@ -341,6 +371,14 @@ schema.virtual("lastUpdate").get(function () {
 schema.index({ "groups.client": 1, "groups.center": 1 });
 schema.index({ "groups.group": 1, "groups.status": 1 });
 schema.index({ isDeleted: 1 });
+schema.index({ client: 1, phone: 1 });
+schema.index({ client: 1, isDeleted: 1 });
+// QR skan: token bo'yicha qidiruv. Unique — boshqa o'quvchilar orasida (bitta
+// o'quvchining bir nechta mijozida migratsiyadan qolgan bir xil token ruxsat).
+schema.index(
+  { "qrTokens.token": 1 },
+  { unique: true, partialFilterExpression: { "qrTokens.token": { $type: "string" } } },
+);
 // Rasm fayli ref-count so'rovi (`Student.exists({ "photos.path": p })`).
 schema.index({ "photos.path": 1 });
 // Ota-ona botda raqam bo'yicha farzandlarini topadi (bo'sh satr ko'p — partial).

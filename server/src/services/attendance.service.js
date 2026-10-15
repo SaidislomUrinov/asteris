@@ -155,8 +155,33 @@ const pickGroupByTime = (groups, now) => {
 const uniqueQrToken = async () => {
   for (;;) {
     const token = crypto.randomBytes(16).toString("hex");
-    if (!(await Student.exists({ qrToken: token }))) return token;
+    if (!(await Student.exists({ $or: [{ "qrTokens.token": token }, { qrToken: token }] }))) return token;
   }
+};
+
+// QR karta MIJOZ bo'yicha (Student.qrTokens) — har markazning o'z kodi.
+const qrTokenOf = (student, clientId) =>
+  (student.qrTokens || []).find((t) => String(t.client) === String(clientId))?.token || null;
+
+// Shu mijoz uchun tokenni beradi; yo'q bo'lsa yoki `reset` — yangisini yozadi.
+// Atomar: parallel so'rov ikkinchi yozuv qo'shib qo'ymaydi, boshqa mijozlarning
+// kartasiga umuman tegmaydi.
+const ensureQrToken = async (student, clientId, reset = false) => {
+  const current = qrTokenOf(student, clientId);
+  if (current && !reset) return current;
+  const token = await uniqueQrToken();
+  if (current) {
+    await Student.updateOne({ _id: student._id, "qrTokens.client": clientId }, { $set: { "qrTokens.$.token": token } });
+    return token;
+  }
+  const res = await Student.updateOne(
+    { _id: student._id, "qrTokens.client": { $ne: clientId } },
+    { $push: { qrTokens: { client: clientId, token } } },
+  );
+  if (res.modifiedCount) return token;
+  // Parallel so'rov ulgurib yozgan — o'shanikini qaytaramiz.
+  const fresh = await Student.findById(student._id).select("qrTokens").lean();
+  return qrTokenOf(fresh, clientId);
 };
 
 // `group.name` IXTIYORIY qo'lda qo'yilgan nom — bo'lmasa (default `null`,
@@ -507,10 +532,8 @@ module.exports = {
     // qo'shimcha ravishda faqat O'Z FILIALI o'quvchisi.
     const { student, entries } = await scopedStudentEntries(clientId, studentId, staffCenterId);
 
-    if (!student.qrToken || reset) {
-      student.qrToken = await uniqueQrToken();
-      await student.save();
-    }
+    // "Yangilash" faqat SHU mijozning kartasini bekor qiladi.
+    const qrToken = await ensureQrToken(student, clientId, reset);
 
     // Karta uchun: markaz nomi/logosi va o'quvchining FAOL guruhlari.
     const active = entries.filter((g) => g.status === "active");
@@ -527,7 +550,7 @@ module.exports = {
       studentId: String(student._id),
       fullName: student.fullName,
       phone: student.phone,
-      qrToken: student.qrToken,
+      qrToken,
       center: { name: center?.name || "", logo: center?.logo || "" },
       groups: groups.map((g) => groupDisplayLabel(g, subjectMap[String(g.subject)])).filter(Boolean),
     };
@@ -603,27 +626,20 @@ module.exports = {
         isDeleted: false,
         groups: { $elemMatch: { group: group._id, client: clientId, status: "active" } },
       })
-        .select("fullName qrToken")
+        .select("fullName qrTokens")
         .sort({ fullName: 1 }),
       Center.findOne({ _id: group.center, client: clientId }).select("name logo"),
       Subject.findById(group.subject).select("name"),
     ]);
 
-    const ops = [];
-    for (const s of students) {
-      if (!s.qrToken) {
-        s.qrToken = await uniqueQrToken();
-        ops.push({
-          updateOne: { filter: { _id: s._id, qrToken: { $not: { $type: "string" } } }, update: { $set: { qrToken: s.qrToken } } },
-        });
-      }
-    }
-    if (ops.length) await Student.bulkWrite(ops);
+    // Shu mijoz kodi yo'q o'quvchilarga yaratiladi (boshqa markazlar kartasiga tegilmaydi).
+    const tokens = new Map();
+    for (const s of students) tokens.set(String(s._id), await ensureQrToken(s, clientId));
 
     return {
       center: { name: center?.name || "", logo: center?.logo || "" },
       group: { _id: String(group._id), name: groupDisplayLabel(group, subject?.name) },
-      students: students.map((s) => ({ _id: String(s._id), fullName: s.fullName, qrToken: s.qrToken })),
+      students: students.map((s) => ({ _id: String(s._id), fullName: s.fullName, qrToken: tokens.get(String(s._id)) })),
     };
   },
 
@@ -643,7 +659,12 @@ module.exports = {
     if (typeof token !== "string") throw new Error("attendance.invalidQr");
     if (!token) throw new Error("attendance.invalidQr");
 
-    const student = await Student.findOne({ qrToken: token, isDeleted: false });
+    // Kod faqat O'Z markazining skanerida ishlaydi — boshqa markaz bergan
+    // karta (o'quvchi shu yerda ham o'qisa ham) yaroqsiz deb hisoblanadi.
+    const student = await Student.findOne({
+      isDeleted: false,
+      qrTokens: { $elemMatch: { client: clientId, token } },
+    });
     if (!student) throw new Error("attendance.invalidQr");
 
     const dayCode = todayDayCode();

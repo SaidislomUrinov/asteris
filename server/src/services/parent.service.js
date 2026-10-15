@@ -80,6 +80,33 @@ const effectiveRole = async (parent, counts = null) => {
 // Farzandlar (yoki o'quvchining o'zi) — rolga mos, o'chirilmagan o'quvchilar.
 // Faqat aktiv a'zoliklar hisobga olinadi; markaz nomi bilan birga qaytadi
 // (bot xabari uchun).
+// O'quvchi MIJOZ darajasida (docs/API_CONTRACT_student_per_client.md §3): bir bola
+// bir nechta brendda o'qisa — har brendda alohida hujjat. Ota-ona/o'quvchi uchun
+// ular bitta "shaxs" — kalit: telefon + normallashgan ism (aka-uka bitta raqamda
+// bo'lsa ismi farq qiladi). Birinchi (eng eski) hujjat ID'si — shaxsning
+// barqaror ID'si (WebApp `/child/:id` manzili).
+const personKey = (s) =>
+  `${String(s.phone || "").trim()}|${String(s.fullName || "").trim().toLowerCase().replace(/\s+/g, " ")}`;
+const groupPersons = (students) => {
+  const map = new Map();
+  for (const s of students) {
+    const k = personKey(s);
+    if (!map.has(k)) map.set(k, []);
+    map.get(k).push(s);
+  }
+  // Asl hujjat (migratsiyada bo'linmagan) birinchi — shaxs ID'si o'zgarmasin.
+  return [...map.values()].map((docs) =>
+    docs.sort(
+      (a, b) =>
+        (a.splitFrom ? 1 : 0) - (b.splitFrom ? 1 : 0) ||
+        (a.createdAt || 0) - (b.createdAt || 0) ||
+        String(a._id).localeCompare(String(b._id)),
+    ),
+  );
+};
+// Shaxsning barcha hujjatlaridagi eng so'nggi rasm.
+const personPhoto = (docs) => latestPhoto({ photos: docs.flatMap((d) => d.photos || []) });
+
 const findChildren = async (rawPhone, role = "parent") => {
   const phone = tgPhone(rawPhone);
   if (!phone) return [];
@@ -87,7 +114,7 @@ const findChildren = async (rawPhone, role = "parent") => {
     isDeleted: false,
     ...roleMatch(role, phone),
   })
-    .select("fullName phone parentPhone photos groups.group groups.center groups.client groups.status")
+    .select("fullName phone parentPhone photos createdAt splitFrom groups.group groups.center groups.client groups.status")
     .lean();
   if (!students.length) return [];
 
@@ -104,8 +131,9 @@ const findChildren = async (rawPhone, role = "parent") => {
   const subjectName = Object.fromEntries(subjects.map((x) => [String(x._id), x.name]));
   const groupName = Object.fromEntries(groups.map((g) => [String(g._id), groupLabelOf(g, subjectName[String(g.subject)])]));
 
-  return students.map((s) => {
-    const active = s.groups.filter((g) => g.status === "active" && centerName[String(g.center)]);
+  return groupPersons(students).map((docs) => {
+    const s = docs[0];
+    const active = docs.flatMap((d) => d.groups).filter((g) => g.status === "active" && centerName[String(g.center)]);
     const byCenter = new Map();
     for (const g of active) {
       const k = String(g.center);
@@ -120,7 +148,7 @@ const findChildren = async (rawPhone, role = "parent") => {
       isSelf: role === "student",
       centers: [...byCenter.values()],
       // Ota-ona cross-tenant — eng so'nggi rasm (API_CONTRACT_student_photo_everywhere.md §1).
-      photo: latestPhoto(s),
+      photo: personPhoto(docs),
     };
   });
 };
@@ -433,9 +461,13 @@ const children = async (parent) => {
   const todayMap = new Map(todaySessions.map((a) => [String(a.group), a]));
 
   const result = [];
-  for (const student of students) {
-    const sid = String(student._id);
-    const own = student.groups.filter(keepEntry);
+  for (const docs of groupPersons(students)) {
+    const student = docs[0];
+    // Shaxsning barcha brenddagi hujjatlari — davomat/baho yozuvlari har
+    // hujjat ID'si bilan, rasm esa a'zolik qaysi hujjatda bo'lsa o'shandan.
+    const sids = new Set(docs.map((d) => String(d._id)));
+    const docOfEntry = new Map(docs.flatMap((d) => d.groups.map((g) => [String(g._id), d])));
+    const own = docs.flatMap((d) => d.groups.filter(keepEntry));
     const ownActiveGroups = new Set(own.filter((g) => g.status === "active").map((g) => String(g.group)));
 
     // Stats — faqat ULANGAN markaz guruhlari bo'yicha (ma'lumot berilmaydigan
@@ -447,12 +479,12 @@ const children = async (parent) => {
     let marked = 0;
     for (const a of attSessions) {
       if (!statGroups.has(String(a.group))) continue;
-      const r = a.records.find((x) => String(x.student) === sid);
+      const r = a.records.find((x) => sids.has(String(x.student)));
       if (!r) continue;
       marked++;
       if (r.status === "present") present++;
     }
-    const myGrades = grades.filter((g) => String(g.student) === sid && statGroups.has(String(g.group)));
+    const myGrades = grades.filter((g) => sids.has(String(g.student)) && statGroups.has(String(g.group)));
     const avgGrade = myGrades.length ? Math.round((myGrades.reduce((s, g) => s + g.value, 0) / myGrades.length) * 10) / 10 : null;
 
     let totalDebt = 0;
@@ -484,7 +516,7 @@ const children = async (parent) => {
       // kiradi — u to'lanmaguncha ota-onaga ko'rinishi kerak.
       totalDebt += billing.debt || 0;
 
-      const rec = todayMap.get(String(group._id))?.records?.find((r) => String(r.student) === sid) || null;
+      const rec = todayMap.get(String(group._id))?.records?.find((r) => sids.has(String(r.student))) || null;
       const name = groupLabelOf(group, subjectName.get(String(group.subject)));
       bucket.groups.push({
         entryId: entry._id,
@@ -506,7 +538,7 @@ const children = async (parent) => {
         todayStatus: rec?.status || null,
         late: !!rec?.late,
         // Guruh filialidagi (Client) rasm — API_CONTRACT_parent_group_photo.md
-        photo: photoFor(student, entry.client || center.client),
+        photo: photoFor(docOfEntry.get(String(entry._id)) || student, entry.client || center.client),
       });
       if (status === "active" && ownActiveGroups.has(String(group._id)) && (group.days || []).includes(todayCode) && group.status === "active") {
         todayList.push({
@@ -524,10 +556,13 @@ const children = async (parent) => {
     result.push({
       student: {
         _id: student._id,
+        // Shaxsning barcha hujjat ID'lari (bir nechta brend) — WebApp eski
+        // havolalarni ham shu bola kartasiga moslay oladi.
+        ids: [...sids],
         fullName: student.fullName,
         phone: student.phone,
         isSelf: role === "student",
-        photo: latestPhoto(student),
+        photo: personPhoto(docs),
       },
       stats: {
         attendancePercent: marked ? Math.round((present / marked) * 100) : 0,

@@ -10,7 +10,10 @@ export const ChildrenProvider = ({ children }) => {
   const req = useRequest(getChildren, []);
   const value = useMemo(() => {
     const list = req.data || [];
-    const findChild = (sid) => list.find((c) => c.student._id === sid) || null;
+    // Bola bir nechta brendda o'qisa server ularni bitta kartaga birlashtiradi —
+    // istalgan hujjat ID'si (`student.ids`) bilan ham topiladi.
+    const findChild = (sid) =>
+      list.find((c) => c.student._id === sid || (c.student.ids || []).includes(sid)) || null;
     const findEntry = (eid) => {
       for (const c of list)
         for (const ce of c.centers)

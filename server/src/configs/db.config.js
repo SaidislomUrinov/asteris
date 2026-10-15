@@ -5,6 +5,9 @@ const { getHash } = require("../utils/hash.util");
 const migrateGradeScale = require("../scripts/migrate-grade-scale");
 const migrateChatParticipants = require("../scripts/migrate-chat-participants");
 const migrateStudentPhotos = require("../scripts/migrate-student-photos");
+const migrateMultiCenter = require("../scripts/migrate-multi-center");
+const migrateQrTokens = require("../scripts/migrate-qr-tokens");
+const migrateStudentClients = require("../scripts/migrate-student-clients");
 
 const seedOwnerAdmin = async () => {
   try {
@@ -52,6 +55,22 @@ const connectDB = async () => {
       await migrateStudentPhotos();
     } catch (err) {
       console.error("O'quvchi rasmlari migratsiya xatosi:", err.message);
+    }
+    try {
+      await migrateMultiCenter();
+    } catch (err) {
+      console.error("Ko'p filial migratsiya xatosi:", err.message);
+    }
+    try {
+      await migrateQrTokens();
+    } catch (err) {
+      console.error("QR kartalar migratsiya xatosi:", err.message);
+    }
+    // QR migratsiyasidan KEYIN — qrTokens mijozlar bo'yicha bo'linadi.
+    try {
+      await migrateStudentClients();
+    } catch (err) {
+      console.error("O'quvchilar (mijoz bo'yicha) migratsiya xatosi:", err.message);
     }
   } catch (err) {
     console.error("MongoDB connection error:", err.message);

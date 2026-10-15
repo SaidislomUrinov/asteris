@@ -389,7 +389,7 @@ module.exports = {
           phone: lead.phone,
           fullName: new RegExp(`^${escapeRegex(lead.fullName)}$`, "i"),
           isDeleted: false,
-          "groups.client": clientId,
+          client: clientId,
         }).select("_id");
 
         const student = await studentService.create(clientId, {

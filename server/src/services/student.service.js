@@ -1272,24 +1272,19 @@ module.exports = {
     const trimmed = typeof phone === "string" ? phone.trim() : "";
     if (!trimmed) return [];
 
-    const students = await Student.find({ phone: trimmed, isDeleted: false }).select(
-      "fullName phone parentPhone photos telegramSame telegramPhone parentTelegramSame parentTelegramPhone groups.client",
+    // FAQAT shu mijoz o'quvchilari (docs/API_CONTRACT_student_per_client.md §2):
+    // boshqa brend o'quvchisining ismi/rasmi hech qachon ko'rinmaydi.
+    const students = await Student.find({ client: clientId, phone: trimmed, isDeleted: false }).select(
+      "fullName phone parentPhone photos telegramSame telegramPhone parentTelegramSame parentTelegramPhone",
     );
 
-    return students.map((student) => {
-      const own = (student.groups || []).some((g) => String(g.client) === String(clientId));
-      return own
-        ? {
-            _id: student._id,
-            fullName: student.fullName,
-            parentPhone: student.parentPhone,
-            ...telegramFieldsOf(student),
-            photo: photoFor(student, clientId),
-          }
-        : // Boshqa client o'quvchisi — tanlashda yuz ko'rinsin: eng so'nggi
-          // rasm (qo'shilganda aynan shu rasm shu client'ga nusxalanadi).
-          { _id: student._id, fullName: student.fullName, photo: latestPhoto(student), shared: true };
-    });
+    return students.map((student) => ({
+      _id: student._id,
+      fullName: student.fullName,
+      parentPhone: student.parentPhone,
+      ...telegramFieldsOf(student),
+      photo: photoFor(student, clientId),
+    }));
   },
 
   // Yangi o'quvchi yaratadi YOKI (agar shu telefon raqam bilan hujjat
@@ -1348,7 +1343,8 @@ module.exports = {
     // `findOne({ phone })` merge xatti-harakati olib tashlandi).
     if (existingStudentId) {
       if (!Types.ObjectId.isValid(existingStudentId)) throw new Error("student.notFound");
-      student = await Student.findOne({ _id: existingStudentId, isDeleted: false });
+      // Hujjat SHU mijozniki bo'lishi shart (o'quvchi mijoz darajasida).
+      student = await Student.findOne({ _id: existingStudentId, client: clientId, isDeleted: false });
       if (!student) throw new Error("student.notFound");
       // Telefon mos kelishi SHART — aks holda ID'ni bilgan har kim istalgan
       // (boshqa markazdagi) o'quvchini o'z guruhiga biriktira olardi.
@@ -1361,7 +1357,12 @@ module.exports = {
     } else {
       if (!fullName) throw new Error("student.fillTheRows");
       if (!STUDENT_PHONE_RE.test(trimmedPhone)) throw new Error("student.invalidPhone");
-      student = new Student({ phone: trimmedPhone, fullName: fullName.trim(), parentPhone: parentPhone || "" });
+      student = new Student({
+        client: clientId,
+        phone: trimmedPhone,
+        fullName: fullName.trim(),
+        parentPhone: parentPhone || "",
+      });
     }
 
     // Tarif `studentLimit`i — FAQAT shu client uchun hali faol bo'lmagan
