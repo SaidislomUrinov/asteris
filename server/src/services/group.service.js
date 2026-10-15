@@ -84,6 +84,7 @@ const DTO = (
   _id: data?._id,
   kind: data?.kind === "individual" ? "individual" : "group",
   teacherPercent: hideFinance ? null : data?.teacherPercent ?? null,
+  coinsEnabled: data?.kind === "individual" ? !!data?.coinsEnabled : true,
   individualStudent: data?.kind === "individual" ? individualStudent : null,
   client: data?.client,
   center: data?.center,
@@ -556,6 +557,7 @@ module.exports = {
       subject: subject._id,
       teacher: teacher._id,
       teacherPercent,
+      coinsEnabled: body.coinsEnabled === true,
       assistant: null,
       room: room?._id || null,
       days: days || [],
@@ -613,6 +615,10 @@ module.exports = {
         changes.push({ field: "teacherPercent", from: group.teacherPercent, to: percent });
         group.teacherPercent = percent;
       }
+    }
+    if (typeof body.coinsEnabled === "boolean" && body.coinsEnabled !== !!group.coinsEnabled) {
+      changes.push({ field: "coinsEnabled", from: !!group.coinsEnabled, to: body.coinsEnabled });
+      group.coinsEnabled = body.coinsEnabled;
     }
     if (body.teacherId !== undefined && body.teacherId !== null && body.teacherId !== "") {
       const teacher = await validateTeacher(clientId, group.center, body.teacherId);

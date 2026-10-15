@@ -62,6 +62,9 @@ router.use("/dashboard", require("./routes/dashboard.routes"));
 router.use("/expenses", require("./routes/expense.routes"));
 router.use("/grades", require("./routes/grade.routes"));
 router.use("/homework", require("./routes/homework.routes"));
+// WECOIN va filial do'koni (API_CONTRACT_wecoin.md §3).
+router.use("/coins", require("./routes/coin.routes"));
+router.use("/shop", require("./routes/shop.routes"));
 router.use("/reports", require("./routes/report.routes"));
 // Audit jurnali — faqat Client Owner (`audit.routes.js` ichida `requireOwner`).
 router.use("/audit-logs", require("./routes/audit.routes"));

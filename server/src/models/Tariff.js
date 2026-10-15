@@ -75,6 +75,7 @@ const schema = new Schema({
       "finance.report", // Moliyaviy hisobotlar
 
       "gamification.badges", // O'quvchi yutuq nishonlari (oylik badge'lar)
+      "gamification.coins", // WECOIN tangalari va filial do'koni
 
       "ai.report", // AI hisobotlari
       "ai.advice", // AI tavsiyalari va maslahatlari

@@ -31,3 +31,26 @@ export const sendQrCard = (entryId, blob) => {
   fd.append("card", new File([blob], `qr-${entryId}.png`, { type: "image/png" }));
   return request("post", `/parent/entries/${entryId}/qr-card/send`, fd);
 };
+
+// WECOIN va filial do'koni (docs/API_CONTRACT_wecoin.md §4). `/parent/coins`
+// tab bar, bosh sahifa va WECOIN sahifasida birga ishlatiladi — qisqa kesh
+// (xarid/like'dan keyin `fresh` bilan yangilanadi).
+let coinsCache = null;
+export const getCoins = (fresh = false) => {
+  if (!fresh && coinsCache && Date.now() - coinsCache.at < 30000) return coinsCache.promise;
+  const promise = request("get", "/parent/coins").catch((e) => {
+    coinsCache = null;
+    throw e;
+  });
+  coinsCache = { at: Date.now(), promise };
+  return promise;
+};
+export const invalidateCoins = () => {
+  coinsCache = null;
+};
+export const getCoinShop = (studentId, centerId) => request("get", `/parent/coins/${studentId}/${centerId}/shop`);
+export const buyProduct = (studentId, centerId, productId) =>
+  request("post", `/parent/coins/${studentId}/${centerId}/shop/${productId}/buy`);
+export const likeProduct = (studentId, centerId, productId) =>
+  request("post", `/parent/coins/${studentId}/${centerId}/shop/${productId}/like`);
+export const getCoinHistory = (studentId, centerId) => request("get", `/parent/coins/${studentId}/${centerId}/history`);

@@ -127,6 +127,15 @@ const PERMISSION_GROUPS = [
       { key: "expense:update", labelKey: "common.edit" },
     ],
   },
+  // WECOIN va filial do'koni (docs/API_CONTRACT_wecoin.md §6) — qoidalar,
+  // mahsulotlar va buyurtmalarni topshirish/qaytarish `coin:manage`.
+  {
+    titleKey: "staff.groupCoins",
+    items: [
+      { key: "coin:view", labelKey: "staff.actionView" },
+      { key: "coin:manage", labelKey: "staff.actionCoinManage" },
+    ],
+  },
   {
     titleKey: "staff.groupCertificate",
     items: [

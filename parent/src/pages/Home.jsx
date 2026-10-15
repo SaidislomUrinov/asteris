@@ -7,6 +7,7 @@ import { Avatar, SectionLabel } from "../components/Card";
 import { TodayCard } from "../components/TodayCard";
 import { ChildCard } from "../components/ChildCard";
 import { RecentNotifications } from "../components/RecentNotifications";
+import { CoinBalanceCard } from "../components/CoinBalanceCard";
 import { ListSkeleton, Skeleton } from "../components/Skeleton";
 import { EmptyState, ErrorState } from "../components/States";
 import { useAuth } from "../contexts/auth";
@@ -73,6 +74,8 @@ export const Home = () => {
           </div>
         </>
       )}
+
+      <CoinBalanceCard />
 
       <RecentNotifications />
     </Page>

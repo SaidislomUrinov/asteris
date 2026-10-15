@@ -7,6 +7,7 @@ import { Avatar, Card, Pill, SectionLabel } from "../components/Card";
 import { TodayCard } from "../components/TodayCard";
 import { StudentGroupCard } from "../components/StudentGroupCard";
 import { RecentNotifications } from "../components/RecentNotifications";
+import { CoinBalanceCard } from "../components/CoinBalanceCard";
 import { ListSkeleton, Skeleton } from "../components/Skeleton";
 import { EmptyState, ErrorState } from "../components/States";
 import { useAuth } from "../contexts/auth";
@@ -75,6 +76,8 @@ export const StudentHome = () => {
       ) : (
         <>
           <TodayCard lessons={today} showStudent={false} tab="homework" />
+
+          <CoinBalanceCard />
 
           <SectionLabel>{t("student.home.groups")}</SectionLabel>
           {active.length === 0 ? (

@@ -126,7 +126,8 @@ function Notifications() {
         // jim
       }
     }
-    if (item.data?.groupId) navigate(`/groups/${item.data.groupId}`);
+    if (item.type === "shop:order") navigate(`/coins?tab=orders&center=${item.data?.centerId || ""}`);
+    else if (item.data?.groupId) navigate(`/groups/${item.data.groupId}`);
   };
 
   const markAll = async () => {

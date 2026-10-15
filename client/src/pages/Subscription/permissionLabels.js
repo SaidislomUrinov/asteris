@@ -19,6 +19,7 @@ export const TARIFF_FEATURE_KEYS = [
   "student.rate",
   "student.transfer",
   "gamification.badges",
+  "gamification.coins",
   "attendance.qr",
   "attendance.report",
   "room.control",

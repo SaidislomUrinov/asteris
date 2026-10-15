@@ -48,6 +48,8 @@ export const PERMISSION_CATALOG = [
     module: "gamification",
     items: [
       { key: "gamification.badges" },
+      // WECOIN tangalari va filial do'koni — docs/API_CONTRACT_wecoin.md.
+      { key: "gamification.coins" },
     ],
   },
   {

@@ -99,4 +99,6 @@ module.exports = {
   badgesLock: (month) => `scheduler:badges:${month}:lock`,
   // Ikkinchi bosqich — ota-onaga Telegram xabari yuborildi.
   badgesNotified: (month) => `scheduler:badges:${month}:notified`,
+  // WECOIN oy yakuni tarqatish (API_CONTRACT_wecoin.md §5) — badge'lardan keyin.
+  coinsDone: (month) => `scheduler:coins:${month}`,
 };

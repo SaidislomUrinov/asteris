@@ -28,6 +28,7 @@ import {
 import Button from "../../ui/Button";
 import GradeSummary from "./GradeSummary";
 import StudentBadges from "./StudentBadges";
+import StudentCoinsCard from "./StudentCoinsCard";
 import IconButton from "../../ui/IconButton";
 import DropMenu from "../../ui/DropMenu";
 import Dialog from "../../ui/Dialog";
@@ -448,7 +449,8 @@ function StudentDetail() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {/* auto-fit: WECOIN kartasi yo'q bo'lsa 3 ustun, bor bo'lsa 4 ustun bo'sh joysiz. */}
+      <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
         <InfoCard
           media={<StudentPhotoAvatar student={student} onUpdated={applyPhoto} />}
           title={student.fullName}
@@ -489,6 +491,8 @@ function StudentDetail() {
           suffix={hideFinance ? "" : t("student.somSuffix")}
           accent={totalDebt > 0 ? "red" : "emerald"}
         />
+
+        <StudentCoinsCard studentId={id} />
       </div>
 
       <p className="font-semibold text-slate-800 dark:text-slate-100">{t("nav.groups")}</p>

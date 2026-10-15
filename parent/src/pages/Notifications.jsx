@@ -14,9 +14,9 @@ import { cn } from "../utils/cn";
 import { useAuth } from "../contexts/auth";
 import { useRoleT } from "../hooks/useRoleT";
 
-const FILTERS = ["", "parent:attendance", "parent:lessonFinished", "parent:payment", "parent:debt", "parent:badge"];
+const FILTERS = ["", "parent:attendance", "parent:lessonFinished", "parent:homeworkMissed", "parent:payment", "parent:debt", "parent:badge", "parent:coin"];
 // O'quvchi roliga keladigan turlar (kontrakt §5)
-const STUDENT_FILTERS = ["", "parent:lessonFinished", "parent:homework", "parent:lessonReminder", "parent:badge"];
+const STUDENT_FILTERS = ["", "parent:lessonFinished", "parent:homework", "parent:homeworkMissed", "parent:lessonReminder", "parent:badge", "parent:coin", "parent:shop"];
 
 const dayKey = (ts) => {
   const d = toDate(ts);

@@ -35,6 +35,7 @@ export const NAV_SECTIONS = [
   { path: "/finance", titleKey: "nav.financeSection" },
   { path: "/reports/teacher-performance", titleKey: "nav.financeSection" },
   { path: "/certificates", titleKey: "nav.certificates" },
+  { path: "/coins", titleKey: "nav.coins" },
   { path: "/archive", titleKey: "nav.settings" },
   { path: "/audit-log", titleKey: "nav.settings" },
   { path: "/reports", titleKey: "nav.financeSection" },

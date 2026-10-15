@@ -33,7 +33,7 @@ const INIT_DATA_MAX_AGE_SEC = 24 * 3600;
 const LANGS = ["uz", "ru", "en"];
 const ROLES = ["parent", "student"];
 // Rolga qarab o'chiriladigan/e'tiborsiz qoldiriladigan mute kalitlari.
-const MUTE_KEYS = ["attendance", "lessonFinished", "payment", "debt", "lessonReminder", "homework", "badge"];
+const MUTE_KEYS = ["attendance", "lessonFinished", "payment", "debt", "lessonReminder", "homework", "homeworkMissed", "badge"];
 const STUDENT_IGNORED_MUTE = ["debt", "payment"];
 
 // ---------------------------------------------------------------------------
@@ -714,8 +714,8 @@ const allPayments = async (parent) => {
 // Rol almashtirilganda eski rolning xabarlari ko'rinmasin (o'quvchiga eski
 // qarz/to'lov xabarlari chiqmasin) — ro'yxat parentNotification TYPE_ROLES bilan mos.
 const ROLE_NOTIF_TYPES = {
-  parent: ["attendance", "payment", "lessonFinished", "debt", "badge"],
-  student: ["lessonFinished", "homework", "lessonReminder", "badge"],
+  parent: ["attendance", "payment", "lessonFinished", "homeworkMissed", "debt", "badge", "coin"],
+  student: ["lessonFinished", "homework", "homeworkMissed", "lessonReminder", "badge", "coin", "shop"],
 };
 const notifications = async (parent, { page = 1, type = "" } = {}) => {
   const pageNum = Math.max(1, Number(page) || 1);
@@ -844,7 +844,7 @@ const entryBadges = async (parent, entryId) => {
 // GET /parent/entries/:entryId/homework?month= (§3.6) — faqat a'zolik
 // oynasidagi (joinedAt..leftAt) sanalar; kelajakdagi sanalar ham ko'rinadi.
 const entryHomework = async (parent, entryId, monthRaw) => {
-  const { entry } = await resolveEntry(parent, entryId);
+  const { entry, student } = await resolveEntry(parent, entryId);
   const month = normalizeMonth(monthRaw);
   const toDay = (unix) => (unix ? moment.unix(unix).tz(TZ).format("YYYY-MM-DD") : null);
   const from = toDay(entry.joinedAt);
@@ -857,10 +857,16 @@ const entryHomework = async (parent, entryId, monthRaw) => {
   const items = date.$gte > date.$lte
     ? []
     : await Homework.find({ group: entry.group, isDeleted: false, date })
-        .select("date text updatedAt")
+        .select("date text updatedAt results")
         .sort({ date: -1 })
         .lean();
-  return { month, items: items.map((h) => ({ date: h.date, text: h.text, updatedAt: h.updatedAt })) };
+  // O'quvchining o'z natijasi (API_CONTRACT_wecoin.md §2.3) — boshqalarniki chiqmaydi.
+  const sid = String(student._id);
+  const statusOf = (h) => (h.results || []).find((r) => String(r.student) === sid)?.status || null;
+  return {
+    month,
+    items: items.map((h) => ({ date: h.date, text: h.text, updatedAt: h.updatedAt, status: statusOf(h) })),
+  };
 };
 
 // GET /parent/entries/:entryId/lesson-plan (API_CONTRACT_parent_lesson_plan.md)
@@ -1014,6 +1020,47 @@ const sendEntryQrCard = async (parent, entryId, file) => {
   }
 };
 
+// ---------------------------------------------------------------------------
+// WECOIN va filial do'koni (API_CONTRACT_wecoin.md §4). Hisob/xarid mantiqi
+// coin/shop servislarida — bu yerda faqat rolga mos o'quvchilar va rol cheklovi.
+// ---------------------------------------------------------------------------
+
+const coinPair = async (parent, studentId, centerId) => {
+  const coinService = require("./coin.service");
+  const students = await findStudentsOf(parent);
+  return await coinService.assertParentPair(students, studentId, centerId);
+};
+
+const coins = async (parent) => {
+  const coinService = require("./coin.service");
+  const role = await effectiveRole(parent);
+  const students = await findStudentsOf(parent, role);
+  return { role, wallets: await coinService.parentWallets(students) };
+};
+
+const coinShop = async (parent, studentId, centerId) => {
+  const shopService = require("./shop.service");
+  return await shopService.shopFor(await coinPair(parent, studentId, centerId), centerId);
+};
+
+// Sotib olish — faqat o'quvchining o'zi (ota-ona faqat ko'radi).
+const coinBuy = async (parent, studentId, centerId, productId) => {
+  if ((await effectiveRole(parent)) !== "student") throw new Error("shop.studentOnly");
+  const shopService = require("./shop.service");
+  return await shopService.buy(await coinPair(parent, studentId, centerId), centerId, productId);
+};
+
+const coinLike = async (parent, studentId, centerId, productId) => {
+  if ((await effectiveRole(parent)) !== "student") throw new Error("shop.studentOnly");
+  const shopService = require("./shop.service");
+  return await shopService.toggleLike(await coinPair(parent, studentId, centerId), centerId, productId);
+};
+
+const coinHistory = async (parent, studentId, centerId) => {
+  const shopService = require("./shop.service");
+  return await shopService.history(await coinPair(parent, studentId, centerId), centerId);
+};
+
 module.exports = {
   ROLES,
   roleMatch,
@@ -1049,4 +1096,9 @@ module.exports = {
   entryBadges,
   entryQrCard,
   sendEntryQrCard,
+  coins,
+  coinShop,
+  coinBuy,
+  coinLike,
+  coinHistory,
 };

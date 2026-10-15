@@ -19,6 +19,7 @@ const Group = lazyPage(() => import("./pages/Group"), "Group");
 const Payments = lazyPage(() => import("./pages/Payments"), "Payments");
 const Notifications = lazyPage(() => import("./pages/Notifications"), "Notifications");
 const Settings = lazyPage(() => import("./pages/Settings"), "Settings");
+const Coins = lazyPage(() => import("./pages/Coins"), "Coins");
 // Ishchi paneli (Boshliq/Hodim) — alohida chunk, ota-ona bundle'iga tushmaydi.
 const WorkerApp = lazyPage(() => import("./worker/WorkerApp"), "WorkerApp");
 
@@ -39,6 +40,7 @@ const Shell = () => {
         <Route path="/child/:sid/group/:eid/:tab?" element={<Group />} />
         <Route path="/payments" element={isStudent ? <Navigate to="/" replace /> : <Payments />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/coins" element={<Coins />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

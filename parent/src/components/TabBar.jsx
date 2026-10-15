@@ -8,10 +8,19 @@ import {
 import { cn } from "../utils/cn";
 import { haptic } from "../lib/telegram";
 import { useAuth } from "../contexts/auth";
+import { useRequest } from "../hooks/useRequest";
+import { getCoins } from "../api/parent";
+import { CoinIcon } from "./CoinIcon";
+
+// WECOIN tabi ikonkasi — faol: oltin, faol emas: kulrang (hi2 to'plamida tanga yo'q).
+const CoinOn = ({ className }) => <CoinIcon className={className} />;
+const CoinOff = ({ className }) => <CoinIcon muted className={className} />;
 
 const TABS = [
   { to: "/", key: "tab.home", on: HiHome, off: HiOutlineHome },
   { to: "/payments", key: "tab.payments", on: HiCreditCard, off: HiOutlineCreditCard, parentOnly: true },
+  // Faqat WECOIN yoqilgan filial bo'lsa (docs/API_CONTRACT_wecoin.md §4).
+  { to: "/coins", key: "tab.coins", on: CoinOn, off: CoinOff, coins: true },
   { to: "/notifications", key: "tab.notifications", on: HiBell, off: HiOutlineBell },
   { to: "/settings", key: "tab.settings", on: HiCog6Tooth, off: HiOutlineCog6Tooth },
 ];
@@ -19,7 +28,9 @@ const TABS = [
 export const TabBar = () => {
   const { t } = useTranslation();
   const { isStudent } = useAuth();
-  const tabs = isStudent ? TABS.filter((x) => !x.parentOnly) : TABS;
+  const { data: coins } = useRequest(() => getCoins(), []);
+  const hasCoins = (coins?.wallets?.length || 0) > 0;
+  const tabs = TABS.filter((x) => !(isStudent && x.parentOnly) && !(x.coins && !hasCoins));
   return (
     <nav
       className="fixed bottom-0 inset-x-0 z-20 bg-card/85 backdrop-blur-md border-t border-line"

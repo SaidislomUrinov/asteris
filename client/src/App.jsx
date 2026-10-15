@@ -52,6 +52,7 @@ import TeacherPerformance from "./pages/Reports/TeacherPerformance";
 import Reports from "./pages/Reports";
 import AuditLog from "./pages/AuditLog";
 import Certificates from "./pages/Certificates";
+import Coins from "./pages/Coins";
 import TemplateEditor from "./pages/Certificates/TemplateEditor";
 import CertificateVerify from "./pages/CertificateVerify";
 import NotFound from "./pages/NotFound";
@@ -288,6 +289,8 @@ function App() {
               {can("certificate:update") && hasFeature("certificate.manage") && (
                 <Route path="/certificates/template/:id" element={<TemplateEditor />} />
               )}
+              {/* WECOIN va filial do'koni (docs/API_CONTRACT_wecoin.md) */}
+              {can("coin:view") && hasFeature("gamification.coins") && <Route path="/coins" element={<Coins />} />}
               {/* Ruxsat yo'q yoki mavjud bo'lmagan sahifa — bo'sh oyna emas. */}
               <Route path="*" element={<NotFound />} />
             </Routes>

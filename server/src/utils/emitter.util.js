@@ -97,7 +97,24 @@ const CALLER_ROUTES_CENTER = new Set([
   "payment:updated",
   "lead:changed",
   "archive:changed",
+  // Uyga vazifa va WECOIN — servis `center:` + `client:` ga o'zi yuboradi
+  // (Owner `center:` xonasida emas, socket.config.js).
+  "homework:updated",
+  "homework:results",
+  "coin:settings",
+  "coin:distributed",
+  "shop:order",
+  "shop:orderUpdated",
+  "shop:products",
 ]);
+
+// Filial hodisasini ham hodimlarga (`center:`), ham Owner'ga (`client:`)
+// yuboradi. Hodisa CALLER_ROUTES_CENTER'da bo'lishi shart — aks holda hodim
+// ikki marta oladi.
+module.exports.toCenter = (clientId, centerId, action, payload) => {
+  module.exports(`center:${centerId}`, action, payload);
+  module.exports(`client:${clientId}`, action, payload);
+};
 
 // Filialga bog'lanmagan, maxfiy bo'lmagan tenant hodisalari — tenantning
 // barcha hodimlariga (`staff:{clientId}` xonasi).

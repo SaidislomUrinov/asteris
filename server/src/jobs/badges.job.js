@@ -16,6 +16,7 @@ const moment = require("moment-timezone");
 const redis = require("../configs/redis.config");
 const keyConfig = require("../configs/key.config");
 const badgeService = require("../services/badge.service");
+const coinService = require("../services/coin.service");
 
 const TZ = "Asia/Tashkent";
 const TICK_MS = 5 * 60 * 1000;
@@ -51,6 +52,17 @@ const run = async () => {
     );
   });
 
+  // WECOIN (API_CONTRACT_wecoin.md §5) — medallar yozilgandan KEYIN (medal
+  // tangalari StudentMedal'dan hisoblanadi).
+  if (await redis.get(keyConfig.badgesDone(month))) {
+    await once(keyConfig.coinsDone(month), async () => {
+      const report = await coinService.distributeMonth(month);
+      console.log(
+        `Coins ${month}: ${report.coins} coins to ${report.students} students (${report.centers} centers, ${report.skippedTariff} skipped by tariff)`,
+      );
+    });
+  }
+
   // Xabar faqat berish bajarilgandan keyin (flag bor) va kunduzgi oynada.
   if (now.hour() < SEND_FROM_HOUR || now.hour() >= SEND_TO_HOUR) return;
   if (!(await redis.get(keyConfig.badgesDone(month)))) return;
@@ -58,6 +70,11 @@ const run = async () => {
     const report = await badgeService.notifyMonth(month);
     console.log(`Badges ${month}: notified ${report.sent}/${report.entries} entries`);
   });
+  // Tanga xabarlari — idempotent (`CoinTransaction.notified`), flag kerak emas.
+  if (await redis.get(keyConfig.coinsDone(month))) {
+    const report = await coinService.notifyMonth(month);
+    if (report.total) console.log(`Coins ${month}: notified ${report.sent}/${report.total}`);
+  }
 };
 
 const start = () => {

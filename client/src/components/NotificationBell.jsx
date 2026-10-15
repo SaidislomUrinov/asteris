@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { HiBell } from "react-icons/hi2";
+import { toast } from "sonner";
 import { useSocketEvent } from "../hooks/useSocketEvent";
 import { api } from "../utils/fetching";
 
@@ -40,7 +41,16 @@ function NotificationBell() {
   }, []);
 
   // Yangi bildirishnoma — server `user:{id}` xonasiga yuboradi.
-  useSocketEvent("notification:new", () => setUnread((n) => n + 1));
+  useSocketEvent("notification:new", (n) => {
+    setUnread((x) => x + 1);
+    // Do'kondan yangi xarid — darhol ko'zga tashlansin (docs/API_CONTRACT_wecoin.md §3).
+    if (n?.type === "shop:order") {
+      toast(t("coins.newOrderToast", { product: n.title }), {
+        description: n.body,
+        action: { label: t("coins.open"), onClick: () => navigate(`/coins?tab=orders&center=${n.data?.centerId || ""}`) },
+      });
+    }
+  });
 
   // Boshqa tab/qurilmada o'qilganda server aniq sonni yuboradi (markRead /
   // markAllRead → `notification:unread`), shunda qo'ng'iroq hamma joyda

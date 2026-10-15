@@ -20,6 +20,12 @@ router.get("/entries/:entryId/badges", parentController.entryBadges);
 router.get("/entries/:entryId/qr-card", parentController.entryQrCard);
 router.post("/entries/:entryId/qr-card/send", parentController.sendEntryQrCard);
 router.get("/payments", parentController.payments);
+// WECOIN va filial do'koni (API_CONTRACT_wecoin.md §4).
+router.get("/coins", parentController.coins);
+router.get("/coins/:studentId/:centerId/shop", parentController.coinShop);
+router.post("/coins/:studentId/:centerId/shop/:productId/buy", parentController.coinBuy);
+router.post("/coins/:studentId/:centerId/shop/:productId/like", parentController.coinLike);
+router.get("/coins/:studentId/:centerId/history", parentController.coinHistory);
 router.get("/notifications", parentController.notifications);
 router.patch("/notifications/read-all", parentController.readAllNotifications);
 router.patch("/settings", parentController.updateSettings);

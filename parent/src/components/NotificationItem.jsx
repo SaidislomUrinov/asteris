@@ -8,8 +8,13 @@ import { BADGE_PALETTE } from "../utils/badges";
 const OPEN_PATH = {
   "parent:homework": (d) => `/child/${d.studentId}/group/${d.entryId}/homework`,
   "parent:lessonReminder": (d) => `/child/${d.studentId}/group/${d.entryId}/homework`,
+  // Vazifa "Bajarmadi" — ikkala rol (API_CONTRACT_homework_missed.md)
+  "parent:homeworkMissed": (d) => `/child/${d.studentId}/group/${d.entryId}/homework`,
   // Yutuq nishonlari — ikkala rol uchun (API_CONTRACT_badges_monthly_rank.md §C)
   "parent:badge": (d) => `/child/${d.studentId}/group/${d.entryId}/badges`,
+  // WECOIN — oy yakuni tangalari va do'kon buyurtmasi (API_CONTRACT_wecoin.md §5)
+  "parent:coin": () => "/coins",
+  "parent:shop": () => "/coins?tab=history",
 };
 
 const DOT = {
@@ -18,8 +23,11 @@ const DOT = {
   "parent:lessonFinished": () => "bg-accent",
   "parent:debt": () => "bg-bad",
   "parent:homework": () => "bg-accent",
+  "parent:homeworkMissed": () => "bg-bad",
   "parent:lessonReminder": () => "bg-warn",
   "parent:badge": () => "bg-amber-400",
+  "parent:coin": () => "bg-amber-400",
+  "parent:shop": (n) => (n.data?.status === "refunded" ? "bg-hint" : "bg-ok"),
 };
 
 const strip = (html = "") =>

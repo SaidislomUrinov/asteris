@@ -10,6 +10,8 @@ const FOLDERS = {
   NEWS: "news",
   // O'quvchi rasmlari (sharp → 360x360 webp) — API_CONTRACT_student_photo.md §1
   STUDENTS: "students",
+  // Filial do'koni mahsulotlari (sharp → 512x512 webp) — API_CONTRACT_wecoin.md §3
+  SHOP: "shop",
 };
 
 const UPLOAD_DIR = path.join(process.cwd(), "uploads");

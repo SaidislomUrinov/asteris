@@ -178,4 +178,52 @@ module.exports = {
       next(error);
     }
   },
+
+  // WECOIN (API_CONTRACT_wecoin.md §4).
+  coins: async (req, res, next) => {
+    try {
+      const data = await parentService.coins(req.parent);
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  coinShop: async (req, res, next) => {
+    try {
+      const data = await parentService.coinShop(req.parent, req.params.studentId, req.params.centerId);
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  coinBuy: async (req, res, next) => {
+    try {
+      const { studentId, centerId, productId } = req.params;
+      const data = await parentService.coinBuy(req.parent, studentId, centerId, productId);
+      return res.send({ ok: true, data, msg: "shop.bought" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  coinLike: async (req, res, next) => {
+    try {
+      const { studentId, centerId, productId } = req.params;
+      const data = await parentService.coinLike(req.parent, studentId, centerId, productId);
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  coinHistory: async (req, res, next) => {
+    try {
+      const data = await parentService.coinHistory(req.parent, req.params.studentId, req.params.centerId);
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
 };

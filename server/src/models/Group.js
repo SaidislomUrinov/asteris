@@ -22,6 +22,13 @@ const schema = new Schema({
     min: 0,
     max: 100,
   },
+  // Individual o'quvchiga WECOIN beriladimi (API_CONTRACT_individual_coins.md) —
+  // har kuni keladigan individual o'quvchida tangalar juda tez to'planadi.
+  // Yo'q/false → shu guruh yozuvlari tanga bermaydi. Oddiy guruhga ta'sir qilmaydi.
+  coinsEnabled: {
+    type: Boolean,
+    default: false,
+  },
   client: {
     type: Schema.Types.ObjectId,
     ref: "Client",

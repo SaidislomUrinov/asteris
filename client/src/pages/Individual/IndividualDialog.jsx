@@ -24,6 +24,8 @@ import { tashkentDay } from "../Students/startDate.util";
 import { assertTelegramForm } from "../../utils/telegramPhone";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
+import useCoinCenters from "../../hooks/useCoinCenters";
+import CoinsSwitchRow from "./CoinsSwitchRow";
 
 const DEFAULT_PERCENT = 50;
 
@@ -58,12 +60,15 @@ function IndividualDialog({ open, onClose, centers = [], subjects = [], teachers
     days: [],
     startTime: "",
     endTime: "",
+    coinsEnabled: false,
   }));
   const [existingStudent, setExistingStudent] = useState(null);
   const [opening, setOpening] = useState(EMPTY_OPENING);
   const [disabled, setDisabled] = useState(false);
 
   const set = (patch) => setForm((prev) => ({ ...prev, ...patch }));
+  const coinCenters = useCoinCenters();
+  const showCoins = coinCenters.has(form.center);
 
   const centerSubjects = useMemo(
     () => subjects.filter((s) => s.center === form.center),
@@ -104,6 +109,7 @@ function IndividualDialog({ open, onClose, centers = [], subjects = [], teachers
         startTime: form.startTime || undefined,
         endTime: form.endTime || undefined,
         roomId: form.room || undefined,
+        coinsEnabled: showCoins ? form.coinsEnabled : false,
         openingDebts: openingPayload.openingDebts,
         openingBalance: openingPayload.openingBalance,
       };
@@ -262,6 +268,10 @@ function IndividualDialog({ open, onClose, centers = [], subjects = [], teachers
             ]}
           />
         </div>
+
+        {showCoins && (
+          <CoinsSwitchRow checked={form.coinsEnabled} onChange={(v) => set({ coinsEnabled: v })} />
+        )}
 
         <OpeningDebtsSection value={opening} onChange={setOpening} />
       </div>

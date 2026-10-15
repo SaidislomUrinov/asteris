@@ -6,6 +6,7 @@ import {
   HiCalendarDays,
   HiCog6Tooth,
   HiCreditCard,
+  HiCircleStack,
   HiPlayCircle,
   HiQrCode,
   HiRectangleStack,
@@ -74,6 +75,10 @@ export default function useNavItems() {
     },
     can("certificate:view") &&
       hasFeature("certificate.manage") && { key: "certificates", to: "/certificates", icon: HiAcademicCap, labelKey: "nav.certificates" },
+    // WECOIN — o'qituvchi/yordamchida yo'q (coin:* ularga berilmaydi).
+    can("coin:view") &&
+      !isTeacher &&
+      hasFeature("gamification.coins") && { key: "coins", to: "/coins", icon: HiCircleStack, labelKey: "nav.coins" },
     { key: "profile", to: "/profile", icon: HiUser, labelKey: "nav.profile" },
     settingsTabs.length > 0 && {
       key: "settings",

@@ -17,6 +17,7 @@ const ALLOWED_EXTENSIONS = {
   [FOLDERS.NEWS]: [".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".webm"],
   // O'quvchi rasmi faqat server tomonda sharp bilan webp'ga aylantirilgan holda.
   [FOLDERS.STUDENTS]: [".webp"],
+  [FOLDERS.SHOP]: [".webp"],
 };
 
 // Faqat `/uploads/<folder>/<fayl>` ko'rinishidagi nisbiy yo'l — `..`, bo'sh

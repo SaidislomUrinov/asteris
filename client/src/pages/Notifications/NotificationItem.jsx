@@ -1,4 +1,5 @@
 import {
+  HiShoppingBag,
   HiCalendarDays,
   HiExclamationTriangle,
   HiInformationCircle,
@@ -17,6 +18,7 @@ const dateOf = (unix) => (unix ? new Date(unix * 1000).toLocaleDateString("uz-UZ
 const iconOf = (type) => {
   if (type === "subscription:expired") return { Icon: HiExclamationTriangle, cls: "bg-red-50 dark:bg-red-500/15 text-red-500" };
   if (type === "subscription:expiring") return { Icon: HiExclamationTriangle, cls: "bg-amber-50 dark:bg-amber-500/15 text-amber-500" };
+  if (type === "shop:order") return { Icon: HiShoppingBag, cls: "bg-amber-50 dark:bg-amber-500/15 text-amber-500" };
   if (type === "lesson:reminder") return { Icon: HiCalendarDays, cls: "bg-blue-50 dark:bg-blue-500/15 text-blue-500" };
   return { Icon: HiInformationCircle, cls: "bg-slate-100 dark:bg-night-800 text-slate-400 dark:text-slate-500" };
 };

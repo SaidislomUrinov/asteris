@@ -52,9 +52,15 @@ const TYPE_ROLES = {
   payment: ["parent", "student"],
   lessonFinished: ["parent", "student"],
   homework: ["student"],
+  // Vazifa "Bajarmadi" deb belgilandi (API_CONTRACT_homework_missed.md).
+  homeworkMissed: ["parent", "student"],
   lessonReminder: ["student"],
   // Oylik yutuq nishonlari (jobs/badges.job.js, API_CONTRACT_badges_monthly_rank.md §C).
   badge: ["parent", "student"],
+  // WECOIN oy yakuni (coin.service.notifyMonth) va do'kon buyurtmasi holati
+  // (API_CONTRACT_wecoin.md §5).
+  coin: ["parent", "student"],
+  shop: ["student"],
 };
 const attTimers = new Map();
 
@@ -221,6 +227,26 @@ const buildHomeworkText = (lang, { ctx, date, text }) =>
     "\n",
   );
 
+// Vazifa qilinmadi (API_CONTRACT_homework_missed.md): ota-onaga ism bilan,
+// o'quvchiga "siz" shaklida. Sana "11 sentabr" ko'rinishida (yilsiz).
+const buildHomeworkMissedText = (lang, { student, ctx, date, text, role }) => {
+  const d = moment.tz(date, "YYYY-MM-DD", TZ);
+  const monthName = (t(lang, "pnMonths").split("|")[d.month()] || "").toLowerCase();
+  // ru'da oy nomi qaratqich kelishigida bo'lishi kerak ("октября") — raqamli sana.
+  const day =
+    lang === "en" ? `${capitalize(monthName)} ${d.date()}` : lang === "ru" ? d.format("DD.MM.YYYY") : `${d.date()}-${monthName}`;
+  const self = role === "student";
+  const lines = [
+    `<b>${fillVars(t(lang, self ? "snHomeworkMissed" : "pnHomeworkMissed"), {
+      name: escapeHtml(student.fullName),
+      date: day,
+    })}</b>`,
+    header(ctx),
+  ];
+  if (text) lines.push("", `${t(lang, "snHomeworkTitle")}: ${escapeHtml(String(text).slice(0, 300))}`);
+  return lines.join("\n");
+};
+
 // Darsdan 1 soat oldin (faqat student roli): "Bugun 15:00 da <guruh> darsingiz bor".
 const buildLessonReminderText = (lang, { ctx, topic = null }) => {
   const title = t(lang, "snReminderText")
@@ -253,21 +279,52 @@ const buildBadgeText = (lang, { student, ctx, month, types, role }) => {
   ].join("\n");
 };
 
+// WECOIN (API_CONTRACT_wecoin.md §5) — oy yakunida berilgan tangalar.
+const buildCoinText = (lang, { student, ctx, month, amount, balance, role }) => {
+  if (!amount) return null;
+  const self = role === "student";
+  const monthName = (t(lang, "pnMonths").split("|")[Number(String(month).slice(5, 7)) - 1] || month).toLowerCase();
+  return [
+    self
+      ? `🪙 <b>${t(lang, "snCoinTitle")}</b>`
+      : `🪙 <b>${t(lang, "pnCoinTitle")} — ${escapeHtml(student.fullName)}</b>`,
+    escapeHtml(ctx.center.name),
+    "",
+    fillVars(t(lang, "pnCoinMonth"), { month: lang === "ru" ? monthName : capitalize(monthName), amount }),
+    fillVars(t(lang, "pnCoinBalance"), { balance }),
+    ...(self ? ["", t(lang, "snCoinHint")] : []),
+  ].join("\n");
+};
+
+const buildShopText = (lang, { ctx, order }) =>
+  [
+    `<b>${t(lang, order.status === "refunded" ? "snShopRefunded" : "snShopDelivered")}</b>`,
+    escapeHtml(ctx.center.name),
+    "",
+    `${escapeHtml(order.productName)} · ${order.price} WECOIN`,
+  ].join("\n");
+
 const BUILDERS = {
+  coin: buildCoinText,
+  shop: buildShopText,
   payment: buildPaymentText,
   attendance: buildAttendanceText,
   lessonFinished: buildLessonFinishedText,
   homework: buildHomeworkText,
+  homeworkMissed: buildHomeworkMissedText,
   lessonReminder: buildLessonReminderText,
   badge: buildBadgeText,
 };
 
 // WebApp ichida ochiladigan sahifa (parent/ ilovasi shu yo'llarni tushunadi).
 const APP_PATH = {
+  coin: () => "/coins",
+  shop: () => "/coins",
   payment: ({ student, entry }) => `/child/${student._id}/group/${entry._id}/payments`,
   attendance: ({ student, entry }) => `/child/${student._id}/group/${entry._id}/attendance`,
   lessonFinished: ({ student, entry }) => `/child/${student._id}/group/${entry._id}/grades`,
   homework: ({ student, entry }) => `/child/${student._id}/group/${entry._id}/homework`,
+  homeworkMissed: ({ student, entry }) => `/child/${student._id}/group/${entry._id}/homework`,
   lessonReminder: ({ student, entry }) => `/child/${student._id}/group/${entry._id}/homework`,
   badge: ({ student, entry }) => `/child/${student._id}/group/${entry._id}/badges`,
 };
@@ -528,6 +585,44 @@ const onHomework = async ({ group, date }) => {
   hwTimers.set(key, timer);
 };
 
+// VAZIFA QILINMADI (API_CONTRACT_homework_missed.md) — o'qituvchi natijani
+// "missed" qilganda. DEBOUNCE: xato bosib qaytarsa xabar ketmasin — taymer
+// otganda Homework qayta o'qiladi va natija hali ham "missed" bo'lsagina
+// yuboriladi. Dedup: `{entryId}:{date}` — bitta vazifa uchun bir marta.
+const missedTimers = new Map();
+
+const sendHomeworkMissed = async (homeworkId, studentId) => {
+  const hw = await Homework.findOne({ _id: homeworkId, isDeleted: false }).select("group date text results").lean();
+  const result = hw?.results?.find((r) => String(r.student) === String(studentId));
+  if (result?.status !== "missed") return;
+  const student = await Student.findOne({ _id: studentId, isDeleted: false });
+  const entry = student?.groups?.find((e) => String(e.group) === String(hw.group) && e.status === "active");
+  if (!entry) return;
+  await notify("homeworkMissed", {
+    student,
+    entry,
+    date: hw.date,
+    text: hw.text,
+    dedupSuffix: hw.date,
+    data: { date: hw.date },
+  });
+};
+
+const onHomeworkMissed = async ({ homeworkId, studentId }) => {
+  const key = `${homeworkId}:${studentId}`;
+  clearTimeout(missedTimers.get(key));
+  const timer = setTimeout(async () => {
+    missedTimers.delete(key);
+    try {
+      await sendHomeworkMissed(homeworkId, studentId);
+    } catch (error) {
+      console.error("parentNotification homeworkMissed:", error?.message || error);
+    }
+  }, HOMEWORK_DEBOUNCE_MS);
+  timer.unref?.();
+  missedTimers.set(key, timer);
+};
+
 // DARS ESLATMASI (§5) — darsdan 60 daqiqa oldin, faqat student roli.
 // Dedup: `lessonReminder:{entryId}:{date}` (parent darajasida).
 const onLessonReminder = async ({ groupId, date, topic = null }) => {
@@ -646,12 +741,37 @@ module.exports = {
     });
   }),
 
+  // WECOIN oy yakuni (coin.service.notifyMonth). Dedup: `{entryId}:{month}`.
+  onCoins: safe(async ({ student, entry, month, amount, balance }) => {
+    await notify("coin", {
+      student,
+      entry,
+      month,
+      amount,
+      balance,
+      dedupSuffix: month,
+      data: { month, amount, centerId: String(entry.center) },
+    });
+  }),
+
+  // Do'kon buyurtmasi topshirildi/qaytarildi (shop.service). Dedup: buyurtma + holat.
+  onShopOrder: safe(async ({ student, entry, order }) => {
+    await notify("shop", {
+      student,
+      entry,
+      order,
+      dedupSuffix: `${order._id}:${order.status}`,
+      data: { orderId: String(order._id), status: order.status, centerId: String(entry.center) },
+    });
+  }),
+
   // Qarz kaskadi digesti — parent darajasida (jobs/parentDebt.job.js).
   onDebtDigest: safe(onDebtDigest),
 
   // Uyga vazifa (homework.service) va dars eslatmasi (lessonReminder.job) —
   // faqat o'quvchi roliga.
   onHomework: safe(onHomework),
+  onHomeworkMissed: safe(onHomeworkMissed),
   onLessonReminder: safe(onLessonReminder),
   centerAllows,
 
@@ -661,6 +781,8 @@ module.exports = {
   _buildAttendanceText: buildAttendanceText,
   _buildLessonFinishedText: buildLessonFinishedText,
   _buildHomeworkText: buildHomeworkText,
+  _buildHomeworkMissedText: buildHomeworkMissedText,
+  _sendHomeworkMissed: sendHomeworkMissed,
   _buildLessonReminderText: buildLessonReminderText,
   _buildBadgeText: buildBadgeText,
   _findParents: findParents,

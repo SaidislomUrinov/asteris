@@ -12,7 +12,7 @@
 export const CLIENT_SECTION_GROUPS = [
   {
     group: "main",
-    items: ["dashboard", "leads", "staff", "groups", "groups/detail", "individual", "students", "students/detail", "qr-attendance", "certificates", "subscription", "profile", "notifications"],
+    items: ["dashboard", "leads", "staff", "groups", "groups/detail", "individual", "students", "students/detail", "qr-attendance", "certificates", "coins", "subscription", "profile", "notifications"],
   },
   // O'qituvchi/Yordamchi menyusi
   { group: "teacher", items: ["lesson", "my-plans"] },
