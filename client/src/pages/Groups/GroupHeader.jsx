@@ -59,13 +59,12 @@ function TelegramRow({ label, children }) {
  * @param {boolean} [props.canEditTelegram]
  * @param {(group: Object) => void} [props.onTelegramSaved]
  */
-// Keng ekranda ustunlar: nom · o'quvchilar · [3-karta] · [vazifa] · Telegram.
-// Kalit: `${extra}${homework}`. Tailwind klasslari to'liq yozilishi shart.
+// Keng ekranda barcha kartalar TENG kenglikda: 3 + [3-karta] + [vazifa] ta ustun.
+// Tailwind klasslari to'liq yozilishi shart.
 const XL_COLS = {
-  "11": "xl:grid-cols-[minmax(0,1.25fr)_minmax(0,0.7fr)_minmax(0,0.9fr)_minmax(0,1.1fr)_minmax(0,1.1fr)]",
-  "10": "xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1.15fr)]",
-  "01": "xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.8fr)_minmax(0,1.1fr)_minmax(0,1.15fr)]",
-  "00": "xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.8fr)_minmax(0,1.15fr)]",
+  3: "xl:grid-cols-3",
+  4: "xl:grid-cols-4",
+  5: "xl:grid-cols-5",
 };
 
 function GroupHeader({
@@ -91,8 +90,8 @@ function GroupHeader({
 
   return (
     <div
-      className={`grid grid-cols-2 gap-3 max-sm:gap-2 ${
-        XL_COLS[`${extra ? 1 : 0}${homework ? 1 : 0}`]
+      className={`grid grid-cols-2 items-stretch gap-3 max-sm:gap-2 ${
+        XL_COLS[3 + (extra ? 1 : 0) + (homework ? 1 : 0)]
       }`}
     >
       <HeaderCard
@@ -198,15 +197,15 @@ function GroupHeader({
               </>
             ) : (
               <>
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
+                <span className="inline-flex items-center gap-1.5 min-w-0 text-xs font-medium text-slate-400 dark:text-slate-500">
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-night-600 shrink-0" />
-                  {t("group.telegramNotConnectedShort")}
+                  <span className="truncate">{t("group.telegramNotConnectedShort")}</span>
                 </span>
                 {canEditTelegram && (
                   <button
                     type="button"
                     onClick={() => setTelegramOpen(true)}
-                    className="ml-auto inline-flex items-center gap-1 shrink-0 rounded-lg px-2 h-7 text-xs font-semibold text-[#229ED9] hover:bg-[#229ED9]/10 transition-colors cursor-pointer"
+                    className="ml-auto inline-flex items-center gap-1 shrink-0 rounded-lg px-1.5 h-7 text-xs font-semibold text-[#229ED9] hover:bg-[#229ED9]/10 transition-colors cursor-pointer"
                   >
                     <HiPlus className="text-sm" aria-hidden="true" />
                     {t("group.telegramConnect")}

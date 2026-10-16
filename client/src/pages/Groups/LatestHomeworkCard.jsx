@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HiArrowsPointingOut, HiClipboardDocumentList } from "react-icons/hi2";
-import { useSocketEvent } from "../../hooks/useSocketEvent";
-import { api } from "../../utils/fetching";
 import HeaderCard from "./HeaderCard";
 import LatestHomeworkDialog from "./LatestHomeworkDialog";
 import { RESULT_OPTIONS, formatHomeworkDate } from "./homeworkResults";
@@ -10,49 +8,33 @@ import { RESULT_OPTIONS, formatHomeworkDate } from "./homeworkResults";
 /**
  * Guruh detali — tepadagi kartalar qatoridagi "Oxirgi vazifa" kartasi
  * (docs/API_CONTRACT_group_latest_homework.md). "Batafsil" — to'liq matn va
- * natijalar modali, undan "Uyga vazifa" tabiga o'tiladi. Boshqa xodim vazifa
- * yozsa yoki natija qo'ysa (`homework:updated|results`) qayta so'raladi.
+ * natijalar modali, undan "Uyga vazifa" tabiga o'tiladi. Ma'lumot
+ * `useLatestHomework` orqali GroupDetail darajasida (guruh bilan parallel)
+ * olinadi.
  *
  * @param {Object} props
- * @param {string} props.groupId
+ * @param {Object|null} props.item
+ * @param {boolean} props.loaded
  * @param {() => void} props.onOpen
  * @param {number} [props.studentsCount] - "Belgilanmagan" sonini hisoblash uchun
  */
-function LatestHomeworkCard({ groupId, onOpen, studentsCount }) {
+function LatestHomeworkCard({ item, loaded, onOpen, studentsCount }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [item, setItem] = useState(null);
-  const [loaded, setLoaded] = useState(false);
-
-  const load = useCallback(async () => {
-    try {
-      const { data } = await api.get(`/homework/${groupId}/latest`);
-      if (!data.ok) throw new Error(data.msg);
-      setItem(data.data?.item || null);
-    } catch {
-      // Ikkinchi darajali karta — xato bo'lsa jim yashiriladi.
-      setItem(null);
-    } finally {
-      setLoaded(true);
-    }
-  }, [groupId]);
-
-  useEffect(() => {
-    const id = setTimeout(load, 0);
-    return () => clearTimeout(id);
-  }, [load]);
-
-  const onChanged = useCallback(
-    (p) => {
-      if (p?.groupId === groupId) load();
-    },
-    [groupId, load],
-  );
-  useSocketEvent("homework:updated", onChanged, !!groupId);
-  useSocketEvent("homework:results", onChanged, !!groupId);
 
   if (!loaded) {
-    return <div className="max-sm:col-span-2 min-h-[58px] rounded-2xl bg-slate-100 dark:bg-night-800 animate-pulse" />;
+    return (
+      <div className="max-sm:col-span-2 flex flex-col gap-2 max-sm:gap-1 p-3 pl-4 max-sm:p-2.5 max-sm:pl-3.5 rounded-2xl bg-white dark:bg-night-900 border border-slate-200/80 dark:border-night-700/80 min-w-0 animate-pulse">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 max-sm:hidden rounded-lg bg-slate-100 dark:bg-night-800" />
+          <div className="h-4 w-1/2 rounded bg-slate-100 dark:bg-night-800" />
+        </div>
+        <div className="h-4 w-4/5 rounded bg-slate-100 dark:bg-night-800" />
+        <div className="mt-auto pt-1">
+          <div className="h-6 w-20 rounded-md bg-slate-100 dark:bg-night-800" />
+        </div>
+      </div>
+    );
   }
 
   const results = Object.values(item?.results || {});

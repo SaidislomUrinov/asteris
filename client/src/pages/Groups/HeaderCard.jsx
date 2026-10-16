@@ -54,7 +54,7 @@ function HeaderCard({
           <p
             className={
               strong
-                ? "font-space font-bold text-base leading-snug text-slate-900 dark:text-slate-100 truncate"
+                ? "font-space font-bold text-base leading-snug text-slate-900 dark:text-slate-100 line-clamp-2 break-words"
                 : `font-semibold text-slate-800 dark:text-slate-100 truncate ${
                     value != null ? "text-sm max-sm:text-xs max-sm:font-medium max-sm:text-slate-500 max-sm:dark:text-slate-400" : "text-sm"
                   }`

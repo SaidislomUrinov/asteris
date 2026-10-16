@@ -69,6 +69,7 @@ import useTodayGrades from "./useTodayGrades";
 import SyllabusTab from "./SyllabusTab";
 import HomeworkTab from "./HomeworkTab";
 import LatestHomeworkCard from "./LatestHomeworkCard";
+import useLatestHomework from "./useLatestHomework";
 import GroupSectionTabs from "./GroupSectionTabs";
 import TodayLessonCard from "./TodayLessonCard";
 import GroupHeader from "./GroupHeader";
@@ -198,6 +199,9 @@ function GroupDetail({ groupId, live = false }) {
   // Kalendarda sana→mavzu ko'rsatish va "Bugungi dars" kartochkasi —
   // ikkalasi ham bitta shartga bog'liq.
   const showPlans = isTeacher && can("lesson:view") && hasFeature("lesson.planning");
+  // "Oxirgi vazifa" kartasi — guruh so'rovi bilan bir vaqtda yuklanadi.
+  const canHomework = can("attendance:view") && hasFeature("homework.manage");
+  const latestHomework = useLatestHomework(id, canHomework);
 
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1036,7 +1040,7 @@ function GroupDetail({ groupId, live = false }) {
     ...(can("attendance:view") && hasFeature("student.rate")
       ? [{ key: "grades", label: t("grade.tab") }]
       : []),
-    ...(can("attendance:view") && hasFeature("homework.manage")
+    ...(canHomework
       ? [{ key: "homework", label: t("homework.tab") }]
       : []),
     ...(can("lesson:view") && hasFeature("lesson.planning")
@@ -1266,7 +1270,10 @@ function GroupDetail({ groupId, live = false }) {
         }
         homework={
           hasHomeworkTab ? (
-            <LatestHomeworkCard groupId={id} studentsCount={studentsCount} onOpen={() => setStudentTab("homework")} />
+            <LatestHomeworkCard
+              item={latestHomework.item}
+              loaded={latestHomework.loaded}
+              studentsCount={studentsCount} onOpen={() => setStudentTab("homework")} />
           ) : null
         }
         canEditTelegram={canEditTelegram}
