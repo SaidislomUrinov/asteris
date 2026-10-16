@@ -1,5 +1,4 @@
-import { jsPDF } from "jspdf";
-import QRCode from "qrcode";
+import { loadJsPdf, loadQRCode } from "../../utils/lazyLibs";
 
 const RECEIPT_VERIFY_BASE = "https://wenet.uz/payment/verify";
 
@@ -83,6 +82,7 @@ export async function downloadPaymentReceiptPdf(
   },
   t,
 ) {
+  const [jsPDF, QRCode] = await Promise.all([loadJsPdf(), loadQRCode()]);
   const monthNames = t("common.monthNames", { returnObjects: true });
   const somSuffix = t("student.somSuffix");
   const hasDebt = remainingDebt > 0;

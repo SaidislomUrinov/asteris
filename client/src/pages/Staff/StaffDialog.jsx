@@ -451,13 +451,13 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
       onSaved?.(data);
 
       if (!isEdit && data?.plainPassword) {
-        downloadStaffCredentialsPdf({
+        setCredentials({ login: data.login, password: data.plainPassword });
+        await downloadStaffCredentialsPdf({
           name: data.name,
           login: data.login,
           password: data.plainPassword,
           url: brandSlug ? brandHost(brandSlug) : "",
         });
-        setCredentials({ login: data.login, password: data.plainPassword });
       } else {
         onClose();
       }

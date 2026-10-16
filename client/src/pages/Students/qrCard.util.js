@@ -1,5 +1,4 @@
-import { jsPDF } from "jspdf";
-import QRCode from "qrcode";
+import { loadJsPdf, loadQRCode } from "../../utils/lazyLibs";
 import { API, api } from "../../utils/fetching";
 
 // O'quvchining QR davomat kartasi — plastik karta o'lchamida (ISO/IEC 7810
@@ -156,6 +155,7 @@ export async function renderQrCard(card, t) {
   ctx.stroke();
 
   const qrCanvas = document.createElement("canvas");
+  const QRCode = await loadQRCode();
   await QRCode.toCanvas(qrCanvas, card.qrToken, {
     width: qrBox - 40,
     margin: 0,
@@ -281,7 +281,7 @@ export async function downloadQrCardPng(card, t) {
 }
 
 export async function downloadQrCardPdf(card, t) {
-  const canvas = await renderQrCard(card, t);
+  const [canvas, jsPDF] = await Promise.all([renderQrCard(card, t), loadJsPdf()]);
   const doc = new jsPDF({ unit: "mm", format: [CARD_MM.w, CARD_MM.h], orientation: "landscape" });
   doc.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, CARD_MM.w, CARD_MM.h);
   doc.save(`QR_${safeName(card.fullName)}.pdf`);
@@ -290,6 +290,7 @@ export async function downloadQrCardPdf(card, t) {
 // A4 varaqqa 2 × 5 karta, orasida kesish uchun joy va burchaklarda kesish
 // belgilari. `cards` bo'sh bo'lmasligi chaqiruvchida tekshiriladi.
 export async function downloadGroupQrCardsPdf(cards, fileLabel, t) {
+  const jsPDF = await loadJsPdf();
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const COLS = 2;
   const ROWS = 5;

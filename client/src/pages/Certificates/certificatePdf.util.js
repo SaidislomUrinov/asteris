@@ -1,5 +1,4 @@
-import { jsPDF } from "jspdf";
-import QRCode from "qrcode";
+import { loadJsPdf, loadQRCode } from "../../utils/lazyLibs";
 
 const VERIFY_BASE = "https://wenet.uz/certificate/verify";
 
@@ -81,6 +80,7 @@ async function embedFonts(doc, fields, fonts, baseUrl) {
  *   shu ro'yxatdan topadi (`field.fontFamily`), berilmasa standart shrift ishlatiladi.
  */
 export async function downloadCertificatePdf(template, certificate, backgroundBaseUrl, fonts = []) {
+  const [jsPDF, QRCode] = await Promise.all([loadJsPdf(), loadQRCode()]);
   const bgDataUrl = await toDataUrl(`${backgroundBaseUrl}${template.backgroundUrl}`);
   const { width: imgW, height: imgH } = await imageSize(bgDataUrl);
 

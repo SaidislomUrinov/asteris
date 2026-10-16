@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { HiChevronDown } from "react-icons/hi";
+import { changeLanguage } from "../utils/i18n";
 import uzFlag from "../assets/uz.png";
 import enFlag from "../assets/en.png";
 import ruFlag from "../assets/ru.png";
@@ -32,7 +33,7 @@ function UpdateLang({ dark = false }) {
   }, []);
 
   const select = (val) => {
-    i18n.changeLanguage(val);
+    changeLanguage(val);
     setOpen(false);
   };
 

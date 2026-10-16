@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { api, CENTERS_CHANGED_EVENT, getActiveCenter, getAuthType, setActiveCenter } from "./utils/fetching";
 import { updateUser } from "./contexts/user";
@@ -17,50 +17,53 @@ import GlobalQrScanner from "./components/GlobalQrScanner";
 import Introduction from "./components/Introduction/Introduction";
 import { INTRO_VERSION, readIntroVersion } from "./components/Introduction/steps";
 import useNewsSync from "./hooks/useNewsSync";
-import ReceptionHome from "./pages/ReceptionHome";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import Dashboard from "./pages/Dashboard";
-import TeacherHome from "./pages/TeacherHome";
-import Staff from "./pages/Staff";
-import StaffDetail from "./pages/Staff/StaffDetail";
-import Subjects from "./pages/Subjects";
-import Rooms from "./pages/Rooms";
-import RoomDetail from "./pages/Rooms/RoomDetail";
-import Groups from "./pages/Groups";
-import GroupDetail from "./pages/Groups/GroupDetail";
-import Individual from "./pages/Individual";
-import Schedule from "./pages/Schedule";
-import Lesson from "./pages/Lesson";
-import MyPlans from "./pages/MyPlans";
-import PlanEditor from "./pages/MyPlans/PlanEditor";
-import Students from "./pages/Students";
-import StudentDetail from "./pages/Students/StudentDetail";
-import StudentAchievements from "./pages/Students/StudentAchievements";
 import { BADGE_FEATURE } from "./utils/badges";
-import Leads from "./pages/Leads";
-import Subscription from "./pages/Subscription";
-import Salary from "./pages/Salary";
-import Expenses from "./pages/Expenses";
-import StaffProfile from "./pages/StaffProfile";
-import Finance from "./pages/Finance";
-import OwnerProfile from "./pages/OwnerProfile";
-import Notifications from "./pages/Notifications";
-import QrAttendance from "./pages/QrAttendance";
-import Revenue from "./pages/Revenue";
-import TeacherPerformance from "./pages/Reports/TeacherPerformance";
-import Reports from "./pages/Reports";
-import AuditLog from "./pages/AuditLog";
-import Certificates from "./pages/Certificates";
-import Coins from "./pages/Coins";
-import TemplateEditor from "./pages/Certificates/TemplateEditor";
-import CertificateVerify from "./pages/CertificateVerify";
-import NotFound from "./pages/NotFound";
-import UiLab from "./pages/UiLab";
-import Calendar from "./pages/Calendar";
-import Archive from "./pages/Archive";
-import VideoLessons from "./pages/VideoLessons";
 import useCan from "./hooks/useCan";
 import useFeature from "./hooks/useFeature";
+
+// Sahifalar route bo'yicha alohida chunk'larga bo'linadi — birinchi ochilishda
+// butun dastur (≈4 MB) emas, faqat ochilgan sahifa yuklanadi.
+const ReceptionHome = lazy(() => import("./pages/ReceptionHome"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const TeacherHome = lazy(() => import("./pages/TeacherHome"));
+const Staff = lazy(() => import("./pages/Staff"));
+const StaffDetail = lazy(() => import("./pages/Staff/StaffDetail"));
+const Subjects = lazy(() => import("./pages/Subjects"));
+const Rooms = lazy(() => import("./pages/Rooms"));
+const RoomDetail = lazy(() => import("./pages/Rooms/RoomDetail"));
+const Groups = lazy(() => import("./pages/Groups"));
+const GroupDetail = lazy(() => import("./pages/Groups/GroupDetail"));
+const Individual = lazy(() => import("./pages/Individual"));
+const Schedule = lazy(() => import("./pages/Schedule"));
+const Lesson = lazy(() => import("./pages/Lesson"));
+const MyPlans = lazy(() => import("./pages/MyPlans"));
+const PlanEditor = lazy(() => import("./pages/MyPlans/PlanEditor"));
+const Students = lazy(() => import("./pages/Students"));
+const StudentDetail = lazy(() => import("./pages/Students/StudentDetail"));
+const StudentAchievements = lazy(() => import("./pages/Students/StudentAchievements"));
+const Leads = lazy(() => import("./pages/Leads"));
+const Subscription = lazy(() => import("./pages/Subscription"));
+const Salary = lazy(() => import("./pages/Salary"));
+const Expenses = lazy(() => import("./pages/Expenses"));
+const StaffProfile = lazy(() => import("./pages/StaffProfile"));
+const Finance = lazy(() => import("./pages/Finance"));
+const OwnerProfile = lazy(() => import("./pages/OwnerProfile"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const QrAttendance = lazy(() => import("./pages/QrAttendance"));
+const Revenue = lazy(() => import("./pages/Revenue"));
+const TeacherPerformance = lazy(() => import("./pages/Reports/TeacherPerformance"));
+const Reports = lazy(() => import("./pages/Reports"));
+const AuditLog = lazy(() => import("./pages/AuditLog"));
+const Certificates = lazy(() => import("./pages/Certificates"));
+const Coins = lazy(() => import("./pages/Coins"));
+const TemplateEditor = lazy(() => import("./pages/Certificates/TemplateEditor"));
+const CertificateVerify = lazy(() => import("./pages/CertificateVerify"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const UiLab = lazy(() => import("./pages/UiLab"));
+const Calendar = lazy(() => import("./pages/Calendar"));
+const Archive = lazy(() => import("./pages/Archive"));
+const VideoLessons = lazy(() => import("./pages/VideoLessons"));
 
 // Login paytida tanlangan rolga qarab tekshiriladigan endpoint boshqacha —
 // Client Owner va Staff mustaqil auth zanjiri (server/CLAUDE.md "Autentifikatsiya").
@@ -148,9 +151,11 @@ function App() {
   // KUTMASDAN, `load`/`_id` tekshiruvidan OLDIN alohida render qilinadi.
   if (pathname.startsWith("/certificate/verify/")) {
     return (
-      <Routes>
-        <Route path="/certificate/verify/:code" element={<CertificateVerify />} />
-      </Routes>
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          <Route path="/certificate/verify/:code" element={<CertificateVerify />} />
+        </Routes>
+      </Suspense>
     );
   }
 
@@ -161,7 +166,11 @@ function App() {
   // ochadi (masalan `/groups?uilab=1`), shunda Navbar aktiv bo'limni to'g'ri
   // ko'rsatadi — u manzilni `useLocation()` dan o'qiydi.
   if (import.meta.env.DEV && (pathname === "/ui-lab" || search.includes("uilab")))
-    return <UiLab />;
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <UiLab />
+      </Suspense>
+    );
 
   if (!load)
     return (
@@ -194,6 +203,7 @@ function App() {
             key={pathname}
             className="p-4 pb-20 lg:pb-4 flex flex-col min-h-full lg:h-full max-lg:[&>*]:!h-auto max-lg:[&>*]:min-h-full"
           >
+            <Suspense fallback={<PageFallback />}>
             <Routes>
               {/* Ildiz yo'l uchun marshrut yo'q edi — shu manzilga to'g'ridan-to'g'ri
                   kirilsa (yoki login'dan keyin) kontent bo'sh qolardi. */}
@@ -315,6 +325,7 @@ function App() {
               {/* Ruxsat yo'q yoki mavjud bo'lmagan sahifa — bo'sh oyna emas. */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </div>
         </div>
       </div>
@@ -333,6 +344,11 @@ function App() {
 }
 
 export default App;
+
+// Lazy sahifa chunk'i yuklanayotganda — kontent maydonida markazdagi spinner.
+function PageFallback() {
+  return <Loading height="40vh" />;
+}
 
 // Yangiliklar store sinxroni (socket + boshlang'ich yuklash). Avval
 // NewsPopup ichida edi; popup olib tashlandi — yangiliklar endi o'zi

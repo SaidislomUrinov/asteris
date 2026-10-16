@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import readXlsxFile from "read-excel-file/browser";
 import { useTranslation } from "react-i18next";
 import {
   HiArrowRight,
@@ -25,6 +24,7 @@ import {
 import Dialog from "../../ui/Dialog";
 import Button from "../../ui/Button";
 import { api } from "../../utils/fetching";
+import { loadReadXlsx } from "../../utils/lazyLibs";
 import { errorMsg, successMsg } from "../../utils/alert";
 import StartDateField from "../Students/StartDateField";
 import { assertStartDate, startDateMinOf, tashkentDay } from "../Students/startDate.util";
@@ -428,7 +428,7 @@ function ImportStudentsDialog({ open, onClose, group, subjects = [], onSaved }) 
         table = parseDelimited(text);
       } else {
         // read-excel-file — FAYL BRAUZERDA o'qiladi, serverga yuborilmaydi.
-        table = normalizeSheetRows(await readXlsxFile(file));
+        table = normalizeSheetRows(await (await loadReadXlsx())(file));
         if (!table.length) {
           errorMsg("import.emptyData");
           return;

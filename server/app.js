@@ -7,6 +7,7 @@ const cluster = require("node:cluster");
 const { availableParallelism } = require("node:os");
 const express = require("express");
 const helmet = require("helmet");
+const compression = require("compression");
 const cors = require("cors");
 const fileUpload = require("express-fileupload");
 
@@ -22,6 +23,10 @@ const app = express();
 app.set("trust proxy", 1);
 
 app.use(helmet());
+// JSON javoblarni gzip bilan siqish — ro'yxatlar (o'quvchilar sahifasi
+// ~130 KB) 8–10 barobar kichrayadi. Prod nginx API javoblarini siqmaydi,
+// shuning uchun bu yerda. 1 KB dan kichik javoblar siqilmaydi.
+app.use(compression({ threshold: 1024 }));
 // exposedHeaders: Content-Disposition — Excel export fayl nomini frontend
 // (cross-origin, 5173→5000) o'qiy olishi uchun (aks holda brauzer bu
 // header'ni JS'dan yashiradi, fayl har doim "export.xlsx" bo'lib qoladi).

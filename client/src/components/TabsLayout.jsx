@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { isSectionActive } from "../utils/navSections";
 import { useFinanceTabs, useScheduleTabs, useSettingsTabs } from "../hooks/useSectionTabs";
+import Loading from "../ui/Loading";
 
 // Menyuda bitta band bo'lgan bo'lim (Sozlamalar, Jadval, Moliya) sahifalari ustidagi
 // umumiy tab qatori. `tabs` — `useSectionTabs` hook'laridan. Detail sahifalar
@@ -38,7 +40,10 @@ export default function TabsLayout({ tabs }) {
       {/* Sahifalar ildizi `h-full` bilan yozilgan — App.jsx'dagi mobil
           `h-auto` qoidasi shu yerda ham takrorlanadi. */}
       <div className="flex-1 min-h-0 flex flex-col max-lg:[&>*]:!h-auto max-lg:[&>*]:min-h-full">
-        <Outlet />
+        {/* Lazy sahifa yuklanayotganda tab qatori joyida qoladi. */}
+        <Suspense fallback={<Loading height="40vh" />}>
+          <Outlet />
+        </Suspense>
       </div>
     </div>
   );

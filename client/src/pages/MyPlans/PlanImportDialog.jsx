@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import readXlsxFile from "read-excel-file/browser";
 import { HiArrowDownTray, HiArrowUpTray, HiExclamationTriangle, HiPlus, HiTrash } from "react-icons/hi2";
 import Dialog from "../../ui/Dialog";
 import Button from "../../ui/Button";
@@ -9,6 +8,7 @@ import Input from "../../ui/Input";
 import Select from "../../ui/Select";
 import PlanImportGuide from "./PlanImportGuide";
 import { api } from "../../utils/fetching";
+import { loadReadXlsx } from "../../utils/lazyLibs";
 import { errorMsg } from "../../utils/alert";
 import { normalizeSheetRows, parseCsv, tableToModules, tempKey, toServerLessons, validateImport } from "./planExcel";
 
@@ -89,7 +89,7 @@ export default function PlanImportDialog({ open, onClose, initialKind, initialMo
     if (name.endsWith(".xls") && !name.endsWith(".xlsx")) return errorMsg("teachingPlan.import.xlsOld");
     try {
       setReading(true);
-      const table = name.endsWith(".csv") ? parseCsv(await file.text()) : normalizeSheetRows(await readXlsxFile(file));
+      const table = name.endsWith(".csv") ? parseCsv(await file.text()) : normalizeSheetRows(await (await loadReadXlsx())(file));
       const parsed = tableToModules(table, kind, t("teachingPlan.import.defaultModule", { n: modules.length + 1 }));
       if (!parsed.length || !parsed.some((m) => m.lessons.length || m.title)) return errorMsg("teachingPlan.import.empty");
       setRows(parsed);
