@@ -4,10 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import useCan from "./useCan";
+import { openCenterCreate } from "../utils/centerActions";
 
 // Old shartlar: nima yetishmasa — qaysi sahifada qo'shiladi va kim qo'sha oladi.
+// Filialning sahifasi yo'q — `open` global "Filial qo'shish" oynasini ochadi
+// (components/center/CenterActionsHost.jsx).
 const PREREQS = {
-  center: { path: "/centers", ownerOnly: true },
+  center: { open: openCenterCreate, ownerOnly: true },
   subject: { path: "/subjects", permission: "subject:create" },
   group: { path: "/groups", permission: "group:create", noTeaching: true },
 };
@@ -54,7 +57,8 @@ export default function usePrerequisite() {
             type="button"
             onClick={() => {
               toast.dismiss(id);
-              navigate(`${p.path}?create=1`);
+              if (p.open) p.open();
+              else navigate(`${p.path}?create=1`);
             }}
             className="font-semibold text-blue-500 dark:text-blue-400 underline underline-offset-2 decoration-blue-500/60 dark:decoration-blue-400/60 hover:decoration-current cursor-pointer"
           >

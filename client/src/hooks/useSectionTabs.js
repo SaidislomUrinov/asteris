@@ -16,7 +16,7 @@ const useRoleFlags = () => {
 
 // "Sozlamalar" — kamdan-kam ochiladigan sahifalar. Tariflar bu yerda emas —
 // menyuda Sozlamalar ostida alohida band.
-export const SETTINGS_PATHS = ["/centers", "/rooms", "/subjects", "/archive", "/audit-log"];
+export const SETTINGS_PATHS = ["/rooms", "/subjects", "/archive", "/audit-log"];
 
 export function useSettingsTabs() {
   const { isOwner, isTeacher } = useRoleFlags();
@@ -24,7 +24,6 @@ export function useSettingsTabs() {
   const hasFeature = useFeature();
 
   return [
-    isOwner && { to: "/centers", labelKey: "nav.centers" },
     can("room:view") && hasFeature("room.control") && { to: "/rooms", labelKey: "nav.rooms" },
     can("subject:view") && !isTeacher && { to: "/subjects", labelKey: "nav.subjects" },
     can("archive:view") && !isTeacher && { to: "/archive", labelKey: "nav.archive" },

@@ -760,7 +760,9 @@
     "keepCountMismatch": "Tarif limitiga teng miqdorda filial tanlang",
     "readOnlyTitle": "Markaz faqat o'qish rejimida",
     "overflowPending": "Tarif limitidan ortiq faol filiallar bor. Avval qaysi filiallar faol qolishini tanlang",
-    "parentNotifInvalid": "Ota-ona bildirishnoma sozlamalari noto'g'ri"
+    "parentNotifInvalid": "Ota-ona bildirishnoma sozlamalari noto'g'ri",
+    "archive": "Filialni arxivlash",
+    "archiveConfirm": "«{{name}}» filiali arxivlansinmi? Ma'lumotlar o'chmaydi — Arxiv bo'limidan qaytarish mumkin."
   },
   "subject": {
     "title": "Fanlar",

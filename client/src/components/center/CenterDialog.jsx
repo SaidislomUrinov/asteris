@@ -12,7 +12,7 @@ const EMPTY_FORM = { name: "", slogan: "", logoFile: null };
 
 // Create/Edit uchun bitta dialog — `center` prop bo'lsa edit rejimi (PATCH),
 // bo'lmasa create (POST). Auth.jsx'dagi try/catch + { ok, data, msg } patterni.
-// Ota komponent (Centers/index.jsx) har ochilishda `key={center?._id || "new"}`
+// Ota komponent (CenterActionsHost / Dashboard) har ochilishda `key`
 // bilan remount qiladi, shu sabab forma boshlang'ich holati useState lazy init
 // orqali to'g'ridan-to'g'ri propsdan olinadi — useEffect + setState shart emas.
 function CenterDialog({ open, onClose, center, onSaved }) {

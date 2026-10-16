@@ -67,7 +67,7 @@ const INPUT_CLS =
 
 // Filial (Center) darajasidagi sozlamalar — bitta modal ichida, "Saqlash"
 // bosilgandagina ikkalasi (to'lov sikli + davomat) birga saqlanadi. Har
-// filial o'z qoidasini tanlaydi (CenterDetail sahifasidagi ⚙️ tugmasi).
+// filial o'z qoidasini tanlaydi (Dashboard sarlavhasidagi ⚙️ tugmasi).
 function CenterSettingsDialog({ open, onClose, centerId }) {
   const { t } = useTranslation();
   const hasFeature = useFeature();

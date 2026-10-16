@@ -760,7 +760,9 @@
     "keepCountMismatch": "Select exactly as many branches as the plan allows",
     "readOnlyTitle": "Center is read-only",
     "overflowPending": "You have more active centers than your plan allows. First choose which centers stay active",
-    "parentNotifInvalid": "Invalid parent notification settings"
+    "parentNotifInvalid": "Invalid parent notification settings",
+    "archive": "Archive branch",
+    "archiveConfirm": "Archive the “{{name}}” branch? Nothing is deleted — you can restore it from Archive."
   },
   "subject": {
     "title": "Subjects",

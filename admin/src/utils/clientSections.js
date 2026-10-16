@@ -21,7 +21,7 @@ export const CLIENT_SECTION_GROUPS = [
   // "Moliya" — bitta band, ichida tablar (hodimda "Mening hisobim" ham)
   { group: "finance", items: ["revenue", "expenses", "salary", "reports", "reports/teacher-performance", "finance"] },
   // "Sozlamalar" — bitta band, ichida tablar
-  { group: "settings", items: ["centers", "rooms", "rooms/detail", "subjects", "archive", "audit-log"] },
+  { group: "settings", items: ["rooms", "rooms/detail", "subjects", "archive", "audit-log"] },
 ];
 
 // "reports/teacher-performance" → "reportsTeacherPerformance" (i18n kaliti uchun).

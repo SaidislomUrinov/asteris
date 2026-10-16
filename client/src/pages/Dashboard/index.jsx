@@ -2,23 +2,32 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import {
+  HiArchiveBox,
   HiArrowTrendingDown,
   HiBanknotes,
+  HiBuildingOffice2,
   HiChartPie,
+  HiCog6Tooth,
   HiExclamationTriangle,
   HiHome,
+  HiPencil,
   HiRectangleGroup,
   HiUserGroup,
   HiUsers,
   HiWallet,
 } from "react-icons/hi2";
 import Button from "../../ui/Button";
-import Select from "../../ui/Select";
+import IconButton from "../../ui/IconButton";
+import Dialog from "../../ui/Dialog";
+import LazyImage from "../../ui/LazyImage";
 import MonthInput from "../../ui/MonthInput";
 import Loading from "../../ui/Loading";
 import PaymentDonut from "../Groups/PaymentDonut";
 import RevenueChart from "../Groups/RevenueChart";
-import ExpenseCategoryDonut from "../Centers/ExpenseCategoryDonut";
+import ExpenseCategoryDonut from "../../components/center/ExpenseCategoryDonut";
+import CenterDialog from "../../components/center/CenterDialog";
+import CenterSettingsDialog from "../../components/center/CenterSettingsDialog";
+import RecentPayments from "./RecentPayments";
 import TodayLessonsScroll from "./TodayLessonsScroll";
 import RevenueByCollector from "./RevenueByCollector";
 import LeadDonut from "./LeadDonut";
@@ -31,8 +40,9 @@ import HiddenFinancePanel from "../../components/HiddenFinancePanel";
 import useHideFinance from "../../hooks/useHideFinance";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
-import { api } from "../../utils/fetching";
-import { errorMsg } from "../../utils/alert";
+import { api, API, notifyCentersChanged, setActiveCenter } from "../../utils/fetching";
+import { errorMsg, successMsg } from "../../utils/alert";
+import switchCenter from "../../utils/switchCenter";
 import { maskMoney } from "../../utils/moneyFormat";
 
 const currentMonth = () => {
@@ -44,10 +54,20 @@ function Dashboard() {
   const { t } = useTranslation();
   // "Tushumlar" kartochkasi faqat Client Owner uchun — backend ham
   // `requireOwner` bilan yopilgan, staff'da so'rov umuman yuborilmaydi.
-  const authType = useSelector((e) => e.user.authType);
+  const { authType, centers = [], activeCenter } = useSelector((e) => e.user);
+  const isOwner = authType === "owner";
   const [month, setMonth] = useState(currentMonth());
-  const [filterCenter, setFilterCenter] = useState("");
-  const [centers, setCenters] = useState([]);
+  // Dashboard = FAOL filial statistikasi (docs/API_CONTRACT_multi_center.md §5) —
+  // so'rovlarda `center` berilmaydi, backend faol filialni o'zi qo'llaydi.
+  // Alohida filial sahifasi yo'q: filial ma'lumoti va amallari shu sarlavhada.
+  const centerList = Array.isArray(centers) ? centers : [];
+  const activeInfo = centerList.find((c) => c._id === activeCenter) || centerList[0] || null;
+  const [center, setCenter] = useState(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editKey, setEditKey] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -67,7 +87,7 @@ function Dashboard() {
     try {
       setLoading(true);
       setError(false);
-      const res = await api.get("/dashboard", { params: { month, center: filterCenter } });
+      const res = await api.get("/dashboard", { params: { month } });
       const { ok, data, msg } = res.data;
       if (!ok) throw new Error(msg);
       setData(data);
@@ -77,21 +97,21 @@ function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [month, filterCenter]);
+  }, [month]);
 
   const fetchExpenseByCategory = useCallback(async () => {
     try {
-      const res = await api.get("/expenses/by-category", { params: { month, center: filterCenter } });
+      const res = await api.get("/expenses/by-category", { params: { month } });
       const { ok, data } = res.data;
       if (ok) setExpenseByCategory(data || []);
     } catch (error) {
       errorMsg(error.message);
     }
-  }, [month, filterCenter]);
+  }, [month]);
 
   const fetchTeacherSalary = useCallback(async () => {
     try {
-      const res = await api.get("/salaries/summary", { params: { month, center: filterCenter } });
+      const res = await api.get("/salaries/summary", { params: { month } });
       const { ok, data } = res.data;
       if (!ok) return;
       const teachers = (data || []).filter((row) => row.staff.role === "teacher");
@@ -102,14 +122,14 @@ function Dashboard() {
     } catch (error) {
       errorMsg(error.message);
     }
-  }, [month, filterCenter]);
+  }, [month]);
 
   // Oylik lid statistikasi — yuqoridagi oy/filial tanlovi bilan birga o'zgaradi.
   const fetchLeadStats = useCallback(async () => {
     if (!canLeads) return;
     try {
       const [statsRes, subjectsRes] = await Promise.all([
-        api.get("/student-leads/stats", { params: { month, center: filterCenter } }),
+        api.get("/student-leads/stats", { params: { month } }),
         api.get("/subjects", { params: { page: 1 } }),
       ]);
       if (statsRes.data.ok) setLeadStats(statsRes.data.data);
@@ -119,7 +139,7 @@ function Dashboard() {
     } catch (error) {
       errorMsg(error.message);
     }
-  }, [month, filterCenter, canLeads]);
+  }, [month, canLeads]);
 
   useSocketEvent("lead:changed", () => fetchLeadStats(), canLeads);
 
@@ -143,21 +163,51 @@ function Dashboard() {
     return () => clearTimeout(t);
   }, [fetchTeacherSalary]);
 
+  // Faol filialning to'liq ma'lumoti (shior, sana) — nom/logo Redux'da bor,
+  // qolgani shu so'rovdan. Xato bo'lsa sarlavha Redux'dagi bilan qoladi.
+  const activeId = activeInfo?._id;
+  const fetchCenter = useCallback(async () => {
+    if (!activeId) return;
+    try {
+      const res = await api.get(`/centers/${activeId}`);
+      if (res.data.ok) setCenter(res.data.data);
+    } catch {
+      // sarlavha Redux'dagi nom bilan ko'rinadi
+    }
+  }, [activeId]);
+
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await api.get("/centers", { params: { page: 1 } });
-        if (res.data.ok) setCenters(res.data.data || []);
-      } catch {
-        // markazlar faqat filtr uchun
+    const id = setTimeout(fetchCenter, 0);
+    return () => clearTimeout(id);
+  }, [fetchCenter]);
+
+  // Arxivlangach boshqa ishlaydigan filialga o'tiladi; qolmasa — filialsiz holat.
+  const confirmArchive = async () => {
+    if (!activeId) return;
+    try {
+      setArchiving(true);
+      const res = await api.delete(`/centers/${activeId}`);
+      const { ok, msg } = res.data;
+      if (!ok) throw new Error(msg);
+      successMsg(msg);
+      const next = centerList.find((c) => c._id !== activeId && c.status !== "blocked");
+      if (next) {
+        switchCenter(next._id);
+      } else {
+        setActiveCenter("");
+        window.location.replace("/dashboard");
       }
-    })();
-  }, []);
+    } catch (error) {
+      errorMsg(error.message);
+    } finally {
+      setArchiving(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
       try {
-        const params = { page: 1, ...(filterCenter ? { center: filterCenter } : {}) };
+        const params = { page: 1 };
         // Ruxsat bo'lmasa API chaqirilmaydi (CLAUDE.md).
         const skip = Promise.resolve({ data: { ok: false } });
         const [roomsRes, subjectsRes] = await Promise.all([
@@ -165,13 +215,12 @@ function Dashboard() {
           can("subject:view") ? api.get("/subjects", { params }) : skip,
         ]);
         if (roomsRes.data.ok) setRoomsCount(roomsRes.data.meta?.total ?? roomsRes.data.data?.length ?? 0);
-        if (subjectsRes.data.ok)
-          setSubjectsCount(subjectsRes.data.meta?.total ?? subjectsRes.data.data?.length ?? 0);
+        if (subjectsRes.data.ok) setSubjectsCount(subjectsRes.data.meta?.total ?? subjectsRes.data.data?.length ?? 0);
       } catch {
         // faqat kichik hisoblagichlar, xato bo'lsa jim o'tkazamiz
       }
     })();
-  }, [filterCenter, can]);
+  }, [can]);
 
   // Realtime — to'lov/davomat/xarajat/oylik o'zgarsa dashboard qayta yuklanadi.
   // Debounce SHART: `attendance:marked` har QR skanida keladi va ertalabki
@@ -216,28 +265,48 @@ function Dashboard() {
   return (
     <div className="flex flex-col w-full h-full gap-4">
       <DashboardHeader
-        icon={<HiChartPie />}
-        title={t("dashboard.title")}
+        leading={<CenterLogo logo={center?.logo ?? activeInfo?.logo} />}
+        title={center?.name || activeInfo?.name || t("dashboard.title")}
+        subtitle={center?.slogan || (activeInfo ? t("dashboard.title") : undefined)}
       >
-        <MonthInput
-          className="w-full sm:w-44"
-          value={month}
-          onChange={(m) => setMonth(m || currentMonth())}
-          max={currentMonth()}
-        />
-        {centers.length > 1 && (
-          <Select
-            className="w-full sm:w-56"
-            placeholder={t("dashboard.center")}
-            variant="white"
-            value={filterCenter}
-            onChange={setFilterCenter}
-            options={[
-              { value: "", label: t("common.all") },
-              ...centers.map((c) => ({ value: c._id, label: c.name })),
-            ]}
-          />
-        )}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex-1 sm:flex-none sm:w-44 min-w-0">
+            <MonthInput
+              className="w-full"
+              value={month}
+              onChange={(m) => setMonth(m || currentMonth())}
+              max={currentMonth()}
+            />
+          </div>
+          {/* Filial amallari — faqat Owner (Center CRUD hodim ruxsati emas).
+            Bloklangan filial Read-Only: amallar ko'rinmaydi. */}
+          {isOwner && activeInfo && activeInfo.status !== "blocked" && (
+            <div className="flex items-center gap-1">
+              <IconButton
+                variant="ghost"
+                color="black"
+                title={t("settings.centerSectionTitle")}
+                onClick={() => setSettingsOpen(true)}
+              >
+                <HiCog6Tooth />
+              </IconButton>
+              <IconButton
+                variant="ghost"
+                color="blue"
+                title={t("center.edit")}
+                onClick={() => {
+                  setEditKey((k) => k + 1);
+                  setEditOpen(true);
+                }}
+              >
+                <HiPencil />
+              </IconButton>
+              <IconButton variant="ghost" color="red" title={t("center.archive")} onClick={() => setArchiveOpen(true)}>
+                <HiArchiveBox />
+              </IconButton>
+            </div>
+          )}
+        </div>
       </DashboardHeader>
 
       {/* MOLIYA — sahifadagi eng muhim raqamlar. Ko'z tugmasi bosilganda
@@ -267,7 +336,9 @@ function Dashboard() {
           label={t("center.teacherSalaryCardTitle")}
           value={maskMoney(teacherSalary.total, hideFinance)}
           suffix={hideFinance ? "" : t("student.somSuffix")}
-          hint={t("dashboard.teacherSalaryHint", { count: teacherSalary.count })}
+          hint={t("dashboard.teacherSalaryHint", {
+            count: teacherSalary.count,
+          })}
           gradient="from-violet-500 to-indigo-600"
           shadow="shadow-violet-500/20"
         />
@@ -352,10 +423,10 @@ function Dashboard() {
             hideFinance ? (
               <HiddenFinancePanel />
             ) : (
-              <RevenueByCollector month={month} center={filterCenter} />
+              <RevenueByCollector month={month} />
             )
           ) : (
-            <TodayLessonsScroll center={filterCenter} />
+            <TodayLessonsScroll />
           )}
         </div>
       </div>
@@ -371,12 +442,71 @@ function Dashboard() {
         </div>
       )}
 
-      {authType === "owner" && (
-        <div className="shrink-0">
-          <TodayLessonsScroll center={filterCenter} />
+      {/* Oxirgi to'lovlar (avvalgi filial sahifasidan) — Owner'da bugungi
+          darslar yonida, hodimda (darslar yuqorida) yolg'iz. */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch lg:h-72">
+        <div className={`min-h-0 ${isOwner ? "lg:col-span-1" : "lg:col-span-3"}`}>
+          {/* Ismlar ko'rinadi, summalar ko'z tugmasi bilan "****" bo'ladi. */}
+          <RecentPayments payments={data.recentPayments || []} hideFinance={hideFinance} />
         </div>
+        {isOwner && (
+          <div className="lg:col-span-2 min-h-0">
+            <TodayLessonsScroll />
+          </div>
+        )}
+      </div>
+
+      {isOwner && activeInfo && (
+        <>
+          <CenterSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} centerId={activeInfo._id} />
+          <CenterDialog
+            key={editKey}
+            open={editOpen}
+            center={center || activeInfo}
+            onClose={() => setEditOpen(false)}
+            onSaved={() => {
+              fetchCenter();
+              // Top'dagi filial nomi/logosi (Redux) ham yangilansin.
+              notifyCentersChanged();
+            }}
+          />
+          <Dialog
+            open={archiveOpen}
+            onClose={() => setArchiveOpen(false)}
+            title={t("center.archive")}
+            actions={
+              <>
+                <Button color="black" variant="text" onClick={() => setArchiveOpen(false)}>
+                  {t("common.cancel")}
+                </Button>
+                <Button color="red" loading={archiving} onClick={confirmArchive}>
+                  {t("center.archive")}
+                </Button>
+              </>
+            }
+          >
+            <p>{t("center.archiveConfirm", { name: activeInfo.name })}</p>
+          </Dialog>
+        </>
       )}
     </div>
+  );
+}
+
+// Sarlavhadagi filial logosi — yo'q bo'lsa bino ikonkasi.
+function CenterLogo({ logo }) {
+  if (logo) {
+    return (
+      <LazyImage
+        src={logo.startsWith("http") ? logo : `${API}${logo}`}
+        className="w-10 h-10 shrink-0 rounded-xl object-cover bg-slate-100 dark:bg-night-800"
+      />
+    );
+  }
+  return (
+    <span className="flex items-center justify-center w-10 h-10 shrink-0 rounded-xl bg-blue-50 dark:bg-blue-500/15 text-blue-500 text-lg">
+      <HiBuildingOffice2 />
+    </span>
   );
 }
 

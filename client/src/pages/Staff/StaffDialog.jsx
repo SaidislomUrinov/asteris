@@ -240,7 +240,7 @@ const initialSalaryValues = (staff) => {
 };
 
 // Create/Edit uchun bitta dialog — `staff` prop bo'lsa edit rejimi (PATCH),
-// bo'lmasa create (POST). Centers/CenterDialog.jsx bilan bir xil naqsh: ota
+// bo'lmasa create (POST). components/center/CenterDialog.jsx bilan bir xil naqsh: ota
 // komponent `key={staff?._id || "new"}` bilan remount qiladi, shu sabab forma
 // boshlang'ich holati useState lazy init orqali propsdan olinadi.
 function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {

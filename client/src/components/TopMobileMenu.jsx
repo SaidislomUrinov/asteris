@@ -6,7 +6,9 @@ import {
   HiBuildingOffice2,
   HiChatBubbleLeftRight,
   HiCheck,
+  HiLockClosed,
   HiMoon,
+  HiPlus,
   HiPlayCircle,
   HiSquares2X2,
   HiSun,
@@ -18,6 +20,7 @@ import useChat from "../hooks/useChat";
 import useTheme, { setTheme } from "../hooks/useTheme";
 import useTutorialVideo from "../hooks/useTutorialVideo";
 import switchCenter from "../utils/switchCenter";
+import { openCenterCreate, openCenterUnblock } from "../utils/centerActions";
 import { resolveSectionKey, videoSectionLabelKey } from "../utils/navSections";
 
 function SectionTitle({ children }) {
@@ -59,7 +62,8 @@ export default function TopMobileMenu() {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const [modal, setModal] = useState(null); // "video" | "chat" | null
-  const { centers = [], activeCenter } = useSelector((e) => e.user);
+  const { centers = [], activeCenter, authType } = useSelector((e) => e.user);
+  const isOwner = authType === "owner";
   const { isDark } = useTheme();
   const chat = useChat(true);
   const sectionKey = resolveSectionKey(pathname);
@@ -103,17 +107,27 @@ export default function TopMobileMenu() {
         <>
           <div className="fixed inset-0 top-15 z-40 bg-slate-900/30" onClick={() => setOpen(false)} />
           <div className="fixed top-[68px] inset-x-3 z-50 flex flex-col gap-4 p-3 max-h-[calc(100dvh-84px)] overflow-y-auto rounded-2xl bg-white dark:bg-night-900 border border-slate-200 dark:border-night-700 shadow-[0_16px_40px_-12px_rgba(15,23,42,0.35)] dark:shadow-none">
-            {active && (
+            {(active || isOwner) && (
               <div className="flex flex-col gap-1.5">
                 <SectionTitle>{t("topMenu.center")}</SectionTitle>
                 <div className="flex flex-col gap-1">
                   {centerList.map((c) => {
                     const on = c._id === active._id;
+                    const blocked = c.status === "blocked";
                     return (
                       <button
                         key={c._id}
                         type="button"
-                        onClick={() => !on && switchCenter(c._id)}
+                        onClick={() => {
+                          if (on) return;
+                          setOpen(false);
+                          // Bloklangan filialga o'tib bo'lmaydi — Owner'ga "Qayta yoqish" tasdig'i.
+                          if (blocked) {
+                            if (isOwner) openCenterUnblock(c);
+                            return;
+                          }
+                          switchCenter(c._id);
+                        }}
                         className={`flex items-center gap-2.5 px-2 py-2 rounded-xl text-left transition-colors ${
                           on
                             ? "bg-blue-50 dark:bg-blue-500/10 cursor-default"
@@ -127,7 +141,13 @@ export default function TopMobileMenu() {
                               : "bg-slate-100 dark:bg-night-800 text-slate-500 dark:text-slate-400"
                           }`}
                         >
-                          {on ? <HiCheck className="text-base" /> : <HiBuildingOffice2 className="text-base" />}
+                          {on ? (
+                            <HiCheck className="text-base" />
+                          ) : blocked ? (
+                            <HiLockClosed className="text-base" />
+                          ) : (
+                            <HiBuildingOffice2 className="text-base" />
+                          )}
                         </span>
                         <span className="flex flex-col min-w-0">
                           <span
@@ -146,6 +166,21 @@ export default function TopMobileMenu() {
                       </button>
                     );
                   })}
+                  {isOwner && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpen(false);
+                        openCenterCreate();
+                      }}
+                      className="flex items-center gap-2.5 px-2 py-2 rounded-xl text-left active:bg-slate-50 dark:active:bg-night-800 cursor-pointer"
+                    >
+                      <span className="grid place-items-center size-8 shrink-0 rounded-lg bg-blue-500 text-white">
+                        <HiPlus className="text-base" />
+                      </span>
+                      <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t("center.create")}</span>
+                    </button>
+                  )}
                 </div>
               </div>
             )}

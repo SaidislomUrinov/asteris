@@ -9,11 +9,10 @@
 //
 // Tartib muhim emas — moslik prefiks bo'yicha aniq topiladi (`/groups` va
 // `/schedule` alohida yo'llar, biri ikkinchisining ichida emas).
-// Sozlamalar tablari (Filiallar, Xonalar, Fanlar, Arxiv, Audit) —
+// Sozlamalar tablari (Xonalar, Fanlar, Arxiv, Audit) —
 // sarlavha "Sozlamalar", qaysi tab ochiqligini tab qatori bildiradi.
 export const NAV_SECTIONS = [
   { path: "/dashboard", titleKey: "nav.dashboard" },
-  { path: "/centers", titleKey: "nav.settings" },
   { path: "/staff", titleKey: "nav.staff" },
   { path: "/subjects", titleKey: "nav.settings" },
   { path: "/rooms", titleKey: "nav.settings" },

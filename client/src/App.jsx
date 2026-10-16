@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Navbar from "./components/Navbar";
 import { FinanceLayout, ScheduleLayout, SettingsLayout } from "./components/TabsLayout";
 import Top from "./components/Top";
+import CenterActionsHost from "./components/center/CenterActionsHost";
 import Logout from "./components/Logout";
 import SubscriptionExpiredBanner from "./components/SubscriptionExpiredBanner";
 import SubscriptionBlockedModal from "./components/SubscriptionBlockedModal";
@@ -20,8 +21,6 @@ import ReceptionHome from "./pages/ReceptionHome";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import TeacherHome from "./pages/TeacherHome";
-import Centers from "./pages/Centers";
-import CenterDetail from "./pages/Centers/CenterDetail";
 import Staff from "./pages/Staff";
 import StaffDetail from "./pages/Staff/StaffDetail";
 import Subjects from "./pages/Subjects";
@@ -176,6 +175,7 @@ function App() {
       <Navbar />
       <div className="flex h-screen items-start justify-start flex-col flex-1 lg:ml-62.5 w-full overflow-hidden">
         <Top />
+        {authType === "owner" && <CenterActionsHost />}
         <SubscriptionExpiredBanner />
         {/* Mobil pastki tab bar (h-16, fixed) sahifa oxirini yopib qo'ymasligi
             uchun bo'sh joy KONTENT div'iga beriladi — scroll konteynerining
@@ -213,7 +213,6 @@ function App() {
               {/* Sozlamalar — kam ochiladigan ro'yxat sahifalari bitta tab
                   qatori ostida (SettingsLayout). URL'lar o'zgarmagan. */}
               <Route element={<SettingsLayout />}>
-                {authType === "owner" && <Route path="/centers" element={<Centers />} />}
                 {can("room:view") && <Route path="/rooms" element={<Rooms />} />}
                 {/* O'qituvchi/yordamchiga Fanlar bo'limi ko'rsatilmaydi — `subject:view`
                     ruxsati qoladi (guruh/dars sahifalari fan nomini API'dan oladi). */}
@@ -241,9 +240,9 @@ function App() {
                   <Route path="/reports/teacher-performance" element={<TeacherPerformance />} />
                 )}
               </Route>
-              {authType === "owner" && (
-                <Route path="/centers/:id" element={<CenterDetail />} />
-              )}
+              {/* Filiallar sahifasi yo'q (docs/API_CONTRACT_center_switcher.md) —
+                  boshqaruv Top menyu va Dashboard'da. Eski havolalar uchun. */}
+              <Route path="/centers/*" element={<Navigate to="/dashboard" replace />} />
               {authType === "owner" && (
                 <Route path="/staff" element={<Staff />} />
               )}

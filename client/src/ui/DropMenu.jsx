@@ -92,6 +92,8 @@ function DropdownMenu({ items = [], onOpenChange, trigger, align = "end" }) {
               const tip = item.title || item.hint || undefined;
               return (
                 <div key={index} title={tip}>
+                  {/* `divider` — band ustida ajratuvchi chiziq (masalan ro'yxat va amal orasida). */}
+                  {item.divider && <div className="mx-1 my-1 h-px bg-slate-100 dark:bg-night-700" />}
                   <button
                     type="button"
                     disabled={item.disabled}
