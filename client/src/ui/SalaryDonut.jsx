@@ -1,5 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import ChartTip from "../components/charts/ChartTip";
+import { money } from "../components/charts/chartTheme";
 import { maskMoney } from "../utils/moneyFormat";
 
 const NET_COLOR = "#10b981"; // emerald-500 — hisoblangan + bonus
@@ -38,11 +40,31 @@ function SalaryDonut({ base = 0, bonus = 0, advance = 0, withdrawal = 0, payout 
       <div className="relative w-full max-w-[200px] aspect-square">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
+            {total > 0 && !hidden && (
+              <Tooltip
+                content={({ active, payload }) =>
+                  active && payload?.length ? (
+                    <ChartTip
+                      rows={[
+                        {
+                          label:
+                            payload[0].payload.key === "net"
+                              ? `${t("salary.base")} + ${t("salary.bonus")}`
+                              : t("salary.deductions"),
+                          value: `${money(payload[0].value)} ${t("student.somSuffix")}`,
+                          color: payload[0].payload.key === "net" ? NET_COLOR : DEDUCT_COLOR,
+                        },
+                      ]}
+                    />
+                  ) : null
+                }
+              />
+            )}
             <Pie
               data={data}
               dataKey="value"
               nameKey="key"
-              innerRadius="72%"
+              innerRadius="80%"
               outerRadius="100%"
               startAngle={90}
               endAngle={-270}
@@ -64,14 +86,14 @@ function SalaryDonut({ base = 0, bonus = 0, advance = 0, withdrawal = 0, payout 
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
             {t("salary.final")}
           </span>
-          <span className="text-xl font-space font-bold text-slate-900 dark:text-slate-100 truncate">
+          <span className="text-xl font-space font-bold tracking-tight text-slate-900 dark:text-slate-100 truncate max-w-full tabular-nums">
             {maskMoney(final, hidden)}
           </span>
           <span className="text-[11px] text-slate-400 dark:text-slate-500">{t("student.somSuffix")}</span>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 text-xs">
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs">
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: NET_COLOR }} />
           <span className="text-slate-500 dark:text-slate-400">

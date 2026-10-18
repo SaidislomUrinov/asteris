@@ -16,6 +16,7 @@ const {
   todayDayCode,
   todayString,
   formatDay,
+  monthStartUnix,
 } = require("../utils/date.util");
 
 // Dashboard — markaz bo'yicha jonli statistika. Hammasi so'rov paytida
@@ -78,11 +79,14 @@ module.exports = {
     let activeStudents = 0;
     let monthRevenue = 0;
     const recentPayments = [];
-    // Oxirgi 30 kunlik tushum grafigi (RevenueChart, GroupDetail'dagi bilan
-    // bir xil komponent) uchun — recentPayments'dan farqli, 10taga
-    // cheklanmaydi, aks holda faol markazda chart noto'g'ri (kamroq) chiqadi.
+    // Oylik tushum grafigi (RevenueChart, GroupDetail'dagi bilan bir xil
+    // komponent) uchun — tanlangan oy va undan oldingi oy ("O'tgan oy"
+    // solishtiruvi), API_CONTRACT_monthly_charts.md. Oy — `monthRevenue`
+    // bilan bir xil qoida: QAYSI OY UCHUN to'langani (`forMonth`), shunda
+    // grafikdagi jami "Oylik tushum" kartasi bilan mos. recentPayments'dan
+    // farqli, 10taga cheklanmaydi. Kunlarga bo'lish frontendda.
     const chartPayments = [];
-    const chartSinceUnix = Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60;
+    const prevMonth = formatMonth(monthStartUnix(m, -1));
 
     for (const student of students) {
       let counted = false;
@@ -109,8 +113,9 @@ module.exports = {
             date: formatDate(p.date),
             dateUnix: p.date,
           });
-          if (p.date >= chartSinceUnix) {
-            chartPayments.push({ status: "paid", date: p.date, amount: p.amount });
+          const payMonth = p.forMonth || formatMonth(p.date);
+          if (payMonth === m || payMonth === prevMonth) {
+            chartPayments.push({ status: "paid", date: p.date, amount: p.amount, forMonth: payMonth });
           }
         }
       }

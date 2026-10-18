@@ -1319,7 +1319,7 @@ function GroupDetail({ groupId, live = false }) {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
             <div className="lg:col-span-2 min-w-0">
-              <RevenueChart payments={allPayments} />
+              <RevenueChart payments={allPayments} month={selectedMonth} />
             </div>
             <PaymentDonut paid={monthlyRevenue} debt={monthlyDebt} />
           </div>

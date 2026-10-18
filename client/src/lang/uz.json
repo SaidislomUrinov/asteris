@@ -2471,5 +2471,17 @@
     "desc": "Bundan buyon tizimga login emas, shu raqam orqali kirasiz. Raqamni keyin faqat rahbaringiz o'zgartira oladi.",
     "later": "Keyinroq",
     "add": "Telefon raqamni kiritish"
+  },
+  "chart": {
+    "revenueTitle": "{{month}} tushumi",
+    "range": "{{month}}, 1–{{day}}",
+    "previousMonth": "O'tgan oy",
+    "untilDay": "{{day}}-kungacha",
+    "diff": "Farq",
+    "collected": "yig'ildi",
+    "currentCycle": "Joriy oy",
+    "prevUntil": "{{month}}, {{day}}-kungacha: {{amount}}",
+    "mln": "mln",
+    "thousand": "ming"
   }
 }

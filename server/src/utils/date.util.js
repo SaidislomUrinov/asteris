@@ -25,6 +25,8 @@ module.exports = {
   // Joriy oy "YYYY-MM" (Asia/Tashkent) — davomat statistikasida "keyingi
   // oyga o'tib bo'lmaydi" chegarasi uchun.
   currentMonthString: () => moment.tz(TZ).format("YYYY-MM"),
+  // "YYYY-MM" oyining 1-kuni 00:00 (Toshkent), `shift` oy siljitilgan holda.
+  monthStartUnix: (month, shift = 0) => moment.tz(month, "YYYY-MM", TZ).add(shift, "months").unix(),
   // Berilgan unix vaqtni "YYYY-MM-DD" ko'rinishida (Asia/Tashkent) qaytaradi
   // (`todayString`dan farqi — istalgan unix uchun, faqat bugun uchun emas).
   formatDay: (unix) => moment.unix(unix).tz(TZ).format("YYYY-MM-DD"),

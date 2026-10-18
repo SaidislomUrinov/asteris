@@ -1,5 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
+import { HiReceiptPercent } from "react-icons/hi2";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import ChartHeader from "../charts/ChartHeader";
+import ChartTip from "../charts/ChartTip";
+import { compact, money } from "../charts/chartTheme";
 
 const CATEGORY_COLORS = {
   rent: "#3b82f6",
@@ -22,19 +26,38 @@ function ExpenseCategoryDonut({ data = [] }) {
 
   return (
     <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 h-full min-h-0">
-      <div className="shrink-0">
-        <p className="font-semibold text-slate-800 dark:text-slate-100">{t("center.expenseByCategoryTitle")}</p>
-        <p className="text-xs text-slate-400 dark:text-slate-500">{t("center.expenseByCategoryDesc")}</p>
-      </div>
+      <ChartHeader
+        icon={<HiReceiptPercent />}
+        tone="rose"
+        title={t("center.expenseByCategoryTitle")}
+        subtitle={t("center.expenseByCategoryDesc")}
+      />
 
-      <div className="relative w-full flex-1 min-h-32 max-h-56">
+      <div className="relative w-full flex-1 min-h-28 max-h-56">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
+            {sorted.length > 0 && (
+              <Tooltip
+                content={({ active, payload }) =>
+                  active && payload?.length ? (
+                    <ChartTip
+                      rows={[
+                        {
+                          label: t(`expense.categories.${payload[0].payload.category}`),
+                          value: `${money(payload[0].value)} ${t("student.somSuffix")}`,
+                          color: CATEGORY_COLORS[payload[0].payload.category] || CATEGORY_COLORS.other,
+                        },
+                      ]}
+                    />
+                  ) : null
+                }
+              />
+            )}
             <Pie
               data={chartData}
               dataKey="total"
               nameKey="category"
-              innerRadius="76%"
+              innerRadius="80%"
               outerRadius="100%"
               startAngle={90}
               endAngle={-270}
@@ -53,14 +76,14 @@ function ExpenseCategoryDonut({ data = [] }) {
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-10 text-center">
-          <span className="text-[0.8rem] font-space font-bold text-slate-800 dark:text-slate-100 leading-tight tabular-nums">
-            {total.toLocaleString("uz-UZ")}
+          <span className="text-xl font-space font-bold text-slate-900 dark:text-slate-100 leading-tight tabular-nums">
+            {compact(total, t)}
           </span>
-          <span className="text-[0.65rem] text-slate-400 dark:text-slate-500">{t("student.somSuffix")}</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">{t("student.somSuffix")}</span>
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100 dark:border-night-700 shrink-0 max-h-32 overflow-y-auto">
+      <div className="flex flex-col gap-1.5 pt-3 border-t border-slate-100 dark:border-night-700 shrink-0 max-h-40 overflow-y-auto">
         {sorted.length === 0 ? (
           <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-1">{t("expense.empty")}</p>
         ) : (
@@ -73,7 +96,7 @@ function ExpenseCategoryDonut({ data = [] }) {
                 />
                 <span className="text-slate-600 dark:text-slate-300 truncate">{t(`expense.categories.${d.category}`)}</span>
               </div>
-              <span className="font-semibold text-slate-800 dark:text-slate-100 shrink-0">
+              <span className="font-semibold tabular-nums text-slate-800 dark:text-slate-100 shrink-0">
                 {d.total.toLocaleString("uz-UZ")}
               </span>
             </div>

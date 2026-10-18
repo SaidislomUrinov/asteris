@@ -2473,5 +2473,17 @@
     "desc": "From now on you will sign in with this number instead of a login. Only your manager can change it later.",
     "later": "Later",
     "add": "Add phone number"
+  },
+  "chart": {
+    "revenueTitle": "{{month}} revenue",
+    "range": "{{month}} 1–{{day}}",
+    "previousMonth": "Previous month",
+    "untilDay": "Through day {{day}}",
+    "diff": "Difference",
+    "collected": "collected",
+    "currentCycle": "Current month",
+    "prevUntil": "{{month}}, through day {{day}}: {{amount}}",
+    "mln": "M",
+    "thousand": "K"
   }
 }

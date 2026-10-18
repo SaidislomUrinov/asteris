@@ -447,7 +447,7 @@ function Dashboard() {
           ) : statsPending ? (
             <PanelSkeleton variant="chart" />
           ) : (
-            <RevenueChart payments={stats.chartPayments} />
+            <RevenueChart payments={stats.chartPayments} month={month} compare />
           )}
         </div>
       </div>

@@ -1,7 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
-import { HiArrowRight } from "react-icons/hi2";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { HiArrowRight, HiUserPlus } from "react-icons/hi2";
+import ChartHeader from "../../components/charts/ChartHeader";
+import ChartTip from "../../components/charts/ChartTip";
 
 const STATUS_COLORS = {
   new: "#3b82f6",
@@ -24,28 +26,47 @@ function LeadDonut({ stats }) {
 
   return (
     <div className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 h-full min-h-0">
-      <div className="flex items-start justify-between gap-2 shrink-0">
-        <div className="min-w-0">
-          <p className="font-semibold text-slate-800 dark:text-slate-100">{t("lead.dashTitle")}</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500">{t("lead.dashDesc", { count: total })}</p>
-        </div>
-        <Link
-          to="/leads"
-          className="flex items-center gap-1 shrink-0 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-400"
-        >
-          {t("nav.leads")}
-          <HiArrowRight />
-        </Link>
-      </div>
+      <ChartHeader
+        icon={<HiUserPlus />}
+        tone="violet"
+        title={t("lead.dashTitle")}
+        subtitle={t("lead.dashDesc", { count: total })}
+        right={
+          <Link
+            to="/leads"
+            className="flex items-center gap-1 shrink-0 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-400"
+          >
+            {t("nav.leads")}
+            <HiArrowRight />
+          </Link>
+        }
+      />
 
       <div className="relative w-full flex-1 min-h-32 max-h-56">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
+            {filled.length > 0 && (
+              <Tooltip
+                content={({ active, payload }) =>
+                  active && payload?.length ? (
+                    <ChartTip
+                      rows={[
+                        {
+                          label: t(`lead.status.${payload[0].payload.key}`),
+                          value: payload[0].value,
+                          color: STATUS_COLORS[payload[0].payload.key],
+                        },
+                      ]}
+                    />
+                  ) : null
+                }
+              />
+            )}
             <Pie
               data={chartData}
               dataKey="count"
               nameKey="key"
-              innerRadius="76%"
+              innerRadius="80%"
               outerRadius="100%"
               startAngle={90}
               endAngle={-270}
@@ -60,14 +81,14 @@ function LeadDonut({ stats }) {
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-10 text-center">
-          <span className="text-xl font-space font-bold text-slate-800 dark:text-slate-100 leading-tight tabular-nums">
+          <span className="text-2xl font-space font-bold tracking-tight text-slate-900 dark:text-slate-100 leading-tight tabular-nums">
             {conversion}%
           </span>
-          <span className="text-[0.65rem] text-slate-400 dark:text-slate-500">{t("lead.dashConversion")}</span>
+          <span className="text-[0.7rem] whitespace-nowrap text-slate-400 dark:text-slate-500">{t("lead.dashConversion")}</span>
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100 dark:border-night-700 shrink-0">
+      <div className="flex flex-col gap-2 pt-3 border-t border-slate-100 dark:border-night-700 shrink-0">
         {rows.map((r) => (
           <div key={r.key} className="flex items-center justify-between gap-2 text-sm min-w-0">
             <div className="flex items-center gap-2 min-w-0">

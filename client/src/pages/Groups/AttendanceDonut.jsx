@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
-import { HiChevronLeft, HiChevronRight } from "react-icons/hi2";
-import Loading from "../../ui/Loading";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { HiChevronLeft, HiChevronRight, HiUserGroup } from "react-icons/hi2";
+import ChartHeader from "../../components/charts/ChartHeader";
+import ChartTip from "../../components/charts/ChartTip";
 import { api } from "../../utils/fetching";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import ChartCard from "../../ui/ChartCard";
@@ -43,7 +44,9 @@ function AttendanceDonut({ groupId, courseStartMonth }) {
     (async () => {
       try {
         setLoading(true);
-        const res = await api.get(`/attendance/${groupId}/stats`, { params: { month } });
+        const res = await api.get(`/attendance/${groupId}/stats`, {
+          params: { month },
+        });
         const { ok, data } = res.data;
         if (!cancelled && ok) setStats(data);
       } catch {
@@ -110,48 +113,115 @@ function AttendanceDonut({ groupId, courseStartMonth }) {
     unmarked: UNMARKED_COLOR,
   };
 
+  const rows = [
+    {
+      key: "present",
+      label: t("group.attendancePresent"),
+      pct: stats?.presentPercent ?? 0,
+      count: stats?.present ?? 0,
+    },
+    {
+      key: "excused",
+      label: t("group.attendanceExcused"),
+      pct: stats?.excusedPercent ?? 0,
+      count: stats?.excused ?? 0,
+    },
+    {
+      key: "absent",
+      label: t("group.attendanceAbsent"),
+      pct: stats?.absentPercent ?? 0,
+      count: stats?.absent ?? 0,
+    },
+    {
+      key: "unmarked",
+      label: t("group.attendanceUnmarked"),
+      pct: stats?.unmarkedPercent ?? 0,
+      count: stats?.unmarked ?? 0,
+    },
+  ];
+  const labelOf = Object.fromEntries(rows.map((r) => [r.key, r.label]));
+
+  const navBtn =
+    "size-9 sm:size-7 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-night-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors";
+
+  const monthNav = (
+    <div className="flex items-center gap-1 shrink-0 justify-between sm:justify-start max-sm:w-full">
+      <button
+        type="button"
+        disabled={!canGoPrev}
+        onClick={() => setMonth((m) => shiftMonth(m, -1))}
+        className={navBtn}
+      >
+        <HiChevronLeft />
+      </button>
+      <span className="text-xs font-medium text-slate-600 dark:text-slate-300 min-w-20 text-center">
+        {monthLabel}
+      </span>
+      <button
+        type="button"
+        disabled={!canGoNext}
+        onClick={() => setMonth((m) => shiftMonth(m, 1))}
+        className={navBtn}
+      >
+        <HiChevronRight />
+      </button>
+    </div>
+  );
+
   return (
     <ChartCard>
-      <div className="flex items-center justify-between gap-2 shrink-0">
-        <div>
-          <p className="font-semibold text-slate-800 dark:text-slate-100">{t("group.attendanceTitle")}</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500">{t("group.attendanceDesc")}</p>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            disabled={!canGoPrev}
-            onClick={() => setMonth((m) => shiftMonth(m, -1))}
-            className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-night-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-          >
-            <HiChevronLeft />
-          </button>
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-300 min-w-20 text-center">{monthLabel}</span>
-          <button
-            type="button"
-            disabled={!canGoNext}
-            onClick={() => setMonth((m) => shiftMonth(m, 1))}
-            className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-night-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-          >
-            <HiChevronRight />
-          </button>
-        </div>
-      </div>
+      <ChartHeader
+        icon={<HiUserGroup />}
+        tone="emerald"
+        title={t("group.attendanceTitle")}
+        subtitle={t("group.attendanceDesc")}
+        right={<div className="max-sm:hidden">{monthNav}</div>}
+      />
+      <div className="sm:hidden -mt-1">{monthNav}</div>
 
       {loading ? (
-        <Loading height="15vh" />
+        <>
+          <div className="flex-1 min-h-32 max-h-56 grid place-items-center">
+            <div className="aspect-square h-full max-h-40 rounded-full border-[14px] border-slate-100 dark:border-night-800 animate-pulse" />
+          </div>
+          <div className="flex flex-col gap-2 pt-3 border-t border-slate-100 dark:border-night-700 shrink-0">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between gap-3">
+                <div className="h-3.5 w-28 rounded bg-slate-100 dark:bg-night-800 animate-pulse" />
+                <div className="h-3.5 w-10 rounded bg-slate-100 dark:bg-night-800 animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </>
       ) : (
         <>
           {/* max-h — donut `flex-1` bilan cheksiz cho'zilib, yonidagi
               kalendardan ham balandroq bo'lib ketardi. */}
-          <div className="relative w-full flex-1 min-h-32 max-h-44">
+          <div className="relative w-full flex-1 min-h-32 max-h-56">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
+                {total > 0 && (
+                  <Tooltip
+                    content={({ active, payload }) =>
+                      active && payload?.length ? (
+                        <ChartTip
+                          rows={[
+                            {
+                              label: labelOf[payload[0].payload.key],
+                              value: payload[0].value,
+                              color: colorOf[payload[0].payload.key],
+                            },
+                          ]}
+                        />
+                      ) : null
+                    }
+                  />
+                )}
                 <Pie
                   data={data}
                   dataKey="value"
                   nameKey="key"
-                  innerRadius="70%"
+                  innerRadius="80%"
                   outerRadius="100%"
                   startAngle={90}
                   endAngle={-270}
@@ -160,48 +230,43 @@ function AttendanceDonut({ groupId, courseStartMonth }) {
                   stroke="none"
                 >
                   {data.map((entry) => (
-                    <Cell key={entry.key} fill={colorOf[entry.key]} opacity={total === 0 ? 0.15 : 1} />
+                    <Cell
+                      key={entry.key}
+                      fill={colorOf[entry.key]}
+                      opacity={total === 0 ? 0.15 : 1}
+                    />
                   ))}
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-3xl font-space font-bold text-slate-800 dark:text-slate-100">
+              <span className="text-4xl font-space font-bold tracking-tight leading-none text-slate-900 dark:text-slate-100">
                 {stats?.presentPercent ?? 0}%
               </span>
-              <span className="text-xs text-slate-400 dark:text-slate-500">{t("group.attendancePresent")}</span>
+              <span className="mt-1 text-xs font-medium text-slate-400 dark:text-slate-500">
+                {t("group.attendancePresent")}
+              </span>
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100 dark:border-night-700 shrink-0">
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: PRESENT_COLOR }} />
-                <span className="text-slate-600 dark:text-slate-300">{t("group.attendancePresent")}</span>
+          <div className="flex flex-col gap-2 pt-3 border-t border-slate-100 dark:border-night-700 shrink-0">
+            {rows.map((r) => (
+              <div
+                key={r.key}
+                className="flex items-center justify-between gap-3 text-sm"
+              >
+                <span className="flex items-center gap-2 min-w-0 text-slate-600 dark:text-slate-300">
+                  <span
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: colorOf[r.key] }}
+                  />
+                  <span className="truncate">{r.label}</span>
+                </span>
+                <span className="shrink-0 font-semibold tabular-nums text-slate-800 dark:text-slate-100">
+                  {r.pct}%
+                </span>
               </div>
-              <span className="font-semibold text-slate-800 dark:text-slate-100">{stats?.presentPercent ?? 0}%</span>
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: EXCUSED_COLOR }} />
-                <span className="text-slate-600 dark:text-slate-300">{t("group.attendanceExcused")}</span>
-              </div>
-              <span className="font-semibold text-slate-800 dark:text-slate-100">{stats?.excusedPercent ?? 0}%</span>
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: ABSENT_COLOR }} />
-                <span className="text-slate-600 dark:text-slate-300">{t("group.attendanceAbsent")}</span>
-              </div>
-              <span className="font-semibold text-slate-800 dark:text-slate-100">{stats?.absentPercent ?? 0}%</span>
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: UNMARKED_COLOR }} />
-                <span className="text-slate-600 dark:text-slate-300">{t("group.attendanceUnmarked")}</span>
-              </div>
-              <span className="font-semibold text-slate-800 dark:text-slate-100">{stats?.unmarkedPercent ?? 0}%</span>
-            </div>
+            ))}
           </div>
         </>
       )}

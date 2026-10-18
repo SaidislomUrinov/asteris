@@ -1,84 +1,93 @@
 import { useTranslation } from "react-i18next";
-import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
+import { HiChartPie } from "react-icons/hi2";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import ChartCard from "../../ui/ChartCard";
+import ChartHeader from "../../components/charts/ChartHeader";
+import ChartTip from "../../components/charts/ChartTip";
+import { money, useChartTheme, PAID_COLOR, DEBT_COLOR } from "../../components/charts/chartTheme";
 
-const PAID_COLOR = "#3b82f6"; // blue-500
-const DEBT_COLOR = "#ef4444"; // red-500
-
-// Joriy oy uchun to'lov holati — ikki qiymatli (to'langan/qarzdor) bo'lgani
-// uchun donut markazida foiz + pastida rangli doira + summa bilan legend
-// yetarli (dataviz: 2 seriyaga ham legend kerak, lekin bu yerda mark ustida
-// to'g'ridan-to'g'ri label — number-heavy UI'da bu ustunroq).
+// To'lov holati (docs/API_CONTRACT_monthly_charts.md) — yarim doira
+// o'lchagich: ko'k — to'langan, qizil — qarzdorlik; o'rtada katta foiz.
+// Ikki seriya bo'lgani uchun legend shart. Hech qanday kutilgan to'lov
+// bo'lmasa — faqat trek va "—".
 function PaymentDonut({ paid = 0, debt = 0 }) {
   const { t } = useTranslation();
+  const th = useChartTheme();
   const total = paid + debt;
-  const percent = total > 0 ? Math.round((paid / total) * 100) : 100;
+  const ratio = total > 0 ? paid / total : null;
+  const som = t("student.somSuffix");
 
-  const data =
-    total > 0
-      ? [
-          { key: "paid", value: paid },
-          { key: "debt", value: debt },
-        ]
-      : [{ key: "paid", value: 1 }];
+  const data = total > 0
+    ? [
+        { key: "paid", name: t("group.paidLabel"), value: paid, color: PAID_COLOR },
+        { key: "debt", name: t("group.debtLabel"), value: debt, color: DEBT_COLOR },
+      ].filter((d) => d.value > 0)
+    : [{ key: "empty", name: "", value: 1, color: th.track }];
+
+  const rows = [
+    { key: "paid", label: t("group.paidLabel"), value: paid, color: PAID_COLOR },
+    { key: "debt", label: t("group.debtLabel"), value: debt, color: DEBT_COLOR },
+  ];
 
   return (
-    <ChartCard>
-      <div className="shrink-0">
-        <p className="font-semibold text-slate-800 dark:text-slate-100">{t("group.paymentStatusTitle")}</p>
-        <p className="text-xs text-slate-400 dark:text-slate-500">{t("group.paymentStatusDesc")}</p>
-      </div>
+    <ChartCard className="min-h-0">
+      <ChartHeader icon={<HiChartPie />} tone="blue" title={t("group.paymentStatusTitle")} subtitle={t("chart.currentCycle")} />
 
-      <div className="relative w-full flex-1 min-h-32 max-h-56">
+      {/* Yoy katta va pastda — katta foiz uning bo'shlig'iga sig'adi. */}
+      <div className="relative flex-1 min-h-44">
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
+          <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+            {total > 0 && (
+              <Tooltip
+                content={({ active, payload }) =>
+                  active && payload?.length ? (
+                    <ChartTip rows={[{ label: payload[0].name, value: `${money(payload[0].value)} ${som}`, color: payload[0].payload.color }]} />
+                  ) : null
+                }
+              />
+            )}
             <Pie
               data={data}
               dataKey="value"
-              nameKey="key"
-              innerRadius="70%"
-              outerRadius="100%"
-              startAngle={90}
-              endAngle={-270}
-              paddingAngle={total > 0 && paid > 0 && debt > 0 ? 3 : 0}
-              cornerRadius={6}
+              nameKey="name"
+              cy="92%"
+              innerRadius="150%"
+              outerRadius="172%"
+              startAngle={180}
+              endAngle={0}
+              cornerRadius={8}
+              paddingAngle={data.length > 1 ? 2 : 0}
               stroke="none"
             >
-              {data.map((entry) => (
-                <Cell
-                  key={entry.key}
-                  fill={entry.key === "paid" ? PAID_COLOR : DEBT_COLOR}
-                  opacity={total === 0 ? 0.15 : 1}
-                />
+              {data.map((d) => (
+                <Cell key={d.key} fill={d.color} />
               ))}
             </Pie>
           </PieChart>
         </ResponsiveContainer>
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-3xl font-space font-bold text-slate-800 dark:text-slate-100">{percent}%</span>
-          <span className="text-xs text-slate-400 dark:text-slate-500">{t("group.paidPercentLabel")}</span>
+        <div className="absolute inset-x-0 bottom-[8%] flex flex-col items-center pointer-events-none">
+          <span className="font-space text-5xl sm:text-6xl font-bold tracking-tight leading-none text-slate-900 dark:text-slate-100">
+            {ratio == null ? "—" : `${Math.round(ratio * 100)}%`}
+          </span>
+          <span className="mt-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">{t("chart.collected")}</span>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 pt-2 border-t border-slate-100 dark:border-night-700 shrink-0">
-        <div className="flex items-center justify-between gap-2 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PAID_COLOR }} />
-            <span className="text-slate-600 dark:text-slate-300">{t("group.paidLabel")}</span>
+      <div className="flex flex-col gap-2 pt-3 border-t border-slate-100 dark:border-night-700 shrink-0">
+        {rows.map((r) => (
+          <div key={r.key} className="flex items-center justify-between gap-3 text-sm">
+            <span className="flex items-center gap-2 min-w-0 text-slate-600 dark:text-slate-300">
+              <span className="size-2.5 shrink-0 rounded-full" style={{ background: r.color }} />
+              <span className="truncate">{r.label}</span>
+              {total > 0 && (
+                <span className="text-xs text-slate-400 dark:text-slate-500">{Math.round((r.value / total) * 100)}%</span>
+              )}
+            </span>
+            <span className="shrink-0 font-semibold tabular-nums text-slate-800 dark:text-slate-100">
+              {money(r.value)} <span className="text-xs font-normal text-slate-400">{som}</span>
+            </span>
           </div>
-          <span className="font-semibold text-slate-800 dark:text-slate-100">
-            {paid.toLocaleString("uz-UZ")} {t("student.somSuffix")}
-          </span>
-        </div>
-        <div className="flex items-center justify-between gap-2 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: DEBT_COLOR }} />
-            <span className="text-slate-600 dark:text-slate-300">{t("group.debtLabel")}</span>
-          </div>
-          <span className="font-semibold text-red-600 dark:text-red-400">
-            {debt.toLocaleString("uz-UZ")} {t("student.somSuffix")}
-          </span>
-        </div>
+        ))}
       </div>
     </ChartCard>
   );
