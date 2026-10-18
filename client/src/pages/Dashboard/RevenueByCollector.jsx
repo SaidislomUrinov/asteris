@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { HiArrowTrendingUp, HiChevronRight, HiUserCircle } from "react-icons/hi2";
 import NumberText from "../../ui/NumberText";
-import Loading from "../../ui/Loading";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { api } from "../../utils/fetching";
 
@@ -26,11 +25,12 @@ function RevenueByCollector({ month, center }) {
 
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
+  // Faqat BIRINCHI yuklanishda skelet — oy almashganda yoki socket
+  // hodisasida eski ro'yxat yangisi kelguncha joyida turadi (miltillamaydi).
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
       const { from, to } = monthRange(month);
       // Faqat jamlanma kerak — `byCollector` va `totalAmount` filtr doirasi
       // bo'yicha hisoblanadi, shuning uchun bitta sahifa so'ralsa yetarli.
@@ -78,7 +78,17 @@ function RevenueByCollector({ month, center }) {
       </div>
 
       {loading ? (
-        <Loading height="180px" />
+        <div className="flex flex-col gap-3.5 flex-1 min-h-0 animate-pulse" aria-busy="true">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="h-3.5 w-1/2 rounded-md bg-slate-100 dark:bg-night-800" />
+                <div className="h-3.5 w-16 rounded-md bg-slate-100 dark:bg-night-800" />
+              </div>
+              <div className="h-1.5 rounded-full bg-slate-100 dark:bg-night-800" />
+            </div>
+          ))}
+        </div>
       ) : rows.length === 0 ? (
         <div className="flex flex-1 items-center justify-center text-sm text-slate-400 dark:text-slate-500 py-8">
           {t("revenue.empty")}

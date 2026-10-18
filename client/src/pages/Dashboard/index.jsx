@@ -21,7 +21,6 @@ import IconButton from "../../ui/IconButton";
 import Dialog from "../../ui/Dialog";
 import LazyImage from "../../ui/LazyImage";
 import MonthInput from "../../ui/MonthInput";
-import Loading from "../../ui/Loading";
 import PaymentDonut from "../Groups/PaymentDonut";
 import RevenueChart from "../Groups/RevenueChart";
 import ExpenseCategoryDonut from "../../components/center/ExpenseCategoryDonut";
@@ -32,6 +31,7 @@ import TodayLessonsScroll from "./TodayLessonsScroll";
 import RevenueByCollector from "./RevenueByCollector";
 import LeadDonut from "./LeadDonut";
 import LeadsBySubject from "./LeadsBySubject";
+import PanelSkeleton from "./PanelSkeleton";
 import useCan from "../../hooks/useCan";
 import MoneyCard from "../../components/dashboard/MoneyCard";
 import StatCard from "../../components/dashboard/StatCard";
@@ -62,6 +62,7 @@ function Dashboard() {
   // Alohida filial sahifasi yo'q: filial ma'lumoti va amallari shu sarlavhada.
   const centerList = Array.isArray(centers) ? centers : [];
   const activeInfo = centerList.find((c) => c._id === activeCenter) || centerList[0] || null;
+  // null — hali yuklanmoqda, false — so'rov muvaffaqiyatsiz (Redux'dagi bilan qoladi).
   const [center, setCenter] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editKey, setEditKey] = useState(0);
@@ -71,10 +72,13 @@ function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [expenseByCategory, setExpenseByCategory] = useState([]);
-  const [teacherSalary, setTeacherSalary] = useState({ total: 0, count: 0 });
-  const [roomsCount, setRoomsCount] = useState(0);
-  const [subjectsCount, setSubjectsCount] = useState(0);
+  // Har bo'lim o'z so'rovi bilan keladi: `null` = hali kelmagan → o'sha joyda
+  // skelet. Aks holda "0"/bo'sh holat ko'rinib, keyin birdan haqiqiy songa
+  // sakrardi. Xato bo'lsa ham bo'sh qiymat qo'yiladi (skelet abadiy qolmasin).
+  const [expenseByCategory, setExpenseByCategory] = useState(null);
+  const [teacherSalary, setTeacherSalary] = useState(null);
+  const [roomsCount, setRoomsCount] = useState(null);
+  const [subjectsCount, setSubjectsCount] = useState(null);
   // Moliyaviy raqamlarni vaqtincha yashirish — resepshin oldida odam
   // o'tirgan yoki noutbuk HDMI orqali proyektorga ulangan holatlar uchun.
   const [hideFinance] = useHideFinance();
@@ -103,8 +107,9 @@ function Dashboard() {
     try {
       const res = await api.get("/expenses/by-category", { params: { month } });
       const { ok, data } = res.data;
-      if (ok) setExpenseByCategory(data || []);
+      setExpenseByCategory(ok ? data || [] : []);
     } catch (error) {
+      setExpenseByCategory((prev) => prev ?? []);
       errorMsg(error.message);
     }
   }, [month]);
@@ -113,13 +118,17 @@ function Dashboard() {
     try {
       const res = await api.get("/salaries/summary", { params: { month } });
       const { ok, data } = res.data;
-      if (!ok) return;
+      if (!ok) {
+        setTeacherSalary((prev) => prev ?? { total: 0, count: 0 });
+        return;
+      }
       const teachers = (data || []).filter((row) => row.staff.role === "teacher");
       setTeacherSalary({
         total: teachers.reduce((sum, row) => sum + row.final, 0),
         count: teachers.length,
       });
     } catch (error) {
+      setTeacherSalary((prev) => prev ?? { total: 0, count: 0 });
       errorMsg(error.message);
     }
   }, [month]);
@@ -132,11 +141,12 @@ function Dashboard() {
         api.get("/student-leads/stats", { params: { month } }),
         api.get("/subjects", { params: { page: 1 } }),
       ]);
-      if (statsRes.data.ok) setLeadStats(statsRes.data.data);
       if (subjectsRes.data.ok) {
         setSubjectNames(Object.fromEntries((subjectsRes.data.data || []).map((s) => [s._id, s.name])));
       }
+      setLeadStats(statsRes.data.ok ? statsRes.data.data || {} : {});
     } catch (error) {
+      setLeadStats((prev) => prev ?? {});
       errorMsg(error.message);
     }
   }, [month, canLeads]);
@@ -170,9 +180,10 @@ function Dashboard() {
     if (!activeId) return;
     try {
       const res = await api.get(`/centers/${activeId}`);
-      if (res.data.ok) setCenter(res.data.data);
+      setCenter((prev) => (res.data.ok ? res.data.data : prev || false));
     } catch {
       // sarlavha Redux'dagi nom bilan ko'rinadi
+      setCenter((prev) => prev || false);
     }
   }, [activeId]);
 
@@ -214,10 +225,13 @@ function Dashboard() {
           can("room:view") ? api.get("/rooms", { params }) : skip,
           can("subject:view") ? api.get("/subjects", { params }) : skip,
         ]);
-        if (roomsRes.data.ok) setRoomsCount(roomsRes.data.meta?.total ?? roomsRes.data.data?.length ?? 0);
-        if (subjectsRes.data.ok) setSubjectsCount(subjectsRes.data.meta?.total ?? subjectsRes.data.data?.length ?? 0);
+        const count = (res) => (res.data.ok ? (res.data.meta?.total ?? res.data.data?.length ?? 0) : 0);
+        setRoomsCount(count(roomsRes));
+        setSubjectsCount(count(subjectsRes));
       } catch {
         // faqat kichik hisoblagichlar, xato bo'lsa jim o'tkazamiz
+        setRoomsCount(0);
+        setSubjectsCount(0);
       }
     })();
   }, [can]);
@@ -248,7 +262,11 @@ function Dashboard() {
   useSocketEvent("payment:created", reloadSalary);
   useSocketEvent("payment:updated", reloadSalary);
 
-  if (loading && !data) return <Loading height="60vh" />;
+  // Sahifa darhol ko'rinadi: sarlavha va kartalar qobig'i joyida, faqat
+  // ma'lumoti hali kelmagan qismlar skelet (butun sahifa spinner emas).
+  const statsPending = loading && !data;
+  const stats = data || {};
+  const centerPending = Boolean(activeId) && center === null;
 
   if (error) {
     return (
@@ -267,7 +285,13 @@ function Dashboard() {
       <DashboardHeader
         leading={<CenterLogo logo={center?.logo ?? activeInfo?.logo} />}
         title={center?.name || activeInfo?.name || t("dashboard.title")}
-        subtitle={center?.slogan || (activeInfo ? t("dashboard.title") : undefined)}
+        subtitle={
+          centerPending ? (
+            <span className="block h-3.5 w-40 mt-1 rounded bg-slate-100 dark:bg-night-800 animate-pulse" />
+          ) : (
+            center?.slogan || (activeInfo ? t("dashboard.title") : undefined)
+          )
+        }
       >
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="flex-1 sm:flex-none sm:w-44 min-w-0">
@@ -318,7 +342,8 @@ function Dashboard() {
         <MoneyCard
           icon={<HiBanknotes />}
           label={t("dashboard.monthRevenue")}
-          value={maskMoney(data.monthRevenue, hideFinance)}
+          loading={statsPending}
+          value={maskMoney(stats.monthRevenue, hideFinance)}
           suffix={hideFinance ? "" : t("student.somSuffix")}
           gradient="from-emerald-500 to-teal-600"
           shadow="shadow-emerald-500/20"
@@ -326,7 +351,8 @@ function Dashboard() {
         <MoneyCard
           icon={<HiArrowTrendingDown />}
           label={t("dashboard.monthExpenses")}
-          value={maskMoney(data.monthExpenses, hideFinance)}
+          loading={statsPending}
+          value={maskMoney(stats.monthExpenses, hideFinance)}
           suffix={hideFinance ? "" : t("student.somSuffix")}
           gradient="from-rose-500 to-red-600"
           shadow="shadow-rose-500/20"
@@ -334,10 +360,11 @@ function Dashboard() {
         <MoneyCard
           icon={<HiWallet />}
           label={t("center.teacherSalaryCardTitle")}
-          value={maskMoney(teacherSalary.total, hideFinance)}
+          loading={!teacherSalary}
+          value={maskMoney(teacherSalary?.total || 0, hideFinance)}
           suffix={hideFinance ? "" : t("student.somSuffix")}
           hint={t("dashboard.teacherSalaryHint", {
-            count: teacherSalary.count,
+            count: teacherSalary?.count || 0,
           })}
           gradient="from-violet-500 to-indigo-600"
           shadow="shadow-violet-500/20"
@@ -345,7 +372,8 @@ function Dashboard() {
         <MoneyCard
           icon={<HiExclamationTriangle />}
           label={t("student.debt")}
-          value={maskMoney(data.currentCycleDebt, hideFinance)}
+          loading={statsPending}
+          value={maskMoney(stats.currentCycleDebt, hideFinance)}
           suffix={hideFinance ? "" : t("student.somSuffix")}
           hint={t("dashboard.debtHint")}
           gradient="from-amber-500 to-orange-600"
@@ -358,37 +386,43 @@ function Dashboard() {
         <StatCard
           icon={<HiUsers />}
           label={t("dashboard.activeStudents")}
-          value={data.activeStudents}
+          value={stats.activeStudents}
+          loading={statsPending}
           color="bg-cyan-50 dark:bg-cyan-500/15 text-cyan-500"
         />
         <StatCard
           icon={<HiUserGroup />}
           label={t("dashboard.activeGroups")}
-          value={data.activeGroups}
+          value={stats.activeGroups}
+          loading={statsPending}
           color="bg-pink-50 dark:bg-pink-500/15 text-pink-500"
         />
         <StatCard
           icon={<HiUserGroup />}
           label={t("dashboard.pendingGroups")}
-          value={data.pendingGroups}
+          value={stats.pendingGroups}
+          loading={statsPending}
           color="bg-slate-100 dark:bg-night-800 text-slate-500 dark:text-slate-400"
         />
         <StatCard
           icon={<HiUsers />}
           label={t("dashboard.staffCount")}
-          value={data.staffCount}
+          value={stats.staffCount}
+          loading={statsPending}
           color="bg-violet-50 dark:bg-violet-500/15 text-violet-500"
         />
         <StatCard
           icon={<HiHome />}
           label={t("room.title")}
           value={roomsCount}
+          loading={roomsCount === null}
           color="bg-orange-50 dark:bg-orange-500/15 text-orange-500"
         />
         <StatCard
           icon={<HiRectangleGroup />}
           label={t("subject.title")}
           value={subjectsCount}
+          loading={subjectsCount === null}
           color="bg-blue-50 dark:bg-blue-500/15 text-blue-500"
         />
       </div>
@@ -401,18 +435,32 @@ function Dashboard() {
         <div className="lg:col-span-1 min-h-0">
           {hideFinance ? (
             <HiddenFinancePanel />
+          ) : statsPending ? (
+            <PanelSkeleton variant="donut" rows={2} />
           ) : (
-            <PaymentDonut paid={data.currentCyclePaid || 0} debt={data.currentCycleDebt || 0} />
+            <PaymentDonut paid={stats.currentCyclePaid || 0} debt={stats.currentCycleDebt || 0} />
           )}
         </div>
         <div className="lg:col-span-2 min-h-0">
-          {hideFinance ? <HiddenFinancePanel /> : <RevenueChart payments={data.chartPayments} />}
+          {hideFinance ? (
+            <HiddenFinancePanel />
+          ) : statsPending ? (
+            <PanelSkeleton variant="chart" />
+          ) : (
+            <RevenueChart payments={stats.chartPayments} />
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch lg:h-88">
         <div className="lg:col-span-1 min-h-0">
-          {hideFinance ? <HiddenFinancePanel /> : <ExpenseCategoryDonut data={expenseByCategory} />}
+          {hideFinance ? (
+            <HiddenFinancePanel />
+          ) : expenseByCategory === null ? (
+            <PanelSkeleton variant="donut" rows={3} />
+          ) : (
+            <ExpenseCategoryDonut data={expenseByCategory} />
+          )}
         </div>
 
         {/* Owner'da yonida "kim qancha yig'gani", staff'da esa (kartochka
@@ -434,10 +482,14 @@ function Dashboard() {
       {canLeads && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch lg:h-88">
           <div className="lg:col-span-1 min-h-0">
-            <LeadDonut stats={leadStats} />
+            {leadStats ? <LeadDonut stats={leadStats} /> : <PanelSkeleton variant="donut" rows={4} />}
           </div>
           <div className="lg:col-span-2 min-h-0">
-            <LeadsBySubject rows={leadStats?.bySubject || []} subjectNames={subjectNames} />
+            {leadStats ? (
+              <LeadsBySubject rows={leadStats.bySubject || []} subjectNames={subjectNames} />
+            ) : (
+              <PanelSkeleton variant="list" rows={4} />
+            )}
           </div>
         </div>
       )}
@@ -447,7 +499,11 @@ function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch lg:h-72">
         <div className={`min-h-0 ${isOwner ? "lg:col-span-1" : "lg:col-span-3"}`}>
           {/* Ismlar ko'rinadi, summalar ko'z tugmasi bilan "****" bo'ladi. */}
-          <RecentPayments payments={data.recentPayments || []} hideFinance={hideFinance} />
+          {statsPending ? (
+            <PanelSkeleton variant="list" rows={4} />
+          ) : (
+            <RecentPayments payments={stats.recentPayments || []} hideFinance={hideFinance} />
+          )}
         </div>
         {isOwner && (
           <div className="lg:col-span-2 min-h-0">

@@ -3,7 +3,9 @@ import NumberText from "../../ui/NumberText";
 // Moliyaviy ko'rsatkichlar — sahifadagi ENG muhim raqamlar, shuning uchun
 // katta, rangli (gradient) kartalarda. `NumberText`da `text-black dark:text-slate-100` qat'iy
 // yozilgani uchun oq rang `!` bilan bekor qilinadi.
-function MoneyCard({ icon, label, value, suffix, hint, gradient, shadow }) {
+// `loading` — ma'lumot kelguncha raqam o'rnida skelet chiziq (karta o'zi
+// darhol ko'rinadi, keyin "0" dan haqiqiy songa sakramaydi).
+function MoneyCard({ icon, label, value, suffix, hint, gradient, shadow, loading = false }) {
   return (
     <div
       className={`relative overflow-hidden flex flex-col justify-between gap-4 p-5 rounded-2xl text-white bg-gradient-to-br ${gradient} shadow-lg ${shadow}`}
@@ -22,13 +24,22 @@ function MoneyCard({ icon, label, value, suffix, hint, gradient, shadow }) {
       </div>
 
       <div className="relative flex flex-col gap-0.5 min-w-0">
-        <span className="flex items-baseline gap-1.5 min-w-0">
-          <NumberText className="!text-white !text-2xl sm:!text-3xl 2xl:!text-[2rem] font-bold leading-none truncate">
-            {value}
-          </NumberText>
-          {suffix && <span className="text-sm text-white/70 shrink-0">{suffix}</span>}
-        </span>
-        {hint && <span className="text-xs text-white/70 truncate">{hint}</span>}
+        {loading ? (
+          <div className="flex flex-col gap-2 animate-pulse" aria-busy="true">
+            <div className="h-7 sm:h-8 w-2/3 rounded-md bg-white/25" />
+            {hint && <div className="h-3 w-1/2 rounded bg-white/20" />}
+          </div>
+        ) : (
+          <>
+            <span className="flex items-baseline gap-1.5 min-w-0">
+              <NumberText className="!text-white !text-2xl sm:!text-3xl 2xl:!text-[2rem] font-bold leading-none truncate">
+                {value}
+              </NumberText>
+              {suffix && <span className="text-sm text-white/70 shrink-0">{suffix}</span>}
+            </span>
+            {hint && <span className="text-xs text-white/70 truncate">{hint}</span>}
+          </>
+        )}
       </div>
     </div>
   );

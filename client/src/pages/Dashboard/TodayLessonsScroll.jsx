@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { HiClock, HiHome, HiUser } from "react-icons/hi2";
-import Loading from "../../ui/Loading";
 import { getTashkentNow } from "../../utils/schedule";
 import { api } from "../../utils/fetching";
 import { errorMsg } from "../../utils/alert";
@@ -101,8 +100,9 @@ function TodayLessonsScroll({ center }) {
   const [isDragging, setIsDragging] = useState(false);
 
   const fetchLessons = useCallback(async () => {
+    // Skelet faqat birinchi yuklanishda — socket orqali qayta so'ralganda
+    // darslar polosasi joyida qoladi (scroll holati ham yo'qolmaydi).
     try {
-      setLoading(true);
       const res = await api.get("/dashboard/today-lessons", { params: { center } });
       const { ok, data, msg } = res.data;
       if (!ok) throw new Error(msg);
@@ -200,7 +200,20 @@ function TodayLessonsScroll({ center }) {
       </div>
 
       {loading ? (
-        <Loading height="15vh" />
+        <div className="flex gap-3 overflow-hidden pb-1 animate-pulse" aria-busy="true">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              style={{ width: CARD_WIDTH }}
+              className="flex flex-col gap-2.5 p-3.5 shrink-0 rounded-xl border border-l-4 border-slate-200 dark:border-night-700"
+            >
+              <div className="h-4 w-3/4 rounded-md bg-slate-100 dark:bg-night-800" />
+              <div className="h-3 w-1/2 rounded-md bg-slate-100 dark:bg-night-800" />
+              <div className="h-3 w-2/3 rounded-md bg-slate-100 dark:bg-night-800" />
+              <div className="h-3 w-1/3 rounded-md bg-slate-100 dark:bg-night-800" />
+            </div>
+          ))}
+        </div>
       ) : withStatuses.length === 0 ? (
         <div className="flex items-center justify-center flex-1 min-h-32 text-slate-400 dark:text-slate-500 text-sm text-center px-4">
           {t("dashboard.noLessonsToday")}
