@@ -23,22 +23,39 @@ const STATUS = {
  * @param {Object} props
  * @param {Array} props.lessons - `todayLessons` (API vaqt bo'yicha tartiblangan)
  * @param {number} props.mins - hozirgi vaqt, kun boshidan daqiqalarda
+ * @param {boolean} [props.pending] - birinchi yuklanish: sarlavha joyida, ro'yxat o'rnida skelet
  */
-function TodayLessons({ lessons, mins }) {
+function TodayLessons({ lessons, mins, pending = false }) {
   const { t } = useTranslation();
 
   return (
     <section className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
       <header className="flex items-center justify-between gap-3">
         <h2 className="font-semibold text-slate-800 dark:text-slate-100">{t("teacherHome.todayLessons")}</h2>
-        {lessons.length > 0 && (
+        {!pending && lessons.length > 0 && (
           <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-night-800 text-xs font-medium text-slate-600 dark:text-slate-300">
             {t("teacherHome.lessonsCount", { count: lessons.length })}
           </span>
         )}
       </header>
 
-      {lessons.length === 0 ? (
+      {pending ? (
+        <div className="flex flex-col gap-2 animate-pulse" aria-busy="true">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 sm:gap-4 p-3 sm:px-4 rounded-xl border border-slate-200/70 dark:border-night-700/70">
+              <div className="flex flex-col gap-1.5 w-14 pr-3 border-r-2 border-slate-100 dark:border-night-700">
+                <div className="h-3.5 w-10 rounded bg-slate-100 dark:bg-night-800" />
+                <div className="h-3 w-8 rounded bg-slate-100 dark:bg-night-800" />
+              </div>
+              <div className="flex flex-col gap-2 flex-1 min-w-0">
+                <div className="h-4 w-2/5 rounded-md bg-slate-100 dark:bg-night-800" />
+                <div className="h-3 w-1/3 rounded-md bg-slate-100 dark:bg-night-800" />
+              </div>
+              <div className="h-7 w-20 shrink-0 rounded-full bg-slate-100 dark:bg-night-800" />
+            </div>
+          ))}
+        </div>
+      ) : lessons.length === 0 ? (
         <div className="flex items-center gap-3 px-4 py-5 rounded-xl border border-dashed border-slate-200 dark:border-night-700">
           <span className="flex items-center justify-center w-10 h-10 shrink-0 rounded-xl bg-slate-50 dark:bg-night-800 text-lg text-slate-400 dark:text-slate-500">
             <HiCalendarDays aria-hidden="true" />

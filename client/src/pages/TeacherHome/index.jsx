@@ -23,7 +23,6 @@ import TodayLessons from "./TodayLessons";
 import MyGroups from "./MyGroups";
 import SalaryPanel from "./SalaryPanel";
 import TransactionsCard from "./TransactionsCard";
-import DashboardSkeleton from "./DashboardSkeleton";
 import { lessonState, nowMinutes } from "./lessonTime";
 
 const monthOf = (str) => Number(str.slice(5, 7)) - 1;
@@ -137,6 +136,11 @@ function TeacherHome() {
         : t("teacherHome.allDone");
 
   const capacity = (data?.rooms || []).reduce((sum, r) => sum + (r.capacity || 0), 0);
+  // Birinchi yuklanish: kartalar (sarlavhalari bilan) darhol joyida, faqat
+  // ma'lumot qismi skelet — so'rov kelganda konteynerlar almashmaydi/sakramaydi.
+  const pending = !data && !failed;
+  // Oylik/tranzaksiya — birinchi yuklanishda ham, boshqa oy tanlanganda ham.
+  const salaryLoading = pending || (loading && data?.month !== month);
 
   return (
     <div className="flex flex-col w-full gap-4 pb-3">
@@ -152,9 +156,7 @@ function TeacherHome() {
         </div>
       </DashboardHeader>
 
-      {!data && loading ? (
-        <DashboardSkeleton />
-      ) : !data && failed ? (
+      {!data && failed ? (
         <div className="flex flex-col items-center gap-3 px-6 py-12 rounded-2xl border border-slate-200/70 dark:border-night-700/70 bg-white dark:bg-night-900 text-center">
           <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-rose-50 dark:bg-rose-500/15 text-xl text-rose-500">
             <HiExclamationTriangle aria-hidden="true" />
@@ -176,6 +178,7 @@ function TeacherHome() {
             <MoneyCard
               icon={<HiBanknotes />}
               label={t("teacherHome.salaryRemaining")}
+              loading={pending}
               value={salary ? maskMoney(salary.final, hideFinance) : "—"}
               suffix={salary && !hideFinance ? t("student.somSuffix") : ""}
               hint={t("teacherHome.forMonth", { month: monthLabel })}
@@ -187,13 +190,15 @@ function TeacherHome() {
                 icon={<HiCalendarDays />}
                 color="bg-orange-50 dark:bg-orange-500/15 text-orange-500"
                 label={t("teacherHome.todayLessons")}
+                loading={pending}
                 value={stats?.todayLessons ?? 0}
-                hint={todayHint}
+                hint={pending ? "" : todayHint}
               />
               <StatCard
                 icon={<HiUserGroup />}
                 color="bg-pink-50 dark:bg-pink-500/15 text-pink-500"
                 label={t("teacherHome.activeGroups")}
+                loading={pending}
                 value={stats?.groups ?? 0}
                 hint={stats?.pendingGroups ? t("teacherHome.pendingCount", { count: stats.pendingGroups }) : ""}
               />
@@ -201,6 +206,7 @@ function TeacherHome() {
                 icon={<HiUsers />}
                 color="bg-cyan-50 dark:bg-cyan-500/15 text-cyan-500"
                 label={t("teacherHome.myStudents")}
+                loading={pending}
                 value={stats?.students ?? 0}
                 hint={stats?.groups ? t("teacherHome.inGroups", { count: stats.groups }) : ""}
               />
@@ -208,6 +214,7 @@ function TeacherHome() {
                 icon={<HiHome />}
                 color="bg-violet-50 dark:bg-violet-500/15 text-violet-500"
                 label={t("teacherHome.myRooms")}
+                loading={pending}
                 value={stats?.rooms ?? 0}
                 hint={capacity ? t("teacherHome.totalCapacity", { count: capacity }) : ""}
               />
@@ -221,15 +228,15 @@ function TeacherHome() {
                 (tranzaksiyalar oylik panelidagi tanlangan oyga tegishli). */}
             <div className="flex flex-col gap-3 min-w-0 max-lg:contents">
               <div className="order-1 min-w-0">
-                <TodayLessons lessons={todayLessons} mins={mins} />
+                <TodayLessons lessons={todayLessons} mins={mins} pending={pending} />
               </div>
               <div className="order-2 min-w-0">
-                <MyGroups groups={data?.groups || []} />
+                <MyGroups groups={data?.groups || []} pending={pending} />
               </div>
               <div className="order-4 min-w-0">
                 <TransactionsCard
                   salary={salary}
-                  loading={loading && data?.month !== month}
+                  loading={salaryLoading}
                   hidden={hideFinance}
                   monthLabel={monthLabel}
                 />
@@ -240,7 +247,7 @@ function TeacherHome() {
               <div className="order-3 min-w-0">
                 <SalaryPanel
                   salary={salary}
-                  loading={loading && data?.month !== month}
+                  loading={salaryLoading}
                   hidden={hideFinance}
                   month={month}
                   monthLabel={monthLabel}

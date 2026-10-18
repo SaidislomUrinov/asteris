@@ -16,8 +16,9 @@ const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
  *
  * @param {Object} props
  * @param {Array} props.groups - API `groups[]`
+ * @param {boolean} [props.pending] - birinchi yuklanish: sarlavha joyida, kartalar o'rnida skelet
  */
-function MyGroups({ groups }) {
+function MyGroups({ groups, pending = false }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
@@ -33,14 +34,27 @@ function MyGroups({ groups }) {
     <section className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
       <header className="flex items-center justify-between gap-3">
         <h2 className="font-semibold text-slate-800 dark:text-slate-100">{t("teacherHome.myGroupsTitle")}</h2>
-        {groups.length > 0 && (
+        {!pending && groups.length > 0 && (
           <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-night-800 text-xs font-medium text-slate-600 dark:text-slate-300">
             {groups.length}
           </span>
         )}
       </header>
 
-      {groups.length === 0 ? (
+      {pending ? (
+        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 animate-pulse" aria-busy="true">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <li key={i} className="flex flex-col gap-3 p-3.5 rounded-xl border border-slate-200/70 dark:border-night-700/70">
+              <div className="flex items-center justify-between gap-2">
+                <div className="h-4 w-1/3 rounded-md bg-slate-100 dark:bg-night-800" />
+                <div className="h-5 w-14 rounded-full bg-slate-100 dark:bg-night-800" />
+              </div>
+              <div className="h-3 w-3/5 rounded-md bg-slate-100 dark:bg-night-800" />
+              <div className="h-3 w-2/5 rounded-md bg-slate-100 dark:bg-night-800" />
+            </li>
+          ))}
+        </ul>
+      ) : groups.length === 0 ? (
         <div className="flex items-center gap-3 px-4 py-5 rounded-xl border border-dashed border-slate-200 dark:border-night-700">
           <span className="flex items-center justify-center w-10 h-10 shrink-0 rounded-xl bg-slate-50 dark:bg-night-800 text-lg text-slate-400 dark:text-slate-500">
             <HiUserGroup aria-hidden="true" />

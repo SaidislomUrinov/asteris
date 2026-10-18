@@ -19,7 +19,8 @@ import StatCard from "../../components/dashboard/StatCard";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import SectionError from "../../components/dashboard/SectionError";
 import Avatar from "../../ui/Avatar";
-import Loading from "../../ui/Loading";
+import ListSkeleton from "./ListSkeleton";
+import PanelSkeleton from "../Dashboard/PanelSkeleton";
 import PaymentDonut from "../Groups/PaymentDonut";
 import RevenueChart from "../Groups/RevenueChart";
 import HiddenFinancePanel from "../../components/HiddenFinancePanel";
@@ -96,8 +97,9 @@ function ReceptionHome() {
       setStatsLoading(false);
       return;
     }
+    // `*Loading` faqat BIRINCHI yuklanishda true (boshlang'ich holat) — socket
+    // orqali qayta so'ralganda eski ma'lumot yangisi kelguncha joyida turadi.
     try {
-      setStatsLoading(true);
       const res = await api.get("/dashboard");
       const { ok, data, msg } = res.data;
       if (!ok) throw new Error(msg);
@@ -117,7 +119,6 @@ function ReceptionHome() {
       return;
     }
     try {
-      setGroupsLoading(true);
       const res = await api.get("/dashboard/today-lessons");
       const { ok, data, msg } = res.data;
       if (!ok) throw new Error(msg);
@@ -154,7 +155,6 @@ function ReceptionHome() {
       return;
     }
     try {
-      setDebtorsLoading(true);
       const [debtorsRes, activeRes] = await Promise.all([
         api.get("/students", { params: { page: 1, debtStatus: "debtor" } }),
         api.get("/students", { params: { page: 1, status: "active" } }),
@@ -221,7 +221,8 @@ function ReceptionHome() {
           <MoneyCard
             icon={<HiBanknotes />}
             label={t("receptionHome.monthRevenue")}
-            value={statsLoading ? "…" : statsFailed && !stats ? "—" : maskMoney(stats?.monthRevenue, hideFinance)}
+            loading={statsLoading}
+            value={statsFailed && !stats ? "—" : maskMoney(stats?.monthRevenue, hideFinance)}
             suffix={hideFinance || (statsFailed && !stats) ? "" : t("student.somSuffix")}
             gradient="from-emerald-500 to-teal-600"
             shadow="shadow-emerald-500/20"
@@ -229,7 +230,8 @@ function ReceptionHome() {
           <MoneyCard
             icon={<HiExclamationTriangle />}
             label={t("student.debt")}
-            value={statsLoading ? "…" : statsFailed && !stats ? "—" : maskMoney(stats?.currentCycleDebt, hideFinance)}
+            loading={statsLoading}
+            value={statsFailed && !stats ? "—" : maskMoney(stats?.currentCycleDebt, hideFinance)}
             suffix={hideFinance || (statsFailed && !stats) ? "" : t("student.somSuffix")}
             hint={t("dashboard.debtHint")}
             gradient="from-amber-500 to-orange-600"
@@ -243,20 +245,23 @@ function ReceptionHome() {
         <StatCard
           icon={<HiUsers />}
           label={t("receptionHome.activeStudents")}
-          value={debtorsLoading ? "…" : debtorsFailed ? "—" : activeStudents}
+          loading={debtorsLoading}
+          value={debtorsFailed ? "—" : activeStudents}
           color="bg-cyan-50 dark:bg-cyan-500/15 text-cyan-500"
         />
         <StatCard
           icon={<HiCalendarDays />}
           label={t("receptionHome.todayLessons")}
-          value={groupsLoading ? "…" : groupsFailed ? "—" : groups.length}
+          loading={groupsLoading}
+          value={groupsFailed ? "—" : groups.length}
           color="bg-orange-50 dark:bg-orange-500/15 text-orange-500"
         />
         <div className="col-span-2 sm:col-span-1 min-w-0">
           <StatCard
             icon={<HiBanknotes />}
             label={t("receptionHome.debtors")}
-            value={debtorsLoading ? "…" : debtorsFailed ? "—" : debtorsTotal}
+            loading={debtorsLoading}
+            value={debtorsFailed ? "—" : debtorsTotal}
             color="bg-red-50 dark:bg-red-500/15 text-red-500"
           />
         </div>
@@ -278,7 +283,7 @@ function ReceptionHome() {
           {!canViewGroups ? (
             <p className="text-sm text-slate-400 dark:text-slate-500 py-8 text-center">{t("receptionHome.noPermission")}</p>
           ) : groupsLoading ? (
-            <Loading height="15vh" />
+            <ListSkeleton />
           ) : groupsFailed ? (
             <SectionError message={t("receptionHome.loadError")} onRetry={fetchGroups} />
           ) : groups.length === 0 ? (
@@ -331,7 +336,8 @@ function ReceptionHome() {
           {!canViewStudents ? (
             <p className="text-sm text-slate-400 dark:text-slate-500 py-8 text-center">{t("receptionHome.noPermission")}</p>
           ) : debtorsLoading ? (
-            <Loading height="15vh" />
+            // Ro'yxat 5 ta eng katta qarzdorni ko'rsatadi — skelet ham 5 qator.
+            <ListSkeleton rows={5} avatar />
           ) : debtorsFailed ? (
             <SectionError message={t("receptionHome.loadError")} onRetry={fetchStudents} />
           ) : debtors.length === 0 ? (
@@ -377,19 +383,28 @@ function ReceptionHome() {
         </ChartCard>
       )}
 
-      {/* `stats` bo'lsa yetarli — socket bilan qayta yuklanganda grafiklar
-          yo'qolib-qaytib "miltillamasin". */}
-      {stats && (
+      {/* Grafiklar kartalar bilan birga darhol joyida (birinchi yuklanishda
+          skelet) — ma'lumot kelganda "Tezkor amallar"ni birdan surib
+          yubormasin. Socket bilan qayta yuklanganda esa miltillamaydi. */}
+      {canViewStats && (stats || statsLoading) && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch lg:h-88">
           <div className="lg:col-span-1 min-h-0">
             {hideFinance ? (
               <HiddenFinancePanel />
+            ) : !stats ? (
+              <PanelSkeleton variant="donut" rows={2} />
             ) : (
               <PaymentDonut paid={stats.currentCyclePaid || 0} debt={stats.currentCycleDebt || 0} />
             )}
           </div>
           <div className="lg:col-span-2 min-h-0">
-            {hideFinance ? <HiddenFinancePanel /> : <RevenueChart payments={stats.chartPayments} />}
+            {hideFinance ? (
+              <HiddenFinancePanel />
+            ) : !stats ? (
+              <PanelSkeleton variant="chart" />
+            ) : (
+              <RevenueChart payments={stats.chartPayments} />
+            )}
           </div>
         </div>
       )}
