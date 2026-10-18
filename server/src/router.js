@@ -41,6 +41,8 @@ router.use("/admin", require("./routes/admin.routes"));
 router.use("/leads", require("./routes/lead.routes"));
 router.use("/tariffs", require("./routes/tariff.routes"));
 router.use("/clients", require("./routes/client.routes"));
+// Yagona kirish (Owner yoki Hodim — raqam bo'yicha aniqlanadi), API_CONTRACT_staff_phone.md §2.
+router.use("/auth", require("./routes/auth.routes"));
 router.use("/client-auth", require("./routes/clientAuth.routes"));
 router.use("/staff-auth", require("./routes/staffAuth.routes"));
 router.use("/staffs", require("./routes/staff.routes"));

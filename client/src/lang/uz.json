@@ -298,24 +298,18 @@
   },
   "auth": {
     "roleOwner": "Boshliq",
-    "roleStaff": "Hodim",
     "phone": "Telefon raqam",
     "login": "Login",
     "password": "Parol",
     "title": "Tizimga kirish",
-    "desc": "Rolingizni tanlang va tizimga kiring",
+    "desc": "Telefon raqamingiz va parolingiz bilan kiring",
     "success": "Muvaffaqiyatli kirdingiz",
     "failed": "Avtorizatsiyadan o'tilmadi, qaytadan kiring",
     "notFound": "Kirish ma'lumotlari yoki parol noto'g'ri",
     "fillTheRows": "Barcha maydonlarni to'ldiring",
     "signOut": "Tizimdan muvaffaqiyatli chiqdingiz",
     "forbidden": "Bu amal uchun ruxsatingiz yo'q",
-    "ownerInfoTitle": "O'quv markazingizni bir joydan boshqaring",
-    "ownerInfoDesc": "Filiallar, hodimlar, moliya va o'quvchilar — barchasi realtime tarzda bitta panelda. Boshliq sifatida to'liq nazorat sizda.",
-    "staffInfoTitle": "Ish jarayoningiz endi tizimda",
-    "staffInfoDesc": "Davomat, guruhlar va vazifalaringiz — hammasi sizga berilgan ruxsatlar doirasida, realtime yangilanadi.",
     "introSeen": "Tanishuv yakunlandi",
-    "loginPlaceholder": "login",
     "poweredBy": "Platforma:",
     "brandRequired": "Markaz manzili orqali kiring"
   },
@@ -406,7 +400,14 @@
     "groupCoins": "WECOIN va do'kon",
     "actionCoinManage": "Boshqarish (qoidalar, mahsulot, buyurtma)",
     "centers": "Filiallar",
-    "address": "Manzil"
+    "address": "Manzil",
+    "phone": "Telefon raqam",
+    "noPhone": "Raqam kiritilmagan",
+    "invalidPhone": "Telefon raqam noto'g'ri — 9 ta raqam kiriting",
+    "phoneTaken": "Bu raqam boshqa hodimga biriktirilgan",
+    "phoneIsOwner": "Bu raqam markaz egasiniki — hodimga boshqa raqam kiriting",
+    "phoneAlreadySet": "Raqamingiz allaqachon kiritilgan",
+    "phoneSaved": "Raqam saqlandi"
   },
   "certificateTemplate": {
     "title": "Sertifikat shablonlari",
@@ -2464,5 +2465,11 @@
     "group": "guruh",
     "message": "Avval {{name}} qo'shing",
     "askOwner": "Avval {{name}} qo'shilishi kerak — rahbaringizga murojaat qiling"
+  },
+  "staffPhone": {
+    "title": "Telefon raqamingizni kiriting",
+    "desc": "Bundan buyon tizimga login emas, shu raqam orqali kirasiz. Raqamni keyin faqat rahbaringiz o'zgartira oladi.",
+    "later": "Keyinroq",
+    "add": "Telefon raqamni kiritish"
   }
 }

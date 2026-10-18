@@ -27,6 +27,7 @@ import useMediaQuery from "../../hooks/useMediaQuery";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 import useQueryState from "../../hooks/useQueryState";
+import StaffPhone from "../../components/staff/StaffPhone";
 
 // Tailwind `sm` breakpoint — FilterBar bilan bir xil chegara.
 const DESKTOP = "(min-width: 640px)";
@@ -197,7 +198,7 @@ function Staff() {
         </span>
       ),
     },
-    { key: "login", header: t("staff.login") },
+    { key: "phone", header: t("staff.phone"), render: (row) => <StaffPhone phone={row.phone} /> },
     {
       key: "center",
       header: t("staff.center"),
@@ -274,7 +275,9 @@ function Staff() {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 cursor-pointer" onClick={() => navigate(`/staff/${row._id}`)}>
           <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">{row.name}</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">{row.login}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">
+            <StaffPhone phone={row.phone} />
+          </p>
         </div>
         <div className="shrink-0">{renderActions(row)}</div>
       </div>

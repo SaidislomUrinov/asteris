@@ -37,6 +37,7 @@ import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 import { maskMoney } from "../../utils/moneyFormat";
 import SalaryBaseBreakdown from "../../components/SalaryBaseBreakdown";
+import StaffPhone from "../../components/staff/StaffPhone";
 
 const currentMonth = () => {
   const d = new Date();
@@ -338,7 +339,7 @@ function StaffDetail() {
         <InfoCard
           icon={<HiUser />}
           title={staff.name}
-          subtitle={staff.login}
+          subtitle={<StaffPhone phone={staff.phone} />}
           accent="blue"
           badge={
             <Chip

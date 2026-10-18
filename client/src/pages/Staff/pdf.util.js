@@ -8,12 +8,12 @@ const pdfT = (key) => {
   return i18n.t(key, { lng });
 };
 
-// Hodim yaratilgach uning kirish rekvizitlarini (ism, login, parol) chiroyli
+// Hodim yaratilgach uning kirish rekvizitlarini (ism, telefon raqam, parol) chiroyli
 // PDF sifatida avtomatik yuklab beradi — parol faqat shu paytda oq-qora
 // ko'rinadi (bir martalik). admin/src/pages/Clients/pdf.util.js bilan bir
 // xil vizual naqsh (alohida ilova bo'lgani uchun bu yerda takrorlanadi).
-// `url` — markaz manzili (`prime.wenet.uz`): login faqat shu manzilda ishlaydi.
-export async function downloadStaffCredentialsPdf({ name, login, password, url = "" }) {
+// `url` — markaz manzili (`prime.wenet.uz`): raqam faqat shu manzilda ishlaydi.
+export async function downloadStaffCredentialsPdf({ name, phone, password, url = "" }) {
   const jsPDF = await loadJsPdf();
   const doc = new jsPDF({ unit: "pt", format: "a5" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -42,7 +42,7 @@ export async function downloadStaffCredentialsPdf({ name, login, password, url =
 
   const rows = [
     ...(url ? [[pdfT("staff.address"), url]] : []),
-    [pdfT("auth.login"), login],
+    [pdfT("auth.phone"), phone],
     [pdfT("auth.password"), password],
   ];
 

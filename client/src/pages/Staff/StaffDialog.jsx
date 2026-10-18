@@ -5,7 +5,7 @@ import {
   HiBanknotes,
   HiBookOpen,
   HiBuildingOffice2,
-  HiIdentification,
+  HiDevicePhoneMobile,
   HiKey,
   HiLockClosed,
   HiUser,
@@ -21,6 +21,7 @@ import { errorMsg, successMsg } from "../../utils/alert";
 import { featureLabelKey } from "../Subscription/permissionLabels";
 import { downloadStaffCredentialsPdf } from "./pdf.util";
 import { brandHost, brandUrl } from "../../utils/brand";
+import { PHONE_PREFIX, phoneSuffix } from "../Students/studentContact.util";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const ROLE_OPTIONS = [
@@ -219,7 +220,8 @@ const SALARY_DESCRIPTION_KEYS = {
 
 const EMPTY_FORM = {
   name: "",
-  login: "",
+  // Kirish raqami — faqat 9 ta raqam, `+998` prefiksi inputda (API_CONTRACT_staff_phone.md §3).
+  phone: "",
   password: "",
   centerIds: [],
   role: "reception",
@@ -269,7 +271,7 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
     isEdit
       ? {
           name: staff.name || "",
-          login: staff.login || "",
+          phone: phoneSuffix(staff.phone),
           password: "",
           // Asosiy filial birinchi — backend shu tartibni saqlaydi.
           centerIds: [
@@ -382,11 +384,14 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
     try {
       if (
         !form.name.trim() ||
-        !form.login.trim() ||
+        // Raqam yangi hodimda majburiy; eski (raqamsiz) hodimni tahrirlashda
+        // bo'sh qolsa ham bo'ladi — u o'zi profilida kiritadi.
+        (!isEdit && !form.phone) ||
         !selectedCenters.length ||
         (!isEdit && !form.password.trim())
       )
         throw new Error("staff.fillTheRows");
+      if (form.phone && form.phone.length !== 9) throw new Error("staff.invalidPhone");
 
       const withValue = needsSalaryValue && isTariffAllowed(form.salaryType);
       if (withValue) {
@@ -429,7 +434,6 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
       const body = {
         centerIds: selectedCenters,
         name: form.name.trim(),
-        login: form.login.trim(),
         role: form.role,
         permissions,
         subjects: isTeachingRole ? form.subjects : [],
@@ -440,6 +444,7 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
         })),
       };
       if (form.password.trim()) body.password = form.password.trim();
+      if (form.phone) body.phone = PHONE_PREFIX + form.phone;
 
       const res = isEdit
         ? await api.patch(`/staffs/${staff._id}`, body)
@@ -451,10 +456,10 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
       onSaved?.(data);
 
       if (!isEdit && data?.plainPassword) {
-        setCredentials({ login: data.login, password: data.plainPassword });
+        setCredentials({ phone: data.phone, password: data.plainPassword });
         await downloadStaffCredentialsPdf({
           name: data.name,
-          login: data.login,
+          phone: data.phone,
           password: data.plainPassword,
           url: brandSlug ? brandHost(brandSlug) : "",
         });
@@ -474,7 +479,7 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
       await navigator.clipboard.writeText(
         [
           brandSlug && `${t("staff.address")}: ${brandUrl(brandSlug)}`,
-          `${t("staff.login")}: ${credentials.login}`,
+          `${t("staff.phone")}: ${credentials.phone}`,
           `${t("staff.password")}: ${credentials.password}`,
         ]
           .filter(Boolean)
@@ -506,16 +511,16 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
             </div>
           )}
           <div className="flex flex-col gap-1 p-3 rounded-xl bg-slate-100 dark:bg-night-800">
-            <span className="text-xs text-slate-500 dark:text-slate-400">{t("staff.login")}</span>
-            <span className="font-semibold text-slate-800 dark:text-slate-100">
-              {credentials.login}
+            <span className="text-xs text-slate-500 dark:text-slate-400">{t("staff.phone")}</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-100 tabular-nums">
+              {credentials.phone}
             </span>
           </div>
           <div className="flex flex-col gap-1 p-3 rounded-xl bg-slate-100 dark:bg-night-800">
             <span className="text-xs text-slate-500 dark:text-slate-400">
               {t("staff.password")}
             </span>
-            <span className="font-semibold text-slate-800 dark:text-slate-100">
+            <span className="font-semibold text-slate-800 dark:text-slate-100 break-all select-all">
               {credentials.password}
             </span>
           </div>
@@ -557,13 +562,15 @@ function StaffDialog({ open, onClose, staff, centers, subjects, onSaved }) {
             onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
           />
           <Input
-            label={t("staff.login")}
-            placeholder={t("staff.login")}
-            required
-            icon={<HiIdentification />}
-            value={form.login}
+            label={t("staff.phone")}
+            placeholder="90 123 45 67"
+            required={!isEdit || !!staff.phone}
+            inputMode="numeric"
+            icon={<HiDevicePhoneMobile />}
+            prefix={PHONE_PREFIX}
+            value={form.phone}
             onChange={(e) =>
-              setForm((prev) => ({ ...prev, login: e.target.value }))
+              setForm((prev) => ({ ...prev, phone: e.target.value.replace(/\D/g, "").slice(0, 9) }))
             }
           />
         </div>

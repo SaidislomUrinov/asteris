@@ -245,7 +245,7 @@ module.exports = {
   staff: async (clientId, { page = 1, search = "" }) => {
     const list = await Staff.find({ client: clientId, isDeleted: true })
       .sort({ deletedAt: -1 })
-      .select("name login role center deletedAt createdAt blocked");
+      .select("name phone login role center deletedAt createdAt blocked");
     const centers = await centerNameMap(list);
 
     const regex = buildRegex(search);
@@ -253,14 +253,15 @@ module.exports = {
       .map((s) => ({
         _id: s._id,
         name: s.name,
-        login: s.login,
+        phone: s.phone || null,
+        login: s.login || null,
         role: s.role,
         blocked: !!s.blocked,
         centerName: centers[String(s.center)] || "—",
         archivedAt: s.deletedAt || null,
         archivedDate: s.deletedAt ? formatDate(s.deletedAt) : "",
       }))
-      .filter((r) => !regex || regex.test(r.name) || regex.test(r.login));
+      .filter((r) => !regex || regex.test(r.name) || regex.test(r.phone || "") || regex.test(r.login || ""));
 
     return paginate(rows, page);
   },
@@ -548,15 +549,21 @@ module.exports = {
     return true;
   },
 
-  // Hodim login'i faqat ARXIVLANMAGANLAR orasida unique (Staff.js partial
-  // index) — arxivdan qaytarayotganda o'sha login boshqa faol hodimga
+  // Hodim raqami/login'i faqat ARXIVLANMAGANLAR orasida unique (Staff.js partial
+  // index) — arxivdan qaytarayotganda o'sha raqam boshqa faol hodimga
   // berilgan bo'lishi mumkin, shuning uchun oldindan tekshiriladi.
   restoreStaff: async (clientId, id, actor = null) => {
     const staff = await Staff.findOne({ _id: id, client: clientId, isDeleted: true });
     if (!staff) throw new Error("archive.notFound");
 
-    const loginTaken = await Staff.findOne({ client: clientId, login: staff.login, isDeleted: false }).select("_id");
-    if (loginTaken) throw new Error("staff.loginTaken");
+    if (staff.phone) {
+      const phoneTaken = await Staff.exists({ client: clientId, phone: staff.phone, isDeleted: false });
+      if (phoneTaken) throw new Error("staff.phoneTaken");
+    }
+    if (staff.login) {
+      const loginTaken = await Staff.exists({ client: clientId, login: staff.login, isDeleted: false });
+      if (loginTaken) throw new Error("staff.loginTaken");
+    }
 
     staff.isDeleted = false;
     staff.deletedAt = null;

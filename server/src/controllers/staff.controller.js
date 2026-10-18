@@ -1,4 +1,5 @@
 const staffService = require("../services/staff.service");
+const authService = require("../services/auth.service");
 const clientService = require("../services/client.service");
 const { sendExcel, THEME } = require("../utils/excel.util");
 const { buildActor } = require("../utils/audit.util");
@@ -56,7 +57,7 @@ module.exports = {
           subtitle: `Jami: ${rows.length} ta`,
           columns: [
             { header: "F.I.Sh.", width: 24, value: (r) => r.name },
-            { header: "Login", width: 18, value: (r) => r.login },
+            { header: "Telefon", width: 18, value: (r) => r.phone },
             { header: "Filial", width: 20, value: (r) => r.centerName },
             { header: "Lavozim", width: 16, value: (r) => ROLE_LABELS[r.role] || r.role },
             { header: "Holat", width: 14, value: (r) => (r.blocked ? "Bloklangan" : "Faol") },
@@ -107,26 +108,8 @@ module.exports = {
 
   signIn: async (req, res, next) => {
     try {
-      const { data, access } = await staffService.signIn(req.body);
-      // `verify` bilan bir xil payload — aks holda login'dan keyin premium
-      // bo'limlar (QR davomat) faqat sahifa yangilangach paydo bo'lardi.
-      const [{ active }, tariffFeatures, tariffName, context] = await Promise.all([
-        clientService.getSubscriptionStatus(data.client),
-        clientService.getTariffFeatures(data.client),
-        clientService.getTariffName(data.client),
-        clientService.sessionContext(data.client, {
-          centerIds: data.centers,
-          excludeBlocked: true,
-          wanted: req.headers["x-center-id"],
-          primary: data.center,
-        }),
-      ]);
-      return res.send({
-        ok: true,
-        data: { ...data, subscriptionActive: active, tariffFeatures, tariffName, ...context },
-        access,
-        msg: "auth.success",
-      });
+      const { data, access } = await authService.staffSession(req.body, req.headers["x-center-id"]);
+      return res.send({ ok: true, data, access, msg: "auth.success" });
     } catch (error) {
       next(error);
     }
@@ -170,6 +153,15 @@ module.exports = {
     try {
       const data = await staffService.updateOwnProfile(req.staff._id, req.body);
       return res.send({ ok: true, data, msg: "staff.profileUpdated" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  setOwnPhone: async (req, res, next) => {
+    try {
+      const data = await staffService.setOwnPhone(req.staff._id, req.body, buildActor(req));
+      return res.send({ ok: true, data, msg: "staff.phoneSaved" });
     } catch (error) {
       next(error);
     }

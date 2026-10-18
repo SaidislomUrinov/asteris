@@ -1,5 +1,6 @@
 const { isValidObjectId } = require("mongoose");
 const clientService = require("../services/client.service");
+const authService = require("../services/auth.service");
 const tariffService = require("../services/tariff.service");
 const subscriptionPaymentService = require("../services/subscriptionPayment.service");
 const SubscriptionPayment = require("../models/SubscriptionPayment");
@@ -117,9 +118,8 @@ module.exports = {
 
   signIn: async (req, res, next) => {
     try {
-      const { data, access } = await clientService.signIn(req.body);
-      const context = await clientService.sessionContext(data._id, { wanted: req.headers["x-center-id"] });
-      return res.send({ ok: true, data: { ...data, ...context }, access, msg: "auth.success" });
+      const { data, access } = await authService.ownerSession(req.body, req.headers["x-center-id"]);
+      return res.send({ ok: true, data, access, msg: "auth.success" });
     } catch (error) {
       next(error);
     }

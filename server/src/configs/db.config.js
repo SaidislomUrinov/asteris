@@ -8,6 +8,7 @@ const migrateStudentPhotos = require("../scripts/migrate-student-photos");
 const migrateMultiCenter = require("../scripts/migrate-multi-center");
 const migrateQrTokens = require("../scripts/migrate-qr-tokens");
 const migrateStudentClients = require("../scripts/migrate-student-clients");
+const migrateStaffPhone = require("../scripts/migrate-staff-phone");
 
 const seedOwnerAdmin = async () => {
   try {
@@ -71,6 +72,11 @@ const connectDB = async () => {
       await migrateStudentClients();
     } catch (err) {
       console.error("O'quvchilar (mijoz bo'yicha) migratsiya xatosi:", err.message);
+    }
+    try {
+      await migrateStaffPhone();
+    } catch (err) {
+      console.error("Hodim raqami migratsiya xatosi:", err.message);
     }
   } catch (err) {
     console.error("MongoDB connection error:", err.message);

@@ -5,6 +5,7 @@ const Subject = require("../models/Subject");
 const Client = require("../models/Client");
 const { getHash, compareHash } = require("../utils/hash.util");
 const { getNow } = require("../utils/date.util");
+const { normalizePhone } = require("../utils/phone.util");
 const envConfig = require("../configs/env.config");
 const keyConfig = require("../configs/key.config");
 const jwtUtil = require("../utils/jwt.util");
@@ -40,7 +41,8 @@ const DTO = (data, centerId = null) => ({
   center: data?.center,
   centers: Staff.centersOf(data),
   name: data?.name,
-  login: data?.login,
+  phone: data?.phone || null,
+  login: data?.login || null,
   role: data?.role,
   permissions: data?.permissions,
   subjects: (data?.subjects || []).map((s) => String(s)),
@@ -157,6 +159,34 @@ const resolveSalaryValues = (body, centerIds, prev = []) => {
   return rows;
 };
 
+// Hodim raqami (API_CONTRACT_staff_phone.md §1): `+998XXXXXXXXX`, mijoz ichida
+// aktiv hodimlar orasida yagona va shu mijoz Owner'ining raqami EMAS — aks
+// holda yagona login (`/auth/signin`) kimni kiritishni aniqlay olmasdi.
+const UZ_PHONE_RE = /^\+998\d{9}$/;
+const resolvePhone = async (clientId, raw, exceptId = null) => {
+  const phone = normalizePhone(raw);
+  if (!UZ_PHONE_RE.test(phone)) throw new Error("staff.invalidPhone");
+  const filter = { client: clientId, phone, isDeleted: false };
+  if (exceptId) filter._id = { $ne: exceptId };
+  const [taken, owner] = await Promise.all([
+    Staff.exists(filter),
+    Client.exists({ _id: clientId, phone }),
+  ]);
+  if (owner) throw new Error("staff.phoneIsOwner");
+  if (taken) throw new Error("staff.phoneTaken");
+  return phone;
+};
+
+const escapeRegex = (v) => v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+// Qidiruv: ism, raqam (bo'shliq/qavslarsiz raqamlar bo'yicha ham) va eski login.
+const searchFilter = (search) => {
+  const regex = new RegExp(escapeRegex(search), "i");
+  const or = [{ name: regex }, { phone: regex }, { login: regex }];
+  const digits = search.replace(/\D/g, "");
+  if (digits.length >= 3 && digits !== search) or.push({ phone: new RegExp(digits) });
+  return or;
+};
+
 const sameIds = (a, b) => a.length === b.length && a.every((id, i) => String(id) === String(b[i]));
 
 module.exports = {
@@ -166,16 +196,15 @@ module.exports = {
 
   // ---- CRUD (Client Owner tomonidan boshqariladi, clientId bo'yicha tenant isolation) ----
   create: async (clientId, body, actor = null) => {
-    const { name, login, password, role, permissions, subjects } = body;
+    const { name, password, role, permissions, subjects } = body;
     const centerIds = await resolveCenters(clientId, body);
-    if (!centerIds || !name || !login || !password) throw new Error("staff.fillTheRows");
+    if (!centerIds || !name || !body.phone || !password) throw new Error("staff.fillTheRows");
     if (!Staff.ROLES.includes(role)) throw new Error("staff.invalidRole");
     const salaryValues = resolveSalaryValues(body, centerIds);
 
-    // Login MIJOZ ichida yagona (brend subdomeni orqali kiriladi).
-    const trimmedLogin = login.trim();
-    const exists = await Staff.findOne({ client: clientId, login: trimmedLogin, isDeleted: false });
-    if (exists) throw new Error("staff.loginTaken");
+    // Raqam MIJOZ ichida yagona (brend subdomeni orqali kiriladi). Login endi
+    // yozilmaydi — u faqat eski hodimlarning zaxira kirish yo'li.
+    const phone = await resolvePhone(clientId, body.phone);
 
     const isTeaching = TEACHING_ROLES.includes(role);
     const { teacherLimit, receptionLimit } = await getStaffLimits(clientId);
@@ -199,7 +228,7 @@ module.exports = {
       center: centerIds[0],
       centers: centerIds,
       name: name.trim(),
-      login: trimmedLogin,
+      phone,
       password: await getHash(password.trim()),
       role,
       permissions: sanitizeStaffPermissions(role, permissions),
@@ -213,7 +242,7 @@ module.exports = {
       center: staff.center,
       action: "staff:create",
       entity: { type: "staff", id: staff._id, label: staff.name },
-      meta: { role: staff.role, login: staff.login, centers: centerIds },
+      meta: { role: staff.role, phone: staff.phone, centers: centerIds },
     });
 
     return { ...DTO(staff), plainPassword: password.trim() };
@@ -221,7 +250,7 @@ module.exports = {
 
   // Yengil ro'yxat — Owner HAM, Staff HAM (masalan Guruh/Xona sahifalaridagi
   // "O'qituvchi" filtri/label uchun) chaqira oladi. To'liq `list()`dan farqli,
-  // maosh/login/permission kabi nozik maydonlar YO'Q — faqat _id/name/role.
+  // maosh/raqam/permission kabi nozik maydonlar YO'Q — faqat _id/name/role.
   lookup: async (clientId, { center = "", role = "" }) => {
     const filter = { client: clientId, isDeleted: false, blocked: false };
     if (center) filter.centers = center;
@@ -252,10 +281,9 @@ module.exports = {
     if (role && Staff.ROLES.includes(role)) baseFilter.role = role;
 
     if (trimmedSearch) {
-      const regex = new RegExp(trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
       const data = await Staff.find({
         ...baseFilter,
-        $or: [{ name: regex }, { login: regex }],
+        $or: searchFilter(trimmedSearch),
       }).sort({ createdAt: -1 });
 
       return {
@@ -297,8 +325,7 @@ module.exports = {
     if (center) baseFilter.centers = center;
     if (role && Staff.ROLES.includes(role)) baseFilter.role = role;
     if (trimmedSearch) {
-      const regex = new RegExp(trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
-      baseFilter.$or = [{ name: regex }, { login: regex }];
+      baseFilter.$or = searchFilter(trimmedSearch);
     }
 
     const staffs = await Staff.find(baseFilter).sort({ createdAt: -1 });
@@ -308,7 +335,7 @@ module.exports = {
 
     return staffs.map((s) => ({
       name: s.name,
-      login: s.login,
+      phone: s.phone || "",
       centerName: Staff.centersOf(s).map((id) => centerMap[id]).filter(Boolean).join(", ") || "—",
       role: s.role,
       blocked: s.blocked,
@@ -321,7 +348,7 @@ module.exports = {
     // Audit uchun — ayniqsa ruxsatlar o'zgarishi (kim kimga nima berdi).
     const before = {
       name: staff.name,
-      login: staff.login,
+      phone: staff.phone || null,
       role: staff.role,
       permissions: [...(staff.permissions || [])],
       center: staff.center ? String(staff.center) : null,
@@ -329,16 +356,10 @@ module.exports = {
       salaryValues: (staff.salaryValues || []).map((r) => `${r.center}:${r.value ?? ""}`),
     };
 
-    if (body.login && body.login.trim() !== staff.login) {
-      const trimmedLogin = body.login.trim();
-      const exists = await Staff.findOne({
-        client: clientId,
-        login: trimmedLogin,
-        isDeleted: false,
-        _id: { $ne: id },
-      });
-      if (exists) throw new Error("staff.loginTaken");
-      staff.login = trimmedLogin;
+    // Raqam (API_CONTRACT_staff_phone.md §3) — eski hodimga ham shu yerda
+    // biriktiriladi. Bo'sh yuborilsa tegilmaydi (raqamni o'chirib bo'lmaydi).
+    if (body.phone && normalizePhone(body.phone) !== staff.phone) {
+      staff.phone = await resolvePhone(clientId, body.phone, staff._id);
     }
 
     if (body.name) staff.name = body.name.trim();
@@ -380,7 +401,7 @@ module.exports = {
 
     const changes = audit.diff(before, {
       name: staff.name,
-      login: staff.login,
+      phone: staff.phone || null,
       role: staff.role,
       permissions: [...(staff.permissions || [])],
       center: staff.center ? String(staff.center) : null,
@@ -445,11 +466,13 @@ module.exports = {
   },
 
   // ---- Staff auth (client panel — Hodim login) ----
-  // Login mijoz ichida yagona — brend slug'i (subdomen) orqali mijoz topiladi
-  // (API_CONTRACT_multi_center.md §3.2).
+  // Raqam (yoki eski hodimda login) mijoz ichida yagona — brend slug'i
+  // (subdomen) orqali mijoz topiladi (API_CONTRACT_multi_center.md §3.2,
+  // API_CONTRACT_staff_phone.md §2).
   signIn: async (body) => {
     const { login, password } = body;
-    if (!login || !password) throw new Error("auth.fillTheRows");
+    const phone = body.phone ? normalizePhone(body.phone) : "";
+    if ((!phone && !login) || !password) throw new Error("auth.fillTheRows");
     const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : "";
     if (!slug) throw new Error("auth.brandRequired");
 
@@ -457,7 +480,8 @@ module.exports = {
     if (!client) throw new Error("auth.notFound");
     if (client.blocked) throw new Error("client.blocked");
 
-    const staff = await Staff.findOne({ client: client._id, login: login.trim(), isDeleted: false });
+    const identity = phone ? { phone } : { login: String(login).trim() };
+    const staff = await Staff.findOne({ client: client._id, ...identity, isDeleted: false });
     if (!staff) throw new Error("auth.notFound");
     if (staff.blocked) throw new Error("staff.blocked");
 
@@ -511,6 +535,30 @@ module.exports = {
     // bir xil kalit, `keyConfig.staff`).
     await redisUtil.set(keyConfig.staff(staff._id), data, envConfig.STAFF_SESSION_TTL);
 
+    return data;
+  },
+
+  // Raqami yo'q (eski) hodim o'z raqamini bir marta kiritadi — keyin uni
+  // faqat Owner o'zgartiradi (API_CONTRACT_staff_phone.md §4).
+  setOwnPhone: async (staffId, body, actor = null) => {
+    if (!body?.phone) throw new Error("staff.fillTheRows");
+    const staff = await Staff.findOne({ _id: staffId, isDeleted: false });
+    if (!staff) throw new Error("auth.notFound");
+    if (staff.phone) throw new Error("staff.phoneAlreadySet");
+
+    staff.phone = await resolvePhone(staff.client, body.phone, staff._id);
+    await staff.save();
+
+    const data = DTO(staff);
+    await redisUtil.set(keyConfig.staff(staff._id), data, envConfig.STAFF_SESSION_TTL);
+    void audit.log({
+      actor,
+      client: staff.client,
+      center: staff.center,
+      action: "staff:update",
+      entity: { type: "staff", id: staff._id, label: staff.name },
+      changes: [{ field: "phone", from: null, to: staff.phone }],
+    });
     return data;
   },
 

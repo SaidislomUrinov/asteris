@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { HiCalendarDays, HiKey, HiLanguage, HiUser } from "react-icons/hi2";
+import { HiCalendarDays, HiDevicePhoneMobile, HiKey, HiLanguage, HiUser } from "react-icons/hi2";
 import Avatar from "../../ui/Avatar";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
@@ -13,6 +13,7 @@ import { updateUser } from "../../contexts/user";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 import useFeature from "../../hooks/useFeature";
+import PhoneSetupDialog from "./PhoneSetupDialog";
 
 // Ulanish jarayonida havola ochilgach, foydalanuvchi Telegram'da "Start"
 // bosishini kutamiz — shu oraliqda holatni sekin-sekin so'raymiz
@@ -48,6 +49,8 @@ function StaffProfile() {
   const [tgLoading, setTgLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [unlinkTarget, setUnlinkTarget] = useState(false);
+  // Raqami yo'q eski hodim — profilga kirishi bilan raqam so'raladi.
+  const [phoneOpen, setPhoneOpen] = useState(!user.phone);
   const pollRef = useRef(null);
 
   const roleKey =
@@ -192,6 +195,25 @@ function StaffProfile() {
             onChange={(e) => setName(e.target.value)}
           />
 
+          {/* Kirish raqami — o'zgartirish faqat Owner orqali. */}
+          {user.phone ? (
+            <Input
+              label={t("staff.phone")}
+              variant="white"
+              icon={<HiDevicePhoneMobile />}
+              value={user.phone}
+              disabled
+            />
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("staff.phone")}</span>
+              <Button variant="outlined" onClick={() => setPhoneOpen(true)} className="w-full">
+                <HiDevicePhoneMobile />
+                {t("staffPhone.add")}
+              </Button>
+            </div>
+          )}
+
           <div className="flex flex-col gap-3 pt-3 mt-1 border-t border-slate-100 dark:border-night-700">
             <p className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
               <HiKey className="text-slate-400 dark:text-slate-500" />
@@ -244,6 +266,8 @@ function StaffProfile() {
           </div>
         </div>
       </div>
+
+      {!user.phone && <PhoneSetupDialog open={phoneOpen} onClose={() => setPhoneOpen(false)} />}
 
       <Dialog
         open={!!unlinkTarget}

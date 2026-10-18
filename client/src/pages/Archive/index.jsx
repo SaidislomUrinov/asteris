@@ -21,6 +21,7 @@ import { useSocketEvent } from "../../hooks/useSocketEvent";
 import useClosingValue from "../../hooks/useClosingValue";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
+import StaffPhone from "../../components/staff/StaffPhone";
 
 // Arxiv — API_CONTRACT_archive.md §7. Arxivlangan Guruh / O'quvchi a'zoligi /
 // Hodim / Xona / Fan bitta sahifada, tab'lar bo'yicha. Har tab bitta
@@ -324,7 +325,9 @@ function Archive() {
         render: (row) => (
           <div className="flex flex-col">
             <span className="font-semibold text-slate-800 dark:text-slate-100">{row.name}</span>
-            <span className="text-xs text-slate-400 dark:text-slate-500">{row.login}</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">
+              <StaffPhone phone={row.phone} />
+            </span>
           </div>
         ),
       },

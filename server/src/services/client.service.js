@@ -313,10 +313,17 @@ module.exports = {
       .select("slug name logo blocked")
       .lean();
     if (!client || client.blocked) throw new Error("brand.notFound");
+    // Shior mijoz emas, FILIAL darajasida — login sahifasida eng eski
+    // (asosiy) filialning shiori ko'rsatiladi, bo'lmasa — yo'q.
+    const sloganCenter = await Center.findOne({ client: client._id, isDeleted: false, slogan: { $nin: ["", null] } })
+      .sort({ createdAt: 1 })
+      .select("slogan")
+      .lean();
     return {
       slug: client.slug,
       name: client.name,
       logo: client.logo || null,
+      slogan: sloganCenter?.slogan || null,
       ...(client.slug !== slug ? { redirect: client.slug } : {}),
     };
   },

@@ -7,42 +7,8 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import UpdateLang from "../../components/UpdateLang";
 import Input from "../../ui/Input";
-import {
-  HiBriefcase,
-  HiDevicePhoneMobile,
-  HiEye,
-  HiEyeSlash,
-  HiUser,
-  HiUserGroup,
-} from "react-icons/hi2";
+import { HiDevicePhoneMobile, HiEye, HiEyeSlash } from "react-icons/hi2";
 import Button from "../../ui/Button";
-
-// Bitta panel — Client Owner ("Boshliq") va Staff ("Hodim") shu yerdan tanlab
-// kiradi. Ikkalasi ham backendda mustaqil auth zanjiri (/client-auth va
-// /staff-auth) — tanlovga qarab boshqa endpoint chaqiriladi.
-const ROLES = [
-  { value: "owner", key: "auth.roleOwner", endpoint: "/client-auth/signin" },
-  { value: "staff", key: "auth.roleStaff", endpoint: "/staff-auth/signin" },
-];
-
-// Chap paneldagi tushuntirish — tanlangan rolga qarab icon/rang/matn almashadi.
-const ROLE_INFO = {
-  owner: {
-    icon: HiBriefcase,
-    gradient: "from-blue-500 to-blue-950",
-    tabActiveText: "text-blue-600 dark:text-blue-400",
-    titleKey: "auth.ownerInfoTitle",
-    descKey: "auth.ownerInfoDesc",
-  },
-  staff: {
-    icon: HiUserGroup,
-    gradient: "from-violet-500 via-purple-700 to-purple-950",
-    tabActiveText:
-      "bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent",
-    titleKey: "auth.staffInfoTitle",
-    descKey: "auth.staffInfoDesc",
-  },
-};
 
 // Hozircha faqat O'zbekiston (+998, 9 ta raqam — jami 13 ta ishora "+" bilan
 // hisoblaganda). Kelajakda chet davlatlari qo'shilganda bu qattiq kodlangan
@@ -57,74 +23,67 @@ const formatPhone = (raw) => {
   return `+${PHONE_PREFIX}${digits}`;
 };
 
-// Kiritilgan Raqam/Login rolga qarab alohida saqlanadi (owner — telefon,
-// staff — login, ikkalasi butunlay boshqa format) — keyingi safar shu
-// panelga qaytilganda avtomatik to'ldirilishi uchun. Parol xavfsizlik
-// nuqtai nazaridan saqlanmaydi.
-const identifierStorageKey = (authType) => `asteris:auth:identifier:${authType}`;
-const loadSavedIdentifier = (authType) => localStorage.getItem(identifierStorageKey(authType)) || "";
+// Kiritilgan raqam keyingi safar avtomatik to'ldirilishi uchun saqlanadi
+// (parol — yo'q). Raqam avval "owner" kalitida turardi — eski qiymat yo'qolmasin.
+const PHONE_KEY = "asteris:auth:identifier:phone";
+const LEGACY_PHONE_KEY = "asteris:auth:identifier:owner";
+const loadSavedPhone = () => {
+  try {
+    return localStorage.getItem(PHONE_KEY) || localStorage.getItem(LEGACY_PHONE_KEY) || "";
+  } catch {
+    return "";
+  }
+};
+const savePhone = (value) => {
+  try {
+    localStorage.setItem(PHONE_KEY, value);
+  } catch {
+    // brauzer xotirasi yopiq — keyingi safar qo'lda kiritiladi
+  }
+};
 
 /**
- * Brend subdomenidagi login (docs/API_CONTRACT_multi_center.md §3.2): mijoz
- * nomi va logotipi ko'rinadi, so'rovga `slug` qo'shiladi — hodim logini shu
- * mijoz ichida qidiriladi.
+ * Brend subdomenidagi login (docs/API_CONTRACT_multi_center.md §3.2,
+ * docs/API_CONTRACT_staff_phone.md §2). Boshliq ham, Hodim ham TELEFON RAQAM
+ * bilan kiradi: subdomen mijozni, raqam esa kimligini aniqlaydi — sessiya
+ * `/auth/signin` javobidagi `authType` bilan ochiladi.
  *
- * @param {{ brand: { slug: string, name: string, logo: string|null } }} props
+ * Tuzilish: markazda bitta ustun — brend logotipi (bo'lsa), nomi, shiori
+ * (bo'lsa), ostida forma kartasi.
+ *
+ * @param {{ brand: { slug: string, name: string, logo: string|null, slogan?: string|null } }} props
  */
 function LoginForm({ brand }) {
-  const [authType, setAuthType] = useState("owner");
-  const [form, setForm] = useState({
-    identifier: loadSavedIdentifier("owner") || formatPhone(""),
-    password: "",
-  });
+  const [form, setForm] = useState({ phone: formatPhone(loadSavedPhone()), password: "" });
   const [disabled, setDisabled] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const dp = useDispatch();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  // Faqat React state (`disabled`) yetarli emas — Enter tugmasi (div'dagi
-  // onKeyDown) va tugma bosilishi bir vaqtda ikkita submit() chaqirsa, ikkala
-  // chaqiruv HAM "disabled hali false" holatida boshlanib ketishi mumkin
-  // (state yangilanishi async). Ikkita parallel signIn — ikkalasi ham
-  // Redis/DB'da bir xil "oxirgi access" kalitini yozadi, lekin frontend
-  // localStorage'ga qaysi javob KEYINROQ kelsa o'shani yozadi — agar tezroq
-  // yuborilgan so'rov sekinroq javob qaytarsa, localStorage ESKIRGAN
-  // (Redis'dagidan farqli) tokenni saqlab qoladi va keyingi so'rovda darhol
-  // "auth.failed" (productionda ENFORCE_SINGLE_DEVICE_SESSION orqali) bilan
-  // chiqarib yuboriladi. Shu sabab submit — synchronous ref bilan qulflanadi.
+  // Faqat React state (`disabled`) yetarli emas — Enter va tugma bosilishi bir
+  // vaqtda ikkita submit() chaqirsa, ikkalasi ham "disabled hali false"
+  // holatida boshlanib ketishi mumkin. Ikkita parallel signIn'da localStorage
+  // keyinroq kelgan (Redis'dagidan farqli) tokenni saqlab qolib, keyingi
+  // so'rovda "auth.failed" bilan chiqarib yuborilardi — shu sabab sync ref.
   const submittingRef = useRef(false);
 
-  const info = ROLE_INFO[authType];
   const logoUrl = brand.logo ? `${API}${brand.logo}` : null;
-  const InfoIcon = info.icon;
 
   const submit = async () => {
     if (submittingRef.current) return;
     try {
-      const identifierFilled =
-        authType === "owner"
-          ? form.identifier.length === PHONE_DIGITS_LEN + PHONE_PREFIX.length + 1
-          : !!form.identifier;
-      if (!identifierFilled || !form.password)
+      if (form.phone.length !== PHONE_DIGITS_LEN + PHONE_PREFIX.length + 1 || !form.password)
         throw new Error("auth.fillTheRows");
       submittingRef.current = true;
       setDisabled(true);
 
-      const endpoint = ROLES.find((r) => r.value === authType).endpoint;
-      const body =
-        authType === "owner"
-          ? { slug: brand.slug, phone: form.identifier, password: form.password }
-          : { slug: brand.slug, login: form.identifier, password: form.password };
-      const res = await api.post(endpoint, body);
-      const { ok, data, access, msg } = res.data;
+      const res = await api.post("/auth/signin", { slug: brand.slug, phone: form.phone, password: form.password });
+      const { ok, data, access, authType, msg } = res.data;
       if (!ok) throw new Error(msg);
       setSession(authType, access);
       setActiveCenter(data.activeCenter || "");
       successMsg(msg);
       dp(updateUser({ ...data, authType }));
-      // Login bo'lgach har doim `/dashboard`ga yo'naltiriladi — Client Owner
-      // ham, Staff (Manager/Reception/Teacher/Assistant) ham, joriy URL
-      // qanday bo'lishidan qat'i nazar.
       navigate("/dashboard", { replace: true });
     } catch (error) {
       errorMsg(error.message);
@@ -134,161 +93,105 @@ function LoginForm({ brand }) {
   };
 
   return (
-    <div
+    <main
       onKeyDown={(k) => k.key === "Enter" && submit()}
-      className="flex w-full h-screen"
+      className="relative isolate flex flex-col items-center justify-center w-full min-h-screen px-4 py-16 overflow-hidden"
     >
-      {/* Chap panel — ro'l tanlanganiga asoslangan tushuntirish */}
+      {/* Fon — yuqoridan tushadigan yumshoq ko'k nur, sahifani "bo'sh" qilmaydi. */}
       <div
-        className={`hidden lg:flex flex-col justify-between flex-1 p-12 text-white bg-gradient-to-br ${info.gradient} duration-500 relative overflow-hidden`}
-      >
-        <div className="flex items-center gap-3 z-10 min-w-0">
-          {logoUrl && (
-            <img src={logoUrl} alt="" className="w-11 h-11 rounded-xl object-contain bg-white p-1 shrink-0" />
-          )}
-          <p className="text-2xl font-space font-semibold truncate">{brand.name}</p>
-        </div>
+        aria-hidden="true"
+        className="pointer-events-none absolute -z-10 left-1/2 -top-48 -translate-x-1/2 w-[900px] h-[520px] rounded-full bg-blue-400/20 dark:bg-blue-500/10 blur-3xl"
+      />
 
-        <div key={authType} className="flex flex-col gap-5 z-10 max-w-md">
-          <div className="w-14 h-14 rounded-2xl bg-white/15 dark:bg-night-900/15 flex items-center justify-center text-2xl animate-rise-in [animation-delay:0ms]">
-            <InfoIcon />
-          </div>
-          <p className="text-3xl font-space font-semibold leading-tight animate-rise-in [animation-delay:80ms]">
-            {t(info.titleKey)}
-          </p>
-          <p className="text-white/70 animate-rise-in [animation-delay:160ms]">
-            {t(info.descKey)}
-          </p>
-        </div>
+      {/* Nozik nuqtali to'r — forma atrofida ko'rinadi, chetlarga qarab so'nadi. */}
+      <div
+        aria-hidden="true"
+        data-login-pattern
+        className="pointer-events-none absolute inset-0 -z-20 bg-[radial-gradient(var(--color-slate-300)_1px,transparent_1px)] dark:bg-[radial-gradient(var(--color-night-600)_1px,transparent_1px)] bg-[size:22px_22px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_45%,black_20%,transparent_100%)]"
+      />
 
-        <p className="text-white/40 text-xs z-10">
-          © {new Date().getFullYear()} {brand.name} · {t("auth.poweredBy")} WENET
-        </p>
+      <div className="absolute top-4 right-4">
+        <UpdateLang />
       </div>
 
-      {/* O'ng panel — tizimga kirish containeri */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4">
-        <div className="lg:hidden flex flex-col items-center gap-2 max-w-full animate-rise-in [animation-delay:0ms]">
+      <div className="flex flex-col items-center w-full max-w-[400px]">
+        {/* Brend: logo → nom → shior */}
+        <div className="flex flex-col items-center text-center animate-rise-in [animation-delay:0ms]">
+          {/* Logo istalgan nisbatda bo'lishi mumkin (kvadrat, keng, baland) —
+              ramka/kesish yo'q: balandlik va kenglik chegarasi ichida o'z
+              shaklida turadi. Logo bo'lmasa — faqat nom. */}
           {logoUrl && (
-            <img src={logoUrl} alt="" className="w-16 h-16 rounded-2xl object-contain bg-white border border-slate-200 dark:border-night-700 p-1.5" />
+            <img
+              src={logoUrl}
+              alt={brand.name}
+              className="block w-auto h-auto max-h-20 max-w-[min(240px,100%)] mb-5 object-contain rounded-xl"
+            />
           )}
-          <p className="text-[28px] font-space font-semibold text-center leading-tight break-words">{brand.name}</p>
+          <h1 className="text-[26px] font-space font-bold leading-tight text-slate-900 dark:text-slate-100 break-words max-w-full">
+            {brand.name}
+          </h1>
+          {brand.slogan && (
+            <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400 break-words max-w-full">{brand.slogan}</p>
+          )}
         </div>
-        <div className="flex flex-col w-full sm:w-110 bg-white dark:bg-night-900 border border-slate-200 dark:border-night-700 rounded-xl overflow-hidden">
-          {/* Header */}
-          <div className="relative z-20 flex flex-col gap-1 p-5 border-b border-slate-100 dark:border-night-700 animate-rise-in [animation-delay:0ms]">
-            <div className="flex items-center justify-between w-full">
-              <p className="font-semibold font-space text-[22px]">
-                {t("auth.title")}
-              </p>
-              <UpdateLang />
-            </div>
-            <p className="text-zinc-500 dark:text-slate-400 text-sm">{t("auth.desc")}</p>
+
+        {/* Forma */}
+        <div className="w-full mt-8 p-6 sm:p-7 rounded-2xl border border-slate-200/80 dark:border-night-700 bg-white dark:bg-night-900 shadow-xl shadow-slate-900/[0.04] dark:shadow-none animate-rise-in [animation-delay:90ms]">
+          <div className="flex flex-col gap-1 mb-5">
+            <p className="text-lg font-semibold font-space text-slate-900 dark:text-slate-100">{t("auth.title")}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t("auth.desc")}</p>
           </div>
 
-          {/* Body */}
-          <div className="flex flex-col gap-3 p-5">
-            <div className="flex items-center justify-center w-full gap-2 bg-slate-100 dark:bg-night-800 rounded-xl p-1 animate-rise-in [animation-delay:80ms]">
-              {ROLES.map((r) => (
-                <button
-                  key={r.value}
-                  type="button"
-                  onClick={() => {
-                    setAuthType(r.value);
-                    const saved = loadSavedIdentifier(r.value);
-                    setForm((prev) => ({
-                      ...prev,
-                      identifier: saved || (r.value === "owner" ? formatPhone("") : ""),
-                    }));
-                  }}
-                  className={`flex-1 py-2 rounded-lg text-sm font-semibold duration-150 cursor-pointer ${
-                    authType === r.value
-                      ? "bg-white dark:bg-night-900 shadow-sm dark:shadow-none"
-                      : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
-                  }`}
-                >
-                  <span
-                    className={
-                      authType === r.value ? ROLE_INFO[r.value].tabActiveText : ""
-                    }
-                  >
-                    {t(r.key)}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <div className="w-full animate-rise-in [animation-delay:160ms]">
-              {authType === "owner" ? (
-                <Input
-                  key="phone"
-                  label={t("auth.phone")}
-                  placeholder="+998901234567"
-                  required
-                  icon={<HiDevicePhoneMobile />}
-                  onChange={(e) => {
-                    const identifier = formatPhone(e.target.value);
-                    setForm((prev) => ({ ...prev, identifier }));
-                    localStorage.setItem(identifierStorageKey("owner"), identifier);
-                  }}
-                  value={form.identifier}
-                />
-              ) : (
-                <Input
-                  key="login"
-                  label={t("auth.login")}
-                  placeholder={t("auth.loginPlaceholder")}
-                  required
-                  icon={<HiUser />}
-                  onChange={(e) => {
-                    const identifier = e.target.value.trim();
-                    setForm((prev) => ({ ...prev, identifier }));
-                    localStorage.setItem(identifierStorageKey("staff"), identifier);
-                  }}
-                  value={form.identifier}
-                />
-              )}
-            </div>
-
-            <div className="w-full animate-rise-in [animation-delay:220ms]">
-              <Input
-                label={t(`auth.password`)}
-                placeholder="******"
-                required
-                type={showPass ? "text" : "password"}
-                icon={
-                  !showPass ? (
-                    <HiEyeSlash
-                      onClick={() => setShowPass((prev) => !prev)}
-                      className="cursor-pointer"
-                    />
-                  ) : (
-                    <HiEye
-                      onClick={() => setShowPass((prev) => !prev)}
-                      className="cursor-pointer"
-                    />
-                  )
-                }
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    password: e.target.value.trim(),
-                  }))
-                }
-                value={form.password}
-              />
-            </div>
+          <div className="flex flex-col gap-4">
+            <Input
+              label={t("auth.phone")}
+              placeholder="+998901234567"
+              required
+              type="tel"
+              inputMode="tel"
+              autoComplete="username"
+              icon={<HiDevicePhoneMobile />}
+              value={form.phone}
+              onChange={(e) => {
+                const phone = formatPhone(e.target.value);
+                setForm((prev) => ({ ...prev, phone }));
+                savePhone(phone);
+              }}
+            />
+            <Input
+              label={t("auth.password")}
+              placeholder="******"
+              required
+              type={showPass ? "text" : "password"}
+              autoComplete="current-password"
+              icon={
+                showPass ? (
+                  <HiEye onClick={() => setShowPass(false)} className="cursor-pointer" />
+                ) : (
+                  <HiEyeSlash onClick={() => setShowPass(true)} className="cursor-pointer" />
+                )
+              }
+              value={form.password}
+              onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value.trim() }))}
+            />
           </div>
 
-          {/* Footer */}
-          <div className="p-5 border-t border-slate-100 dark:border-night-700 animate-rise-in [animation-delay:280ms]">
+          <div className="mt-6">
             <Button fullWith loading={disabled} onClick={submit}>
               {t("common.confirm")}
             </Button>
           </div>
         </div>
+
+        <p className="mt-8 text-xs text-slate-400 dark:text-slate-500 animate-rise-in [animation-delay:180ms]">
+          © {new Date().getFullYear()} {brand.name} · {t("auth.poweredBy")}{" "}
+          <span className="font-space font-semibold">
+            <span className="text-blue-500">WE</span>
+            <span className="text-slate-500 dark:text-slate-400">NET</span>
+          </span>
+        </p>
       </div>
-    </div>
+    </main>
   );
 }
 

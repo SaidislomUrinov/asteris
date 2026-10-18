@@ -38,9 +38,17 @@ const schema = new Schema({
     required: true,
     trim: true,
   },
+  // Kirish identifikatori — `+998XXXXXXXXX` (API_CONTRACT_staff_phone.md §1).
+  // Eski hodimlarda yo'q: maydon umuman yozilmaydi (`""` emas — aks holda
+  // `{client, phone}` unique indeksida to'qnashadi).
+  phone: {
+    type: String,
+    trim: true,
+  },
+  // ESKI identifikator — faqat raqami hali kiritilmagan hodimlar uchun zaxira
+  // kirish yo'li. Yangi hodimlarda yozilmaydi.
   login: {
     type: String,
-    required: true,
     trim: true,
   },
   password: {
@@ -113,10 +121,19 @@ const schema = new Schema({
   },
 });
 
-// Login MIJOZ ichida yagona (brend subdomeni — API_CONTRACT_multi_center.md §1),
-// faqat aktiv hujjatlar orasida: arxivlangan hodimning logini qayta berilishi mumkin.
-// Eski global `{ login: 1 }` indeksi scripts/migrate-multi-center.js da o'chiriladi.
-schema.index({ client: 1, login: 1 }, { unique: true, partialFilterExpression: { isDeleted: false } });
+// Raqam va login MIJOZ ichida yagona (brend subdomeni — API_CONTRACT_multi_center.md §1),
+// faqat aktiv hujjatlar orasida: arxivlangan hodimning raqami qayta berilishi mumkin.
+// `$type: "string"` — maydoni yo'q hujjatlar indeksga tushmaydi (login'siz yangi
+// hodimlar `null` dublikati bo'lib qolmasin). Eski `{client, login}` indeksi
+// (filtrsiz) scripts/migrate-staff-phone.js da almashtiriladi.
+schema.index(
+  { client: 1, phone: 1 },
+  { unique: true, partialFilterExpression: { isDeleted: false, phone: { $type: "string" } } },
+);
+schema.index(
+  { client: 1, login: 1 },
+  { unique: true, partialFilterExpression: { isDeleted: false, login: { $type: "string" } } },
+);
 
 schema.pre("save", async function () {
   this.updatedAt = getNow();

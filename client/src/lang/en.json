@@ -298,24 +298,18 @@
   },
   "auth": {
     "roleOwner": "Owner",
-    "roleStaff": "Staff",
     "phone": "Phone number",
     "login": "Login",
     "password": "Password",
     "title": "Sign in",
-    "desc": "Choose your role and sign in",
+    "desc": "Sign in with your phone number and password",
     "success": "Signed in successfully",
     "failed": "Authorization failed, please sign in again",
     "notFound": "Incorrect credentials or password",
     "fillTheRows": "Fill in all fields",
     "signOut": "You have signed out successfully",
     "forbidden": "You do not have permission for this action",
-    "ownerInfoTitle": "Run your learning center from one place",
-    "ownerInfoDesc": "Centers, staff, finances and students — all in a single realtime panel. As the owner, you have full control.",
-    "staffInfoTitle": "Your workflow is now in the system",
-    "staffInfoDesc": "Attendance, groups and your tasks — all within the permissions you were granted, updated in realtime.",
     "introSeen": "Intro completed",
-    "loginPlaceholder": "login",
     "poweredBy": "Powered by",
     "brandRequired": "Sign in via your center's address"
   },
@@ -406,7 +400,14 @@
     "groupCoins": "WECOIN & shop",
     "actionCoinManage": "Manage (rules, products, orders)",
     "centers": "Branches",
-    "address": "Address"
+    "address": "Address",
+    "phone": "Phone number",
+    "noPhone": "No phone number",
+    "invalidPhone": "Invalid phone number — enter 9 digits",
+    "phoneTaken": "This number is already assigned to another staff member",
+    "phoneIsOwner": "This is the owner's number — use a different one for staff",
+    "phoneAlreadySet": "Your number is already set",
+    "phoneSaved": "Phone number saved"
   },
   "certificateTemplate": {
     "title": "Certificate templates",
@@ -2466,5 +2467,11 @@
     "group": "group",
     "message": "First add a {{name}}",
     "askOwner": "A {{name}} must be added first — contact your manager"
+  },
+  "staffPhone": {
+    "title": "Enter your phone number",
+    "desc": "From now on you will sign in with this number instead of a login. Only your manager can change it later.",
+    "later": "Later",
+    "add": "Add phone number"
   }
 }

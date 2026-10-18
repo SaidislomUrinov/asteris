@@ -13,7 +13,7 @@ const router = Router();
 const accountLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
-  keyGenerator: (req) => `${rateLimit.ipKey(req)}:${String(req.body?.login || "").trim().toLowerCase().slice(0, 64)}`,
+  keyGenerator: (req) => `${rateLimit.ipKey(req)}:${String(req.body?.phone || req.body?.login || "").trim().toLowerCase().slice(0, 64)}`,
 });
 const ipLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 60 });
 const signInLimiter = [ipLimiter, accountLimiter];
@@ -31,6 +31,7 @@ router.post("/signin", signInLimiter, staffController.signIn);
 router.get("/verify", staffAuth, fullStaffAuth, staffController.verify);
 router.post("/signout", staffAuth, fullStaffAuth, staffController.signOutSession);
 router.patch("/profile", profileLimiter, staffAuth, fullStaffAuth, staffController.updateOwnProfile);
+router.patch("/phone", profileLimiter, staffAuth, fullStaffAuth, staffController.setOwnPhone);
 router.patch("/intro-seen", staffAuth, fullStaffAuth, staffController.markIntroSeen);
 
 module.exports = router;
