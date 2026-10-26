@@ -145,7 +145,7 @@ export const AddStudentSheet = ({ open, group, onClose, onAdded }) => {
       setFile(f);
     }
   };
-  const takePhoto = () => !busy && cameraRef.current?.click();
+  const fromCamera = () => !busy && cameraRef.current?.click();
   const fromGallery = () => !busy && galleryRef.current?.click();
 
   const submit = async () => {
@@ -214,7 +214,7 @@ export const AddStudentSheet = ({ open, group, onClose, onAdded }) => {
       <div className="flex flex-col items-center gap-2 pt-1 pb-1">
         <button
           type="button"
-          onClick={takePhoto}
+          onClick={fromCamera}
           aria-label={preview ? t("student.photoRetake") : t("student.photoTake")}
           className="relative w-[88px] h-[88px] active:opacity-80"
         >
@@ -233,24 +233,31 @@ export const AddStudentSheet = ({ open, group, onClose, onAdded }) => {
             {preview ? <HiArrowPath className="w-3.5 h-3.5" /> : <HiOutlineCamera className="w-3.5 h-3.5" />}
           </span>
         </button>
-        <div className="flex items-center gap-3 text-[12.5px] font-bold">
+        <div className="flex items-center gap-2 text-[13px] font-bold">
+          <button
+            type="button"
+            onClick={fromCamera}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-accent/10 text-accent active:opacity-70"
+          >
+            <HiOutlineCamera className="w-4 h-4" />
+            {t("worker.student.photoFromCamera")}
+          </button>
           <button
             type="button"
             onClick={fromGallery}
-            className="inline-flex items-center gap-1 text-accent active:opacity-70"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-ink/6 text-ink active:opacity-70"
           >
             <HiOutlinePhoto className="w-4 h-4" />
-            {t("student.photoGallery")}
+            {t("worker.student.photoFromGallery")}
           </button>
           {preview && (
             <button
               type="button"
               onClick={() => !busy && setFile(null)}
               aria-label={t("worker.student.photoRemove")}
-              className="inline-flex items-center gap-1 text-bad active:opacity-70"
+              className="inline-grid place-items-center size-9 rounded-full bg-bad/10 text-bad active:opacity-70"
             >
               <HiOutlineTrash className="w-4 h-4" />
-              {t("worker.student.photoRemove")}
             </button>
           )}
         </div>

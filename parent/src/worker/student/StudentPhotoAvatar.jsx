@@ -1,14 +1,13 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HiArrowPath, HiCamera, HiOutlineCamera, HiOutlineTrash } from "react-icons/hi2";
+import { HiArrowPath, HiCamera } from "react-icons/hi2";
 import { haptic } from "../../lib/telegram";
 import { photoSrc } from "../../lib/studentPhoto";
 import { Avatar } from "../../components/Card";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { initials } from "../../utils/format";
 import { cn } from "../../utils/cn";
-import { BottomSheet } from "../components/BottomSheet";
-import { MenuItem } from "../components/MenuItem";
+import { PhotoSourceSheet } from "../components/PhotoSourceSheet";
 import { useSocketEvents } from "../useSocket";
 import { useStudentPhoto } from "./useStudentPhoto";
 
@@ -22,7 +21,6 @@ const EVENTS = ["student:updated"];
 // rasm paydo bo'lganda layout siljimaydi.
 export const StudentPhotoAvatar = ({ student, className, rounded = "rounded-2xl" }) => {
   const { t } = useTranslation();
-  const inputRef = useRef(null);
   const id = student?._id;
 
   // Javob / socket'dan kelgan yangi rasm darhol ko'rinadi; sahifa ma'lumoti
@@ -44,20 +42,10 @@ export const StudentPhotoAvatar = ({ student, className, rounded = "rounded-2xl"
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const pickFile = () => inputRef.current?.click();
-
   const onTap = () => {
     if (busy || !id) return;
     haptic("light");
-    if (src) setMenuOpen(true);
-    else pickFile();
-  };
-
-  const onFile = (e) => {
-    const file = e.target.files?.[0];
-    // Bir xil faylni qayta tanlash ham `change` bersin.
-    e.target.value = "";
-    if (file) upload(file);
+    setMenuOpen(true);
   };
 
   const onRemove = async () => {
@@ -91,28 +79,13 @@ export const StudentPhotoAvatar = ({ student, className, rounded = "rounded-2xl"
         </span>
       </button>
 
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" tabIndex={-1} aria-hidden="true" onChange={onFile} />
-
-      <BottomSheet open={menuOpen} onClose={() => setMenuOpen(false)} title={student?.fullName} subtitle={t("worker.student.photoTitle")}>
-        <div className="flex flex-col divide-y divide-line/70">
-          <MenuItem
-            icon={HiOutlineCamera}
-            label={t("worker.student.photoReplace")}
-            onClick={() => {
-              setMenuOpen(false);
-              pickFile();
-            }}
-          />
-          <MenuItem
-            icon={HiOutlineTrash}
-            label={t("worker.student.photoRemove")}
-            onClick={() => {
-              setMenuOpen(false);
-              setConfirmOpen(true);
-            }}
-          />
-        </div>
-      </BottomSheet>
+      <PhotoSourceSheet
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onFile={upload}
+        title={student?.fullName}
+        onRemove={src ? () => setConfirmOpen(true) : undefined}
+      />
 
       <ConfirmDialog
         open={confirmOpen}

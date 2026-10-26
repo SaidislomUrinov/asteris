@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import { Card } from "../../components/Card";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { RowsSkeleton } from "../components/WorkerSkeleton";
 import { EmptyState, ErrorState } from "../../components/States";
+import { PhotoSourceSheet } from "../components/PhotoSourceSheet";
 import { haptic } from "../../lib/telegram";
 import { useWorker } from "../useWorker";
 import { activeEntryOf, asErr, clampMonth, monthRowOf, tashkentMonth, tashkentMonthOfUnix } from "../utils";
@@ -32,8 +33,9 @@ export const StudentsTab = ({ group, students, state, todayMarks, perm, onAdded 
   // cheklaydi). Badge tarifi yo'q o'qituvchida yutuqlar sahifasi (avatar kirish
   // nuqtasi) yopiq — shuning uchun qator menyusida ham bor. Ro'yxat
   // `student:updated` bilan o'zi yangilanadi.
-  const fileRef = useRef(null);
   const [photoFor, setPhotoFor] = useState(null);
+  // Oyna fayl tanlashdan oldin yopiladi, o'quvchi esa yuklash tugaguncha kerak.
+  const [photoSheet, setPhotoSheet] = useState(false);
   const [removeFor, setRemoveFor] = useState(null);
   const photo = useStudentPhoto(photoFor?._id || removeFor?._id);
   // "+ O'quvchi qo'shish" (docs/API_CONTRACT_enroll_with_photo.md) — ruxsat
@@ -128,12 +130,10 @@ export const StudentsTab = ({ group, students, state, todayMarks, perm, onAdded 
   const pickPhoto = (s) => {
     setMenuFor(null);
     setPhotoFor(s);
-    fileRef.current?.click();
+    setPhotoSheet(true);
   };
-  const onFile = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (file) await photo.upload(file);
+  const onFile = async (file) => {
+    await photo.upload(file);
     setPhotoFor(null);
   };
   const onRemovePhoto = async () => {
@@ -194,7 +194,12 @@ export const StudentsTab = ({ group, students, state, todayMarks, perm, onAdded 
         />
       )}
       {addSheet}
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
+      <PhotoSourceSheet
+        open={photoSheet}
+        onClose={() => setPhotoSheet(false)}
+        onFile={onFile}
+        title={photoFor?.fullName}
+      />
       {removeFor && (
         <ConfirmDialog
           open

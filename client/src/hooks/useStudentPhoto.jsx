@@ -7,6 +7,7 @@ import useClosingValue from "./useClosingValue";
 import { api } from "../utils/fetching";
 import { errorMsg, successMsg } from "../utils/alert";
 import { uploadStudentPhoto } from "../utils/studentPhoto";
+import StudentPhotoCapture from "../pages/Students/StudentPhotoCapture";
 
 /**
  * O'quvchi rasmini yuklash/olib tashlash oqimi bitta joyda
@@ -14,44 +15,47 @@ import { uploadStudentPhoto } from "../utils/studentPhoto";
  * barcha rollarga ko'rinadi, cheklovni server qo'yadi (o'qituvchi faqat
  * o'z guruhidagi o'quvchiga).
  *
- * - `pick(student)` — fayl tanlash oynasini ochadi (foydalanuvchi bosishi
- *   ichida chaqirilishi shart, aks holda brauzer bloklaydi).
+ * - `pick(student)` — rasm dialogini ochadi: kameradan olish yoki galereyadan
+ *   tanlash (docs/API_CONTRACT_photo_source_choice.md), "Saqlash" bilan yuklanadi.
  * - `askRemove(student)` — tasdiqlash modali, keyin DELETE.
  * - `busyId` — hozir yuklanayotgan o'quvchi `_id` si.
  * - `menuItems(student)` — DropMenu bandlari (`useSendQrCard` naqshi).
- * - `element` — yashirin `<input type="file">` + tasdiqlash modali; sahifada
+ * - `element` — rasm dialogi + olib tashlash tasdiqlash modali; sahifada
  *   bir marta render qilinadi.
  *
  * @param {(studentId: string, photo: string) => void} onUpdated
  */
 export default function useStudentPhoto(onUpdated) {
   const { t } = useTranslation();
-  const inputRef = useRef(null);
-  const targetRef = useRef(null);
   const busyRef = useRef(false);
   const [busyId, setBusyId] = useState("");
+  const [pickTarget, setPickTarget] = useState(null);
+  const pickView = useClosingValue(pickTarget);
+  const [pickFile, setPickFile] = useState(null);
   const [removeTarget, setRemoveTarget] = useState(null);
   const removeView = useClosingValue(removeTarget);
   const [removing, setRemoving] = useState(false);
 
   const pick = useCallback((student) => {
     if (!student?._id || busyRef.current) return;
-    targetRef.current = student;
-    inputRef.current?.click();
+    setPickFile(null);
+    setPickTarget(student);
   }, []);
 
-  const handleFile = async (e) => {
-    const file = e.target.files?.[0];
-    // Bir xil faylni qayta tanlash ham `change` bersin.
-    e.target.value = "";
-    const student = targetRef.current;
-    if (!file || !student?._id || busyRef.current) return;
+  const closePick = () => {
+    if (!busyRef.current) setPickTarget(null);
+  };
+
+  const savePick = async () => {
+    const student = pickTarget;
+    if (!pickFile || !student?._id || busyRef.current) return;
     busyRef.current = true;
     setBusyId(student._id);
     try {
-      const { msg, photo } = await uploadStudentPhoto(student._id, file);
+      const { msg, photo } = await uploadStudentPhoto(student._id, pickFile);
       onUpdated?.(student._id, photo);
       successMsg(msg);
+      setPickTarget(null);
     } catch (error) {
       errorMsg(error.message);
     } finally {
@@ -114,15 +118,31 @@ export default function useStudentPhoto(onUpdated) {
 
   const element = (
     <>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        tabIndex={-1}
-        aria-hidden="true"
-        onChange={handleFile}
-      />
+      {pickView && (
+        <Dialog
+          open={!!pickTarget}
+          onClose={closePick}
+          title={pickView.photo ? t("student.photoReplace") : t("student.photoAdd")}
+          actions={
+            <>
+              <Button color="black" variant="text" onClick={closePick} disabled={!!busyId}>
+                {t("common.cancel")}
+              </Button>
+              <Button loading={!!busyId} disabled={!pickFile} onClick={savePick}>
+                {t("common.save")}
+              </Button>
+            </>
+          }
+        >
+          <StudentPhotoCapture
+            value={pickFile}
+            onChange={setPickFile}
+            existingPhoto={pickView.photo}
+            active={!!pickTarget}
+            disabled={!!busyId}
+          />
+        </Dialog>
+      )}
       {removeView && (
         <Dialog
           open={!!removeTarget}
