@@ -1,6 +1,7 @@
 const Student = require("../models/Student");
 const Attendance = require("../models/Attendance");
 const Grade = require("../models/Grade");
+const Homework = require("../models/Homework");
 const { currentMonthString } = require("./date.util");
 
 // Oy "YYYY-MM" formati (API_CONTRACT_badges_monthly_rank.md §A).
@@ -22,6 +23,11 @@ const monthDateRange = (month) => ({ $gte: `${month}-01`, $lte: `${month}-31` })
 const GRADE_PRIOR_MEAN = 5.5;
 const GRADE_PRIOR_WEIGHT = 5;
 
+// Uyga vazifa natijasi reyting uchun 10 ballik "baho" sifatida hisoblanadi:
+// bajarildi = 10, qisman = 5, bajarilmadi = 0. Faqat o'qituvchi natija
+// belgilagan vazifalar kiradi (belgilanmagani hisobga olinmaydi).
+const HOMEWORK_POINTS = { done: 10, partial: 5, missed: 0 };
+
 // IMDb usuli: score = (sum + C·m) / (count + C), 2 xona aniqlikda.
 const gradeScore = (sum, count) =>
   Math.round(((sum + GRADE_PRIOR_WEIGHT * GRADE_PRIOR_MEAN) / (count + GRADE_PRIOR_WEIGHT)) * 100) / 100;
@@ -31,11 +37,12 @@ const gradeScore = (sum, count) =>
 // noldan boshlanadi (API_CONTRACT_badges_monthly_rank.md §A) — butun tarix
 // bo'yicha reytingda yangi o'quvchi eski "chempion"ga hech qachon yetolmasdi.
 // `group` — Group hujjati (`_id` kerak). Formula o'zgarmagan.
-// Qaytaradi: { [studentId]: { attendanceRate, gradeAverage, gradeCount, gradeScore } }
+// Qaytaradi: { [studentId]: { attendanceRate, gradeAverage, gradeCount, homeworkRate, gradeScore } }
+// `gradeScore` baho + uyga vazifa natijalaridan birga hisoblanadi.
 const groupStudentsSummary = async (group, { month } = {}) => {
   const groupId = group._id;
   const range = monthDateRange(MONTH_RE.test(month || "") ? month : currentMonthString());
-  const [activeStudentIds, attendanceAgg, gradeAgg] = await Promise.all([
+  const [activeStudentIds, attendanceAgg, gradeAgg, homeworkAgg] = await Promise.all([
     Student.find({ groups: { $elemMatch: { group: groupId, status: "active" } } }).select("_id"),
     Attendance.aggregate([
       { $match: { group: groupId, date: range } },
@@ -52,7 +59,29 @@ const groupStudentsSummary = async (group, { month } = {}) => {
       { $match: { group: groupId, date: range } },
       { $group: { _id: "$student", avg: { $avg: "$value" }, sum: { $sum: "$value" }, count: { $sum: 1 } } },
     ]),
+    Homework.aggregate([
+      { $match: { group: groupId, date: range, isDeleted: false } },
+      { $unwind: "$results" },
+      {
+        $group: {
+          _id: "$results.student",
+          sum: {
+            $sum: {
+              $switch: {
+                branches: Object.entries(HOMEWORK_POINTS).map(([status, points]) => ({
+                  case: { $eq: ["$results.status", status] },
+                  then: points,
+                })),
+                default: 0,
+              },
+            },
+          },
+          count: { $sum: 1 },
+        },
+      },
+    ]),
   ]);
+  const homeworkMap = Object.fromEntries(homeworkAgg.map((h) => [String(h._id), h]));
 
   const attendanceMap = Object.fromEntries(
     attendanceAgg.map((a) => [String(a._id), a.total ? Math.round((a.present / a.total) * 100) : 0]),
@@ -60,25 +89,25 @@ const groupStudentsSummary = async (group, { month } = {}) => {
   const gradeMap = Object.fromEntries(
     gradeAgg.map((g) => [
       String(g._id),
-      {
-        average: Math.round(g.avg * 10) / 10,
-        count: g.count,
-        // Saralash uchun Bayes o'rtachasi — baho SONI ham hisobga olinadi:
-        // 2 ta "10" olgan o'quvchi 25 ta baho bilan 9.5 o'rtachali
-        // o'quvchidan yuqoriga chiqmasin.
-        score: gradeScore(g.sum, g.count),
-      },
+      { average: Math.round(g.avg * 10) / 10, count: g.count, sum: g.sum },
     ]),
   );
 
   const summary = {};
   for (const s of activeStudentIds) {
     const id = String(s._id);
+    const grade = gradeMap[id];
+    const homework = homeworkMap[id];
+    const count = (grade?.count ?? 0) + (homework?.count ?? 0);
     summary[id] = {
       attendanceRate: attendanceMap[id] || 0,
-      gradeAverage: gradeMap[id]?.average ?? null,
-      gradeCount: gradeMap[id]?.count ?? 0,
-      gradeScore: gradeMap[id]?.score ?? null,
+      gradeAverage: grade?.average ?? null,
+      gradeCount: grade?.count ?? 0,
+      homeworkRate: homework ? Math.round((homework.sum / (homework.count * 10)) * 100) : null,
+      // Saralash uchun Bayes o'rtachasi — baho + uyga vazifa SONI ham hisobga
+      // olinadi: 2 ta "10" olgan o'quvchi 25 ta baho bilan 9.5 o'rtachali
+      // o'quvchidan yuqoriga chiqmasin.
+      gradeScore: count ? gradeScore((grade?.sum ?? 0) + (homework?.sum ?? 0), count) : null,
     };
   }
   return summary;
