@@ -976,6 +976,8 @@
       "photoEdit": "Rasmni o'zgartirish",
       "photoAdd": "Rasm qo'yish",
       "photoTitle": "O'quvchi rasmi",
+      "photoFromCamera": "Kameradan olish",
+      "photoFromGallery": "Galereyadan tanlash",
       "photoReplace": "Rasmni almashtirish",
       "photoRemove": "Rasmni olib tashlash",
       "photoRemoveTitle": "Rasmni olib tashlaysizmi?",
@@ -1306,7 +1308,8 @@
     "tx": {
       "earn": "{{month}} natijalari",
       "spend": "Do'kondan xarid",
-      "refund": "Xarid qaytarildi"
+      "refund": "Xarid qaytarildi",
+      "adjust": "Markaz tomonidan"
     },
     "part": {
       "grades": "Baholar",

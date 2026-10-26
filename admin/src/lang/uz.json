@@ -330,8 +330,12 @@
         "description": "O'quvchilarga oylik yutuq nishonlari (mukammal davomat, a'lochi, seriyalar, chempion) beriladi va ota-onaga Telegram orqali yuboriladi."
       },
       "attendance_qr": {
-        "label": "QR davomat",
+        "label": "Davomat",
         "description": "Davomatni QR kod skanerlash orqali avtomatik belgilash imkonini beradi."
+      },
+      "attendance_face": {
+        "label": "Yuz orqali davomat",
+        "description": "Davomatni o'quvchi yuzini kamera orqali tanib avtomatik belgilash imkonini beradi (QR davomat bilan birga ishlaydi)."
       },
       "attendance_report": {
         "label": "Davomat hisobotlari",
@@ -1073,7 +1077,7 @@
       "groupsDetail": "Guruh detali",
       "students": "O'quvchilar",
       "studentsDetail": "O'quvchi detali",
-      "qrAttendance": "QR davomat",
+      "qrAttendance": "Davomat",
       "certificates": "Sertifikatlar",
       "subscription": "Tariflar",
       "profile": "Profil",

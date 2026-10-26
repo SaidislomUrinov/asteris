@@ -980,6 +980,8 @@
       "photoEdit": "Change photo",
       "photoAdd": "Add photo",
       "photoTitle": "Student photo",
+      "photoFromCamera": "Take a photo",
+      "photoFromGallery": "Choose from gallery",
       "photoReplace": "Replace photo",
       "photoRemove": "Remove photo",
       "photoRemoveTitle": "Remove photo?",
@@ -1310,7 +1312,8 @@
     "tx": {
       "earn": "{{month}} results",
       "spend": "Shop purchase",
-      "refund": "Purchase refunded"
+      "refund": "Purchase refunded",
+      "adjust": "From the center"
     },
     "part": {
       "grades": "Grades",

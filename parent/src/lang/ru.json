@@ -996,6 +996,8 @@
       "photoEdit": "Изменить фото",
       "photoAdd": "Добавить фото",
       "photoTitle": "Фото ученика",
+      "photoFromCamera": "Сфотографировать",
+      "photoFromGallery": "Выбрать из галереи",
       "photoReplace": "Заменить фото",
       "photoRemove": "Удалить фото",
       "photoRemoveTitle": "Удалить фото?",
@@ -1326,7 +1328,8 @@
     "tx": {
       "earn": "Итоги: {{month}}",
       "spend": "Покупка в магазине",
-      "refund": "Покупка возвращена"
+      "refund": "Покупка возвращена",
+      "adjust": "От центра"
     },
     "part": {
       "grades": "Оценки",

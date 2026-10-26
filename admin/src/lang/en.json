@@ -330,8 +330,12 @@
         "description": "Students earn monthly achievement badges (perfect attendance, top student, streaks, champion), which are sent to parents via Telegram."
       },
       "attendance_qr": {
-        "label": "QR attendance",
+        "label": "Attendance",
         "description": "Allows marking attendance automatically by scanning a QR code."
+      },
+      "attendance_face": {
+        "label": "Face attendance",
+        "description": "Automatically marks attendance by recognizing the student's face through the camera (works alongside QR attendance)."
       },
       "attendance_report": {
         "label": "Attendance reports",
@@ -1073,7 +1077,7 @@
       "groupsDetail": "Group detail",
       "students": "Students",
       "studentsDetail": "Student detail",
-      "qrAttendance": "QR attendance",
+      "qrAttendance": "Attendance",
       "certificates": "Certificates",
       "subscription": "Plans",
       "profile": "Profile",
