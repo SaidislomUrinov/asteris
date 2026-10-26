@@ -424,6 +424,141 @@ async function writeRecord(
   return { session, entry, date };
 }
 
+// QR va yuz skani uchun umumiy yadro: o'quvchi allaqachon topilgan, endi
+// guruhni tanlaydi, dublikatni tekshiradi va yozuvni qo'yadi.
+// `source` — "qr" | "face".
+// Yuz galereyasi chegarasi va descriptor o'lchami (face-api: 128).
+const FACE_GALLERY_LIMIT = 2000;
+const FACE_DIM = 128;
+
+async function scanStudent(clientId, student, { groupId } = {}, staffCenterId = null, teachScope = null, source = "qr") {
+  const dayCode = todayDayCode();
+  const clientEntries = student.groups.filter(
+    (g) =>
+      String(g.client) === String(clientId) &&
+      g.status === "active" &&
+      (!staffCenterId || String(g.center) === String(staffCenterId)),
+  );
+  if (!clientEntries.length) throw new Error("attendance.studentNotInCenter");
+
+  const groups = await Group.find({
+    _id: { $in: clientEntries.map((g) => g.group) },
+    client: clientId,
+    isDeleted: false,
+    ...(teachScope && { [teachScope.field]: teachScope.staffId }),
+  }).populate({ path: "subject", select: "name" });
+  if (teachScope && !groups.length) throw new Error("attendance.studentNotInGroup");
+
+  // Aniq guruh berilgan — o'quvchi aynan shu guruhda bo'lishi shart
+  // ("noto'g'ri guruh — rad etish").
+  let target;
+  if (groupId) {
+    target = groups.find((g) => String(g._id) === String(groupId));
+    if (!target) throw new Error("attendance.studentNotInGroup");
+  } else {
+    const todayGroups = groups.filter((g) => g.status === "active" && g.days?.includes(dayCode));
+    if (!todayGroups.length) throw new Error("attendance.noLessonToday");
+
+    // Bugun allaqachon belgilangan darslar chiqarib tashlanadi — o'quvchi
+    // ikkinchi fanga kelib kartani qayta o'tkazsa, tizim uni "takroriy
+    // skan" deb emas, KEYINGI dars deb tushunadi.
+    const todaySessions = await Attendance.find({
+      group: { $in: todayGroups.map((g) => g._id) },
+      date: todayString(),
+    }).select("group records");
+    const markedGroupIds = new Set(
+      todaySessions
+        .filter((x) => x.records.some((r) => String(r.student) === String(student._id)))
+        .map((x) => String(x.group)),
+    );
+    const pending = todayGroups.filter((g) => !markedGroupIds.has(String(g._id)));
+
+    // Hammasi belgilangan bo'lsa — pastdagi takroriy skan tarmog'iga tushadi.
+    const candidates = pending.length ? pending : todayGroups;
+
+    // Bittasi qolgan bo'lsa savol ham, taxmin ham kerak emas.
+    target = candidates.length === 1 ? candidates[0] : pickGroupByTime(candidates, getNow());
+
+    if (!target) {
+      return {
+        needsGroup: true,
+        student: { _id: String(student._id), fullName: student.fullName, photo: photoFor(student, clientId) },
+        groups: candidates.map((g) => ({
+          _id: String(g._id),
+          subject: g.subject?.name || "",
+          activeId: g.activeId,
+          startTime: g.startTime,
+          endTime: g.endTime,
+        })),
+      };
+    }
+  }
+
+  if (target.status !== "active" || !target.days?.includes(dayCode)) {
+    throw new Error("attendance.notLessonDay");
+  }
+
+  // Takroriy skan — qayta yozilmaydi, mavjud yozuv qaytariladi va
+  // frontend ogohlantirish toast'ini ko'rsatadi. Avval mavjud yozuv
+  // o'qiladi (qulfsiz, faqat o'qish) — odatiy "operator bir necha soniya
+  // ichida kartani ikkinchi marta o'tkazdi" holatida haqiqiy status/late
+  // ko'rsatiladi, aks holda ("kech qoldi" yozuvi ham "keldi" deb
+  // ko'rsatilardi — qulf yo'lida doim `late:false` qattiq yozilgan edi).
+  const date = todayString();
+  const session = await Attendance.findOne({ group: target._id, date });
+  const already = session?.records.find((r) => String(r.student) === String(student._id));
+  if (already) {
+    return {
+      duplicate: true,
+      student: { _id: String(student._id), fullName: student.fullName, photo: photoFor(student, clientId) },
+      groupId: String(target._id),
+      subject: target.subject?.name || "",
+      status: already.status,
+      late: already.late || false,
+    };
+  }
+
+  // Yozuv hali yo'q — lekin bir kartani skaner va kamera deyarli bir
+  // vaqtda o'qisa ikkita parallel so'rov ikkalasi ham "yozuv yo'q" deb
+  // ko'rib dublikat qo'shishi mumkin — shu o'quvchi+guruh+kun uchun qisqa
+  // Redis qulfi (SET NX) buni oldini oladi. Bu holatda haqiqiy late
+  // qiymatini hali bilib bo'lmaydi (yozuv hali yo'q) — "present" taxmin
+  // qilinadi, chunki qulfni ilgari olgan so'rov aynan shuni yozadi.
+  const lockKey = `qrscan:${target._id}:${student._id}:${date}`;
+  const locked = await redis.set(lockKey, "1", "EX", 5, "NX");
+  if (!locked) {
+    return {
+      duplicate: true,
+      student: { _id: String(student._id), fullName: student.fullName, photo: photoFor(student, clientId) },
+      groupId: String(target._id),
+      subject: target.subject?.name || "",
+      status: "present",
+      late: false,
+    };
+  }
+
+  const setting = await getOrCreateSettings(target.center);
+  const startUnix = timeToUnixToday(target.startTime);
+  const late =
+    setting.lateAfterMinutes > 0 && startUnix !== null && getNow() > startUnix + setting.lateAfterMinutes * 60;
+
+  const { entry } = await writeRecord(clientId, target, student, {
+    status: "present",
+    late,
+    source,
+  });
+
+  return {
+    student: { _id: String(student._id), fullName: student.fullName, photo: photoFor(student, clientId) },
+    groupId: String(target._id),
+    subject: target.subject?.name || "",
+    status: "present",
+    late,
+    date,
+    entry,
+  };
+}
+
 module.exports = {
   getSettings: async (clientId, centerId) => {
     await assertCenterOwnership(clientId, centerId);
@@ -666,132 +801,69 @@ module.exports = {
       qrTokens: { $elemMatch: { client: clientId, token } },
     });
     if (!student) throw new Error("attendance.invalidQr");
+    return await scanStudent(clientId, student, { groupId }, staffCenterId, teachScope, "qr");
+  },
 
-    const dayCode = todayDayCode();
-    const clientEntries = student.groups.filter(
-      (g) =>
-        String(g.client) === String(clientId) &&
-        g.status === "active" &&
-        (!staffCenterId || String(g.center) === String(staffCenterId)),
-    );
-    if (!clientEntries.length) throw new Error("attendance.studentNotInCenter");
-
-    const groups = await Group.find({
-      _id: { $in: clientEntries.map((g) => g.group) },
-      client: clientId,
+  // Yuz galereyasi (API_CONTRACT_face_attendance.md §3): shu client (va hodim
+  // filiali / teacher guruhlari) doirasidagi FAOL o'quvchilar, rasmi borlar.
+  // `face: null` — descriptor hali hisoblanmagan (brauzer orqa fonda to'ldiradi).
+  getFaceGallery: async (clientId, staffCenterId = null, teachScope = null) => {
+    const entryMatch = { client: clientId, status: "active", ...(staffCenterId && { center: staffCenterId }) };
+    if (teachScope) {
+      const own = await Group.find(
+        { client: clientId, isDeleted: false, [teachScope.field]: teachScope.staffId },
+        { _id: 1 },
+      ).lean();
+      entryMatch.group = { $in: own.map((g) => g._id) };
+    }
+    const students = await Student.find({
       isDeleted: false,
-      ...(teachScope && { [teachScope.field]: teachScope.staffId }),
-    }).populate({ path: "subject", select: "name" });
-    if (teachScope && !groups.length) throw new Error("attendance.studentNotInGroup");
+      groups: { $elemMatch: entryMatch },
+      "photos.client": clientId,
+    })
+      .select("fullName photos")
+      .limit(FACE_GALLERY_LIMIT)
+      .lean();
 
-    // Aniq guruh berilgan — o'quvchi aynan shu guruhda bo'lishi shart
-    // ("noto'g'ri guruh — rad etish").
-    let target;
-    if (groupId) {
-      target = groups.find((g) => String(g._id) === String(groupId));
-      if (!target) throw new Error("attendance.studentNotInGroup");
-    } else {
-      const todayGroups = groups.filter((g) => g.status === "active" && g.days?.includes(dayCode));
-      if (!todayGroups.length) throw new Error("attendance.noLessonToday");
-
-      // Bugun allaqachon belgilangan darslar chiqarib tashlanadi — o'quvchi
-      // ikkinchi fanga kelib kartani qayta o'tkazsa, tizim uni "takroriy
-      // skan" deb emas, KEYINGI dars deb tushunadi.
-      const todaySessions = await Attendance.find({
-        group: { $in: todayGroups.map((g) => g._id) },
-        date: todayString(),
-      }).select("group records");
-      const markedGroupIds = new Set(
-        todaySessions
-          .filter((x) => x.records.some((r) => String(r.student) === String(student._id)))
-          .map((x) => String(x.group)),
-      );
-      const pending = todayGroups.filter((g) => !markedGroupIds.has(String(g._id)));
-
-      // Hammasi belgilangan bo'lsa — pastdagi takroriy skan tarmog'iga tushadi.
-      const candidates = pending.length ? pending : todayGroups;
-
-      // Bittasi qolgan bo'lsa savol ham, taxmin ham kerak emas.
-      target = candidates.length === 1 ? candidates[0] : pickGroupByTime(candidates, getNow());
-
-      if (!target) {
-        return {
-          needsGroup: true,
-          student: { _id: String(student._id), fullName: student.fullName, photo: photoFor(student, clientId) },
-          groups: candidates.map((g) => ({
-            _id: String(g._id),
-            subject: g.subject?.name || "",
-            activeId: g.activeId,
-            startTime: g.startTime,
-            endTime: g.endTime,
-          })),
-        };
-      }
+    const key = String(clientId);
+    const list = [];
+    for (const st of students) {
+      const item = (st.photos || []).find((p) => String(p.client) === key && p.path);
+      if (!item) continue;
+      list.push({
+        _id: String(st._id),
+        fullName: st.fullName,
+        photo: item.path,
+        face: Array.isArray(item.face) && item.face.length === FACE_DIM ? item.face : null,
+      });
     }
+    return { students: list, total: list.length };
+  },
 
-    if (target.status !== "active" || !target.days?.includes(dayCode)) {
-      throw new Error("attendance.notLessonDay");
-    }
+  // Brauzer hisoblagan descriptor'ni rasm bilan birga saqlaydi. `photo` joriy
+  // rasm yo'liga teng bo'lishi shart — rasm orada almashgan bo'lsa eskirgan
+  // descriptor yozilmaydi.
+  saveFace: async (clientId, studentId, { descriptor, photo } = {}) => {
+    const valid =
+      Array.isArray(descriptor) &&
+      descriptor.length === FACE_DIM &&
+      descriptor.every((n) => typeof n === "number" && Number.isFinite(n) && Math.abs(n) <= 5);
+    if (!valid || typeof photo !== "string" || !photo) throw new Error("attendance.invalidFace");
+    if (!isValidObjectId(studentId)) throw new Error("attendance.invalidFace");
 
-    // Takroriy skan — qayta yozilmaydi, mavjud yozuv qaytariladi va
-    // frontend ogohlantirish toast'ini ko'rsatadi. Avval mavjud yozuv
-    // o'qiladi (qulfsiz, faqat o'qish) — odatiy "operator bir necha soniya
-    // ichida kartani ikkinchi marta o'tkazdi" holatida haqiqiy status/late
-    // ko'rsatiladi, aks holda ("kech qoldi" yozuvi ham "keldi" deb
-    // ko'rsatilardi — qulf yo'lida doim `late:false` qattiq yozilgan edi).
-    const date = todayString();
-    const session = await Attendance.findOne({ group: target._id, date });
-    const already = session?.records.find((r) => String(r.student) === String(student._id));
-    if (already) {
-      return {
-        duplicate: true,
-        student: { _id: String(student._id), fullName: student.fullName, photo: photoFor(student, clientId) },
-        groupId: String(target._id),
-        subject: target.subject?.name || "",
-        status: already.status,
-        late: already.late || false,
-      };
-    }
+    const res = await Student.updateOne(
+      { _id: studentId, isDeleted: false, photos: { $elemMatch: { client: clientId, path: photo } } },
+      { $set: { "photos.$.face": descriptor } },
+    );
+    if (!res.matchedCount) throw new Error("attendance.facePhotoChanged");
+    return { saved: true };
+  },
 
-    // Yozuv hali yo'q — lekin bir kartani skaner va kamera deyarli bir
-    // vaqtda o'qisa ikkita parallel so'rov ikkalasi ham "yozuv yo'q" deb
-    // ko'rib dublikat qo'shishi mumkin — shu o'quvchi+guruh+kun uchun qisqa
-    // Redis qulfi (SET NX) buni oldini oladi. Bu holatda haqiqiy late
-    // qiymatini hali bilib bo'lmaydi (yozuv hali yo'q) — "present" taxmin
-    // qilinadi, chunki qulfni ilgari olgan so'rov aynan shuni yozadi.
-    const lockKey = `qrscan:${target._id}:${student._id}:${date}`;
-    const locked = await redis.set(lockKey, "1", "EX", 5, "NX");
-    if (!locked) {
-      return {
-        duplicate: true,
-        student: { _id: String(student._id), fullName: student.fullName, photo: photoFor(student, clientId) },
-        groupId: String(target._id),
-        subject: target.subject?.name || "",
-        status: "present",
-        late: false,
-      };
-    }
-
-    const setting = await getOrCreateSettings(target.center);
-    const startUnix = timeToUnixToday(target.startTime);
-    const late =
-      setting.lateAfterMinutes > 0 && startUnix !== null && getNow() > startUnix + setting.lateAfterMinutes * 60;
-
-    const { entry } = await writeRecord(clientId, target, student, {
-      status: "present",
-      late,
-      source: "qr",
-    });
-
-    return {
-      student: { _id: String(student._id), fullName: student.fullName, photo: photoFor(student, clientId) },
-      groupId: String(target._id),
-      subject: target.subject?.name || "",
-      status: "present",
-      late,
-      date,
-      entry,
-    };
+  scanFace: async (clientId, { studentId, groupId } = {}, staffCenterId = null, teachScope = null) => {
+    if (!isValidObjectId(studentId)) throw new Error("attendance.invalidFace");
+    const student = await Student.findOne({ _id: studentId, isDeleted: false });
+    if (!student) throw new Error("attendance.invalidFace");
+    return await scanStudent(clientId, student, { groupId }, staffCenterId, teachScope, "face");
   },
 
   // "Umumiy davomat" donut charti uchun — shu guruhning BARCHA o'quvchilari

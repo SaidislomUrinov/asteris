@@ -21,6 +21,7 @@ export const TARIFF_FEATURE_KEYS = [
   "gamification.badges",
   "gamification.coins",
   "attendance.qr",
+  "attendance.face",
   "attendance.report",
   "room.control",
   "lesson.planning",

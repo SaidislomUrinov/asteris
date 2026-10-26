@@ -125,6 +125,45 @@ module.exports = {
     }
   },
 
+  getFaceGallery: async (req, res, next) => {
+    try {
+      const field = teachingScopeField(req);
+      const data = await attendanceService.getFaceGallery(
+        req.client._id,
+        req.centerScope || null,
+        field ? { field, staffId: req.staff._id } : null,
+      );
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  saveFace: async (req, res, next) => {
+    try {
+      const data = await attendanceService.saveFace(req.client._id, req.params.studentId, req.body);
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  scanFace: async (req, res, next) => {
+    try {
+      const field = teachingScopeField(req);
+      const data = await attendanceService.scanFace(
+        req.client._id,
+        req.body,
+        req.centerScope || null,
+        field ? { field, staffId: req.staff._id } : null,
+      );
+      const msg = data.duplicate ? "attendance.alreadyMarked" : "attendance.marked";
+      return res.send({ ok: true, data, msg: data.needsGroup ? undefined : msg });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   getStats: async (req, res, next) => {
     try {
       const data = await attendanceService.getStats(req.client._id, req.params.groupId, req.query.month);

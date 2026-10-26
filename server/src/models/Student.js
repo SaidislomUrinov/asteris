@@ -256,6 +256,9 @@ const schema = new Schema({
           client: { type: Schema.Types.ObjectId, ref: "Client", required: true },
           path: { type: String, default: "" },
           updatedAt: { type: Number, default: 0 },
+          // Yuz descriptor'i (API_CONTRACT_face_attendance.md) — 128 son,
+          // shu rasmdan. Rasm almashsa element qayta yaratiladi va tushib ketadi.
+          face: { type: [Number], default: undefined },
         },
         { _id: false },
       ),

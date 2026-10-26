@@ -50,6 +50,27 @@ router.post(
   attendanceController.scanQr,
 );
 
+// FaceID davomat — tarif flagi `attendance.face` (API_CONTRACT_face_attendance.md).
+router.get(
+  "/face/gallery",
+  requireTariffFeature("attendance.face"),
+  requireTenantPermission("attendance:view"),
+  attendanceController.getFaceGallery,
+);
+router.post(
+  "/face/scan",
+  requireTariffFeature("attendance.face"),
+  requireTenantPermission("attendance:create"),
+  attendanceController.scanFace,
+);
+router.put(
+  "/face/:studentId",
+  requireTariffFeature("attendance.face"),
+  requireTenantPermission("attendance:create"),
+  requireStudentScope(),
+  attendanceController.saveFace,
+);
+
 router.get(
   "/:groupId/stats",
   requireTenantPermission("attendance:view"),

@@ -56,6 +56,7 @@ export const PERMISSION_CATALOG = [
     module: "attendance",
     items: [
       { key: "attendance.qr" },
+      { key: "attendance.face" },
       { key: "attendance.report" },
     ],
   },

@@ -12,7 +12,7 @@ const recordSchema = new Schema(
     // joyning hammasi buzilardi.
     late: { type: Boolean, default: false },
     // Yozuv QR skan orqali kelganmi yoki qo'lda belgilanganmi — audit uchun.
-    source: { type: String, enum: ["manual", "qr"], default: "manual" },
+    source: { type: String, enum: ["manual", "qr", "face"], default: "manual" },
   },
   { _id: false },
 );

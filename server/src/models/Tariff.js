@@ -59,6 +59,7 @@ const schema = new Schema({
       "student.transfer", // O'quvchini guruhlar orasida ko'chirish
 
       "attendance.qr", // QR kod orqali davomat olish
+      "attendance.face", // Yuz (FaceID) orqali davomat olish
       "attendance.report", // Davomat hisobotlari
 
       "room.control", // Xonalar va auditoriyalarni boshqarish
