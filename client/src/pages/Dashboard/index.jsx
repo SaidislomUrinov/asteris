@@ -281,7 +281,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col w-full h-full gap-4">
+    <div className="flex flex-col w-full h-full gap-4 pb-6">
       <DashboardHeader
         leading={<CenterLogo logo={center?.logo ?? activeInfo?.logo} />}
         title={center?.name || activeInfo?.name || t("dashboard.title")}
