@@ -23,5 +23,11 @@ router.get("/student/:studentId", requireTenantPermission("coin:view"), requireS
 router.get("/:centerId/settings", requireTenantPermission("coin:view"), requireOwnCenterParam(), coinController.getSettings);
 router.put("/:centerId/settings", requireTenantPermission("coin:manage"), requireOwnCenterParam(), coinController.updateSettings);
 router.get("/:centerId/students", requireTenantPermission("coin:view"), requireOwnCenterParam(), coinController.students);
+router.post(
+  "/:centerId/students/:studentId/adjust",
+  requireTenantPermission("coin:manage"),
+  requireOwnCenterParam(),
+  coinController.adjust,
+);
 
 module.exports = router;

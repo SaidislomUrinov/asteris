@@ -58,6 +58,7 @@ function StudentsTab({ centerId }) {
   useSocketEvent("shop:order", refresh, !!centerId);
   useSocketEvent("shop:orderUpdated", refresh, !!centerId);
   useSocketEvent("coin:distributed", refresh, !!centerId);
+  useSocketEvent("coin:adjusted", refresh, !!centerId);
 
   return (
     <div className="flex flex-col gap-3 flex-1">

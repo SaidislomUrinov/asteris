@@ -44,6 +44,7 @@ function StudentCoinsCard({ studentId }) {
   useSocketEvent("shop:order", refresh, allowed);
   useSocketEvent("shop:orderUpdated", refresh, allowed);
   useSocketEvent("coin:distributed", refresh, allowed);
+  useSocketEvent("coin:adjusted", refresh, allowed);
 
   if (!allowed || !data?.centers?.length) return null;
   const many = data.centers.length > 1;

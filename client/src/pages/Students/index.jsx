@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   HiBanknotes,
+  HiCurrencyDollar,
   HiEye,
   HiMagnifyingGlass,
   HiPencilSquare,
@@ -27,6 +28,8 @@ import Dialog from "../../ui/Dialog";
 import StudentDialog from "./StudentDialog";
 import StudentEditDialog from "./StudentEditDialog";
 import StudentContactDialog from "./StudentContactDialog";
+import AdjustCoinsDialog from "../Coins/AdjustCoinsDialog";
+import useCoinCenters from "../../hooks/useCoinCenters";
 import TelegramStatusBadges from "../../ui/TelegramStatusBadges";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import PaymentDialog from "./PaymentDialog";
@@ -129,6 +132,10 @@ function Students() {
   const editRowView = useClosingValue(editRow);
   // Faqat `student:contact` (lekin `student:update` emas) bo'lgan hodim uchun.
   const [contactRow, setContactRow] = useState(null);
+  // WECOIN qo'lda berish/ayirish (API_CONTRACT_coin_adjust.md).
+  const coinCenters = useCoinCenters();
+  const [coinRow, setCoinRow] = useState(null);
+  const coinRowView = useClosingValue(coinRow);
   const contactRowView = useClosingValue(contactRow);
 
   // Kontakt maydonlarini (tahrirlash javobi yoki socket payload'idan)
@@ -249,6 +256,21 @@ function Students() {
   };
 
   const activeGroupsOf = (row) => row.groups.filter((g) => g.status === "active");
+  const coinCentersOf = (row) =>
+    [...new Set(activeGroupsOf(row).map((g) => g.center))]
+      .filter((id) => coinCenters.has(id))
+      .map((id) => ({ _id: id, name: centerMap[id] || "—" }));
+  const coinItems = (row) =>
+    can("coin:manage") && coinCentersOf(row).length
+      ? [
+          {
+            label: t("coins.adjust.menu"),
+            icon: HiCurrencyDollar,
+            iconClass: "bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400",
+            onClick: () => setCoinRow(row),
+          },
+        ]
+      : [];
   // TO'LIQ qarzdorlik — o'tgan barcha sikllar + joriy sikl qoldig'i
   // (`g.debt`, server: computeBilling). Avval faqat joriy sikl qoldig'i
   // qo'shilardi, shu sabab o'tgan oylardan qarzi bor o'quvchi ro'yxatda
@@ -337,6 +359,7 @@ function Students() {
                         },
                       ]
                     : []),
+                ...coinItems(row),
                 ...qrSendItems(row),
               ]}
             />
@@ -480,6 +503,7 @@ function Students() {
                       },
                     ]
                   : []),
+              ...coinItems(row),
               ...qrSendItems(row),
             ]}
           />
@@ -806,6 +830,16 @@ function Students() {
           student={contactRowView}
           onClose={() => setContactRow(null)}
           onSaved={(data) => mergeContact(data?._id, data)}
+        />
+      )}
+
+      {coinRowView && (
+        <AdjustCoinsDialog
+          key={coinRowView._id}
+          open={!!coinRow}
+          student={coinRowView}
+          centers={coinCentersOf(coinRowView)}
+          onClose={() => setCoinRow(null)}
         />
       )}
     </div>

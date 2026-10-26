@@ -103,6 +103,7 @@ const CALLER_ROUTES_CENTER = new Set([
   "homework:results",
   "coin:settings",
   "coin:distributed",
+  "coin:adjusted",
   "shop:order",
   "shop:orderUpdated",
   "shop:products",

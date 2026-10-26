@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { HiOutlineClock, HiPhoto, HiArrowUturnLeft, HiShoppingBag, HiSparkles } from "react-icons/hi2";
+import { HiOutlineClock, HiPhoto, HiArrowUturnLeft, HiShoppingBag, HiSparkles, HiGift } from "react-icons/hi2";
 import { Card, Pill, SectionLabel } from "../../components/Card";
 import { EmptyState, ErrorState } from "../../components/States";
 import { ListSkeleton } from "../../components/Skeleton";
@@ -11,7 +11,7 @@ import { fmtTime, fmtMonth, fmtDate, toDate, ymOf } from "../../utils/format";
 import { cn } from "../../utils/cn";
 
 const ORDER_TONE = { pending: "warn", delivered: "ok", refunded: "mut" };
-const TX_ICON = { earn: HiSparkles, spend: HiShoppingBag, refund: HiArrowUturnLeft };
+const TX_ICON = { earn: HiSparkles, spend: HiShoppingBag, refund: HiArrowUturnLeft, adjust: HiGift };
 const PARTS = ["grades", "homework", "attendance", "medals"];
 
 // Tranzaksiya qaysi oyga tegishli: earn — `month`, qolganlari — yaratilgan oy.
@@ -92,7 +92,7 @@ export const HistoryTab = ({ wallet }) => {
                   <div
                     className={cn(
                       "w-9 h-9 rounded-xl grid place-items-center shrink-0",
-                      tx.type === "earn" ? "bg-amber-400/15 text-amber-600 dark:text-amber-400" : "bg-ink/6 text-hint",
+                      tx.type === "earn" || (tx.type === "adjust" && tx.amount > 0) ? "bg-amber-400/15 text-amber-600 dark:text-amber-400" : "bg-ink/6 text-hint",
                     )}
                   >
                     <Icon className="w-[18px] h-[18px]" />
@@ -110,7 +110,8 @@ export const HistoryTab = ({ wallet }) => {
                         ))}
                       </div>
                     ) : (
-                      <div className="text-[12px] text-hint mt-0.5">
+                      <div className="text-[12px] text-hint mt-0.5 break-words">
+                        {tx.reason ? `${tx.reason} · ` : ""}
                         {fmtDate(tx.createdAt)} · {fmtTime(tx.createdAt)}
                       </div>
                     )}

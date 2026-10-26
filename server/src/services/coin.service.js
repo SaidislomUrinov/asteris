@@ -26,6 +26,8 @@ const FEATURE = "gamification.coins";
 const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 const PARTS = ["grades", "homework", "attendance", "medals"];
 const PAGE_SIZE = 30;
+const ADJUST_MAX = 10000;
+const REASON_MAX = 140;
 
 const currentMonth = () => moment.tz(TZ).format("YYYY-MM");
 const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -307,6 +309,92 @@ const updateSettings = async (clientId, centerId, body, actor) => {
   return settingDTO(doc, centerId);
 };
 
+// POST /coins/:centerId/students/:studentId/adjust — xodim qo'lda tanga beradi (+)
+// yoki ayiradi (−). Daftarga `adjust` yozuvi; balans atomar (ayirishda `$gte`).
+const adjust = async (clientId, centerId, studentId, body, actor) => {
+  const amount = Number(body?.amount);
+  if (!Number.isInteger(amount) || amount === 0 || Math.abs(amount) > ADJUST_MAX) throw new Error("coin.invalidAmount");
+  const reason = typeof body?.reason === "string" ? body.reason.trim() : "";
+  if (reason.length > REASON_MAX) throw new Error("coin.invalidReason");
+  const center = await assertCenter(clientId, centerId);
+  if (!isValidObjectId(studentId)) throw new Error("coin.notAvailable");
+
+  const [setting, student] = await Promise.all([
+    CoinSetting.findOne({ client: clientId, center: centerId, enabled: true }).select("_id").lean(),
+    Student.findOne({
+      _id: studentId,
+      isDeleted: false,
+      groups: { $elemMatch: { client: clientId, center: centerId, status: "active" } },
+    })
+      .select("fullName groups.group groups.center groups.status")
+      .lean(),
+  ]);
+  if (!setting || !student) throw new Error("coin.notAvailable");
+  const blocked = new Set((await noCoinGroupIds(centerId)).map(String));
+  if (!student.groups.some((g) => String(g.center) === String(centerId) && coinEntry(g, blocked))) {
+    throw new Error("coin.notAvailable");
+  }
+
+  const filter = { student: studentId, center: centerId };
+  const now = getNow();
+  let wallet;
+  if (amount > 0) {
+    wallet = await CoinWallet.findOneAndUpdate(
+      filter,
+      { $inc: { balance: amount, earned: amount }, $set: { updatedAt: now }, $setOnInsert: { client: clientId } },
+      { upsert: true, returnDocument: "after" },
+    ).lean();
+  } else {
+    wallet = await CoinWallet.findOneAndUpdate(
+      { ...filter, balance: { $gte: -amount } },
+      { $inc: { balance: amount, spent: -amount }, $set: { updatedAt: now } },
+      { returnDocument: "after" },
+    ).lean();
+    if (!wallet) throw new Error("coin.notEnoughBalance");
+  }
+
+  let tx;
+  try {
+    tx = await CoinTransaction.create({
+      client: clientId,
+      center: centerId,
+      student: studentId,
+      type: "adjust",
+      amount,
+      reason,
+      by: { id: actor?.id || null, kind: actor?.kind === "staff" ? "staff" : "client", name: actor?.name || "" },
+    });
+  } catch (error) {
+    // Daftarsiz balans o'zgarmasin — teskari yozuv.
+    await CoinWallet.updateOne(filter, {
+      $inc: amount > 0 ? { balance: -amount, earned: -amount } : { balance: -amount, spent: amount },
+    });
+    throw error;
+  }
+
+  const before = wallet.balance - amount;
+  await auditLog({
+    actor,
+    client: clientId,
+    center: centerId,
+    action: "coin:adjust",
+    entity: { type: "Student", id: student._id, label: student.fullName },
+    changes: [{ field: "wecoin", from: before, to: wallet.balance }],
+    meta: { amount, reason, center: center.name },
+  });
+  emit.toCenter(clientId, centerId, "coin:adjusted", {
+    centerId: String(centerId),
+    studentId: String(studentId),
+    amount,
+    balance: wallet.balance,
+  });
+  return {
+    balance: wallet.balance,
+    amount,
+    transaction: { _id: String(tx._id), type: tx.type, amount, reason, createdAt: tx.createdAt },
+  };
+};
+
 // GET /coins/active-centers — WECOIN yoqilgan filiallar (individual switch
 // ko'rinishi uchun, API_CONTRACT_individual_coins.md §3). Hodim — o'z filiali.
 const activeCenters = async (clientId, centerScope = null) => {
@@ -509,6 +597,7 @@ module.exports = {
   notifyMonth,
   getSettings,
   updateSettings,
+  adjust,
   activeCenters,
   students,
   studentWallets,

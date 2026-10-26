@@ -27,6 +27,7 @@ import {
   HiPhone,
   HiPlus,
   HiReceiptPercent,
+  HiCurrencyDollar,
   HiUserGroup,
   HiUserMinus,
   HiUsers,
@@ -103,6 +104,7 @@ import StudentDialog from "../Students/StudentDialog";
 import ImportStudentsDialog from "./ImportStudentsDialog";
 import StudentEditDialog from "../Students/StudentEditDialog";
 import StudentContactDialog from "../Students/StudentContactDialog";
+import AdjustCoinsDialog from "../Coins/AdjustCoinsDialog";
 import TelegramStatusBadges from "../../ui/TelegramStatusBadges";
 import PaymentDialog from "../Students/PaymentDialog";
 import ReceiptPromptDialog from "../Students/ReceiptPromptDialog";
@@ -277,6 +279,9 @@ function GroupDetail({ groupId, live = false }) {
   // O'qituvchi/yordamchi uchun faqat kontaktni tahrirlash (`student:contact`)
   // — docs/API_CONTRACT_student_contact_telegram.md §5.
   const [contactTarget, setContactTarget] = useState(null);
+  // WECOIN qo'lda berish/ayirish (API_CONTRACT_coin_adjust.md).
+  const [coinTarget, setCoinTarget] = useState(null);
+  const coinTargetView = useClosingValue(coinTarget);
   const contactTargetView = useClosingValue(contactTarget);
 
   // Kunlik davomat — bugungi sessiya `/attendance/:groupId`dan yuklanadi va
@@ -855,6 +860,8 @@ function GroupDetail({ groupId, live = false }) {
   const canEditPercent = isIndividual && !isTeacher && (authType === "owner" || can("group:update"));
   // WECOIN switch — faqat filialda WECOIN ishlasa (tarif + sozlama).
   const showCoinsSwitch = canEditPercent && coinCenters.has(group?.center);
+  // Individual guruhda faqat WECOIN yoqilgan bo'lsa (aks holda o'quvchiga filial hamyoni ko'rsatilmaydi).
+  const canAdjustCoins = can("coin:manage") && coinCenters.has(group?.center) && (!isIndividual || !!group?.coinsEnabled);
   const toggleCoins = async (coinsEnabled) => {
     try {
       setCoinsSaving(true);
@@ -1874,6 +1881,16 @@ function GroupDetail({ groupId, live = false }) {
                               },
                             ]
                           : []),
+                        ...(entry.status === "active" && canAdjustCoins
+                          ? [
+                              {
+                                label: t("coins.adjust.menu"),
+                                icon: HiCurrencyDollar,
+                                iconClass: "bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400",
+                                onClick: () => setCoinTarget(s),
+                              },
+                            ]
+                          : []),
                         // QR kartani o'quvchi/ota-onaning Telegramiga yuborish.
                         ...qrSendItems(s),
                         // Boshqa guruhga o'tkazish va guruhdan chiqarish —
@@ -1995,6 +2012,16 @@ function GroupDetail({ groupId, live = false }) {
           student={contactTargetView}
           onClose={() => setContactTarget(null)}
           onSaved={(data) => mergeContact(data?._id, data)}
+        />
+      )}
+
+      {coinTargetView && (
+        <AdjustCoinsDialog
+          key={coinTargetView._id}
+          open={!!coinTarget}
+          student={coinTargetView}
+          centers={[{ _id: group.center, name: centerMap[group.center] || "" }]}
+          onClose={() => setCoinTarget(null)}
         />
       )}
 

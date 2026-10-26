@@ -23,6 +23,17 @@ module.exports = {
     }
   },
 
+  // POST /coins/:centerId/students/:studentId/adjust — body { amount, reason? }
+  adjust: async (req, res, next) => {
+    try {
+      const { centerId, studentId } = req.params;
+      const data = await coinService.adjust(req.client._id, centerId, studentId, req.body, buildActor(req));
+      return res.send({ ok: true, data, msg: "coin.adjusted" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   // GET /coins/active-centers — individual switch uchun.
   activeCenters: async (req, res, next) => {
     try {

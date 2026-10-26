@@ -475,6 +475,7 @@ const history = async ({ student }, centerId) => {
       month: tx.month || null,
       orderId: tx.order ? String(tx.order) : null,
       breakdown: tx.breakdown || null,
+      reason: tx.reason || "",
       createdAt: tx.createdAt,
     })),
   };
