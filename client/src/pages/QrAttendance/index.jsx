@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   HiCamera,
@@ -6,22 +6,13 @@ import {
   HiClock,
   HiCommandLine,
   HiExclamationTriangle,
-  HiQrCode,
+  HiFaceSmile,
   HiVideoCameraSlash,
   HiXCircle,
 } from "react-icons/hi2";
-import jsQR from "jsqr";
 import Avatar from "../../ui/Avatar";
-import Dialog from "../../ui/Dialog";
-import useQrScanner from "../../hooks/useQrScanner";
-import { api } from "../../utils/fetching";
-import { errorMsg, successMsg } from "../../utils/alert";
-import { scanSound } from "../../utils/scanSound";
-
-// Bir xil QR kamera oldida turganda sekundiga o'nlab marta o'qiladi — shu
-// muddat ichida takroriy skan e'tiborga olinmaydi (server so'rovlari
-// bombardimon qilinmasligi uchun).
-const RESCAN_COOLDOWN = 3000;
+import ScanFaceIcon from "../../ui/ScanFaceIcon";
+import { useScanner } from "../../contexts/scanner";
 
 // Skan natijasining vizual holati bitta joyda — natija banneri, tarix
 // qatoridagi belgi va statistika kartochkalari shu jadvalga tayanadi,
@@ -75,149 +66,17 @@ const clockOf = (ms) =>
 function QrAttendance() {
   const { t } = useTranslation();
 
+  // Kamera, tarix va natija Top'dagi tugma bilan boshqariladigan umumiy
+  // skanerdan keladi (contexts/ScannerContext.jsx) — sahifa faqat ko'rsatadi.
+  const { faceOn, face, scanning, stream, cameraError, result, history, scannerSeen, start, stop } = useScanner();
+
   const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const streamRef = useRef(null);
-  const rafRef = useRef(0);
-  const lastTokenRef = useRef({ token: "", at: 0 });
-  const busyRef = useRef(false);
-  const tickRef = useRef(null);
-
-  const [scanning, setScanning] = useState(false);
-  const [cameraError, setCameraError] = useState("");
-  const [result, setResult] = useState(null);
-  // Bugungi skanlar tarixi (eng yangisi birinchi) — operator nima
-  // bo'lganini ko'rib turishi uchun.
-  const [history, setHistory] = useState([]);
-  // Bir nechta guruhda bugun darsi bor bo'lsa, qaysi biriga yozilishini
-  // so'raydigan tanlov.
-  const [groupChoice, setGroupChoice] = useState(null);
-  // Shu seansda apparat skanerdan hech bo'lmasa bitta o'qish bo'ldimi —
-  // operator skaner ulanganini ko'rib turishi uchun.
-  const [scannerSeen, setScannerSeen] = useState(false);
-
-  const stop = useCallback(() => {
-    cancelAnimationFrame(rafRef.current);
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-    setScanning(false);
-  }, []);
-
-  const send = useCallback(
-    async (token, groupId, via = "camera") => {
-      busyRef.current = true;
-      try {
-        const res = await api.post("/attendance/qr/scan", { token, groupId });
-        const { ok, data, msg } = res.data;
-        if (!ok) throw new Error(msg);
-
-        if (data.needsGroup) {
-          scanSound.attention();
-          setGroupChoice({ token, via, ...data });
-          return;
-        }
-
-        const item = { ...data, via, at: Date.now() };
-        setResult(item);
-        setHistory((prev) => [item, ...prev].slice(0, 20));
-        if (data.duplicate) scanSound.duplicate();
-        else if (data.late) scanSound.late();
-        else scanSound.success();
-        if (data.duplicate) successMsg("attendance.alreadyMarked");
-        else successMsg(data.late ? "attendance.markedLate" : "attendance.marked");
-      } catch (error) {
-        scanSound.error();
-        errorMsg(error.message);
-        const failed = { failed: true, message: error.message, via, at: Date.now() };
-        setResult(failed);
-        setHistory((prev) => [failed, ...prev].slice(0, 20));
-      } finally {
-        busyRef.current = false;
-      }
-    },
-    [],
-  );
-
-  // Har kadrni canvas'ga chizib jsQR bilan o'qiydi. Kadrlar tez keladi,
-  // shuning uchun so'rov ketayotganda (busyRef) yangi o'qish boshlanmaydi.
-  // Sikl o'zini o'zi chaqirgani uchun ref orqali — funksiya o'ziga
-  // to'g'ridan-to'g'ri murojaat qila olmaydi (e'lon qilinishidan oldin).
-  const tick = useCallback(() => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-
-    if (video?.readyState === video?.HAVE_ENOUGH_DATA && canvas && !busyRef.current) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(image.data, image.width, image.height);
-
-      if (code?.data) {
-        const now = Date.now();
-        const last = lastTokenRef.current;
-        const isRepeat = last.token === code.data && now - last.at < RESCAN_COOLDOWN;
-        if (!isRepeat) {
-          lastTokenRef.current = { token: code.data, at: now };
-          send(code.data);
-        }
-      }
-    }
-
-    rafRef.current = requestAnimationFrame(() => tickRef.current?.());
-  }, [send]);
-
-  // Sikl o'zini o'zi chaqiradi — har kadrda ENG SO'NGGI `tick` ishlatilishi
-  // uchun ref orqali (funksiya o'zining ichida o'ziga murojaat qila olmaydi).
   useEffect(() => {
-    tickRef.current = tick;
-  }, [tick]);
-
-  const start = useCallback(async () => {
-    setCameraError("");
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      setScanning(true);
-      rafRef.current = requestAnimationFrame(() => tickRef.current?.());
-    } catch {
-      setCameraError(t("attendance.cameraDenied"));
-    }
-  }, [t]);
-
-  useEffect(() => stop, [stop]);
-
-  // Apparat skaner mantig'i `useQrScanner` hookida — xuddi shu hook
-  // butun ilova bo'ylab ham ishlaydi (components/GlobalQrScanner.jsx),
-  // ikkalasi bir xil tezlik filtri va qoidalarga tayanadi.
-  const onScannerToken = useCallback(
-    (token) => {
-      if (busyRef.current) return;
-      const now = Date.now();
-      const last = lastTokenRef.current;
-      if (last.token === token && now - last.at < RESCAN_COOLDOWN) return;
-      lastTokenRef.current = { token, at: now };
-      setScannerSeen(true);
-      send(token, undefined, "scanner");
-    },
-    [send],
-  );
-
-  // Bu sahifada modal ochiq bo'lganda hook o'zi to'xtaydi (dialogState).
-  useQrScanner(onScannerToken);
-
-  const chooseGroup = async (groupId) => {
-    const { token, via } = groupChoice;
-    setGroupChoice(null);
-    await send(token, groupId, via);
-  };
+    const video = videoRef.current;
+    if (!video) return;
+    video.srcObject = stream;
+    if (stream) video.play().catch(() => {});
+  }, [stream]);
 
   // Bugungi jamlanma — faqat shu seansdagi skanlardan (tarix 20 tagacha).
   const stats = useMemo(
@@ -263,7 +122,7 @@ function QrAttendance() {
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-12 h-12 shrink-0 rounded-2xl bg-white/10 ring-1 ring-white/10 flex items-center justify-center text-white text-2xl">
-              <HiQrCode />
+              <ScanFaceIcon />
             </div>
             <div className="flex flex-col min-w-0">
               <h1 className="font-space font-bold text-xl text-white truncate">
@@ -280,6 +139,19 @@ function QrAttendance() {
               on={scanning}
               label={scanning ? t("attendance.cameraLive") : t("attendance.cameraOff")}
             />
+            {faceOn && (
+              <StatusPill
+                on={face.status === "ready"}
+                icon={<HiFaceSmile className="text-sm" />}
+                label={
+                  face.status === "error"
+                    ? t("attendance.faceError")
+                    : face.status === "ready"
+                      ? t("attendance.faceReady", { done: face.done, total: face.total })
+                      : t("attendance.faceLoading")
+                }
+              />
+            )}
             <StatusPill
               on={scannerSeen}
               icon={<HiCommandLine className="text-sm" />}
@@ -311,7 +183,6 @@ function QrAttendance() {
           <div className="flex flex-col items-center p-3 sm:p-4 rounded-2xl bg-white dark:bg-night-900 ring-1 ring-slate-200/70 dark:ring-night-700/70 shadow-[0_1px_3px_rgba(15,23,42,0.05)] dark:shadow-none">
             <div className="relative w-full max-w-2xl aspect-square sm:aspect-[4/3] rounded-2xl overflow-hidden bg-slate-950">
               <video ref={videoRef} playsInline muted className="w-full h-full object-cover" />
-              <canvas ref={canvasRef} className="hidden" />
 
               {/* Kamera o'chiq — katta QR belgisi va nima qilish kerakligi */}
               {!scanning && (
@@ -323,7 +194,7 @@ function QrAttendance() {
                         : "bg-white/5 dark:bg-night-900/5 text-slate-400 dark:text-slate-500 ring-white/10 dark:ring-night-900/10"
                     }`}
                   >
-                    {cameraError ? <HiVideoCameraSlash /> : <HiQrCode />}
+                    {cameraError ? <HiVideoCameraSlash /> : <ScanFaceIcon />}
                   </div>
                   <p
                     className={`text-sm max-w-xs ${cameraError ? "text-red-300" : "text-slate-400 dark:text-slate-500"}`}
@@ -356,7 +227,7 @@ function QrAttendance() {
 
                   <span className="absolute bottom-3 left-3 flex items-center gap-2 px-3 h-8 rounded-full bg-slate-950/70 backdrop-blur text-[11px] font-semibold text-slate-200 ring-1 ring-white/10 dark:ring-night-900/10">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                    {t("attendance.waitingQr")}
+                    {faceOn ? t("attendance.waitingQrFace") : t("attendance.waitingQr")}
                   </span>
                   <span className="absolute bottom-3 right-3 hidden sm:block text-[11px] text-slate-400 dark:text-slate-500">
                     {t("attendance.scanReadyHint")}
@@ -506,7 +377,7 @@ function QrAttendance() {
           {history.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-20 px-6 text-center">
               <div className="w-16 h-16 rounded-3xl bg-slate-50 dark:bg-night-800 flex items-center justify-center text-3xl text-slate-300 dark:text-slate-600">
-                <HiQrCode />
+                <ScanFaceIcon />
               </div>
               <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
                 {t("attendance.scanHistoryEmpty")}
@@ -553,7 +424,9 @@ function QrAttendance() {
                         {/* Qaysi usulda o'qilgani — skanerni sozlashda foydali */}
                         {item.via === "scanner"
                           ? t("attendance.viaScanner")
-                          : t("attendance.viaCamera")}
+                          : item.via === "face"
+                            ? t("attendance.viaFace")
+                            : t("attendance.viaCamera")}
                       </span>
                     </div>
                     <span
@@ -576,34 +449,6 @@ function QrAttendance() {
         </div>
       </div>
 
-      <Dialog
-        open={!!groupChoice}
-        onClose={() => setGroupChoice(null)}
-        title={t("attendance.chooseGroupTitle")}
-        className="md:w-100"
-        zIndex="z-40"
-      >
-        <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
-          {t("attendance.chooseGroupHint", { name: groupChoice?.student?.fullName })}
-        </p>
-        <div className="flex flex-col gap-2">
-          {groupChoice?.groups.map((g) => (
-            <button
-              key={g._id}
-              onClick={() => chooseGroup(g._id)}
-              className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-night-700 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:bg-blue-500/15 cursor-pointer duration-200"
-            >
-              <span className="text-sm font-medium text-slate-800 dark:text-slate-100">
-                {g.subject} - {g.activeId}
-              </span>
-              <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                <HiClock className="text-slate-300 dark:text-slate-600" />
-                {g.startTime} - {g.endTime}
-              </span>
-            </button>
-          ))}
-        </div>
-      </Dialog>
     </div>
   );
 }

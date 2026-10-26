@@ -13,7 +13,8 @@ import CenterActionsHost from "./components/center/CenterActionsHost";
 import Logout from "./components/Logout";
 import SubscriptionExpiredBanner from "./components/SubscriptionExpiredBanner";
 import SubscriptionBlockedModal from "./components/SubscriptionBlockedModal";
-import GlobalQrScanner from "./components/GlobalQrScanner";
+import { ScannerProvider } from "./contexts/ScannerContext";
+import ScannerPreview from "./components/ScannerPreview";
 import Introduction from "./components/Introduction/Introduction";
 import { INTRO_VERSION, readIntroVersion } from "./components/Introduction/steps";
 import useNewsSync from "./hooks/useNewsSync";
@@ -180,6 +181,7 @@ function App() {
     );
   if (!_id) return <Auth />;
   return (
+    <ScannerProvider>
     <div className="flex items-start justify-start w-full">
       <Navbar />
       <div className="flex h-screen items-start justify-start flex-col flex-1 lg:ml-62.5 w-full overflow-hidden">
@@ -331,8 +333,8 @@ function App() {
       </div>
       <Logout />
       <SubscriptionBlockedModal />
-      {/* Apparat QR skaner — istalgan sahifada ishlaydi */}
-      <GlobalQrScanner />
+      {/* Kamera skaneri (Top'dagi tugma) kichik oynasi; apparat skaner ScannerProvider ichida */}
+      <ScannerPreview />
       {/* Qo'llab-quvvatlash chati — Owner/Staff har doim ko'radi, permission talab qilinmaydi. */}
       {/* Yangi foydalanuvchi YOKI tur dizayn bilan yangilangan (versiya). */}
       {(!introSeen || readIntroVersion() < INTRO_VERSION) && <Introduction />}
@@ -340,6 +342,7 @@ function App() {
           Faqat shu autentifikatsiyadan keyingi layout'da — login'da yo'q. */}
       <NewsSync />
     </div>
+    </ScannerProvider>
   );
 }
 

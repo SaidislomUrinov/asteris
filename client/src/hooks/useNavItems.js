@@ -8,7 +8,6 @@ import {
   HiCreditCard,
   HiCircleStack,
   HiPlayCircle,
-  HiQrCode,
   HiRectangleStack,
   HiUser,
   HiUserCircle,
@@ -28,6 +27,7 @@ import {
   useScheduleTabs,
   useSettingsTabs,
 } from "./useSectionTabs";
+import ScanFaceIcon from "../ui/ScanFaceIcon";
 
 // Menyu bandlari — YAGONA manba. Chap menyu (Navbar) ro'yxatni to'liq chizadi,
 // mobil pastki tab-bar (MobileTabBar) esa shu ro'yxatdan rolga qarab 5 tasini
@@ -65,7 +65,7 @@ export default function useNavItems() {
       hasFeature("lesson.planning") && { key: "myPlans", to: "/my-plans", icon: HiRectangleStack, labelKey: "nav.myPlans" },
     can("student:view") && !isTeacher && { key: "students", to: "/students", icon: HiUsers, labelKey: "nav.students" },
     can("attendance:create") &&
-      hasFeature("attendance.qr") && { key: "qrAttendance", to: "/qr-attendance", icon: HiQrCode, labelKey: "nav.qrAttendance" },
+      hasFeature("attendance.qr") && { key: "qrAttendance", to: "/qr-attendance", icon: ScanFaceIcon, labelKey: "nav.qrAttendance" },
     financeTabs.length > 0 && {
       key: "finance",
       to: financeTabs[0].to,

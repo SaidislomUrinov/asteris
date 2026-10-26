@@ -6,6 +6,7 @@ import NotificationBell from "./NotificationBell";
 import HelpMenu from "./HelpMenu";
 import ThemeToggle from "./ThemeToggle";
 import HideFinanceToggle from "./HideFinanceToggle";
+import ScannerToggle from "./ScannerToggle";
 import CenterSwitcher from "./CenterSwitcher";
 import TopMobileMenu from "./TopMobileMenu";
 import useMediaQuery from "../hooks/useMediaQuery";
@@ -80,6 +81,7 @@ export default function Top() {
       </div>
       <div className="flex items-center gap-0.5 sm:gap-2 shrink-0">
         <CenterSwitcher />
+        <ScannerToggle />
         <ThemeToggle />
         <HelpMenu />
         <NotificationBell />
