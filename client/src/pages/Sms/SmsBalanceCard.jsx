@@ -40,7 +40,7 @@ function SmsBalanceCard({ balance, loading, isOwner, onBuy, lowLimit = 10 }) {
       : "";
 
   return (
-    <div className={`flex flex-col justify-between gap-3 p-5 rounded-2xl border ${tone.box}`}>
+    <div className={`flex flex-col justify-between gap-3 p-4 rounded-2xl border ${tone.box}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <span className={`flex items-center justify-center w-11 h-11 rounded-xl shrink-0 ${tone.icon}`}>

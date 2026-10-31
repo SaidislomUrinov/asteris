@@ -22,12 +22,10 @@ const TABS = ["history", "transactions", "purchases"];
 const POLL_MS = 4000;
 const POLL_LIMIT_MS = 2 * 60 * 1000;
 
-const StatCard = ({ label, value, sub, className = "" }) => (
-  <div
-    className={`flex flex-col justify-center gap-0.5 p-3.5 rounded-2xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none ${className}`}
-  >
+const Stat = ({ label, value, sub }) => (
+  <div className="flex flex-col justify-center gap-0.5 min-w-0 px-4 py-3">
     <span className="text-xs font-medium text-slate-400 dark:text-slate-500">{label}</span>
-    <span className="text-lg font-bold leading-snug text-slate-800 dark:text-slate-100">{value}</span>
+    <span className="text-base font-bold leading-snug text-slate-800 dark:text-slate-100">{value}</span>
     {sub && <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{sub}</span>}
   </div>
 );
@@ -223,26 +221,25 @@ function Sms() {
   ];
 
   return (
-    <div className="flex flex-col w-full h-full gap-4">
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1.5fr)] gap-3">
+    <div className="flex flex-col w-full gap-4 pb-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-3">
         <SmsBalanceCard balance={balance} loading={loading && !balance} isOwner={isOwner} onBuy={() => setBuyOpen(true)} />
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <StatCard
+        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 dark:divide-night-700 rounded-2xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
+          <Stat
             label={t("sms.lastSent")}
             value={last ? fmtUnix(last.startedAt) : t("sms.never")}
             sub={last ? `${last.templateTitle} · ${t(`sms.topics.${last.topic}`)}` : ""}
-            className="col-span-2 sm:col-span-1"
           />
-          <StatCard
+          <Stat
             label={t("sms.thisMonth")}
-            value={<NumberText className="text-lg!">{month?.sent ?? 0}</NumberText>}
+            value={<NumberText className="text-base!">{month?.sent ?? 0}</NumberText>}
             sub={t("sms.thisMonthSub", { batches: month?.batches ?? 0 })}
           />
-          <StatCard
+          <Stat
             label={t("sms.delivery")}
             value={
               <span>
-                <NumberText className="text-lg!">{month?.delivered ?? 0}</NumberText> / <NumberText className="text-lg! text-red-500">{month?.failed ?? 0}</NumberText>
+                <NumberText className="text-base!">{month?.delivered ?? 0}</NumberText> / <NumberText className="text-base! text-red-500">{month?.failed ?? 0}</NumberText>
               </span>
             }
             sub={t("sms.deliverySub")}
@@ -260,26 +257,27 @@ function Sms() {
         />
       )}
 
-      <div className="flex items-center gap-1 shrink-0 overflow-x-auto border-b border-slate-200 dark:border-night-700 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {TABS.map((key) => (
-          <button
-            type="button"
-            key={key}
-            onClick={() => setTab(key)}
-            className={`px-4 h-10 -mb-px shrink-0 border-b-2 text-sm font-semibold whitespace-nowrap cursor-pointer ${
-              tab === key
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-            }`}
-          >
-            {t(`sms.tabs.${key}`)}
-          </button>
-        ))}
-      </div>
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-1 p-1 overflow-x-auto self-start max-w-full rounded-xl bg-slate-100 dark:bg-night-800 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {TABS.map((key) => (
+            <button
+              type="button"
+              key={key}
+              onClick={() => setTab(key)}
+              className={`px-4 h-9 shrink-0 rounded-lg text-[13px] font-semibold whitespace-nowrap cursor-pointer ${
+                tab === key
+                  ? "bg-white dark:bg-night-700 text-blue-600 dark:text-blue-400 shadow-[0_1px_2px_rgba(15,23,42,0.08)] dark:shadow-none"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+              }`}
+            >
+              {t(`sms.tabs.${key}`)}
+            </button>
+          ))}
+        </div>
 
       {tab === "history" &&
         (error ? (
-          <div className="flex flex-col items-center justify-center w-full flex-1 gap-3 text-slate-400 dark:text-slate-500">
+          <div className="flex flex-col items-center justify-center w-full h-48 gap-3 text-slate-400 dark:text-slate-500">
             <HiChatBubbleLeftRight className="text-4xl" />
             <p className="text-sm">{t("sms.loadError")}</p>
             <Button variant="outlined" onClick={fetchAll}>
@@ -300,6 +298,8 @@ function Sms() {
         ))}
       {tab === "transactions" && <SmsTransactionsTab refreshKey={refreshKey} />}
       {tab === "purchases" && <SmsPurchasesTab refreshKey={refreshKey} />}
+
+      </div>
 
       {isOwner && <BuyPackageDialog open={buyOpen} onClose={() => setBuyOpen(false)} />}
       <SmsBatchDialog key={selected?._id || "none"} batch={selected} onClose={() => setSelected(null)} />
