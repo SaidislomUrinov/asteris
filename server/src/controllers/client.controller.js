@@ -53,6 +53,15 @@ module.exports = {
     }
   },
 
+  stats: async (req, res, next) => {
+    try {
+      const data = await clientService.stats(req.params.id);
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   update: async (req, res, next) => {
     try {
       const data = await clientService.update(req.params.id, req.body, req.files);

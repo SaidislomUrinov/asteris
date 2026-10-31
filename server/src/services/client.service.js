@@ -6,6 +6,10 @@ const Center = require("../models/Center");
 const Group = require("../models/Group");
 const Staff = require("../models/Staff");
 const Student = require("../models/Student");
+const Room = require("../models/Room");
+const Subject = require("../models/Subject");
+const StudentLead = require("../models/StudentLead");
+const SubscriptionPayment = require("../models/SubscriptionPayment");
 const { getHash, compareHash } = require("../utils/hash.util");
 const { getNow, addMonths, addDays } = require("../utils/date.util");
 const envConfig = require("../configs/env.config");
@@ -409,6 +413,77 @@ module.exports = {
         total,
         totalPages: Math.ceil(total / PAGE_SIZE) || 1,
       },
+    };
+  },
+
+  // Admin panel: mijoz bo'yicha hisoblangan raqamlar (hodim, o'quvchi, guruh...).
+  // `{ used, limit }` — limit tarif snapshot'idan (-1 = cheksiz, null = obuna yo'q).
+  stats: async (id) => {
+    const client = await populateSubscription(Client.findOne({ _id: id, isDeleted: false }));
+    if (!client) throw new Error("client.notFound");
+    const clientId = client._id;
+    const live = { client: clientId, isDeleted: false };
+    const snap = client.subscription?.tariffSnapshot || null;
+    const limitOf = (key) => (snap && typeof snap[key] === "number" ? snap[key] : null);
+
+    const countBy = async (Model, field, match = {}) => {
+      const rows = await Model.aggregate([{ $match: { ...live, ...match } }, { $group: { _id: `$${field}`, count: { $sum: 1 } } }]);
+      return Object.fromEntries(rows.map((r) => [r._id, r.count]));
+    };
+
+    const [centers, staffRoles, staffBlocked, groupStatus, individuals, rooms, subjects, leads, studentRows, paid] =
+      await Promise.all([
+        countBy(Center, "status"),
+        countBy(Staff, "role"),
+        Staff.countDocuments({ ...live, blocked: true }),
+        countBy(Group, "status", { kind: { $ne: "individual" } }),
+        Group.countDocuments({ ...live, kind: "individual" }),
+        Room.countDocuments(live),
+        Subject.countDocuments(live),
+        StudentLead.countDocuments(live),
+        // Bir o'quvchi hujjati — bitta "shaxs"; a'zolik holati shu mijoz doirasida.
+        Student.aggregate([
+          { $match: { isDeleted: false, "groups.client": clientId } },
+          { $project: { statuses: { $setUnion: [{ $map: { input: { $filter: { input: "$groups", cond: { $eq: ["$$this.client", clientId] } } }, as: "g", in: "$$g.status" } }, []] } } },
+          { $project: { state: { $cond: [{ $in: ["active", "$statuses"] }, "active", { $cond: [{ $in: ["left", "$statuses"] }, "left", "archived"] }] } } },
+        ]),
+        SubscriptionPayment.aggregate([
+          { $match: { client: clientId, status: "paid" } },
+          { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } },
+        ]),
+      ]);
+
+    const students = { active: 0, left: 0, archived: 0 };
+    studentRows.forEach((r) => {
+      if (r.state in students) students[r.state] += 1;
+    });
+    const num = (v) => v || 0;
+    const centersActive = num(centers.active);
+    const centersBlocked = num(centers.blocked);
+    const staffTotal = Object.values(staffRoles).reduce((a, b) => a + b, 0);
+
+    return {
+      centers: { active: centersActive, blocked: centersBlocked, total: centersActive + centersBlocked, limit: limitOf("centerLimit") },
+      staff: {
+        total: staffTotal,
+        blocked: staffBlocked,
+        reception: { used: num(staffRoles.reception), limit: limitOf("receptionLimit") },
+        teacher: { used: num(staffRoles.teacher), limit: limitOf("teacherLimit") },
+        assistant: num(staffRoles.assistant),
+      },
+      students: { ...students, total: students.active + students.left + students.archived, limit: limitOf("studentLimit") },
+      groups: {
+        active: num(groupStatus.active),
+        pending: num(groupStatus.pending),
+        finished: num(groupStatus.finished),
+        individual: individuals,
+        total: num(groupStatus.active) + num(groupStatus.pending) + num(groupStatus.finished),
+      },
+      rooms,
+      subjects,
+      leads,
+      payments: { count: paid[0]?.count || 0, total: paid[0]?.total || 0 },
+      createdAt: client.createdAt,
     };
   },
 

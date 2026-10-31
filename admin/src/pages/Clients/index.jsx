@@ -10,6 +10,7 @@ import {
   HiArrowPath,
   HiXCircle,
   HiTrash,
+  HiChartBar,
 } from "react-icons/hi2";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
@@ -21,6 +22,7 @@ import Dialog from "../../ui/Dialog";
 import DropMenu from "../../ui/DropMenu";
 import ClientDialog from "./ClientDialog";
 import SubscriptionDialog from "./SubscriptionDialog";
+import ClientStatsDialog from "./ClientStatsDialog";
 
 export default function Clients() {
   const { t } = useTranslation();
@@ -35,6 +37,7 @@ export default function Clients() {
   const [activeClient, setActiveClient] = useState(null);
   const [subDialogOpen, setSubDialogOpen] = useState(false);
   const [subClient, setSubClient] = useState(null);
+  const [statsClient, setStatsClient] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -145,7 +148,11 @@ export default function Clients() {
       key: "name",
       header: t("client.name"),
       className: "font-medium text-slate-800",
-      render: (c) => c.name,
+      render: (c) => (
+        <button type="button" onClick={() => setStatsClient(c)} className="text-left cursor-pointer hover:text-blue-600 duration-200">
+          {c.name}
+        </button>
+      ),
     },
     {
       key: "phone",
@@ -215,6 +222,12 @@ export default function Clients() {
         <div className="flex items-center justify-end">
           <DropMenu
             items={[
+              {
+                label: t("client.stats.open"),
+                icon: HiChartBar,
+                iconClass: "bg-emerald-100 text-emerald-500",
+                onClick: () => setStatsClient(c),
+              },
               {
                 label: t("common.edit"),
                 icon: HiPencilSquare,
@@ -313,6 +326,8 @@ export default function Clients() {
         client={activeClient}
         onSaved={onSaved}
       />
+
+      <ClientStatsDialog open={!!statsClient} onClose={() => setStatsClient(null)} client={statsClient} />
 
       <SubscriptionDialog
         open={subDialogOpen}
