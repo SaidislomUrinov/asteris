@@ -237,13 +237,14 @@ function App() {
                 {authType === "owner" && <Route path="/audit-log" element={<AuditLog />} />}
               </Route>
               {authType === "owner" && <Route path="/subscription" element={<Subscription />} />}
+              {/* SMS xabarnoma — alohida bo'lim (Moliya tab qatoridan tashqarida). */}
+              {can("sms:view") && hasFeature("sms.notification") && <Route path="/sms" element={<Sms />} />}
               {/* Moliya — tushum/xarajat/oylik/hisobot (+ hodimning o'z hisobi)
                   bitta tab qatori ostida. */}
               <Route element={<FinanceLayout />}>
                 {authType === "staff" && <Route path="/finance" element={<Finance />} />}
                 {authType === "owner" && <Route path="/revenue" element={<Revenue />} />}
                 {can("expense:view") && <Route path="/expenses" element={<Expenses />} />}
-                {can("sms:view") && hasFeature("sms.notification") && <Route path="/sms" element={<Sms />} />}
                 {can("salary:view") && <Route path="/salary" element={<Salary />} />}
                 {/* Hisobotlar — moliyaviy (`finance.report`) va/yoki davomat
                     (`attendance.report`) hisoboti tarifda bo'lsa ochiladi. */}

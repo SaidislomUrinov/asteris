@@ -70,9 +70,25 @@ function Sms() {
 
   const fetchLookups = useCallback(async () => {
     try {
-      const [tpl, grp] = await Promise.all([api.get("/sms/templates"), api.get("/groups", { params: { page: 1 } })]);
+      const [tpl, first, teachers] = await Promise.all([
+        api.get("/sms/templates"),
+        api.get("/groups", { params: { page: 1 } }),
+        api.get("/staffs/lookup", { params: { role: "teacher" } }).catch(() => null),
+      ]);
       if (tpl.data.ok) setTemplates(tpl.data.data || []);
-      if (grp.data.ok) setGroups(grp.data.data || []);
+      if (!first.data.ok) return;
+      // /groups sahifalab beradi (50 tadan) — qolgan sahifalar ham olinadi.
+      let list = first.data.data || [];
+      const totalPages = first.data.meta?.totalPages || 1;
+      if (totalPages > 1) {
+        const rest = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, i) => api.get("/groups", { params: { page: i + 2 } })),
+        );
+        list = list.concat(...rest.map((r) => (r.data.ok ? r.data.data || [] : [])));
+      }
+      // Ro'yxat faqat `teacher` ID'sini beradi — nomi hodimlar lookup'idan.
+      const names = Object.fromEntries((teachers?.data?.ok ? teachers.data.data || [] : []).map((s) => [s._id, s.name]));
+      setGroups(list.map((g) => ({ ...g, teacherName: names[g.teacher] || "" })));
     } catch {
       // shablon/guruh ro'yxati yuborish paneli uchun yordamchi ma'lumot
     }
