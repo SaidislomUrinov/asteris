@@ -9,8 +9,6 @@ import { BADGE_TYPES, GRADE_BADGE_TYPES, badgeProgress } from "../../utils/badge
 import { fmtMonth } from "../../utils/format";
 import { cn } from "../../utils/cn";
 
-const MAX_MONTHS = 3;
-
 const BAR_TONE = { met: "bg-ok", broken: "bg-bad/60", progress: "bg-accent" };
 
 // Joriy oy progressi — bitta tur qatori.
@@ -58,17 +56,15 @@ const EarnedCard = ({ item, index }) => {
   const { t } = useTranslation();
   const name = t(`badge.types.${item.type}.name`);
   const months = item.months || [];
-  const rest = months.length - MAX_MONTHS;
   return (
     <Card className="flex flex-col items-center text-center px-2.5 py-4">
       <BadgeIcon type={item.type} size={60} count={item.count} label={name} delay={index * 0.08} />
       <div className="font-title font-bold text-[13px] leading-tight mt-2.5 break-words">{name}</div>
       <div className="text-[11px] text-hint leading-snug mt-1 break-words">{t(`badge.types.${item.type}.desc`)}</div>
-      <div className="mt-2 flex flex-col items-center gap-0.5">
-        {months.slice(0, MAX_MONTHS).map((m) => (
-          <span key={m} className="text-[11px] font-bold text-ink/80">{fmtMonth(m)}</span>
+      <div className="mt-2 flex flex-wrap justify-center gap-1">
+        {months.map((m) => (
+          <span key={m} className="text-[11px] font-bold text-ink/80 bg-ink/6 rounded-md px-1.5 py-0.5">{fmtMonth(m)}</span>
         ))}
-        {rest > 0 && <span className="text-[11px] text-hint">{t("badge.moreMonths", { count: rest })}</span>}
       </div>
     </Card>
   );
