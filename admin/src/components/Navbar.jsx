@@ -12,6 +12,7 @@ import {
   HiPlayCircle,
   HiOutlineChatBubbleLeftRight,
   HiNewspaper,
+  HiChatBubbleLeftRight,
 } from "react-icons/hi2";
 import { HiBars2, HiXMark } from "react-icons/hi2";
 import { Link, useLocation } from "react-router-dom";
@@ -187,6 +188,13 @@ export default function Navbar() {
             <NavLink to="/tutorial-videos" startsWith>
               <HiPlayCircle className="text-rose-400 text-[20px]" />
               {t("nav.tutorialVideos")}
+            </NavLink>
+          )}
+
+          {allowed("settings:manage") && (
+            <NavLink to="/sms" startsWith>
+              <HiChatBubbleLeftRight className="text-sky-400 text-[20px]" />
+              {t("nav.sms")}
             </NavLink>
           )}
 

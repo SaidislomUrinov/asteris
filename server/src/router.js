@@ -36,6 +36,8 @@ router.use("/admin/chat", require("./routes/adminChat.routes"));
 router.use("/admin/audit-logs", require("./routes/adminAudit.routes"));
 // Yangiliklar (Platform Admin tomoni) — API_CONTRACT_news.md §2, xuddi shu naqsh.
 router.use("/admin/news", require("./routes/adminNews.routes"));
+// SMS shablonlar, tarix va test yuborish (Platform Admin).
+router.use("/admin/sms", require("./routes/adminSms.routes"));
 
 router.use("/admin", require("./routes/admin.routes"));
 router.use("/leads", require("./routes/lead.routes"));
@@ -74,6 +76,8 @@ router.use("/syllabus", require("./routes/syllabus.routes"));
 // O'qituvchining shablon dars rejalari (API_CONTRACT_teaching_plans.md §4.1).
 router.use("/teaching-plans", require("./routes/teachingPlan.routes"));
 router.use("/notifications", require("./routes/notification.routes"));
+// SMS xabarnoma (filial darajasi, getsms.uz) — Owner + `sms:*` ruxsatli Staff.
+router.use("/sms", require("./routes/sms.routes"));
 // Yangiliklar (Client Owner + Staff) — API_CONTRACT_news.md §3.
 router.use("/news", require("./routes/news.routes"));
 router.use("/teacher", require("./routes/teacher.routes"));

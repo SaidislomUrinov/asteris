@@ -23,6 +23,7 @@ export const TARIFF_FEATURE_KEYS = [
   "attendance.qr",
   "attendance.face",
   "attendance.report",
+  "sms.notification",
   "room.control",
   "lesson.planning",
   "homework.manage",

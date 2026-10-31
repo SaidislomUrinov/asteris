@@ -200,7 +200,8 @@
     "myPlans": "Мои планы уроков",
     "videoLessons": "Видеоуроки",
     "individual": "Индивидуальные",
-    "coins": "Гамификация"
+    "coins": "Гамификация",
+    "sms": "SMS-уведомления"
   },
   "report": {
     "revenue": "Выручка",
@@ -407,7 +408,9 @@
     "phoneTaken": "Этот номер уже привязан к другому сотруднику",
     "phoneIsOwner": "Это номер владельца центра — укажите сотруднику другой номер",
     "phoneAlreadySet": "Ваш номер уже указан",
-    "phoneSaved": "Номер сохранён"
+    "phoneSaved": "Номер сохранён",
+    "groupSms": "SMS-уведомления",
+    "actionSend": "Отправка"
   },
   "certificateTemplate": {
     "title": "Шаблоны сертификатов",
@@ -1904,7 +1907,8 @@
     "ai_report": "AI-отчёт",
     "ai_advice": "AI-рекомендации",
     "gamification_badges": "Значки достижений",
-    "gamification_coins": "Монеты WECOIN и магазин"
+    "gamification_coins": "Монеты WECOIN и магазин",
+    "sms_notification": "SMS-уведомления"
   },
   "lead": {
     "invalidTelegramPhone": "Неверный номер Telegram",
@@ -2172,6 +2176,26 @@
       "bigJump": {
         "name": "Большой рывок",
         "desc": "Подъём в рейтинге на 5+ позиций за месяц"
+      },
+      "titleDefender": {
+        "name": "Хранитель трона",
+        "desc": "Два месяца подряд удержал 1-е место в рейтинге группы"
+      },
+      "phoenix": {
+        "name": "Феникс",
+        "desc": "За месяц поднялся из нижней половины рейтинга в топ-3"
+      },
+      "punctual": {
+        "name": "Точные часы",
+        "desc": "За месяц ни одного пропуска и опоздания (не менее 6 уроков)"
+      },
+      "grandSlam": {
+        "name": "Три короны",
+        "desc": "За один месяц идеальная посещаемость, отличные оценки и топ-3"
+      },
+      "comeback": {
+        "name": "Возвращение",
+        "desc": "В прошлом месяце 3+ пропуска, в этом посетил все занятия"
       }
     },
     "periodNow": "сейчас",
@@ -2186,7 +2210,15 @@
       "finished": "Завершённые группы",
       "left": "Покинутые группы",
       "archived": "Архив"
-    }
+    },
+    "needRanked": "В рейтинге нужно не менее {{min}} учеников",
+    "notPrevFirst": "В прошлом месяце не было 1-го места",
+    "notBottomHalf": "В прошлом месяце не был в нижней половине",
+    "move": "{{from}}-е место → {{to}}-е место",
+    "brokenPunctual": "Пропусков: {{absent}}, опозданий: {{late}}",
+    "grandFlags": "Посещаемость {{att}} · Оценки {{grades}} · Топ-3 {{podium}}",
+    "comebackNeedPrev": "В прошлом месяце должно быть 3+ пропуска",
+    "comebackBroken": "Пропусков: {{absent}}"
   },
   "telegramPhone": {
     "sameLabel": "Телефон и номер Telegram совпадают",
@@ -2523,5 +2555,155 @@
     "prevUntil": "{{month}}, по {{day}}-е: {{amount}}",
     "mln": "млн",
     "thousand": "тыс."
+  },
+  "sms": {
+    "tabs": {
+      "templates": "Шаблоны",
+      "history": "История",
+      "test": "Тестовая отправка",
+      "transactions": "История баланса",
+      "purchases": "Мои пакеты"
+    },
+    "topics": {
+      "debt": "Задолженность",
+      "absent": "Не пришёл на урок",
+      "payment": "Оплата",
+      "lesson": "Урок",
+      "info": "Общее"
+    },
+    "logStatus": {
+      "queued": "В очереди",
+      "sent": "Отправлено",
+      "delivered": "Доставлено",
+      "failed": "Ошибка",
+      "skipped": "Нет номера"
+    },
+    "batchStatus": {
+      "sending": "Отправляется",
+      "done": "Завершено",
+      "failed": "Ошибка"
+    },
+    "variables": {
+      "center": "Название филиала",
+      "student": "Имя и фамилия ученика",
+      "group": "Название группы",
+      "price": "Ежемесячная цена",
+      "debt": "Сумма долга",
+      "month": "За какой месяц",
+      "date": "Дата (для «Не пришёл»)"
+    },
+    "recipient": "Получатель",
+    "text": "Текст",
+    "history": "История SMS",
+    "refreshStatus": "Обновить статус",
+    "startedAt": "Время начала",
+    "emptyLogs": "SMS не найдены",
+    "sendTitle": "Отправка SMS",
+    "template": "Шаблон",
+    "audienceParents": "Родителям",
+    "audienceStudents": "Ученикам",
+    "audience": "Кому",
+    "audience_parents": "Родители",
+    "audience_students": "Ученики",
+    "groups": "Группы",
+    "debtOnly": "Только должники",
+    "preview": "Предпросмотр",
+    "previewCount": "Будет отправлено SMS: {{count}}",
+    "previewNoPhone": "у {{count}} нет номера",
+    "send": "Отправить",
+    "sendConfirm": "Отправить {{count}} SMS?",
+    "result": "Результат",
+    "resultLine": "Отправлено: {{sent}} · Доставлено: {{delivered}} · Ошибок: {{failed}} (всего {{total}})",
+    "sentBy": "Отправил",
+    "details": "Подробнее",
+    "lastSent": "Последняя SMS",
+    "never": "Ещё не отправлялись",
+    "thisMonth": "Отправлено за месяц",
+    "thisMonthSub": "Рассылок: {{batches}}",
+    "delivery": "Доставлено / Ошибки",
+    "deliverySub": "за этот месяц",
+    "loadError": "Не удалось загрузить SMS",
+    "empty": "SMS ещё не отправлялись",
+    "center": "Филиал",
+    "editTemplate": "Редактировать шаблон",
+    "createTemplate": "Создать шаблон",
+    "deleteTemplate": "Удалить шаблон",
+    "deleteConfirm": "Удалить шаблон «{{title}}»?",
+    "emptyTemplates": "Шаблонов нет",
+    "templateTitle": "Название",
+    "topic": "Тема",
+    "charCount": "Символов: {{count}}",
+    "active": "Активен",
+    "on": "Включён",
+    "off": "Выключен",
+    "phone": "Номер телефона",
+    "sendTest": "Отправить тест",
+    "gatewayUnreachable": "Не удалось подключиться к SMS-шлюзу (IP сервера зарегистрирован в getsms?)",
+    "sending": "Отправка SMS началась",
+    "fillTheRows": "Заполните все поля",
+    "invalidValue": "Неверное значение",
+    "invalidTopic": "Неверная тема",
+    "textTooLong": "Текст слишком длинный (до 1000 символов)",
+    "unknownVariable": "В шаблоне неизвестная переменная",
+    "centerRequired": "Сначала выберите филиал",
+    "templateNotFound": "Шаблон не найден",
+    "alreadySending": "Предыдущая отправка ещё не завершена",
+    "duplicateRecently": "Такая рассылка только что была отправлена (подождите 5 минут)",
+    "noRecipients": "Подходящих получателей нет",
+    "tooManyRecipients": "Слишком много получателей (до 2000)",
+    "notConfigured": "SMS-сервис не настроен",
+    "gatewayInvalidResponse": "SMS-шлюз вернул неверный ответ",
+    "gatewayTimeout": "SMS-шлюз не отвечает",
+    "batchTooLarge": "Нельзя отправить более 100 SMS за запрос",
+    "batchNotFound": "Рассылка не найдена",
+    "invalidPhone": "Неверный номер телефона",
+    "templateSaved": "Шаблон сохранён",
+    "templateDeleted": "Шаблон удалён",
+    "testSent": "Тестовое SMS отправлено",
+    "som": "сум",
+    "price": "Цена",
+    "packageName": "Название пакета",
+    "smsCount": "Количество SMS",
+    "remaining": "Остаток",
+    "expiresAt": "Действует до",
+    "paidAt": "Время оплаты",
+    "unlimited": "Безлимитный",
+    "validity": "{{count}} дн.",
+    "insufficientBalance": "Недостаточно SMS на балансе",
+    "packageNotFound": "Пакет не найден",
+    "invalidPackage": "Неверные данные пакета",
+    "purchaseNotFound": "Покупка не найдена",
+    "minAmount": "Цена должна быть не меньше 1000 сум",
+    "balanceTitle": "Баланс SMS",
+    "balanceUnit": "SMS",
+    "balanceEmpty": "Баланс закончился",
+    "balanceLow": "Баланс на исходе",
+    "nearestExpiry": "{{count}} до {{date}}",
+    "buyPackage": "Купить пакет",
+    "previewSummary": "{{count}} SMS · {{segments}} частей · баланс {{balance}}",
+    "insufficient": "Недостаточно баланса",
+    "packagesTitle": "SMS пакеты",
+    "packagesEmpty": "Пакетов пока нет",
+    "pricePerSms": "1 SMS ≈ {{price}} сум",
+    "pay": "Оплатить",
+    "credited": "Вам начислено {{count}} SMS",
+    "paymentFailed": "Платёж не прошёл",
+    "amount": "Количество",
+    "batchTitle": "Рассылка",
+    "date": "Дата",
+    "emptyTransactions": "Движений баланса нет",
+    "emptyPurchases": "Купленных пакетов нет",
+    "txTypes": {
+      "topup": "Пополнение",
+      "spend": "Списание",
+      "refund": "Возврат",
+      "expire": "Истёк срок"
+    },
+    "purchaseStatus": {
+      "pending": "Ожидает",
+      "paid": "Оплачен",
+      "cancelled": "Отменён",
+      "failed": "Ошибка"
+    }
   }
 }

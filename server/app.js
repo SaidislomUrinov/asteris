@@ -128,6 +128,7 @@ const start = async () => {
   require("./src/jobs/subscriptionPaymentExpire.job").start();
   require("./src/jobs/backup.job").start();
   require("./src/jobs/badges.job").start();
+  require("./src/jobs/smsStatus.job").start();
 
   // Telegram bot — faqat platforma sozlamalarida yoqilgan va token mavjud
   // bo'lsa ko'tariladi. Cluster'da Redis qulfi orqali faqat BITTA worker

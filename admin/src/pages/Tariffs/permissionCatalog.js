@@ -61,6 +61,10 @@ export const PERMISSION_CATALOG = [
     ],
   },
   {
+    module: "sms",
+    items: [{ key: "sms.notification" }],
+  },
+  {
     module: "room",
     items: [
       { key: "room.control" },

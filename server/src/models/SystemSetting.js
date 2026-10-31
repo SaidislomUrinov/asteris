@@ -74,6 +74,14 @@ const schema = new Schema({
     },
   },
 
+  // SMS zaxirasi (getsms.uz'dan qo'lda kiritilgan sotib olingan qism soni va ogohlantirish chegarasi)
+  // — docs/API_CONTRACT_sms_packages.md.
+  sms: {
+    gatewayPurchased: { type: Number, default: 0 },
+    lowThreshold: { type: Number, default: 1000 },
+    lastAlertAt: { type: Number, default: null },
+  },
+
   createdAt: {
     type: Number,
     default: getNow,

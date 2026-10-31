@@ -107,6 +107,10 @@ const CALLER_ROUTES_CENTER = new Set([
   "shop:order",
   "shop:orderUpdated",
   "shop:products",
+  // SMS balans filial darajasida — servis `toCenter` bilan yuboradi.
+  "sms:balance",
+  "sms:credited",
+  "sms:batch",
 ]);
 
 // Filial hodisasini ham hodimlarga (`center:`), ham Owner'ga (`client:`)

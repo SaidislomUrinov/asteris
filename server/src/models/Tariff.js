@@ -44,6 +44,7 @@ const schema = new Schema({
       "excel.export", // Ma'lumotlarni Excel (.xlsx) formatiga eksport qilish
 
       "telegram.notifications", // Telegram bot orqali avtomatik xabarnomalar yuborish
+      "sms.notification", // SMS xabarnoma (ota-ona/o'quvchiga shablon bo'yicha SMS)
 
       "teacher.notifications", // O'qituvchilarga bildirishnomalar
       "teacher.performance", // O'qituvchi ish unumdorligi

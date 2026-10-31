@@ -56,6 +56,14 @@ module.exports = {
   INPAY_MERCHANT_ID: env.INPAY_MERCHANT_ID,
   INPAY_MERCHANT_TOKEN: env.INPAY_MERCHANT_TOKEN,
 
+  // SMS shlyuz (getsms.uz). Tizim darajasidagi yagona akkaunt: barcha filiallar nomidan
+  // shu login/parol bilan yuboriladi. Server IP'si getsms texnik xizmatida ro'yxatdan
+  // o'tgan bo'lishi shart. NICKNAME bo'sh bo'lsa qisqa raqamdan yuboriladi.
+  GETSMS_URL: env.GETSMS_URL || "http://185.8.212.184/smsgateway",
+  GETSMS_LOGIN: env.GETSMS_LOGIN,
+  GETSMS_PASSWORD: env.GETSMS_PASSWORD,
+  GETSMS_NICKNAME: env.GETSMS_NICKNAME || "",
+
   // 0 yoki bo'sh = CPU yadrolari soni bo'yicha (API_CONTRACT_performance.md §5)
   CLUSTER_WORKERS: Number(env.CLUSTER_WORKERS) || 0,
 

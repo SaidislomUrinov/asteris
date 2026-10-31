@@ -47,6 +47,7 @@ const Leads = lazy(() => import("./pages/Leads"));
 const Subscription = lazy(() => import("./pages/Subscription"));
 const Salary = lazy(() => import("./pages/Salary"));
 const Expenses = lazy(() => import("./pages/Expenses"));
+const Sms = lazy(() => import("./pages/Sms"));
 const StaffProfile = lazy(() => import("./pages/StaffProfile"));
 const Finance = lazy(() => import("./pages/Finance"));
 const OwnerProfile = lazy(() => import("./pages/OwnerProfile"));
@@ -242,6 +243,7 @@ function App() {
                 {authType === "staff" && <Route path="/finance" element={<Finance />} />}
                 {authType === "owner" && <Route path="/revenue" element={<Revenue />} />}
                 {can("expense:view") && <Route path="/expenses" element={<Expenses />} />}
+                {can("sms:view") && hasFeature("sms.notification") && <Route path="/sms" element={<Sms />} />}
                 {can("salary:view") && <Route path="/salary" element={<Salary />} />}
                 {/* Hisobotlar — moliyaviy (`finance.report`) va/yoki davomat
                     (`attendance.report`) hisoboti tarifda bo'lsa ochiladi. */}

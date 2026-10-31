@@ -77,6 +77,13 @@ const PERMISSION_GROUPS = [
     ],
   },
   {
+    titleKey: "staff.groupSms",
+    items: [
+      { key: "sms:view", labelKey: "staff.actionView" },
+      { key: "sms:send", labelKey: "staff.actionSend" },
+    ],
+  },
+  {
     titleKey: "staff.groupSubjects",
     items: [
       { key: "subject:view", labelKey: "staff.actionView" },

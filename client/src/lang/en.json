@@ -200,7 +200,8 @@
     "myPlans": "My lesson plans",
     "videoLessons": "Video guides",
     "individual": "Individual",
-    "coins": "Gamification"
+    "coins": "Gamification",
+    "sms": "SMS notifications"
   },
   "report": {
     "revenue": "Revenue",
@@ -407,7 +408,9 @@
     "phoneTaken": "This number is already assigned to another staff member",
     "phoneIsOwner": "This is the owner's number — use a different one for staff",
     "phoneAlreadySet": "Your number is already set",
-    "phoneSaved": "Phone number saved"
+    "phoneSaved": "Phone number saved",
+    "groupSms": "SMS notifications",
+    "actionSend": "Send"
   },
   "certificateTemplate": {
     "title": "Certificate templates",
@@ -1900,7 +1903,8 @@
     "ai_report": "AI report",
     "ai_advice": "AI advice",
     "gamification_badges": "Achievement badges",
-    "gamification_coins": "WECOIN coins & shop"
+    "gamification_coins": "WECOIN coins & shop",
+    "sms_notification": "SMS notifications"
   },
   "lead": {
     "invalidTelegramPhone": "Invalid Telegram number",
@@ -2168,6 +2172,26 @@
       "bigJump": {
         "name": "Big jump",
         "desc": "Climbed 5+ places in a month"
+      },
+      "titleDefender": {
+        "name": "Throne Defender",
+        "desc": "Held 1st place in the group ranking two months in a row"
+      },
+      "phoenix": {
+        "name": "Phoenix",
+        "desc": "Rose from the bottom half of the ranking to the top 3 in one month"
+      },
+      "punctual": {
+        "name": "Clockwork",
+        "desc": "No missed or late lessons in a month (at least 6 lessons)"
+      },
+      "grandSlam": {
+        "name": "Triple Crown",
+        "desc": "Perfect attendance, top grades and a top-3 place in a single month"
+      },
+      "comeback": {
+        "name": "Comeback",
+        "desc": "Missed 3+ lessons last month, attended every one this month"
       }
     },
     "periodNow": "now",
@@ -2182,7 +2206,15 @@
       "finished": "Finished groups",
       "left": "Left groups",
       "archived": "Archived"
-    }
+    },
+    "needRanked": "At least {{min}} ranked students required",
+    "notPrevFirst": "Was not 1st last month",
+    "notBottomHalf": "Was not in the bottom half last month",
+    "move": "Place {{from}} → {{to}}",
+    "brokenPunctual": "{{absent}} missed, {{late}} late",
+    "grandFlags": "Attendance {{att}} · Grades {{grades}} · Top-3 {{podium}}",
+    "comebackNeedPrev": "Needs 3+ missed lessons last month",
+    "comebackBroken": "{{absent}} missed"
   },
   "telegramPhone": {
     "sameLabel": "Phone and Telegram number are the same",
@@ -2517,5 +2549,155 @@
     "prevUntil": "{{month}}, through day {{day}}: {{amount}}",
     "mln": "M",
     "thousand": "K"
+  },
+  "sms": {
+    "tabs": {
+      "templates": "Templates",
+      "history": "History",
+      "test": "Send test",
+      "transactions": "Balance history",
+      "purchases": "My packages"
+    },
+    "topics": {
+      "debt": "Debt",
+      "absent": "Absent",
+      "payment": "Payment",
+      "lesson": "Lesson",
+      "info": "General"
+    },
+    "logStatus": {
+      "queued": "Queued",
+      "sent": "Sent",
+      "delivered": "Delivered",
+      "failed": "Failed",
+      "skipped": "No number"
+    },
+    "batchStatus": {
+      "sending": "Sending",
+      "done": "Done",
+      "failed": "Failed"
+    },
+    "variables": {
+      "center": "Branch name",
+      "student": "Student full name",
+      "group": "Group name",
+      "price": "Monthly price",
+      "debt": "Debt amount",
+      "month": "For which month",
+      "date": "Date (for absence)"
+    },
+    "recipient": "Recipient",
+    "text": "Text",
+    "history": "SMS history",
+    "refreshStatus": "Refresh status",
+    "startedAt": "Started at",
+    "emptyLogs": "No messages",
+    "sendTitle": "Send SMS",
+    "template": "Template",
+    "audienceParents": "To parents",
+    "audienceStudents": "To students",
+    "audience": "To",
+    "audience_parents": "Parents",
+    "audience_students": "Students",
+    "groups": "Groups",
+    "debtOnly": "Debtors only",
+    "preview": "Preview",
+    "previewCount": "{{count}} SMS will be sent",
+    "previewNoPhone": "{{count}} without number",
+    "send": "Send",
+    "sendConfirm": "Send {{count}} SMS?",
+    "result": "Result",
+    "resultLine": "Sent: {{sent}} · Delivered: {{delivered}} · Failed: {{failed}} (total {{total}})",
+    "sentBy": "Sent by",
+    "details": "Details",
+    "lastSent": "Last SMS",
+    "never": "Not sent yet",
+    "thisMonth": "Sent this month",
+    "thisMonthSub": "{{batches}} batches",
+    "delivery": "Delivered / Failed",
+    "deliverySub": "this month",
+    "loadError": "Failed to load SMS data",
+    "empty": "No SMS sent yet",
+    "center": "Branch",
+    "editTemplate": "Edit template",
+    "createTemplate": "Create template",
+    "deleteTemplate": "Delete template",
+    "deleteConfirm": "Delete template \"{{title}}\"?",
+    "emptyTemplates": "No templates",
+    "templateTitle": "Title",
+    "topic": "Topic",
+    "charCount": "Characters: {{count}}",
+    "active": "Active",
+    "on": "On",
+    "off": "Off",
+    "phone": "Phone number",
+    "sendTest": "Send test",
+    "gatewayUnreachable": "Cannot reach SMS gateway (is the server IP registered with getsms?)",
+    "sending": "SMS sending started",
+    "fillTheRows": "Fill in all fields",
+    "invalidValue": "Invalid value",
+    "invalidTopic": "Invalid topic",
+    "textTooLong": "Text is too long (max 1000)",
+    "unknownVariable": "Unknown variable in template",
+    "centerRequired": "Select a branch first",
+    "templateNotFound": "Template not found",
+    "alreadySending": "Previous sending is still in progress",
+    "duplicateRecently": "The same SMS was just sent (wait 5 minutes)",
+    "noRecipients": "No matching recipients",
+    "tooManyRecipients": "Too many recipients (max 2000)",
+    "notConfigured": "SMS service is not configured",
+    "gatewayInvalidResponse": "SMS gateway returned an invalid response",
+    "gatewayTimeout": "SMS gateway timed out",
+    "batchTooLarge": "Max 100 SMS per request",
+    "batchNotFound": "Batch not found",
+    "invalidPhone": "Invalid phone number",
+    "templateSaved": "Template saved",
+    "templateDeleted": "Template deleted",
+    "testSent": "Test SMS sent",
+    "som": "UZS",
+    "price": "Price",
+    "packageName": "Package name",
+    "smsCount": "SMS count",
+    "remaining": "Remaining",
+    "expiresAt": "Expires",
+    "paidAt": "Paid at",
+    "unlimited": "Unlimited",
+    "validity": "{{count}} days",
+    "insufficientBalance": "Not enough SMS balance",
+    "packageNotFound": "Package not found",
+    "invalidPackage": "Invalid package data",
+    "purchaseNotFound": "Purchase not found",
+    "minAmount": "Price must be at least 1000 UZS",
+    "balanceTitle": "SMS balance",
+    "balanceUnit": "SMS",
+    "balanceEmpty": "Balance is empty",
+    "balanceLow": "Balance is running low",
+    "nearestExpiry": "{{count}} until {{date}}",
+    "buyPackage": "Buy a package",
+    "previewSummary": "{{count}} SMS · {{segments}} parts · balance {{balance}}",
+    "insufficient": "Not enough balance",
+    "packagesTitle": "SMS packages",
+    "packagesEmpty": "No packages yet",
+    "pricePerSms": "1 SMS ≈ {{price}} UZS",
+    "pay": "Pay",
+    "credited": "{{count}} SMS have been added to your balance",
+    "paymentFailed": "Payment failed",
+    "amount": "Amount",
+    "batchTitle": "Dispatch",
+    "date": "Date",
+    "emptyTransactions": "No balance activity",
+    "emptyPurchases": "No purchased packages",
+    "txTypes": {
+      "topup": "Top-up",
+      "spend": "Spent",
+      "refund": "Refund",
+      "expire": "Expired"
+    },
+    "purchaseStatus": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "cancelled": "Cancelled",
+      "failed": "Failed"
+    }
   }
 }

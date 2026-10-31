@@ -19,6 +19,7 @@ import Logs from "./pages/Logs";
 import Settings from "./pages/Settings";
 import Fonts from "./pages/Fonts";
 import TutorialVideos from "./pages/TutorialVideos";
+import Sms from "./pages/Sms";
 import Chat from "./pages/Chat";
 import News from "./pages/News";
 import NewsEditor from "./pages/News/NewsEditor";
@@ -72,6 +73,7 @@ function App() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/fonts" element={<Fonts />} />
               <Route path="/tutorial-videos" element={<TutorialVideos />} />
+              <Route path="/sms" element={<Sms />} />
               <Route path="/chat" element={<Chat />} />
               {canManageNews && <Route path="/news" element={<News />} />}
               {canManageNews && <Route path="/news/new" element={<NewsEditor key="new" />} />}

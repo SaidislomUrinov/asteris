@@ -424,7 +424,14 @@
       "delta": "{{from}} → {{to}}",
       "notPodium": "Not in the top-3 this month yet",
       "needTwoMonths": "Must be ranked both last month and this month",
-      "positions": "#{{from}} → #{{to}}"
+      "positions": "#{{from}} → #{{to}}",
+      "needRanked": "At least {{min}} ranked students required",
+      "notPrevFirst": "Was not 1st last month",
+      "notBottomHalf": "Was not in the bottom half last month",
+      "punctualBroken": "{{absent}} missed, {{late}} late",
+      "grandFlags": "Attendance {{att}} · Grades {{grades}} · Top-3 {{podium}}",
+      "comebackNeedPrev": "Needs 3+ missed lessons last month",
+      "comebackBroken": "{{absent}} missed"
     },
     "types": {
       "perfectAttendance": {
@@ -476,6 +483,31 @@
         "name": "Big jump",
         "desc": "Climbed 5+ places in a month",
         "rule": "Climb at least 5 places in the ranking vs last month"
+      },
+      "titleDefender": {
+        "name": "Throne Defender",
+        "desc": "Held 1st place in the group ranking two months in a row",
+        "rule": "1st place in the group ranking both last month and this month (at least 3 ranked students)"
+      },
+      "phoenix": {
+        "name": "Phoenix",
+        "desc": "Rose from the bottom half of the ranking to the top 3 in one month",
+        "rule": "Was in the bottom half last month, 1st–3rd place this month (at least 6 students)"
+      },
+      "punctual": {
+        "name": "Clockwork",
+        "desc": "No missed or late lessons in a month (at least 6 lessons)",
+        "rule": "At least 6 lessons in the month with no absences and no lateness"
+      },
+      "grandSlam": {
+        "name": "Triple Crown",
+        "desc": "Perfect attendance, top grades and a top-3 place in a single month",
+        "rule": "Perfect attendance, excellent or perfect grades and 1st–3rd place in one month"
+      },
+      "comeback": {
+        "name": "Comeback",
+        "desc": "Missed 3+ lessons last month, attended every one this month",
+        "rule": "At least 6 lessons this month with no misses (needs 3+ missed lessons last month)"
       }
     }
   },
@@ -981,6 +1013,8 @@
       "photoAdd": "Add photo",
       "photoTitle": "Student photo",
       "photoFromCamera": "Take a photo",
+      "cameraFailed": "Couldn't open the camera",
+      "cameraNative": "Open phone camera",
       "photoFromGallery": "Choose from gallery",
       "photoReplace": "Replace photo",
       "photoRemove": "Remove photo",

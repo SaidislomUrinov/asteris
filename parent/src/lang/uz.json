@@ -420,7 +420,14 @@
       "delta": "{{from}} → {{to}}",
       "notPodium": "Shu oy hozircha top-3 da emas",
       "needTwoMonths": "O'tgan oy va shu oy reytingda bo'lish kerak",
-      "positions": "{{from}}-o'rin → {{to}}-o'rin"
+      "positions": "{{from}}-o'rin → {{to}}-o'rin",
+      "needRanked": "Reytingda kamida {{min}} o'quvchi kerak",
+      "notPrevFirst": "O'tgan oy 1-o'rin emas edi",
+      "notBottomHalf": "O'tgan oy pastki yarmida emas edi",
+      "punctualBroken": "{{absent}} ta qoldirilgan, {{late}} ta kechikkan",
+      "grandFlags": "Davomat {{att}} · Baho {{grades}} · Top-3 {{podium}}",
+      "comebackNeedPrev": "O'tgan oy 3+ dars qoldirilgan bo'lishi kerak",
+      "comebackBroken": "{{absent}} ta qoldirilgan"
     },
     "types": {
       "perfectAttendance": {
@@ -472,6 +479,31 @@
         "name": "Katta sakrash",
         "desc": "Reytingda bir oyda 5+ pog'ona ko'tarildi",
         "rule": "O'tgan oyga nisbatan reytingda kamida 5 pog'ona ko'tarilish"
+      },
+      "titleDefender": {
+        "name": "Taxt himoyachisi",
+        "desc": "Ketma-ket ikki oy guruh reytingida 1-o'rinni saqlab qoldi",
+        "rule": "O'tgan oy ham, shu oy ham guruh reytingida 1-o'rin (reytingda kamida 3 o'quvchi)"
+      },
+      "phoenix": {
+        "name": "Feniks",
+        "desc": "Reytingning pastki yarmidan bir oyda top-3 ga ko'tarildi",
+        "rule": "O'tgan oy reytingning pastki yarmida edi, shu oy 1–3-o'rin (kamida 6 o'quvchi)"
+      },
+      "punctual": {
+        "name": "Aniq soat",
+        "desc": "Oy davomida birorta ham dars qoldirilmadi va kechikilmadi (kamida 6 ta dars)",
+        "rule": "Oyda kamida 6 dars, birortasini qoldirmaslik va kechikmaslik"
+      },
+      "grandSlam": {
+        "name": "Uch toj",
+        "desc": "Bir oyda mukammal davomat, a'lo baholar va top-3 ga erishildi",
+        "rule": "Bir oyda mukammal davomat, a'lochi yoki mukammal baholar va 1–3-o'rin"
+      },
+      "comeback": {
+        "name": "Qaytish",
+        "desc": "O'tgan oy 3+ dars qoldirib, shu oy hammasiga keldi",
+        "rule": "Shu oy kamida 6 ta dars o'tib, birortasini qoldirmaslik (o'tgan oy 3+ dars qoldirilgan bo'lishi kerak)"
       }
     }
   },
@@ -977,6 +1009,8 @@
       "photoAdd": "Rasm qo'yish",
       "photoTitle": "O'quvchi rasmi",
       "photoFromCamera": "Kameradan olish",
+      "cameraFailed": "Kamerani ochib bo'lmadi",
+      "cameraNative": "Telefon kamerasini ochish",
       "photoFromGallery": "Galereyadan tanlash",
       "photoReplace": "Rasmni almashtirish",
       "photoRemove": "Rasmni olib tashlash",

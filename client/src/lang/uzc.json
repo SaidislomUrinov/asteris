@@ -200,7 +200,8 @@
     "myPlans": "Дарс режаларим",
     "videoLessons": "Видео қўлланмалар",
     "individual": "Индивидуал",
-    "coins": "Гамификация"
+    "coins": "Гамификация",
+    "sms": "СМС хабарнома"
   },
   "report": {
     "revenue": "Тушум",
@@ -407,7 +408,9 @@
     "phoneTaken": "Бу рақам бошқа ходимга бириктирилган",
     "phoneIsOwner": "Бу рақам марказ эгасиники — ходимга бошқа рақам киритинг",
     "phoneAlreadySet": "Рақамингиз аллақачон киритилган",
-    "phoneSaved": "Рақам сақланди"
+    "phoneSaved": "Рақам сақланди",
+    "groupSms": "СМС хабарнома",
+    "actionSend": "Юбориш"
   },
   "certificateTemplate": {
     "title": "Сертификат шаблонлари",
@@ -1789,7 +1792,8 @@
     "ai_report": "AI ҳисобот",
     "ai_advice": "AI тавсия",
     "gamification_badges": "Ютуқ нишонлари",
-    "gamification_coins": "WECOIN тангалари ва дўкон"
+    "gamification_coins": "WECOIN тангалари ва дўкон",
+    "sms_notification": "СМС хабарнома"
   },
   "import": {
     "buttonLabel": "Excel'дан импорт",
@@ -2166,6 +2170,26 @@
       "bigJump": {
         "name": "Катта сакраш",
         "desc": "Рейтингда бир ойда 5+ поғона кўтарилди"
+      },
+      "titleDefender": {
+        "name": "Тахт ҳимоячиси",
+        "desc": "Кетма-кет икки ой гуруҳ рейтингида 1-ўринни сақлаб қолди"
+      },
+      "phoenix": {
+        "name": "Феникс",
+        "desc": "Рейтингнинг пастки ярмидан бир ойда топ-3 га кўтарилди"
+      },
+      "punctual": {
+        "name": "Аниқ соат",
+        "desc": "Ой давомида биронта ҳам дарс қолдирилмади ва кечикилмади (камида 6 та дарс)"
+      },
+      "grandSlam": {
+        "name": "Уч тож",
+        "desc": "Бир ойда мукаммал давомат, аъло баҳолар ва топ-3 га эришилди"
+      },
+      "comeback": {
+        "name": "Қайтиш",
+        "desc": "Ўтган ой 3+ дарс қолдириб, шу ой ҳаммасига келди"
       }
     },
     "periodNow": "ҳозир",
@@ -2180,7 +2204,15 @@
       "finished": "Якунланган гуруҳлар",
       "left": "Чиқиб кетган гуруҳлар",
       "archived": "Архивланган"
-    }
+    },
+    "needRanked": "Рейтингда камида {{min}} ўқувчи керак",
+    "notPrevFirst": "Ўтган ой 1-ўрин эмас эди",
+    "notBottomHalf": "Ўтган ой пастки ярмида эмас эди",
+    "move": "{{from}}-ўрин → {{to}}-ўрин",
+    "brokenPunctual": "{{absent}} та қолдирилган, {{late}} та кечиккан",
+    "grandFlags": "Давомат {{att}} · Баҳо {{grades}} · Топ-3 {{podium}}",
+    "comebackNeedPrev": "Ўтган ой 3+ дарс қолдирилган бўлиши керак",
+    "comebackBroken": "{{absent}} та қолдирилган"
   },
   "telegramPhone": {
     "sameLabel": "Телефон ва Telegram рақами бир хил",
@@ -2515,5 +2547,155 @@
     "prevUntil": "{{month}}, {{day}}-кунгача: {{amount}}",
     "mln": "млн",
     "thousand": "минг"
+  },
+  "sms": {
+    "tabs": {
+      "templates": "Шаблонлар",
+      "history": "Тарих",
+      "test": "Тест юбориш",
+      "transactions": "Баланс тарихи",
+      "purchases": "Пакетларим"
+    },
+    "topics": {
+      "debt": "Қарздорлик",
+      "absent": "Дарсга келмади",
+      "payment": "Тўлов",
+      "lesson": "Дарс",
+      "info": "Умумий"
+    },
+    "logStatus": {
+      "queued": "Навбатда",
+      "sent": "Юборилди",
+      "delivered": "Этказилди",
+      "failed": "Хато",
+      "skipped": "Рақам йўқ"
+    },
+    "batchStatus": {
+      "sending": "Юборилмоқда",
+      "done": "Тугади",
+      "failed": "Хато"
+    },
+    "variables": {
+      "center": "Филиал номи",
+      "student": "Ўқувчи исм фамилияси",
+      "group": "Гуруҳ номи",
+      "price": "Ойлик нарх",
+      "debt": "Қарз суммаси",
+      "month": "Қайси ой учун",
+      "date": "Сана (Дарсга келмади учун)"
+    },
+    "recipient": "Қабул қилувчи",
+    "text": "Матн",
+    "history": "СМС тарихи",
+    "refreshStatus": "Ҳолатни янгилаш",
+    "startedAt": "Бошланган вақт",
+    "emptyLogs": "СМС топилмади",
+    "sendTitle": "СМС юбориш",
+    "template": "Шаблон",
+    "audienceParents": "Ота-оналарга",
+    "audienceStudents": "Ўқувчиларга",
+    "audience": "Кимга",
+    "audience_parents": "Ота-оналар",
+    "audience_students": "Ўқувчилар",
+    "groups": "Гуруҳлар",
+    "debtOnly": "Фақат қарздорлар",
+    "preview": "Олдиндан кўриш",
+    "previewCount": "{{count}} та СМС юборилади",
+    "previewNoPhone": "{{count}} тасида рақам йўқ",
+    "send": "Юбориш",
+    "sendConfirm": "{{count}} та СМС юборилсин?",
+    "result": "Натижа",
+    "resultLine": "Юборилди: {{sent}} · Этказилди: {{delivered}} · Хато: {{failed}} (жами {{total}})",
+    "sentBy": "Юборган",
+    "details": "Батафсил",
+    "lastSent": "Охирги СМС",
+    "never": "Ҳали юборилмаган",
+    "thisMonth": "Шу ой юборилган",
+    "thisMonthSub": "{{batches}} та юбориш",
+    "delivery": "Этказилди / Хато",
+    "deliverySub": "шу ой бўйича",
+    "loadError": "СМС ма'лумотлари юкланмади",
+    "empty": "Ҳали СМС юборилмаган",
+    "center": "Филиал",
+    "editTemplate": "Шаблонни таҳрирлаш",
+    "createTemplate": "Шаблон яратиш",
+    "deleteTemplate": "Шаблонни ўчириш",
+    "deleteConfirm": "\"{{title}}\" шаблони ўчирилсинми?",
+    "emptyTemplates": "Шаблонлар йўқ",
+    "templateTitle": "Сарлавҳа",
+    "topic": "Мавзу",
+    "charCount": "Белгилар сони: {{count}}",
+    "active": "Фаол",
+    "on": "Ёқилган",
+    "off": "Ўчиқ",
+    "phone": "Телефон рақам",
+    "sendTest": "Тест юбориш",
+    "gatewayUnreachable": "СМС шлюзига уланиб бўлмади (сервер ИП'си гетсмс'да рўйхатдан ўтганми?)",
+    "sending": "СМС юбориш бошланди",
+    "fillTheRows": "Барча майдонларни тўлдиринг",
+    "invalidValue": "Нотўғри қиймат",
+    "invalidTopic": "Нотўғри мавзу",
+    "textTooLong": "Матн жуда узун (1000 белгигача)",
+    "unknownVariable": "Шаблонда нома'лум ўзгарувчи бор",
+    "centerRequired": "Аввал филиални танланг",
+    "templateNotFound": "Шаблон топилмади",
+    "alreadySending": "Олдинги юбориш ҳали тугамаган",
+    "duplicateRecently": "Бу СМС яқинда худди шу созламалар билан юборилган (5 дақиқа кутинг)",
+    "noRecipients": "Мос қабул қилувчи топилмади",
+    "tooManyRecipients": "Қабул қилувчилар жуда кўп (2000 тагача)",
+    "notConfigured": "СМС хизмати созланмаган",
+    "gatewayInvalidResponse": "СМС шлюзи нотўғри жавоб қайтарди",
+    "gatewayTimeout": "СМС шлюзи жавоб бермади",
+    "batchTooLarge": "Бир сўровда 100 тадан ортиқ СМС юбориб бўлмайди",
+    "batchNotFound": "Юбориш топилмади",
+    "invalidPhone": "Телефон рақам нотўғри",
+    "templateSaved": "Шаблон сақланди",
+    "templateDeleted": "Шаблон ўчирилди",
+    "testSent": "Тест СМС юборилди",
+    "som": "сўм",
+    "price": "Нарх",
+    "packageName": "Пакет номи",
+    "smsCount": "SMS сони",
+    "remaining": "Қолдиқ",
+    "expiresAt": "Тугаш санаси",
+    "paidAt": "Тўланган вақт",
+    "unlimited": "Чексиз",
+    "validity": "{{count}} кун",
+    "insufficientBalance": "SMS балансi етарли эмас",
+    "packageNotFound": "Пакет топилмади",
+    "invalidPackage": "Пакет маълумотлари нотўғри",
+    "purchaseNotFound": "Харид топилмади",
+    "minAmount": "Нарх камида 1000 сўм бўлиши керак",
+    "balanceTitle": "SMS баланси",
+    "balanceUnit": "SMS",
+    "balanceEmpty": "Баланс тугаган",
+    "balanceLow": "Баланс кам қолмоқда",
+    "nearestExpiry": "{{count}} та {{date}} гача",
+    "buyPackage": "Пакет сотиб олиш",
+    "previewSummary": "{{count}} та SMS · {{segments}} қисм · баланс {{balance}}",
+    "insufficient": "Баланс етарли эмас",
+    "packagesTitle": "SMS пакетлар",
+    "packagesEmpty": "Ҳозирча пакетлар йўқ",
+    "pricePerSms": "1 SMS ≈ {{price}} сўм",
+    "pay": "Тўлаш",
+    "credited": "Сизга {{count}} та SMS бириктирилди",
+    "paymentFailed": "Тўлов амалга ошмади",
+    "amount": "Миқдор",
+    "batchTitle": "Юбориш",
+    "date": "Сана",
+    "emptyTransactions": "Баланс ҳаракатлари йўқ",
+    "emptyPurchases": "Сотиб олинган пакетлар йўқ",
+    "txTypes": {
+      "topup": "Тўлдириш",
+      "spend": "Сарфланди",
+      "refund": "Қайтарилди",
+      "expire": "Муддати ўтди"
+    },
+    "purchaseStatus": {
+      "pending": "Кутилмоқда",
+      "paid": "Тўланган",
+      "cancelled": "Бекор қилинган",
+      "failed": "Хато"
+    }
   }
 }

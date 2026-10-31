@@ -4,6 +4,7 @@ import {
   HiAcademicCap,
   HiBriefcase,
   HiCalendarDays,
+  HiChatBubbleLeftRight,
   HiCog6Tooth,
   HiCreditCard,
   HiCircleStack,
@@ -73,6 +74,9 @@ export default function useNavItems() {
       icon: HiWallet,
       labelKey: "nav.financeSection",
     },
+    can("sms:view") &&
+      !isTeacher &&
+      hasFeature("sms.notification") && { key: "sms", to: "/sms", icon: HiChatBubbleLeftRight, labelKey: "nav.sms" },
     can("certificate:view") &&
       hasFeature("certificate.manage") && { key: "certificates", to: "/certificates", icon: HiAcademicCap, labelKey: "nav.certificates" },
     // WECOIN — o'qituvchi/yordamchida yo'q (coin:* ularga berilmaydi).

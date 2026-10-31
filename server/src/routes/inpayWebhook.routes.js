@@ -1,5 +1,6 @@
 const { Router } = require("express");
 const rateLimit = require("../utils/rateLimit.util");
+const smsService = require("../services/sms.service");
 const subscriptionPaymentService = require("../services/subscriptionPayment.service");
 
 const router = Router();
@@ -19,7 +20,9 @@ router.post("/callback", callbackLimiter, async (req, res, next) => {
     const raw = req.body?.order_id || req.query?.order_id;
     const orderId = typeof raw === "string" || typeof raw === "number" ? String(raw).slice(0, 100) : "";
     if (!orderId) return res.status(400).send({ ok: false, msg: "inpay.missingOrderId" });
-    await subscriptionPaymentService.verifyAndActivate(orderId);
+    // order_id avval SMS paket sotuvidan qidiriladi, topilmasa obuna to'lovi oqimi.
+    if (await smsService.isSmsOrder(orderId)) await smsService.verifyAndCredit(orderId);
+    else await subscriptionPaymentService.verifyAndActivate(orderId);
     return res.send({ ok: true });
   } catch (error) {
     next(error);
