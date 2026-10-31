@@ -163,6 +163,66 @@ body {
   .badge-shine { animation: none !important; display: none; }
 }
 
+/* ── Raqobat nishonlari animatsiyasi (docs/API_CONTRACT_competition_badges.md §5) ──
+   Faqat olingan nishon glifida (BadgeIcon `live`); transform/opacity, JS yo'q. */
+@keyframes bd-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+@keyframes bd-sweep {
+  0%, 55% { transform: translateX(0) skewX(-20deg); }
+  100% { transform: translateX(14px) skewX(-20deg); }
+}
+@keyframes bd-flame {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50% { transform: translateY(-0.7px) scaleY(1.1); }
+}
+@keyframes bd-wing {
+  0%, 100% { transform: scale(1) rotate(0); }
+  50% { transform: scale(1.06) rotate(-3deg); }
+}
+@keyframes bd-spark {
+  0% { opacity: 0; transform: translateY(2px); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-3px); }
+}
+@keyframes bd-tick {
+  to { transform: rotate(360deg); }
+}
+@keyframes bd-twinkle {
+  0%, 60%, 100% { opacity: 1; transform: scale(1); }
+  15% { opacity: 1; transform: scale(1.25); }
+  35% { opacity: 0.55; transform: scale(0.92); }
+}
+@keyframes bd-rays {
+  to { transform: rotate(360deg); }
+}
+@keyframes bd-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes bd-flash {
+  0%, 55%, 100% { opacity: 1; transform: scale(1); }
+  65% { opacity: 0.35; transform: scale(0.9); }
+  75% { opacity: 1; transform: scale(1.12); }
+}
+.bd-breathe { transform-box: fill-box; transform-origin: center; animation: bd-breathe 3.2s ease-in-out infinite; }
+.bd-sweep { transform-box: fill-box; transform-origin: center; animation: bd-sweep 3.6s ease-in-out infinite; }
+.bd-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: bd-flame 1.5s ease-in-out infinite; }
+.bd-wing { transform-box: fill-box; transform-origin: 100% 80%; animation: bd-wing 2.4s ease-in-out infinite; }
+.bd-spark { transform-box: fill-box; transform-origin: center; animation: bd-spark 2.2s ease-out infinite; }
+.bd-spark-2 { animation-delay: 1.1s; }
+.bd-tick { transform-origin: 12px 13.2px; animation: bd-tick 12s steps(12) infinite; }
+.bd-twinkle { transform-box: fill-box; transform-origin: center; animation: bd-twinkle 2.6s ease-in-out infinite; }
+.bd-twinkle-2 { animation-delay: 0.45s; }
+.bd-twinkle-3 { animation-delay: 0.9s; }
+.bd-rays { transform-box: fill-box; transform-origin: center; animation: bd-rays 14s linear infinite; }
+.bd-spin { transform-box: fill-box; transform-origin: center; animation: bd-spin 9s linear infinite; }
+.bd-flash { transform-box: fill-box; transform-origin: center; animation: bd-flash 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .bd-a { animation: none !important; }
+  .bd-fx { display: none; }
+}
+
 /* Telegram temasiga (data-theme) bog'langan — Tailwind `dark:` OS temasini kuzatadi */
 .rank-tier-1 { color: #b45309; }
 .rank-tier-2 { color: #475569; }

@@ -17,6 +17,15 @@ const HEX_FACE = hex(18.4);
 // Markaziy glif — 24×24 koordinatada, `currentColor` bilan. `inner` —
 // ikkinchi darajali rang (alanga yuragi); soya qatlamida currentColor.
 const STROKE = { fill: "none", stroke: "currentColor", strokeLinecap: "round", strokeLinejoin: "round" };
+// Beshburchakli yulduz konturi (24×24) — grandSlam glifi kichraytirib ishlatadi.
+const STAR = "M12 2.6l2.85 5.95 6.45.8-4.75 4.45 1.2 6.4L12 17.05 6.25 20.2l1.2-6.4L2.7 9.35l6.45-.8z";
+// Orqa lenta uchlari faqat shu turlarda chiziladi (accent rangi boshqa turlarda glifda ishlatilmaydi).
+const RIBBON_TYPES = ["champion", "goldCollection"];
+// Animatsiya klassi — faqat nishon olingan (ctx.live) bo'lsa; `bd-a` markeri reduced-motion uchun (index.css).
+const anim = (c, cls) => (c?.live ? `${cls} bd-a` : undefined);
+const CROWN = "M7.4 16.4l-.9-6.6 3.1 2.4L12 8l2.4 4.2 3.1-2.4-.9 6.6z";
+// Chap qanot (o'ng qanot — ko'zgu akslantirish); tepa qirrasi patlar shaklida
+const WING = "M11 17.4C5.6 17.6 1.6 14 .6 4.4l4 3.2-.2-4.4 3.6 3.6 1.4-3.4 1.6 4.6z";
 const GLYPHS = {
   // Kalendar + belgi
   perfectAttendance: () => (
@@ -83,6 +92,93 @@ const GLYPHS = {
     <g {...STROKE} strokeWidth="2.6">
       <path d="M5.5 12.5L12 6l6.5 6.5" />
       <path d="M5.5 19.5L12 13l6.5 6.5" />
+    </g>
+  ),
+  // Qalqon + toj (taxt himoyachisi). Animatsiya: qalqon nafas oladi, tojda nur o'tadi.
+  titleDefender: (inner, c) => (
+    <g>
+      <g className={anim(c, "bd-breathe")}>
+        <path fill="currentColor" d="M12 21.4c-4.6-2-7.2-5.2-7.2-9.8V5.8L12 3l7.2 2.8v5.8c0 4.6-2.6 7.8-7.2 9.8z" />
+        <path fill={inner} d={CROWN} />
+        {c?.main && c.live && (
+          <>
+            <clipPath id={`k${c.uid}`}>
+              <path d={CROWN} />
+            </clipPath>
+            <g clipPath={`url(#k${c.uid})`}>
+              <rect x="4.2" y="6.5" width="2.8" height="11" fill="#fff" opacity="0.9" className="bd-sweep bd-a bd-fx" />
+            </g>
+          </>
+        )}
+      </g>
+    </g>
+  ),
+  // Qanotli alanga (feniks): ikki yoyilgan qanot, markazda alanga va cho'g'
+  phoenix: (inner, c) => (
+    <g>
+      <g className={anim(c, "bd-wing")}>
+        <path fill="currentColor" d={WING} />
+      </g>
+      <g transform="matrix(-1 0 0 1 24 0)">
+        <g className={anim(c, "bd-wing")}>
+          <path fill="currentColor" d={WING} />
+        </g>
+      </g>
+      <path fill="currentColor" d="M12 22.8c-1.7-1.5-2.6-3.1-2.6-4.8h5.2c0 1.7-.9 3.3-2.6 4.8z" />
+      <g className={anim(c, "bd-flame")}>
+        <path fill={inner} d="M12 1.8c.8 3.4 3.6 5 3.6 9.2a3.6 3.6 0 0 1-7.2 0c0-1.6.6-2.8 1.6-3.8.2 1.1.7 1.7 1.5 2-.3-2.6-.2-5.3.5-7.4z" />
+        <path fill={c?.accent || "currentColor"} d="M12 10.8c.5 1.4 1.8 2 1.8 3.5a1.8 1.8 0 0 1-3.6 0c0-1 .8-1.8 1.8-3.5z" />
+      </g>
+      {c?.main && c.live && (
+        <g fill={c.accent}>
+          <circle cx="8.2" cy="5.2" r="0.8" className="bd-spark bd-a bd-fx" />
+          <circle cx="16" cy="6.4" r="0.7" className="bd-spark bd-spark-2 bd-a bd-fx" />
+        </g>
+      )}
+    </g>
+  ),
+  // Soat sirtmog'i + mil (aniq soat). Animatsiya: uzun mil diskret qadamlarda tik-tak qiladi.
+  punctual: (inner, c) => (
+    <g {...STROKE} strokeWidth="2.2">
+      <circle cx="12" cy="13.2" r="7.4" />
+      <path d="M3.8 6.4l3-2.6M20.2 6.4l-3-2.6" />
+      <path d="M12 13.2l2.5 1.6" />
+      <path className={anim(c, "bd-tick")} d="M12 13.2V8.2" />
+    </g>
+  ),
+  // Uch yulduz (uch toj): orqada aylanuvchi nurlar
+  grandSlam: (inner, c) => (
+    <g>
+      {c?.main && c.live && (
+        <g fill={c.accent} opacity="0.4" className="bd-rays bd-a bd-fx">
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((r) => (
+            <path key={r} transform={`rotate(${r} 12 12.6)`} d="M12 12.6L10.8 2.2h2.4z" />
+          ))}
+        </g>
+      )}
+      {[
+        ["", "5.2 2.8"],
+        [" bd-twinkle-2", "-0.4 12.2"],
+        [" bd-twinkle-3", "10.8 12.2"],
+      ].map(([cls, pos]) => (
+        <g key={pos} transform={`translate(${pos}) scale(0.62)`}>
+          <path className={anim(c, `bd-twinkle${cls}`)} fill={c?.accent || "currentColor"} d={STAR} />
+        </g>
+      ))}
+    </g>
+  ),
+  // Aylana strelka (orqaga qaytish) ichida chaqmoq. Animatsiya: halqa sekin aylanadi, chaqmoq miltillaydi.
+  comeback: (inner, c) => (
+    <g>
+      <g className={anim(c, "bd-spin")}>
+        <g {...STROKE} strokeWidth="2.2">
+          <path d="M19.4 12a7.4 7.4 0 1 1-2.2-5.3" />
+          <path d="M13.9 6.9h3.5V3.4" />
+        </g>
+      </g>
+      <g className={anim(c, "bd-flash")}>
+        <path fill={c?.accent || inner} d="M13.2 6.9L8.6 13.1h3l-.8 4.2 4.6-6.2h-3z" />
+      </g>
     </g>
   ),
 };
@@ -152,7 +248,7 @@ function BadgeIcon({ type, size = 40, earned = true, count, animated = true, lab
         </defs>
 
         {/* Champion — hexagon ortidan chiqib turgan qizil lenta uchlari */}
-        {p.accent && (
+        {p.accent && RIBBON_TYPES.includes(type) && (
           <g fill={p.accent}>
             <path d="M12 37h7v15l-3.5-2.6L12 52z" />
             <path d="M29 37h7v15l-3.5-2.6L29 52z" />
@@ -185,9 +281,9 @@ function BadgeIcon({ type, size = 40, earned = true, count, animated = true, lab
         {/* Glif: bo'rttirma soya + asosiy rang */}
         <g transform="translate(13.2 15.4) scale(0.9)">
           <g transform="translate(0 0.9)" color={p.rim} opacity="0.55">
-            {glyph("currentColor")}
+            {glyph("currentColor", { live, uid, accent: "currentColor", main: false })}
           </g>
-          <g color={p.glyph}>{glyph(p.mid)}</g>
+          <g color={p.glyph}>{glyph(p.mid, { live, uid, accent: p.accent || p.mid, main: true })}</g>
         </g>
       </svg>
 

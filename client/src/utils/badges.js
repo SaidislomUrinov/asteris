@@ -12,10 +12,19 @@ export const BADGE_TYPES = [
   "podiumStreak",
   "goldCollection",
   "bigJump",
+  "titleDefender",
+  "phoenix",
+  "punctual",
+  "grandSlam",
+  "comeback",
 ];
 
 // Tarif flagi — o'chiq bo'lsa badge UI butunlay yashirin, API chaqirilmaydi.
 export const BADGE_FEATURE = "gamification.badges";
+
+// Reytingga bog'liq nishonlar — individual (1 kishilik) guruhda berilmaydi/ko'rinmaydi.
+// `punctual` reyting va bahoga bog'liq emas — ikkala ro'yxatga kirmaydi.
+export const RANK_BADGE_TYPES = ["titleDefender", "phoenix", "grandSlam"];
 
 // Markaz baholarni yashirsa (`showGrades=false`) server bu turlarni qaytarmaydi.
 export const GRADE_BADGE_TYPES = [
@@ -27,6 +36,9 @@ export const GRADE_BADGE_TYPES = [
   "podiumStreak",
   "goldCollection",
   "bigJump",
+  "titleDefender",
+  "phoenix",
+  "grandSlam",
 ];
 
 // Metall emblem palitrasi: hi → mid → lo — yuz gradienti, rim — chekka qirra,
@@ -44,6 +56,11 @@ export const BADGE_PALETTE = {
   podiumStreak: { hi: "#FECDD3", mid: "#F43F5E", lo: "#BE123C", rim: "#881337", glyph: "#FFF1F2" },
   goldCollection: { hi: "#FEF3C7", mid: "#F59E0B", lo: "#B45309", rim: "#78350F", glyph: "#FFFBEB", accent: "#2563EB" },
   bigJump: { hi: "#BAE6FD", mid: "#0EA5E9", lo: "#0369A1", rim: "#0C4A6E", glyph: "#F0F9FF" },
+  titleDefender: { hi: "#BFDBFE", mid: "#3B82F6", lo: "#1D4ED8", rim: "#1E3A8A", glyph: "#EFF6FF", accent: "#FBBF24" },
+  phoenix: { hi: "#FED7AA", mid: "#F97316", lo: "#C2410C", rim: "#7C2D12", glyph: "#FFF7ED", accent: "#FACC15" },
+  punctual: { hi: "#A7F3D0", mid: "#10B981", lo: "#047857", rim: "#064E3B", glyph: "#ECFDF5" },
+  grandSlam: { hi: "#E9D5FF", mid: "#A855F7", lo: "#7E22CE", rim: "#581C87", glyph: "#FAF5FF", accent: "#FDE047" },
+  comeback: { hi: "#FDE68A", mid: "#F59E0B", lo: "#B45309", rim: "#78350F", glyph: "#FFFBEB", accent: "#38BDF8" },
 };
 
 export const badgeNameKey = (type) => `badge.types.${type}.name`;

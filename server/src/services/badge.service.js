@@ -26,12 +26,12 @@ const {
 
 // Guruhning `untilDate`gacha bo'lgan butun davomat/baho tarixi (seriyalar oy
 // chegarasidan o'tadi). `studentIds` berilsa faqat shular (bitta o'quvchi
-// progressi uchun). Qaytaradi: { att: Map<id, [{date,status}]>, gr: Map<id, [{date,value}]> }
+// progressi uchun). Qaytaradi: { att: Map<id, [{date,status,late}]>, gr: Map<id, [{date,value}]> }
 const loadHistory = async (groupId, untilDate, studentIds = null) => {
   const only = studentIds ? { student: { $in: studentIds } } : {};
   const [sessions, grades] = await Promise.all([
     Attendance.find({ group: groupId, date: { $lte: untilDate } })
-      .select("date records.student records.status")
+      .select("date records.student records.status records.late")
       .sort({ date: 1 })
       .lean(),
     Grade.find({ group: groupId, date: { $lte: untilDate }, ...only })
@@ -46,7 +46,7 @@ const loadHistory = async (groupId, untilDate, studentIds = null) => {
       const id = String(r.student);
       if (want && !want.has(id)) continue;
       if (!att.has(id)) att.set(id, []);
-      att.get(id).push({ date: s.date, status: r.status });
+      att.get(id).push({ date: s.date, status: r.status, late: r.late === true });
     }
   }
   const gr = new Map();
@@ -72,6 +72,7 @@ const evaluateGroup = async (group, month, studentIds = null) => {
   const ranked = group.kind !== "individual";
   const positions = ranked ? positionsInSummary(summary) : {};
   const prevPositions = ranked ? positionsInSummary(prevSummary) : {};
+  const prevRankedTotal = Object.keys(prevPositions).length;
   const rankedTotal = Object.keys(positions).length;
   const ids = studentIds ? studentIds.map(String) : Object.keys(summary);
   const only = { group: group._id, month: { $lt: month }, ...(studentIds ? { student: { $in: studentIds } } : {}) };
@@ -101,6 +102,7 @@ const evaluateGroup = async (group, month, studentIds = null) => {
       position: positions[id] ?? null,
       rankedTotal,
       prevPosition: prevPositions[id] ?? null,
+      prevRankedTotal,
       medals: medalsOf.get(id) || [],
       earnedBefore: rankBadgesOf.get(id) || [],
     });

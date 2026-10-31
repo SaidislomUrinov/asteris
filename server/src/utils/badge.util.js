@@ -19,6 +19,11 @@ const BADGE_TYPES = [
   "podiumStreak",
   "goldCollection",
   "bigJump",
+  "titleDefender",
+  "phoenix",
+  "punctual",
+  "grandSlam",
+  "comeback",
 ];
 
 // Bahodan kelib chiqadigan nishonlar — markaz `showGrades: false` qilgan
@@ -33,11 +38,24 @@ const GRADE_BADGES = [
   "podiumStreak",
   "goldCollection",
   "bigJump",
+  "titleDefender",
+  "phoenix",
+  "grandSlam",
 ];
 
 // Guruh ichidagi O'RINGA bog'liq nishonlar — individual (1 kishilik) guruhda
 // ma'nosiz, u yerda ko'rsatilmaydi (API_CONTRACT_individual_students.md §0.6).
-const RANK_BADGES = ["champion", "mostImproved", "podiumStreak", "goldCollection", "bigJump"];
+// `punctual` kirmaydi: reyting/bahoga bog'liq emas.
+const RANK_BADGES = [
+  "champion",
+  "mostImproved",
+  "podiumStreak",
+  "goldCollection",
+  "bigJump",
+  "titleDefender",
+  "phoenix",
+  "grandSlam",
+];
 
 // Telegram xabaridagi belgi.
 const BADGE_EMOJI = {
@@ -51,6 +69,11 @@ const BADGE_EMOJI = {
   podiumStreak: "🏅",
   goldCollection: "🥇",
   bigJump: "🚀",
+  titleDefender: "🛡️",
+  phoenix: "🦅",
+  punctual: "⏰",
+  grandSlam: "💎",
+  comeback: "⚡",
 };
 
 // Tarif flagi (Tariff.allowedPermissions).
@@ -64,6 +87,11 @@ const ATTENDANCE_STREAK = 10; // ketma-ket "present"
 const GRADE_STREAK = 5; // ketma-ket "10"
 const PODIUM_STREAK = 3; // ketma-ket oylar top-3 da (StudentMedal)
 const GOLD_COLLECTION = 3; // jami oltin medal (1-o'rin) — bir martalik
+const TITLE_DEFENDER_MIN_RANKED = 3; // titleDefender: oyda kamida shuncha reytingli o'quvchi
+const PHOENIX_MIN_RANKED = 6; // phoenix: M va M-1 da kamida shuncha reytingli o'quvchi
+const PUNCTUAL_MIN_LESSONS = 6; // punctual: oyda kamida shuncha dars (present+absent)
+const COMEBACK_PREV_ABSENT = 3; // comeback: o'tgan oyda kamida shuncha qoldirilgan dars (absent)
+const COMEBACK_MIN_LESSONS = 6; // comeback: shu oyda kamida shuncha dars (present+absent), absent = 0
 const BIG_JUMP = 5; // o'tgan oyga nisbatan reytingda kamida shuncha pog'ona ko'tarilish
 
 const round2 = (n) => Math.round(n * 100) / 100;
@@ -115,6 +143,8 @@ const runStreak = (events, target) => {
 //   e'tiborsiz qoldiriladi — natija takrorlanuvchi/idempotent).
 //   position/rankedTotal — `month` oylik reytingidagi o'rin (gradeScore.util).
 //   prevPosition — o'tgan oy reytingidagi o'rin (bigJump).
+//   prevRankedTotal — o'tgan oy reytingli o'quvchilar soni (phoenix).
+//   attendance elementlari: { date, status, late } (late — faqat present'da sanaladi).
 //   medals — `month` dan OLDINGI oylar medallari [{ month, position }] (StudentMedal).
 //   earnedBefore — `month` dan oldin berilgan podiumStreak/goldCollection
 //   nishonlari [{ type, month }] (seriya yopilishi va bir martalik shart uchun).
@@ -127,6 +157,7 @@ const evaluateStudent = ({
   position = null,
   rankedTotal = 0,
   prevPosition = null,
+  prevRankedTotal = 0,
   medals = [],
   earnedBefore = [],
 }) => {
@@ -137,12 +168,18 @@ const evaluateStudent = ({
 
   let present = 0;
   let absent = 0;
+  let late = 0; // oydagi kechikkan present yozuvlari
   for (const a of att) {
     if (!inMonth(a.date, month)) continue;
-    if (a.status === "present") present++;
-    else if (a.status === "absent") absent++;
+    if (a.status === "present") {
+      present++;
+      if (a.late === true) late++;
+    } else if (a.status === "absent") absent++;
   }
   const held = present + absent; // `excused` sanalmaydi
+  // comeback: o'tgan oydagi qoldirilgan darslar (excused sanalmaydi).
+  let prevAbsent = 0;
+  for (const a of att) if (inMonth(a.date, prevMonth) && a.status === "absent") prevAbsent++;
 
   const monthGrades = gr.filter((g) => inMonth(g.date, month)).map((g) => g.value);
   const prevGrades = gr.filter((g) => inMonth(g.date, prevMonth)).map((g) => g.value);
@@ -172,6 +209,9 @@ const evaluateStudent = ({
   const goldDone = earnedBefore.some((b) => b.type === "goldCollection" && b.month < month);
   const jump = position !== null && prevPosition !== null ? prevPosition - position : null;
 
+  // Raqobat nishonlari (API_CONTRACT_competition_badges.md §1).
+  const wasBottomHalf = prevPosition !== null && prevRankedTotal > 0 && prevPosition > prevRankedTotal / 2;
+
   const cond = {
     perfectAttendance: held >= MIN_LESSONS && absent === 0,
     excellent: gradeCount >= MIN_GRADES && monthGrades.every((v) => v >= EXCELLENT_MIN_VALUE),
@@ -182,7 +222,17 @@ const evaluateStudent = ({
     podiumStreak: podiumNow && podiumRun >= PODIUM_STREAK - 1,
     goldCollection: !goldDone && goldCount >= GOLD_COLLECTION,
     bigJump: jump !== null && jump >= BIG_JUMP,
+    titleDefender: position === 1 && prevPosition === 1 && rankedTotal >= TITLE_DEFENDER_MIN_RANKED,
+    phoenix:
+      wasBottomHalf &&
+      position !== null &&
+      position <= 3 &&
+      rankedTotal >= PHOENIX_MIN_RANKED &&
+      prevRankedTotal >= PHOENIX_MIN_RANKED,
+    punctual: held >= PUNCTUAL_MIN_LESSONS && absent === 0 && late === 0,
+    comeback: prevAbsent >= COMEBACK_PREV_ABSENT && held >= COMEBACK_MIN_LESSONS && absent === 0,
   };
+  cond.grandSlam = cond.perfectAttendance && (cond.excellent || cond.perfect) && position !== null && position <= 3;
 
   const earned = {};
   if (cond.perfectAttendance) earned.perfectAttendance = { present, held };
@@ -194,6 +244,12 @@ const evaluateStudent = ({
   if (cond.podiumStreak) earned.podiumStreak = { target: PODIUM_STREAK, position };
   if (cond.goldCollection) earned.goldCollection = { golds: goldCount };
   if (cond.bigJump) earned.bigJump = { from: prevPosition, to: position, jump };
+  if (cond.titleDefender) earned.titleDefender = { position: 1, total: rankedTotal };
+  if (cond.phoenix) earned.phoenix = { from: prevPosition, to: position, total: rankedTotal };
+  if (cond.punctual) earned.punctual = { held };
+  if (cond.grandSlam)
+    earned.grandSlam = { position, present, held, gradeCount, average: average === null ? null : round2(average) };
+  if (cond.comeback) earned.comeback = { prevAbsent, held };
 
   // `achieved`/`broken` — kontraktdan tashqari qulaylik: UI "shartni hozircha
   // bajaryapti / bu oy buzildi" holatini qayta hisoblamasin.
@@ -232,6 +288,47 @@ const evaluateStudent = ({
       achieved: cond.goldCollection,
     },
     bigJump: { prevPosition, position, jump, target: BIG_JUMP, achieved: cond.bigJump },
+    titleDefender: {
+      prevPosition,
+      position,
+      total: rankedTotal,
+      min: TITLE_DEFENDER_MIN_RANKED,
+      achieved: cond.titleDefender,
+    },
+    phoenix: {
+      prevPosition,
+      prevTotal: prevRankedTotal,
+      position,
+      min: PHOENIX_MIN_RANKED,
+      wasBottomHalf,
+      achieved: cond.phoenix,
+    },
+    punctual: {
+      held,
+      absent,
+      late,
+      min: PUNCTUAL_MIN_LESSONS,
+      broken: absent > 0 || late > 0,
+      achieved: cond.punctual,
+    },
+    grandSlam: {
+      attendance: cond.perfectAttendance,
+      grades: cond.excellent || cond.perfect,
+      podium: podiumNow,
+      done: [cond.perfectAttendance, cond.excellent || cond.perfect, podiumNow].filter(Boolean).length,
+      target: 3,
+      achieved: cond.grandSlam,
+    },
+    comeback: {
+      prevAbsent,
+      held,
+      absent,
+      min: COMEBACK_MIN_LESSONS,
+      needPrev: COMEBACK_PREV_ABSENT,
+      eligible: prevAbsent >= COMEBACK_PREV_ABSENT,
+      broken: absent > 0,
+      achieved: cond.comeback,
+    },
     mostImproved: {
       delta,
       prevAverage: prevAverage === null ? null : round2(prevAverage),
@@ -287,6 +384,11 @@ module.exports = {
   PODIUM_STREAK,
   GOLD_COLLECTION,
   BIG_JUMP,
+  TITLE_DEFENDER_MIN_RANKED,
+  PHOENIX_MIN_RANKED,
+  PUNCTUAL_MIN_LESSONS,
+  COMEBACK_PREV_ABSENT,
+  COMEBACK_MIN_LESSONS,
   currentMonth,
   prevMonthOf,
   runStreak,

@@ -77,6 +77,48 @@ function describe(type, p, t) {
         done: !!p.achieved,
       };
     }
+    case "titleDefender": {
+      if (p.position == null) return { text: t("badge.noRank") };
+      if ((p.total || 0) < (p.min || 3)) return { text: t("badge.needRanked", { min: p.min || 3 }) };
+      if (p.achieved) return { done: true };
+      // O'tgan oy 1-o'rin bo'lmasa — shu oy uchun endi olib bo'lmaydi.
+      if (p.prevPosition !== 1) return { text: t("badge.notPrevFirst"), broken: true };
+      return { text: t("badge.position", { position: p.position, total: p.total || 0 }) };
+    }
+    case "phoenix": {
+      if (p.position == null) return { text: t("badge.noRank") };
+      if ((p.total || 0) < (p.min || 6) || (p.prevTotal || 0) < (p.min || 6)) return { text: t("badge.needRanked", { min: p.min || 6 }) };
+      if (p.achieved) return { done: true };
+      if (!p.wasBottomHalf) return { text: t("badge.notBottomHalf"), broken: true };
+      return { text: t("badge.move", { from: p.prevPosition, to: p.position }) };
+    }
+    case "punctual": {
+      const min = p.min || 6;
+      if (p.broken) {
+        return { value: p.held || 0, max: min, text: t("badge.brokenPunctual", { absent: p.absent || 0, late: p.late || 0 }), broken: true };
+      }
+      return { value: p.held || 0, max: min, text: `${p.held || 0}/${min}`, done: !!p.achieved };
+    }
+    case "grandSlam": {
+      const target = p.target || 3;
+      return {
+        value: p.done || 0,
+        max: target,
+        text: `${p.done || 0}/${target}`,
+        done: !!p.achieved,
+        sub: t("badge.grandFlags", { att: p.attendance ? "✓" : "✗", grades: p.grades ? "✓" : "✗", podium: p.podium ? "✓" : "✗" }),
+      };
+    }
+    case "comeback": {
+      const min = p.min || 6;
+      if (!p.eligible) {
+        return { value: 0, max: min, text: `${p.prevAbsent || 0}/${p.needPrev || 3}`, sub: t("badge.comebackNeedPrev", { n: p.needPrev || 3 }) };
+      }
+      if (p.broken) {
+        return { value: p.held || 0, max: min, text: t("badge.comebackBroken", { absent: p.absent || 0 }), broken: true };
+      }
+      return { value: p.held || 0, max: min, text: `${Math.min(p.held || 0, min)}/${min}`, done: !!p.achieved };
+    }
     default:
       return { text: "" };
   }
@@ -90,25 +132,25 @@ function BadgeProgressRow({ type, progress }) {
   const { t } = useTranslation();
   const d = describe(type, progress, t);
   const hasBar = d.max > 0 && d.value !== undefined;
+  // Holat matni: qisqasi ("7/9") nom yonida, uzuni (sabab, "Hozircha bajarilmoqda")
+  // nom tagida o'raladi — nom kesilib ketmasin.
+  const status = d.done ? t(d.final ? "badge.completed" : "badge.onTrack") : d.text;
+  const inline = !!status && status.length <= 16;
+  const tone = d.done ? "text-emerald-600 dark:text-emerald-400" : d.broken ? "text-red-500 dark:text-red-400" : "text-slate-400 dark:text-slate-500";
 
   return (
-    <div className="flex items-center gap-2.5 min-w-0" title={t(badgeDescKey(type))}>
+    <div className="flex items-start gap-2.5 min-w-0" title={t(badgeDescKey(type))}>
       <BadgeIcon type={type} size={28} earned={!!d.done} animated={false} />
       <div className="flex flex-col gap-1 min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2 min-w-0">
-          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">{t(badgeNameKey(type))}</span>
-          <span
-            className={`text-[11px] font-semibold shrink-0 tabular-nums ${
-              d.done ? "text-emerald-600 dark:text-emerald-400" : d.broken ? "text-red-500" : "text-slate-400 dark:text-slate-500"
-            }`}
-          >
-            {/* Oy yakunlanmagan — seriyadan boshqa shartlar hali buzilishi mumkin */}
-            {d.done ? t(d.final ? "badge.completed" : "badge.onTrack") : d.text}
+        <div className="flex items-baseline justify-between gap-2 min-w-0">
+          <span className="text-xs font-semibold leading-snug text-slate-700 dark:text-slate-300 break-words min-w-0">
+            {t(badgeNameKey(type))}
           </span>
+          {inline && <span className={`text-[11px] font-semibold shrink-0 tabular-nums ${tone}`}>{status}</span>}
         </div>
-        {hasBar && (
-          <ProgressBar value={d.value} max={d.max} color={d.done ? "emerald" : d.broken ? "slate" : "blue"} />
-        )}
+        {hasBar && <ProgressBar value={d.value} max={d.max} color={d.done ? "emerald" : d.broken ? "slate" : "blue"} />}
+        {status && !inline && <span className={`text-[11px] font-medium leading-snug ${tone}`}>{status}</span>}
+        {d.sub && <span className="text-[11px] leading-snug text-slate-400 dark:text-slate-500">{d.sub}</span>}
       </div>
     </div>
   );

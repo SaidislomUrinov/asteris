@@ -57,6 +57,11 @@ const badges = (entryId) => {
     podiumStreak: { current: 1, target: 3, podiumNow: true, achieved: false },
     goldCollection: { current: 1, target: 3, done: false, achieved: false },
     bigJump: { prevPosition: 9, position: 3, jump: 6, target: 5, achieved: true },
+    titleDefender: { prevPosition: 1, position: entryId === E_MATH ? 1 : 4, total: 14, min: 3, achieved: entryId === E_MATH },
+    phoenix: { prevPosition: 11, prevTotal: 13, position: 4, min: 6, wasBottomHalf: true, achieved: false },
+    punctual: { held: 7, absent: 0, late: 1, min: 6, broken: true, achieved: false },
+    grandSlam: { attendance: true, grades: true, podium: false, done: 2, target: 3, achieved: false },
+    comeback: { prevAbsent: 4, held: 3, absent: 0, min: 6, needPrev: 3, eligible: true, broken: false, achieved: false },
   };
   const earned = mode === "empty" || entryId === E_RUS ? [] : [
     { type: "perfectAttendance", count: 3, months: [prev(1), prev(3), prev(4)] },
@@ -66,6 +71,11 @@ const badges = (entryId) => {
     { type: "podiumStreak", count: 1, months: [prev(1)] },
     { type: "goldCollection", count: 1, months: [prev(1)] },
     { type: "bigJump", count: 1, months: [prev(4)] },
+    { type: "titleDefender", count: 1, months: [prev(1)] },
+    { type: "phoenix", count: 1, months: [prev(2)] },
+    { type: "punctual", count: 2, months: [prev(1), prev(3)] },
+    { type: "grandSlam", count: 1, months: [prev(1)] },
+    { type: "comeback", count: 1, months: [prev(2)] },
   ];
   const medals = mode === "empty" || entryId === E_RUS ? [] : [
     { month: prev(1), position: 1, total: 14 },

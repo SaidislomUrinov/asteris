@@ -11,7 +11,16 @@ export const BADGE_TYPES = [
   "podiumStreak",
   "goldCollection",
   "bigJump",
+  "titleDefender",
+  "phoenix",
+  "punctual",
+  "grandSlam",
+  "comeback",
 ];
+
+// Reytingga bog'liq nishonlar — individual (1 kishilik) guruhda berilmaydi/ko'rinmaydi.
+// `punctual` reyting va bahoga bog'liq emas — ikkala ro'yxatga kirmaydi.
+export const RANK_BADGE_TYPES = ["titleDefender", "phoenix", "grandSlam"];
 
 // Markaz baholarni yashirsa (`showGrades=false`) server bu turlarni qaytarmaydi.
 export const GRADE_BADGE_TYPES = [
@@ -23,6 +32,9 @@ export const GRADE_BADGE_TYPES = [
   "podiumStreak",
   "goldCollection",
   "bigJump",
+  "titleDefender",
+  "phoenix",
+  "grandSlam",
 ];
 
 // Metall emblem palitrasi: hi → mid → lo — yuz gradienti, rim — chekka qirra,
@@ -39,6 +51,11 @@ export const BADGE_PALETTE = {
   podiumStreak: { hi: "#FECDD3", mid: "#F43F5E", lo: "#BE123C", rim: "#881337", glyph: "#FFF1F2" },
   goldCollection: { hi: "#FEF3C7", mid: "#F59E0B", lo: "#B45309", rim: "#78350F", glyph: "#FFFBEB", accent: "#2563EB" },
   bigJump: { hi: "#BAE6FD", mid: "#0EA5E9", lo: "#0369A1", rim: "#0C4A6E", glyph: "#F0F9FF" },
+  titleDefender: { hi: "#BFDBFE", mid: "#3B82F6", lo: "#1D4ED8", rim: "#1E3A8A", glyph: "#EFF6FF", accent: "#FBBF24" },
+  phoenix: { hi: "#FED7AA", mid: "#F97316", lo: "#C2410C", rim: "#7C2D12", glyph: "#FFF7ED", accent: "#FACC15" },
+  punctual: { hi: "#A7F3D0", mid: "#10B981", lo: "#047857", rim: "#064E3B", glyph: "#ECFDF5" },
+  grandSlam: { hi: "#E9D5FF", mid: "#A855F7", lo: "#7E22CE", rim: "#581C87", glyph: "#FAF5FF", accent: "#FDE047" },
+  comeback: { hi: "#FDE68A", mid: "#F59E0B", lo: "#B45309", rim: "#78350F", glyph: "#FFFBEB", accent: "#38BDF8" },
 };
 
 const clamp = (v) => Math.max(0, Math.min(1, v));
@@ -126,6 +143,47 @@ export const badgeProgress = (type, p) => {
         positive: jump > 0,
         hint: { key: "badge.hint.positions", opts: { from: p.prevPosition, to: p.position } },
       };
+    }
+    case "titleDefender": {
+      if (p.position == null) return { pct: 0, value: "—", state: "progress", hint: { key: "badge.hint.noRank" } };
+      const min = p.min ?? 3;
+      if ((p.total ?? 0) < min) return { pct: 0, value: `${p.position}/${p.total ?? 0}`, state: "progress", hint: { key: "badge.hint.needRanked", opts: { min } } };
+      if (p.achieved) return { pct: 1, value: `${p.position}/${p.total}`, state: "met" };
+      // O'tgan oy 1-o'rin bo'lmasa — shu oy uchun endi olib bo'lmaydi.
+      if (p.prevPosition !== 1) return { pct: 0, value: `${p.position}/${p.total}`, state: "broken", hint: { key: "badge.hint.notPrevFirst" } };
+      return { pct: clamp(p.total > 1 ? (p.total - p.position) / (p.total - 1) : 1), value: `${p.position}/${p.total}`, state: "progress" };
+    }
+    case "phoenix": {
+      if (p.position == null) return { pct: 0, value: "—", state: "progress", hint: { key: "badge.hint.noRank" } };
+      const min = p.min ?? 6;
+      const value = `${p.prevPosition ?? "—"} → ${p.position}`;
+      if ((p.total ?? 0) < min || (p.prevTotal ?? 0) < min) return { pct: 0, value, state: "progress", hint: { key: "badge.hint.needRanked", opts: { min } } };
+      if (p.achieved) return { pct: 1, value, state: "met" };
+      if (!p.wasBottomHalf) return { pct: 0, value, state: "broken", hint: { key: "badge.hint.notBottomHalf" } };
+      return { pct: clamp(p.position <= 3 ? 1 : 3 / p.position), value, state: "progress", positive: p.prevPosition > p.position };
+    }
+    case "punctual": {
+      const min = p.min ?? 6;
+      const held = p.held ?? 0;
+      if (p.broken) return { pct: clamp(held / min), value: `${Math.min(held, min)}/${min}`, state: "broken", hint: { key: "badge.hint.punctualBroken", opts: { absent: p.absent ?? 0, late: p.late ?? 0 } } };
+      return { pct: clamp(held / min), value: `${Math.min(held, min)}/${min}`, state: p.achieved ? "met" : "progress" };
+    }
+    case "grandSlam": {
+      const target = p.target ?? 3;
+      const done = p.done ?? 0;
+      return {
+        pct: clamp(done / target),
+        value: `${done}/${target}`,
+        state: p.achieved ? "met" : "progress",
+        hint: { key: "badge.hint.grandFlags", opts: { att: p.attendance ? "✓" : "✗", grades: p.grades ? "✓" : "✗", podium: p.podium ? "✓" : "✗" } },
+      };
+    }
+    case "comeback": {
+      const min = p.min ?? 6;
+      const held = p.held ?? 0;
+      if (!p.eligible) return { pct: 0, value: `${p.prevAbsent ?? 0}/${p.needPrev ?? 3}`, state: "progress", hint: { key: "badge.hint.comebackNeedPrev", opts: { n: p.needPrev ?? 3 } } };
+      if (p.broken) return { pct: clamp(held / min), value: `${held}/${min}`, state: "broken", hint: { key: "badge.hint.comebackBroken", opts: { absent: p.absent ?? 0 } } };
+      return { pct: clamp(held / min), value: `${Math.min(held, min)}/${min}`, state: p.achieved ? "met" : "progress" };
     }
     default:
       return { pct: 0, value: "—", state: "progress" };
