@@ -18,7 +18,7 @@ export const FACE_MATCH_MARGIN = 0.05;
 const DETECT_OPTIONS = { inputSize: 320, scoreThreshold: 0.5 };
 const BACKFILL_OPTIONS = { inputSize: 416, scoreThreshold: 0.5 };
 // Orqa fon hisobi kamera siklini bo'g'ib qo'ymasligi uchun elementlar orasida pauza.
-const BACKFILL_GAP_MS = 120;
+const BACKFILL_GAP_MS = 400;
 
 const loadImage = (url) =>
   new Promise((resolve, reject) => {
@@ -47,6 +47,8 @@ const padded = (source, canvas = document.createElement("canvas")) => {
 };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// Og'ir bosqichlar orasida brauzerga chizish/hodisalar uchun nafas beramiz.
+const nextTick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 /**
  * @param {boolean} enabled - tarifda `attendance.face` bor bo'lsa true; false bo'lsa hech narsa yuklanmaydi
@@ -132,6 +134,7 @@ export default function useFaceRecognition(enabled) {
     const run = (input) => faceapi.detectSingleFace(input, options).withFaceLandmarks(true).withFaceDescriptor();
     let found = await run(video);
     if (!found) {
+      await nextTick();
       // Yuz kadrni to'ldirib turgan bo'lsa detektor topa olmaydi — kichraytirib qayta urinamiz.
       padCanvasRef.current = padded(video, padCanvasRef.current || undefined);
       found = await run(padCanvasRef.current);

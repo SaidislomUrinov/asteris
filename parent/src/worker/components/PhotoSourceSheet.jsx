@@ -1,18 +1,19 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HiOutlineCamera, HiOutlinePhoto, HiOutlineTrash } from "react-icons/hi2";
 import { haptic } from "../../lib/telegram";
 import { BottomSheet } from "./BottomSheet";
 import { MenuItem } from "./MenuItem";
+import { PhotoCameraOverlay } from "./PhotoCameraOverlay";
 
 // Rasm manbasi tanlovi (docs/API_CONTRACT_photo_source_choice.md): kameradan
 // olish yoki galereyadan tanlash. Telegram WebView'da `getUserMedia` ishonchsiz,
-// shuning uchun kamera — `capture` atributli input (telefonning o'z kamerasi).
+// shuning uchun kamera avval jonli oqim (PhotoCameraOverlay), u bo'lmasa `capture` input.
 // Inputlar oyna yopilgandan keyin ham DOM'da qoladi — `click()` foydalanuvchi
 // bosishi ichida chaqiriladi.
 export const PhotoSourceSheet = ({ open, onClose, onFile, title, subtitle, onRemove }) => {
   const { t } = useTranslation();
-  const cameraRef = useRef(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const galleryRef = useRef(null);
 
   const pick = (ref) => {
@@ -30,11 +31,16 @@ export const PhotoSourceSheet = ({ open, onClose, onFile, title, subtitle, onRem
 
   return (
     <>
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" tabIndex={-1} aria-hidden="true" onChange={onChange} />
+      <PhotoCameraOverlay open={cameraOpen} onClose={() => setCameraOpen(false)} onFile={onFile} />
       <input ref={galleryRef} type="file" accept="image/*" className="hidden" tabIndex={-1} aria-hidden="true" onChange={onChange} />
       <BottomSheet open={open} onClose={onClose} title={title || t("worker.student.photoTitle")} subtitle={subtitle}>
         <div className="flex flex-col divide-y divide-line/70">
-          <MenuItem icon={HiOutlineCamera} label={t("worker.student.photoFromCamera")} onClick={() => pick(cameraRef)} />
+          <MenuItem icon={HiOutlineCamera} label={t("worker.student.photoFromCamera")} onClick={() => {
+              haptic("light");
+              onClose();
+              setCameraOpen(true);
+            }}
+          />
           <MenuItem icon={HiOutlinePhoto} label={t("worker.student.photoFromGallery")} onClick={() => pick(galleryRef)} />
           {onRemove && (
             <MenuItem

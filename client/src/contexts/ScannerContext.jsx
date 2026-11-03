@@ -20,8 +20,14 @@ import { ScannerContext } from "./scanner";
 // Bir xil QR kamera oldida turganda sekundiga o'nlab marta o'qiladi — shu
 // muddat ichida takroriy skan e'tiborga olinmaydi.
 const RESCAN_COOLDOWN = 3000;
+// QR har kadrda emas — ~8 marta/s yetarli; kadr 800px gacha kichraytiriladi
+// (to'liq o'lchamli getImageData + jsQR asosiy oqimni qotirardi).
+const QR_INTERVAL = 120;
+const QR_MAX_SIZE = 800;
 // Yuz aniqlash kadrlar tezligida emas (og'ir hisob) — shu oraliqda bir marta.
+// Yuz topilmayotgan paytda (bo'sh kadr) sekinroq: kamera oldida odam yo'q.
 const FACE_INTERVAL = 300;
+const FACE_IDLE_INTERVAL = 700;
 // Bir o'quvchi ketma-ket shuncha tekshiruvda mos chiqsagina belgilanadi.
 const FACE_CONFIRM_FRAMES = 3;
 // Odam kamera oldida turib qolsa takroriy xabar chiqmasligi uchun.
@@ -80,7 +86,8 @@ export function ScannerProvider({ children }) {
   const tickRef = useRef(null);
   const lastTokenRef = useRef({ token: "", at: 0 });
   const busyRef = useRef(false);
-  const faceRef = useRef({ at: 0, running: false, candidate: "", hits: 0, cooldown: {} });
+  const faceRef = useRef({ at: 0, running: false, candidate: "", hits: 0, cooldown: {}, idle: false });
+  const qrAtRef = useRef(0);
 
   const [scanning, setScanning] = useState(false);
   const [stream, setStream] = useState(null);
@@ -185,9 +192,12 @@ export function ScannerProvider({ children }) {
     const video = engineVideoRef.current;
     const canvas = canvasRef.current;
 
-    if (video && video.readyState === video.HAVE_ENOUGH_DATA && canvas && !busyRef.current) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+    const nowTs = Date.now();
+    if (video && video.readyState === video.HAVE_ENOUGH_DATA && canvas && !busyRef.current && nowTs - qrAtRef.current >= QR_INTERVAL) {
+      qrAtRef.current = nowTs;
+      const scale = Math.min(1, QR_MAX_SIZE / Math.max(video.videoWidth, video.videoHeight));
+      canvas.width = Math.round(video.videoWidth * scale);
+      canvas.height = Math.round(video.videoHeight * scale);
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -205,11 +215,12 @@ export function ScannerProvider({ children }) {
 
     // QR topilmasa — yuzni tekshirish (og'ir, shuning uchun FACE_INTERVAL bilan).
     const f = faceRef.current;
-    if (faceOn && face.status === "ready" && video && !busyRef.current && !f.running && Date.now() - f.at >= FACE_INTERVAL) {
+    if (faceOn && face.status === "ready" && video && !busyRef.current && !f.running && Date.now() - f.at >= (f.idle ? FACE_IDLE_INTERVAL : FACE_INTERVAL)) {
       f.running = true;
       f.at = Date.now();
       faceDetectRef.current(video)
         .then((hit) => {
+          f.idle = !hit;
           if (!hit?.matched) {
             f.candidate = "";
             f.hits = 0;

@@ -18,6 +18,7 @@ import { useWorker } from "../useWorker";
 import { errText, groupLabel } from "../utils";
 import { BottomSheet } from "../components/BottomSheet";
 import { MoneyInput } from "../components/MoneyInput";
+import { PhotoCameraOverlay } from "../components/PhotoCameraOverlay";
 
 const PHONE_PREFIX = "+998";
 const PHONE_LEN = 9;
@@ -59,11 +60,11 @@ const PhoneField = ({ label, value, onChange, hint, autoFocus }) => (
 // StudentDialog bilan bir xil: telefon 9 raqam bo'lganda lookup → mavjud
 // o'quvchini tanlash (`existingStudentId`), aks holda yangi hujjat. Telegram
 // maydonlari so'ralmaydi (server default). Rasm: Telegram WebView'da
-// `getUserMedia` ishonchsiz — `<input capture>` telefonning o'z kamerasini ochadi.
+// jonli kamera (PhotoCameraOverlay), u ochilmasa `<input capture>`.
 export const AddStudentSheet = ({ open, group, onClose, onAdded }) => {
   const { t } = useTranslation();
   const { can } = useWorker();
-  const cameraRef = useRef(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const galleryRef = useRef(null);
 
   const [phone, setPhone] = useState("");
@@ -145,7 +146,7 @@ export const AddStudentSheet = ({ open, group, onClose, onAdded }) => {
       setFile(f);
     }
   };
-  const fromCamera = () => !busy && cameraRef.current?.click();
+  const fromCamera = () => !busy && setCameraOpen(true);
   const fromGallery = () => !busy && galleryRef.current?.click();
 
   const submit = async () => {
@@ -261,7 +262,14 @@ export const AddStudentSheet = ({ open, group, onClose, onAdded }) => {
             </button>
           )}
         </div>
-        <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
+        <PhotoCameraOverlay
+          open={cameraOpen}
+          onClose={() => setCameraOpen(false)}
+          onFile={(f) => {
+            haptic("light");
+            setFile(f);
+          }}
+        />
         <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
       </div>
 
