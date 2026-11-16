@@ -9,7 +9,7 @@ schema.statics.next = async function (name) {
   const doc = await this.findByIdAndUpdate(
     name,
     { $inc: { seq: 1 } },
-    { new: true, upsert: true },
+    { returnDocument: "after", upsert: true },
   );
   return doc.seq;
 };

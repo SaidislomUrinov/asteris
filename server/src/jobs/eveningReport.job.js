@@ -8,8 +8,7 @@ const Subject = require("../models/Subject");
 const Attendance = require("../models/Attendance");
 const telegramService = require("../services/telegram.service");
 const { t } = require("../bot/i18n");
-const { escapeHtml } = require("../bot/notify");
-const { blockList } = require("../bot/format");
+const { richTable } = require("../bot/format");
 const { todayString, todayDayCode, dateStringToUnix, getNow } = require("../utils/date.util");
 
 const CHECK_MINUTES = 5;
@@ -82,11 +81,11 @@ const collectAttendance = async (groups, date) => {
   return { byGroup, totals };
 };
 
-const summaryLines = (lang, totals) => [
-  `${t(lang, "eveningPresent")}: <b>${totals.present}</b>`,
-  `${t(lang, "eveningAbsent")}: <b>${totals.absent}</b>`,
-  `${t(lang, "eveningExcused")}: <b>${totals.excused}</b>`,
-  `${t(lang, "eveningUnmarked")}: <b>${totals.unmarked}</b>`,
+const summaryRows = (lang, totals) => [
+  [t(lang, "eveningPresent"), String(totals.present)],
+  [t(lang, "eveningAbsent"), String(totals.absent)],
+  [t(lang, "eveningExcused"), String(totals.excused)],
+  [t(lang, "eveningUnmarked"), String(totals.unmarked)],
 ];
 
 // Markaz hisoboti — Client Owner (tushum bilan) va Resepshin (tushumsiz).
@@ -128,25 +127,30 @@ const sendCenterReports = async (date, dayCode, now) => {
     const teacherMap = Object.fromEntries(teachers.map((s) => [String(s._id), s.name]));
     const revenue = revenueRows[0]?.total || 0;
 
-    const lessonBlocks = groups.map((g) => ({
-      title: escapeHtml(`${subjectMap[String(g.subject)] || "?"} - ${g.activeId}`),
-      lines: [
-        [`${g.startTime}-${g.endTime}`, g.teacher ? escapeHtml(teacherMap[String(g.teacher)] || "") : ""]
-          .filter(Boolean)
-          .join(" · "),
-      ],
-    }));
+    const lessonRows = groups.map((g) => [
+      `${subjectMap[String(g.subject)] || "?"} - ${g.activeId}`,
+      `${g.startTime}-${g.endTime}`,
+      g.teacher ? teacherMap[String(g.teacher)] || "" : "",
+    ]);
 
-    const buildText = (lang, withRevenue) => {
-      const lines = [`${t(lang, "eveningHeader")} — <b>${escapeHtml(center.name)}</b>`, ""];
-      lines.push(...summaryLines(lang, totals));
-      if (withRevenue) lines.push(`${t(lang, "eveningRevenue")}: <b>${money(revenue)}</b>`);
-      lines.push("", `<b>${t(lang, "eveningLessons")}:</b>`, "", blockList(lessonBlocks));
-      return lines.join("\n");
+    const buildRich = (lang, withRevenue) => {
+      const rows = summaryRows(lang, totals);
+      if (withRevenue) rows.push([t(lang, "eveningRevenue"), money(revenue)]);
+      return {
+        blocks: [
+          { type: "heading", size: 3, text: `${t(lang, "eveningHeader")} — ${center.name}` },
+          richTable(null, rows),
+          { type: "paragraph", text: { type: "bold", text: `${t(lang, "eveningLessons")}:` } },
+          richTable(
+            [t(lang, "morningSubjectCol"), t(lang, "morningTimeCol"), t(lang, "eveningTeacherCol")],
+            lessonRows,
+          ),
+        ],
+      };
     };
 
     await telegramService
-      .sendIfLinked("client", center.client, (lang) => buildText(lang, true))
+      .sendRichIfLinked("client", center.client, (lang) => buildRich(lang, true))
       .catch(() => {});
 
     const receptions = await Staff.find({
@@ -158,7 +162,7 @@ const sendCenterReports = async (date, dayCode, now) => {
     }).select("_id");
     for (const r of receptions) {
       await telegramService
-        .sendIfLinked("staff", r._id, (lang) => buildText(lang, false))
+        .sendRichIfLinked("staff", r._id, (lang) => buildRich(lang, false))
         .catch(() => {});
     }
   }
@@ -205,28 +209,40 @@ const sendTeacherReports = async (date, dayCode, now) => {
     const subjectMap = Object.fromEntries(subjects.map((s) => [String(s._id), s.name]));
     const centerMap = Object.fromEntries(centers.map((c) => [String(c._id), c.name]));
 
-    const lessonBlocks = (lang) =>
+    const lessonRows = (lang) =>
       groups.map((g) => {
         const stat = byGroup[String(g._id)];
-        return {
-          title: escapeHtml(`${subjectMap[String(g.subject)] || "?"} - ${g.activeId}`),
-          lines: [
-            `${g.startTime}-${g.endTime}`,
-            ...(multiCenter && centerMap[String(g.center)]
-              ? [`${t(lang, "reminderCenterLabel")}: ${escapeHtml(centerMap[String(g.center)])}`]
-              : []),
-            `${t(lang, "eveningPresent")}: ${stat.present} · ${t(lang, "eveningAbsent")}: ${stat.absent}`,
-          ],
-        };
+        const row = [
+          `${subjectMap[String(g.subject)] || "?"} - ${g.activeId}`,
+          `${g.startTime}-${g.endTime}`,
+          `${stat.present} / ${stat.absent}`,
+        ];
+        if (multiCenter) row.push(centerMap[String(g.center)] || "");
+        return row;
       });
 
     await telegramService
-      .sendIfLinked("staff", staff._id, (lang) => {
-        const lines = [t(lang, "eveningHeader"), ""];
-        lines.push(...summaryLines(lang, totals));
-        lines.push("", `<b>${t(lang, "eveningMyLessons")}:</b>`, "", blockList(lessonBlocks(lang)));
-        return lines.join("\n");
-      })
+      .sendRichIfLinked("staff", staff._id, (lang) => ({
+        blocks: [
+          { type: "heading", size: 3, text: t(lang, "eveningHeader") },
+          richTable(null, [
+            [t(lang, "eveningPresent"), String(totals.present)],
+            [t(lang, "eveningAbsent"), String(totals.absent)],
+            [t(lang, "eveningExcused"), String(totals.excused)],
+            [t(lang, "eveningUnmarked"), String(totals.unmarked)],
+          ]),
+          { type: "paragraph", text: { type: "bold", text: `${t(lang, "eveningMyLessons")}:` } },
+          richTable(
+            [
+              t(lang, "morningSubjectCol"),
+              t(lang, "morningTimeCol"),
+              `${t(lang, "eveningPresent")} / ${t(lang, "eveningAbsent")}`,
+              ...(multiCenter ? [t(lang, "reminderCenterLabel")] : []),
+            ],
+            lessonRows(lang),
+          ),
+        ],
+      }))
       .catch(() => {});
   }
 };

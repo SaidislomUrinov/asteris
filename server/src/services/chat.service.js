@@ -123,7 +123,7 @@ const getOrCreateConversation = async (clientId, participant) => {
   try {
     return await ChatConversation.findOneAndUpdate(filter, update, {
       upsert: true,
-      new: true,
+      returnDocument: "after",
       setDefaultsOnInsert: true,
     });
   } catch (error) {

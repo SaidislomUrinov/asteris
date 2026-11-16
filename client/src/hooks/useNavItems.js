@@ -29,6 +29,7 @@ import {
   useSettingsTabs,
 } from "./useSectionTabs";
 import ScanFaceIcon from "../ui/ScanFaceIcon";
+import { filterVisibleVideos } from "../utils/visibleVideos";
 
 // Menyu bandlari — YAGONA manba. Chap menyu (Navbar) ro'yxatni to'liq chizadi,
 // mobil pastki tab-bar (MobileTabBar) esa shu ro'yxatdan rolga qarab 5 tasini
@@ -44,8 +45,9 @@ export default function useNavItems() {
   const financeTabs = useFinanceTabs();
   const isOwner = authType === "owner";
   const isTeacher = authType === "staff" && ["teacher", "assistant"].includes(role);
+  const videos = useSelector((s) => s.tutorialVideos);
 
-  return [
+  const items = [
     { key: "dashboard", to: "/dashboard", icon: HiChartPie, labelKey: "nav.dashboard" },
     can("lead:view") && !isTeacher && { key: "leads", to: "/leads", icon: HiViewfinderCircle, labelKey: "nav.leads" },
     isOwner && { key: "staff", to: "/staff", icon: HiBriefcase, labelKey: "nav.staff" },
@@ -92,11 +94,16 @@ export default function useNavItems() {
       labelKey: "nav.settings",
     },
     // Video qo'llanmalar — barcha rollar (docs/API_CONTRACT_tutorial_videos_v2.md § 4).
+    // Pastda: shu foydalanuvchi ko'ra oladigan video bo'lmasa band olib tashlanadi.
     { key: "videoLessons", to: "/video-lessons", icon: HiVideoCamera, labelKey: "nav.videoLessons" },
     // Tariflar — Sozlamalar ostida alohida band (obuna holati tez-tez
     // tekshiriladi, tab ichida yashirinib qolmasin).
     isOwner && { key: "subscription", to: "/subscription", icon: HiCreditCard, labelKey: "nav.subscription" },
   ].filter(Boolean);
+
+  const tabs = [...settingsTabs, ...scheduleTabs, ...financeTabs];
+  const hasVideos = filterVisibleVideos(videos, authType, items, tabs).length > 0;
+  return hasVideos ? items : items.filter((item) => item.key !== "videoLessons");
 }
 
 // Mobil pastki tab-bar: rolga qarab eng ko'p ishlatiladigan bo'limlar (tartib

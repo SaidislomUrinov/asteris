@@ -67,7 +67,7 @@ before(async () => {
     assert.equal(r.body.ok, true, `signin failed: ${r.body.msg}`);
     return r.body.access;
   };
-  const staffSignIn = (s) => signIn("/staff-auth/signin", { login: s.login, password: s.password });
+  const staffSignIn = (s) => signIn("/staff-auth/signin", { login: s.login, password: s.password, slug: s.slug });
   ctx.tokenA = await signIn("/client-auth/signin", { phone: ctx.A.phone, password: ctx.A.password });
   ctx.tokenRecA1 = await staffSignIn(ctx.recA1);
   ctx.tokenTeachA1 = await staffSignIn(ctx.teachA1);
@@ -140,14 +140,13 @@ describe("Filial izolyatsiyasi (A1 hodimi → A2 ma'lumoti)", () => {
 });
 
 describe("Boshqa mijoz o'quvchisi (umumiy hujjat)", () => {
-  test("lookup boshqa mijoz o'quvchisining ota-ona raqamini bermaydi", async () => {
+  // O'quvchi mijoz darajasida: boshqa mijoz hujjati lookup'da umuman chiqmaydi.
+  test("lookup boshqa mijoz o'quvchisini ko'rsatmaydi", async () => {
     const r = await srv.request("GET", `/students/lookup?phone=${encodeURIComponent(ctx.sB1.phone)}`, {
       headers: clientHeader(ctx.tokenA),
     });
     assert.equal(r.body.ok, true);
-    assert.equal(r.body.data.length, 1);
-    assert.equal(r.body.data[0].shared, true);
-    assert.equal(r.body.data[0].parentPhone, undefined);
+    assert.deepEqual(r.body.data, []);
   });
 
   test("lookup — o'qituvchiga yopiq (student:create kerak)", async () => {
@@ -202,7 +201,13 @@ describe("Sessiya va ruxsatlar", () => {
 
     const after = await srv.request("GET", "/groups", { headers: staffHeader(ctx.tokenBlockMe) });
     assert.equal(after.body.ok, false);
-    assert.equal(after.body.msg, "staff.blocked");
+    // Bloklashda sessiyalar bekor qilinadi (`revokeSessions`) — eski token
+    // endi umuman yaroqsiz; qayta kirishga urinish esa `staff.blocked` oladi.
+    assert.equal(after.body.msg, "auth.failed");
+    const relogin = await srv.request("POST", "/staff-auth/signin", {
+      body: { login: ctx.blockMe.login, password: ctx.blockMe.password, slug: ctx.blockMe.slug },
+    });
+    assert.equal(relogin.body.msg, "staff.blocked");
   });
 
   test("o'qituvchi /dashboard moliyasini ko'rmaydi (dashboard:view yo'q)", async () => {

@@ -97,7 +97,7 @@ function GroupMultiSelect({ groups, value, onChange }) {
         ref={triggerRef}
         type="button"
         onClick={toggleOpen}
-        className={`flex items-center justify-between w-full h-11 px-3.5 rounded-xl border bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none cursor-pointer text-left duration-200 ${
+        className={`flex items-center justify-between w-full h-11 px-3.5 rounded-xl border bg-white dark:bg-night-900 cursor-pointer text-left duration-200 ${
           open ? "ring-3 ring-blue-500/15 border-blue-500" : "border-slate-200 dark:border-night-700 hover:border-slate-300 dark:hover:border-night-600"
         }`}
       >
@@ -132,7 +132,7 @@ function GroupMultiSelect({ groups, value, onChange }) {
           <div
             ref={dropdownRef}
             style={{ position: "fixed", top: pos.top, bottom: pos.bottom, left: pos.left, width: pos.width, maxHeight: pos.maxHeight, zIndex: 9999 }}
-            className="flex flex-col overflow-hidden rounded-xl border border-zinc-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-xl"
+            className="flex flex-col overflow-hidden rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-xl"
           >
             <div className="flex items-center gap-2 px-3 h-10 shrink-0 border-b border-slate-100 dark:border-night-700">
               <HiMagnifyingGlass className="shrink-0 text-slate-400" />

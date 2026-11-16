@@ -7,8 +7,7 @@ const Staff = require("../models/Staff");
 const Student = require("../models/Student");
 const telegramService = require("../services/telegram.service");
 const { t } = require("../bot/i18n");
-const { escapeHtml } = require("../bot/notify");
-const { bulletList, blockList } = require("../bot/format");
+const { richTable } = require("../bot/format");
 const { todayString, todayDayCode } = require("../utils/date.util");
 
 const TZ = "Asia/Tashkent";
@@ -57,23 +56,31 @@ const buildCenterSummary = async (centerId, dayCode) => {
   };
 };
 
-const buildCenterText = (lang, centerName, summary) => {
-  const lines = [`${t(lang, "morningHeader")} — <b>${escapeHtml(centerName)}</b>`, ""];
+const buildCenterRich = (lang, centerName, summary) => {
+  const blocks = [{ type: "heading", size: 3, text: `${t(lang, "morningHeader")} — ${centerName}` }];
   if (summary.lessonsCount === 0) {
-    lines.push(t(lang, "morningNoLessons"));
-    return lines.join("\n");
+    blocks.push({ type: "paragraph", text: t(lang, "morningNoLessons") });
+    return { blocks };
   }
-  lines.push(`${t(lang, "morningLessonsToday")}: <b>${summary.lessonsCount}</b>`);
-  lines.push(`${t(lang, "morningStudentsExpected")}: <b>${summary.studentsExpected}</b>`);
+  blocks.push(
+    richTable(null, [
+      [t(lang, "morningLessonsToday"), String(summary.lessonsCount)],
+      [t(lang, "morningStudentsExpected"), String(summary.studentsExpected)],
+    ]),
+  );
   if (summary.rooms.length) {
-    lines.push("", `<b>${t(lang, "morningRooms")}:</b>`);
-    lines.push(bulletList(summary.rooms.map((r) => escapeHtml(r))));
+    blocks.push(
+      { type: "paragraph", text: { type: "bold", text: `${t(lang, "morningRooms")}:` } },
+      richTable(null, summary.rooms.map((r) => [r])),
+    );
   }
   if (summary.teachers.length) {
-    lines.push("", `<b>${t(lang, "morningTeachers")}:</b>`);
-    lines.push(bulletList(summary.teachers.map((n) => escapeHtml(n))));
+    blocks.push(
+      { type: "paragraph", text: { type: "bold", text: `${t(lang, "morningTeachers")}:` } },
+      richTable(null, summary.teachers.map((n) => [n])),
+    );
   }
-  return lines.join("\n");
+  return { blocks };
 };
 
 const sendCenterReports = async (dayCode) => {
@@ -85,7 +92,7 @@ const sendCenterReports = async (dayCode) => {
 
     // Client Owner
     await telegramService
-      .sendIfLinked("client", center.client, (lang) => buildCenterText(lang, center.name, summary))
+      .sendRichIfLinked("client", center.client, (lang) => buildCenterRich(lang, center.name, summary))
       .catch(() => {});
 
     // Shu markazning Resepshinlari — xuddi Owner bilan bir xil kontent
@@ -99,7 +106,7 @@ const sendCenterReports = async (dayCode) => {
     }).select("_id");
     for (const r of receptions) {
       await telegramService
-        .sendIfLinked("staff", r._id, (lang) => buildCenterText(lang, center.name, summary))
+        .sendRichIfLinked("staff", r._id, (lang) => buildCenterRich(lang, center.name, summary))
         .catch(() => {});
     }
   }
@@ -142,29 +149,32 @@ const sendTeacherReports = async (dayCode) => {
     const centerMap = Object.fromEntries(centers.map((c) => [String(c._id), c.name]));
 
     await telegramService
-      .sendIfLinked("staff", staff._id, (lang) => {
-        const lines = [t(lang, "morningHeader"), "", `<b>${t(lang, "morningMyLessons")}</b>`];
+      .sendRichIfLinked("staff", staff._id, (lang) => {
+        const blocks = [
+          { type: "heading", size: 3, text: t(lang, "morningHeader") },
+          { type: "paragraph", text: { type: "bold", text: t(lang, "morningMyLessons") } },
+        ];
         if (!groups.length) {
-          lines.push(t(lang, "morningNoLessonsMine"));
+          blocks.push({ type: "paragraph", text: t(lang, "morningNoLessonsMine") });
         } else {
-          lines.push(
-            "",
-            blockList(
-              groups.map((g) => ({
-                title: escapeHtml(`${subjectMap[String(g.subject)] || "?"} - ${g.activeId}`),
-                lines: [
-                  [`${g.startTime}-${g.endTime}`, g.room ? escapeHtml(roomMap[String(g.room)] || "") : ""]
-                    .filter(Boolean)
-                    .join(" · "),
-                  ...(multiCenter && centerMap[String(g.center)]
-                    ? [`${t(lang, "reminderCenterLabel")}: ${escapeHtml(centerMap[String(g.center)])}`]
-                    : []),
-                ],
-              })),
+          const headers = [t(lang, "morningSubjectCol"), t(lang, "morningTimeCol"), t(lang, "morningRoomCol")];
+          if (multiCenter) headers.push(t(lang, "reminderCenterLabel"));
+          blocks.push(
+            richTable(
+              headers,
+              groups.map((g) => {
+                const row = [
+                  `${subjectMap[String(g.subject)] || "?"} - ${g.activeId}`,
+                  `${g.startTime}-${g.endTime}`,
+                  g.room ? roomMap[String(g.room)] || "" : "",
+                ];
+                if (multiCenter) row.push(centerMap[String(g.center)] || "");
+                return row;
+              }),
             ),
           );
         }
-        return lines.join("\n");
+        return { blocks };
       })
       .catch(() => {});
   }

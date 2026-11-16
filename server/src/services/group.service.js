@@ -985,6 +985,48 @@ module.exports = {
     return DTO(group, countMap[String(group._id)] || 0);
   },
 
+  // Bot orqali xabar — API_CONTRACT_group_broadcast.md. Guruhdagi barcha
+  // faol (left/archived bo'lmagan) o'quvchilarning ota-onasiga (yoki
+  // `Parent.role==="student"` bo'lsa o'zi) Telegramda bir marta yuboradi —
+  // bir parent bir nechta o'quvchiga tegishli bo'lsa ham dublikat yuborilmaydi.
+  broadcast: async (clientId, id, text) => {
+    const group = await Group.findOne({ _id: id, client: clientId, isDeleted: false });
+    if (!group) throw new Error("group.notFound");
+
+    const students = await Student.find({
+      isDeleted: false,
+      "groups.group": group._id,
+      "groups.status": { $ne: "archived" },
+    });
+
+    const { findParents } = require("./parentNotification.service");
+    const { sendToChat } = require("../bot/notify");
+
+    const parentMap = new Map();
+    for (const student of students) {
+      const recipients = await findParents(student, ["parent", "student"]);
+      for (const { parent } of recipients) parentMap.set(String(parent._id), parent);
+    }
+
+    let sent = 0;
+    let skipped = 0;
+    for (const parent of parentMap.values()) {
+      if (!parent.telegram?.chatId || parent.telegram?.blockedAt) {
+        skipped += 1;
+        continue;
+      }
+      try {
+        const result = await sendToChat(parent.telegram.chatId, text);
+        if (result?.ok) sent += 1;
+        else skipped += 1;
+      } catch {
+        skipped += 1;
+      }
+    }
+
+    return { total: students.length, sent, skipped };
+  },
+
   // Arxivlash — API_CONTRACT_archive.md. Guruh HOLATIDAN qat'i nazar
   // (pending/active/finished) arxivlanadi. "O'chirish" tushunchasi yo'q:
   // `isDeleted` endi "arxivda" degani, hujjat hech qachon yo'qolmaydi va

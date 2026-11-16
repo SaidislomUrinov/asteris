@@ -156,7 +156,7 @@ function SendHomeworkDialog({ open, onClose, groupId, initialDate, lessonByDate 
                 onClick={() => setDate(d)}
                 className={`flex flex-col items-center justify-center gap-0.5 shrink-0 w-12 h-15 rounded-2xl border text-center cursor-pointer transition-colors duration-150 ${
                   active
-                    ? "bg-blue-500 border-blue-500 text-white shadow-[0_4px_12px_-4px_rgba(59,130,246,0.6)]"
+                    ? "bg-blue-500 border-blue-500 text-white"
                     : isToday
                       ? "bg-blue-50 dark:bg-blue-500/15 border-blue-300 dark:border-blue-500/40 text-blue-700 dark:text-blue-400"
                       : lesson

@@ -1389,5 +1389,56 @@
     "productNotFound": "Mahsulot topilmadi",
     "studentOnly": "Faqat o'quvchi xarid qila oladi",
     "bought": "Xarid qilindi"
+  },
+  "quiz": {
+    "active": {
+      "title": "Joriy test(lar)",
+      "continue": "Davom ettirish"
+    },
+    "history": {
+      "title": "O'tgan testlar",
+      "score": "Baho: {{score}}"
+    },
+    "countdown": {
+      "title": "Test",
+      "startingIn": "Boshlanishiga qoldi",
+      "duration": "Test vaqti: {{n}} daqiqa",
+      "keepOpen": "Sahifani yopmang — test o'zi boshlanadi"
+    },
+    "question": {
+      "progress": "{{current}}/{{total}}-savol",
+      "answered": "{{done}}/{{total}} ta savolga javob berildi",
+      "prev": "Oldingi",
+      "next": "Keyingi",
+      "finish": "Yakunlash",
+      "back": "Qaytish",
+      "finishTitle": "Testni yakunlaysizmi?",
+      "finishText": "Yakunlagach javoblarni o'zgartirib bo'lmaydi.",
+      "finishUnanswered": "{{n}} ta savol javobsiz qoladi. Yakunlagach o'zgartirib bo'lmaydi.",
+      "covered": "Testga qayting"
+    },
+    "result": {
+      "score": "Baho: {{score}}",
+      "correctLabel": "to'g'ri javob",
+      "excellent": "Ajoyib natija!",
+      "good": "Yaxshi natija!",
+      "tryAgain": "Keyingi safar yaxshiroq bo'ladi",
+      "review": "Javoblaringiz",
+      "yourAnswer": "Sizning javobingiz",
+      "correctAnswer": "To'g'ri javob",
+      "noAnswer": "Javob berilmagan",
+      "reviewLater": "To'g'ri javoblar test hamma uchun tugagach ko'rinadi.",
+      "home": "Bosh sahifa"
+    },
+    "missed": {
+      "title": "Test yakunlangan",
+      "text": "Siz bu testda qatnashmadingiz."
+    },
+    "notFound": "Test topilmadi",
+    "alreadyFinished": "Test allaqachon yakunlangan",
+    "notStarted": "Test hali boshlanmagan",
+    "finished": "Test yakunlangan",
+    "notFinished": "Test hali yakunlanmagan",
+    "questionNotFound": "Savol topilmadi"
   }
 }

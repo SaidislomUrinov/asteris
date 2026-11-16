@@ -12,9 +12,8 @@ const parentNotification = require("../services/parentNotification.service");
 const notificationService = require("../services/notification.service");
 const telegramService = require("../services/telegram.service");
 const clientService = require("../services/client.service");
-const syllabusProgress = require("../utils/syllabusProgress.util");
 const { t } = require("../bot/i18n");
-const { escapeHtml } = require("../bot/notify");
+const { richTable } = require("../bot/format");
 const { todayString, todayDayCode, dateStringToUnix, getNow } = require("../utils/date.util");
 
 // Darsga shuncha daqiqa qolganda eslatma yuboriladi. Tekshiruv har daqiqada
@@ -170,23 +169,27 @@ const run = async () => {
       });
 
       // Telegram — faqat shu hodim shaxsiy chatini ulagan bo'lsa (jimgina
-      // o'tkazib yuboriladi, xato emas).
+      // o'tkazib yuboriladi, xato emas). Rich message (InputRichMessage):
+      // heading + haqiqiy list bloki, plain HTML "• " workaroundsiz.
       telegramService
-        .sendIfLinked("staff", staffId, (lang) => {
-          const lines = [
-            `${t(lang, "reminderHeader")}`,
-            "",
-            `<b>${escapeHtml(subjectMap[String(g.subject)] || "?")} - ${g.activeId}</b>`,
-            `${t(lang, "reminderTimeLabel")}: ${g.startTime}`,
-          ];
+        .sendRichIfLinked("staff", staffId, (lang) => {
+          const rows = [[t(lang, "reminderTimeLabel"), g.startTime]];
           if (multiCenterStaff.has(staffId) && centerNames[String(g.center)]) {
-            lines.push(`${t(lang, "reminderCenterLabel")}: ${escapeHtml(centerNames[String(g.center)])}`);
+            rows.push([t(lang, "reminderCenterLabel"), centerNames[String(g.center)]]);
           }
-          if (g.room) lines.push(`${t(lang, "reminderRoomLabel")}: ${escapeHtml(roomMap[String(g.room)] || "")}`);
-          lines.push(
-            `${t(lang, "reminderTopicLabel")}: ${topic ? escapeHtml(topic) : t(lang, "reminderNoTopic")}`,
-          );
-          return lines.join("\n");
+          if (g.room) rows.push([t(lang, "reminderRoomLabel"), roomMap[String(g.room)] || ""]);
+          rows.push([t(lang, "reminderTopicLabel"), topic || t(lang, "reminderNoTopic")]);
+
+          return {
+            blocks: [
+              { type: "heading", size: 3, text: t(lang, "reminderHeader") },
+              {
+                type: "paragraph",
+                text: { type: "bold", text: `${subjectMap[String(g.subject)] || "?"} - ${g.activeId}` },
+              },
+              richTable(null, rows),
+            ],
+          };
         })
         .catch(() => {});
     }

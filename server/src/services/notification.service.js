@@ -80,7 +80,7 @@ module.exports = {
     const doc = await Notification.findOneAndUpdate(
       { _id: id, "recipient.id": userId },
       { $set: { read: true, readAt: Math.floor(Date.now() / 1000) } },
-      { new: true },
+      { returnDocument: "after" },
     );
     if (!doc) throw new Error("notification.notFound");
     await emitUnread(userId);

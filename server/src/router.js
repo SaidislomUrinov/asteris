@@ -66,6 +66,13 @@ router.use("/dashboard", require("./routes/dashboard.routes"));
 router.use("/expenses", require("./routes/expense.routes"));
 router.use("/grades", require("./routes/grade.routes"));
 router.use("/homework", require("./routes/homework.routes"));
+// Test (Quiz) moduli (docs/API_CONTRACT_quiz.md) — staff/teacher tomon.
+router.use("/quiz", require("./routes/quiz.routes"));
+// Test (Quiz) — Ota-ona/O'quvchi WebApp tomoni, alohida auth zanjiri.
+router.use("/parent-quiz", require("./routes/parentQuiz.routes"));
+// Test shablonlari (docs/API_CONTRACT_quiz_templates.md) — "Dars rejalari"
+// sahifasidagi "Testlar" tabi, fanga bog'langan, guruhga bog'lanmagan.
+router.use("/quiz-templates", require("./routes/quizTemplate.routes"));
 // WECOIN va filial do'koni (API_CONTRACT_wecoin.md §3).
 router.use("/coins", require("./routes/coin.routes"));
 router.use("/shop", require("./routes/shop.routes"));

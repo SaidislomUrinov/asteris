@@ -282,6 +282,7 @@
       "room": "Room",
       "lesson": "Lesson",
       "homework": "Homework",
+      "quiz": "Quiz",
       "certificate": "Certificate",
       "receipt": "Receipt",
       "finance": "Finance",
@@ -351,6 +352,10 @@
       "lesson_planning": {
         "label": "Lesson planning",
         "description": "Allows planning the schedule of upcoming lessons in advance."
+      },
+      "quiz_manage": {
+        "label": "Quiz",
+        "description": "Allows sending quizzes to a group, viewing results, and grading."
       },
       "homework_manage": {
         "label": "Homework",

@@ -182,7 +182,7 @@ module.exports = {
           note: String(note || "").trim().slice(0, 200),
         },
       },
-      { new: true, upsert: true, setDefaultsOnInsert: true },
+      { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
     );
 
     emit(`client:${clientId}`, "grade:set", {

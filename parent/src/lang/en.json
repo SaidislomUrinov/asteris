@@ -1393,5 +1393,56 @@
     "productNotFound": "Product not found",
     "studentOnly": "Only the student can buy",
     "bought": "Purchased"
+  },
+  "quiz": {
+    "active": {
+      "title": "Active test(s)",
+      "continue": "Continue"
+    },
+    "history": {
+      "title": "Past tests",
+      "score": "Score: {{score}}"
+    },
+    "countdown": {
+      "title": "Test",
+      "startingIn": "Starts in",
+      "duration": "Test time: {{n}} min",
+      "keepOpen": "Keep this page open — the test starts automatically"
+    },
+    "question": {
+      "progress": "Question {{current}}/{{total}}",
+      "answered": "{{done}}/{{total}} answered",
+      "prev": "Previous",
+      "next": "Next",
+      "finish": "Finish",
+      "back": "Go back",
+      "finishTitle": "Finish the test?",
+      "finishText": "You can't change your answers after finishing.",
+      "finishUnanswered": "{{n}} questions will stay unanswered. You can't change them after finishing.",
+      "covered": "Return to the test"
+    },
+    "result": {
+      "score": "Grade: {{score}}",
+      "correctLabel": "correct answers",
+      "excellent": "Excellent result!",
+      "good": "Good result!",
+      "tryAgain": "You'll do better next time",
+      "review": "Your answers",
+      "yourAnswer": "Your answer",
+      "correctAnswer": "Correct answer",
+      "noAnswer": "No answer",
+      "reviewLater": "Correct answers appear once the test has finished for everyone.",
+      "home": "Home"
+    },
+    "missed": {
+      "title": "Test finished",
+      "text": "You did not take part in this test."
+    },
+    "notFound": "Test not found",
+    "alreadyFinished": "The test has already finished",
+    "notStarted": "The test has not started yet",
+    "finished": "The test has finished",
+    "notFinished": "The test has not finished yet",
+    "questionNotFound": "Question not found"
   }
 }

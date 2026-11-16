@@ -22,6 +22,9 @@ const Settings = lazyPage(() => import("./pages/Settings"), "Settings");
 const Coins = lazyPage(() => import("./pages/Coins"), "Coins");
 // Ishchi paneli (Boshliq/Hodim) — alohida chunk, ota-ona bundle'iga tushmaydi.
 const WorkerApp = lazyPage(() => import("./worker/WorkerApp"), "WorkerApp");
+// Test (Quiz) — bot "Boshlash" tugmasi web_app URL orqali to'g'ridan-to'g'ri
+// shu yo'lni ochadi (docs/API_CONTRACT_quiz.md "Bot xabarlari").
+const QuizPage = lazyPage(() => import("./pages/Quiz/QuizPage"), "QuizPage");
 
 const Shell = () => {
   useBackButton();
@@ -42,10 +45,12 @@ const Shell = () => {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/coins" element={<Coins />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/quiz/:entryId/:quizId" element={<QuizPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Suspense>
-      <TabBar />
+      {/* Test — to'liq ekran: pastki menyu chalg'itmasin */}
+      {!pathname.startsWith("/quiz/") && <TabBar />}
     </ChildrenProvider>
   );
 };

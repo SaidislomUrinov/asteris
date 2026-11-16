@@ -302,7 +302,7 @@ module.exports = {
   },
   // fullStaffAuth'dan keyin ishlatiladi — req.staff.role/permissions'ga tayanadi
   requireStaffPermission: (permission) => (req, res, next) => {
-    const { role, permissions } = req.staff || {};
+    const { permissions } = req.staff || {};
 
     // To'liq huquq endi ROL emas, RUXSAT orqali: `permissions: ["all"]`.
     // (Eski "manager" roli olib tashlandi — migratsiyada ular `reception`
@@ -571,7 +571,7 @@ module.exports = {
   requireTenantPermission: (permission) => (req, res, next) => {
     if (!req.staff) return next(); // Client Owner
 
-    const { role, permissions } = req.staff;
+    const { permissions } = req.staff;
     // To'liq huquq endi ROL emas, RUXSAT orqali: `permissions: ["all"]`.
     // (Eski "manager" roli olib tashlandi — migratsiyada ular `reception`
     // + `["all"]` ga o'tkazilgan.)

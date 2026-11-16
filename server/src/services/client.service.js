@@ -917,7 +917,7 @@ module.exports = {
       Client.findOneAndUpdate(
         { _id: clientId, isDeleted: false },
         { $set: { introSeen: true } },
-        { new: true },
+        { returnDocument: "after" },
       ),
     );
     if (!client) throw new Error("auth.notFound");

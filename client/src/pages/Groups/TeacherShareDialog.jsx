@@ -84,7 +84,7 @@ function TeacherShareDialog({ mode, open, studentName, caption, price, studentId
   const segment = (active) =>
     `h-9 min-w-0 truncate px-2 rounded-lg text-sm font-semibold cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-violet-400 dark:focus-visible:ring-violet-500 ${
       active
-        ? "bg-white dark:bg-night-700 text-violet-700 dark:text-violet-300 shadow-[0_1px_2px_rgba(15,23,42,0.08)] ring-1 ring-inset ring-violet-200 dark:ring-violet-400/30"
+        ? "bg-white dark:bg-night-700 text-violet-700 dark:text-violet-300 ring-1 ring-inset ring-violet-200 dark:ring-violet-400/30"
         : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
     }`;
 

@@ -81,7 +81,7 @@ module.exports = {
           note: String(note || "").trim().slice(0, 160),
         },
       },
-      { new: true, upsert: true, setDefaultsOnInsert: true },
+      { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
     );
     await syncCreditForDate(clientId, groupId, date, !chargeable);
     return DTO(holiday);

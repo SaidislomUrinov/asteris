@@ -10,7 +10,9 @@ import {
   HiCalendar,
   HiCalendarDays,
   HiClipboardDocumentList,
+  HiOutlineChatBubbleLeftRight,
   HiOutlineClipboardDocumentList,
+  HiOutlineDevicePhoneMobile,
   HiOutlineDocumentArrowDown,
   HiPencilSquare,
   HiPaperAirplane,
@@ -35,6 +37,7 @@ import Dialog from "../../ui/Dialog";
 import Chip from "../../ui/Chip";
 import Loading from "../../ui/Loading";
 import StudentEditDialog from "./StudentEditDialog";
+import StudentMessageDialog from "./StudentMessageDialog";
 import PaymentDialog from "./PaymentDialog";
 import DebtBreakdownDialog from "./DebtBreakdownDialog";
 import OpeningDebtsDialog from "./OpeningDebtsDialog";
@@ -95,6 +98,7 @@ function StudentDetail() {
   const { canSend: canSendQr, send: sendQr, sendingId: qrSendingId } = useSendQrCard();
   const [qrOpen, setQrOpen] = useState(false);
   const [certificateOpen, setCertificateOpen] = useState(false);
+  const [messageChannel, setMessageChannel] = useState(null); // "telegram"|"sms"
   const [payTarget, setPayTarget] = useState(null);
   const payTargetView = useClosingValue(payTarget);
   const [payPreset, setPayPreset] = useState(null); // { amount, forMonth } — "Qarzdorliklar"dan bitta oy tanlanganda
@@ -428,6 +432,21 @@ function StudentDetail() {
           icon: HiAcademicCap,
           iconClass: "bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400",
           onClick: () => setCertificateOpen(true),
+        }]
+      : []),
+    // O'quvchiga Telegram/SMS xabar — docs/API_CONTRACT_profile_test_and_student_notify.md §2
+    ...(can("student:contact")
+      ? [{
+          label: t("student.message.telegramTitle"),
+          icon: HiOutlineChatBubbleLeftRight,
+          iconClass: "bg-sky-50 dark:bg-sky-500/15 text-sky-600 dark:text-sky-400",
+          onClick: () => setMessageChannel("telegram"),
+        },
+        {
+          label: t("student.message.smsTitle"),
+          icon: HiOutlineDevicePhoneMobile,
+          iconClass: "bg-slate-50 dark:bg-night-800 text-slate-600 dark:text-slate-300",
+          onClick: () => setMessageChannel("sms"),
         }]
       : []),
   ];
@@ -1013,6 +1032,14 @@ function StudentDetail() {
       )}
 
       <QrCardDialog open={qrOpen} onClose={() => setQrOpen(false)} student={student} />
+      {messageChannel && (
+        <StudentMessageDialog
+          open={!!messageChannel}
+          onClose={() => setMessageChannel(null)}
+          studentId={id}
+          channel={messageChannel}
+        />
+      )}
       <IssueCertificateDialog
         open={certificateOpen}
         onClose={() => setCertificateOpen(false)}

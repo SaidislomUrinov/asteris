@@ -144,7 +144,14 @@ const buildRecipients = async (clientId, center, tpl, opts) => {
 
   const entryMatch = { client: clientId, center: center._id, status: "active" };
   if (groupIds.length) entryMatch.group = { $in: groupIds };
-  const students = await Student.find({ isDeleted: false, groups: { $elemMatch: entryMatch } })
+  // `studentIds` — studentMessage.service.js dan bitta o'quvchiga yuborishda
+  // (profil sahifasi) butun guruhga emas, faqat shu o'quvchiga cheklash uchun.
+  const studentIdFilter = (Array.isArray(opts.studentIds) ? opts.studentIds : [])
+    .filter((id) => Types.ObjectId.isValid(id))
+    .map((id) => new Types.ObjectId(id));
+  const studentQuery = { isDeleted: false, groups: { $elemMatch: entryMatch } };
+  if (studentIdFilter.length) studentQuery._id = { $in: studentIdFilter };
+  const students = await Student.find(studentQuery)
     .select("fullName phone parentPhone groups")
     .lean();
 
@@ -173,6 +180,7 @@ const buildRecipients = async (clientId, center, tpl, opts) => {
   }
 
   const wanted = new Set(groupIds.map(String));
+  const excluded = new Set((Array.isArray(opts.excludeIds) ? opts.excludeIds : []).map(String));
   const seen = new Set();
   const items = [];
   let skipped = 0;
@@ -184,6 +192,10 @@ const buildRecipients = async (clientId, center, tpl, opts) => {
       const group = groupMap[String(entry.group)];
       if (!group) continue;
       if (absentSet && !absentSet.has(`${entry.group}|${s._id}`)) continue;
+      // Foydalanuvchi "Oldindan ko'rish"da shu qabul qiluvchining checkboxini o'chirgan —
+      // SMS yubormaymiz, balansdan ham yechmaymiz (pastda items'ga umuman qo'shilmaydi).
+      const recipientId = `${s._id}:${entry.group}`;
+      if (excluded.has(recipientId)) continue;
 
       let debt = 0;
       let debtMonths = [];
@@ -198,7 +210,7 @@ const buildRecipients = async (clientId, center, tpl, opts) => {
       const phone = getsms.toGatewayPhone(normalizePhone(rawPhone));
       if (!phone) {
         skipped += 1;
-        items.push({ studentId: s._id, name: s.fullName, phone: normalizePhone(rawPhone) || "", text: "", skip: true });
+        items.push({ id: recipientId, studentId: s._id, name: s.fullName, phone: normalizePhone(rawPhone) || "", text: "", skip: true });
         continue;
       }
 
@@ -215,7 +227,7 @@ const buildRecipients = async (clientId, center, tpl, opts) => {
       const key = `${phone}|${text}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      items.push({ studentId: s._id, name: s.fullName, phone, text, segments: countSegments(text) });
+      items.push({ id: recipientId, studentId: s._id, name: s.fullName, phone, text, segments: countSegments(text) });
     }
   }
   return { items, skipped, debtOnly, forcedDebtOnly: usesDebt && !opts.debtOnly, absentDate: isAbsentTopic ? absentDate : null };
@@ -469,6 +481,28 @@ const validatePackageBody = (body) => {
 module.exports = {
   templateDTO,
   refreshLogs,
+  getTemplate,
+  render,
+
+  // studentMessage.service.js uchun — mavjud shablon/balans/getsms zanjirini
+  // AYNAN O'ZI orqali, lekin faqat BITTA o'quvchiga cheklab yuboradi
+  // (`buildRecipients`'ga `studentIds` filtri orqali). Xato kodlari (sms.*)
+  // `send()` bilan bir xil.
+  sendToStudent: async (clientId, centerId, studentId, body, actor = null) => {
+    const student = await Student.findOne({
+      _id: studentId,
+      isDeleted: false,
+      groups: { $elemMatch: { client: clientId, center: centerId, status: "active" } },
+    }).select("_id");
+    if (!student) throw new Error("student.notFound");
+    if (!body?.templateId) throw new Error("sms.templateNotFound");
+    return module.exports.send(
+      clientId,
+      centerId,
+      { ...body, studentIds: [String(studentId)] },
+      actor,
+    );
+  },
 
   // ── Shablonlar ──────────────────────────────────────────────────────────
   listTemplates: async ({ onlyActive = true } = {}) => {
@@ -526,7 +560,7 @@ module.exports = {
       noPhone: r.skipped,
       debtOnly: r.debtOnly,
       forcedDebtOnly: r.forcedDebtOnly,
-      sample: valid.slice(0, 5).map((i) => ({ name: i.name, phone: i.phone, text: i.text })),
+      recipients: valid.map((i) => ({ id: i.id, studentId: i.studentId, name: i.name, phone: i.phone, text: i.text, segments: i.segments })),
     };
   },
 

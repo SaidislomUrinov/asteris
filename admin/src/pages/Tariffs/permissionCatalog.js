@@ -83,6 +83,12 @@ export const PERMISSION_CATALOG = [
     ],
   },
   {
+    module: "quiz",
+    items: [
+      { key: "quiz.manage" },
+    ],
+  },
+  {
     module: "certificate",
     items: [
       { key: "certificate.manage" },

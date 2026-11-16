@@ -48,6 +48,7 @@ before(async () => {
   ctx.tokenStaff = await signIn("/staff-auth/signin", {
     login: ctx.staffA1.login,
     password: ctx.staffA1.password,
+    slug: ctx.staffA1.slug,
   });
 });
 

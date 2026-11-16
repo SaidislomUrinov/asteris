@@ -59,7 +59,7 @@ module.exports = {
     const setting = await BillingSetting.findOneAndUpdate(
       { center: centerId },
       { $set: { client: clientId, cycleMode: body.cycleMode } },
-      { new: true, upsert: true, setDefaultsOnInsert: true },
+      { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
     );
     await redisUtil.del(keyConfig.billingSetting(centerId));
     return DTO(setting);

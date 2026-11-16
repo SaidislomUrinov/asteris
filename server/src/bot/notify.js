@@ -70,4 +70,20 @@ const parentWebAppMarkup = async (label, path = "") => {
   }
 };
 
-module.exports = { sendToChat, sendDocumentToChat, sendPhotoToChat, escapeHtml, parentWebAppMarkup };
+// Strukturaviy xabar (Bot API `InputRichMessage` — haqiqiy heading/list/
+// blockquote bloklari bilan, eski `<pre>`/qo'lda "• " workaroundsiz).
+// `rich` — `{ blocks: [...] }` yoki `{ html: "..." }`/`{ markdown: "..." }`.
+// Xato otilmaydi, boshqa `send*ToChat` funksiyalari kabi `{ ok:false, error }`.
+const sendRichToChat = async (chatId, rich, extra = {}) => {
+  if (!chatId) return { ok: false, error: "notify.noChat" };
+  try {
+    const bot = await getApiBot();
+    if (!bot) return { ok: false, error: "notify.botUnavailable" };
+    await bot.api.sendRichMessage(chatId, rich, extra);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error?.message || "notify.failed" };
+  }
+};
+
+module.exports = { sendToChat, sendRichToChat, sendDocumentToChat, sendPhotoToChat, escapeHtml, parentWebAppMarkup };

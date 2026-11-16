@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { HiChatBubbleLeftRight } from "react-icons/hi2";
+import { HiChatBubbleLeftRight, HiClock, HiCreditCard, HiShoppingBag } from "react-icons/hi2";
 import Button from "../../ui/Button";
 import Chip from "../../ui/Chip";
 import List from "../../ui/List";
@@ -18,7 +18,11 @@ import SmsPurchasesTab from "./SmsPurchasesTab";
 import BuyPackageDialog, { PENDING_SMS_ORDER_KEY } from "./BuyPackageDialog";
 import { STATUS_COLOR, TOPIC_COLOR, fmtUnix } from "./smsFormat";
 
-const TABS = ["history", "transactions", "purchases"];
+const TABS = [
+  { key: "history", icon: HiClock },
+  { key: "transactions", icon: HiCreditCard },
+  { key: "purchases", icon: HiShoppingBag },
+];
 const POLL_MS = 4000;
 const POLL_LIMIT_MS = 2 * 60 * 1000;
 
@@ -240,7 +244,7 @@ function Sms() {
     <div className="flex flex-col w-full gap-4 pb-4">
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-3">
         <SmsBalanceCard balance={balance} loading={loading && !balance} isOwner={isOwner} onBuy={() => setBuyOpen(true)} />
-        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 dark:divide-night-700 rounded-2xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
+        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 dark:divide-night-700 rounded-2xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
           <Stat
             label={t("sms.lastSent")}
             value={last ? fmtUnix(last.startedAt) : t("sms.never")}
@@ -275,17 +279,18 @@ function Sms() {
 
       <div className="flex flex-col gap-3">
         <div className="flex gap-1 p-1 overflow-x-auto self-start max-w-full rounded-xl bg-slate-100 dark:bg-night-800 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {TABS.map((key) => (
+          {TABS.map(({ key, icon: Icon }) => (
             <button
               type="button"
               key={key}
               onClick={() => setTab(key)}
-              className={`px-4 h-9 shrink-0 rounded-lg text-[13px] font-semibold whitespace-nowrap cursor-pointer ${
+              className={`flex items-center gap-1.5 px-4 h-9 shrink-0 rounded-lg text-[13px] font-semibold whitespace-nowrap cursor-pointer ${
                 tab === key
-                  ? "bg-white dark:bg-night-700 text-blue-600 dark:text-blue-400 shadow-[0_1px_2px_rgba(15,23,42,0.08)] dark:shadow-none"
+                  ? "bg-white dark:bg-night-700 text-blue-600 dark:text-blue-400"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
+              <Icon className="text-base shrink-0" />
               {t(`sms.tabs.${key}`)}
             </button>
           ))}

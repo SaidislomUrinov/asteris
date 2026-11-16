@@ -223,6 +223,11 @@ router.patch(
   studentController.update,
 );
 router.patch("/:id/contact", requireStudentContact, studentController.updateContact);
+// Profildan Telegram/SMS xabar (API_CONTRACT_profile_test_and_student_notify.md §2)
+// — kontakt bilan bir xil doira/ruxsat (`student:contact`), yangi permission
+// qo'shilmagan.
+router.post("/:id/message/telegram", requireStudentContact, studentController.sendTelegramMessage);
+router.post("/:id/message/sms", requireStudentContact, studentController.sendSmsMessage);
 // O'quvchi rasmi — `photo` maydoni, multipart (API_CONTRACT_student_photo.md §3).
 // `/:id/photo` bilan to'qnashadigan boshqa PUT/DELETE marshrut yo'q.
 router.put("/:id/photo", requireStudentPhoto, studentController.setPhoto);

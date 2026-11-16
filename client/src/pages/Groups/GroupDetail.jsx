@@ -26,6 +26,7 @@ import {
   HiPencilSquare,
   HiPhone,
   HiPlus,
+  HiQrCode,
   HiReceiptPercent,
   HiCurrencyDollar,
   HiUserGroup,
@@ -36,6 +37,8 @@ import {
   HiStar,
   HiClipboardDocumentList,
   HiBookOpen,
+  HiQuestionMarkCircle,
+  HiMegaphone,
 } from "react-icons/hi2";
 import Button from "../../ui/Button";
 import Input from "../../ui/Input";
@@ -69,6 +72,8 @@ import GradeCell from "./GradeCell";
 import useTodayGrades from "./useTodayGrades";
 import SyllabusTab from "./SyllabusTab";
 import HomeworkTab from "./HomeworkTab";
+import QuizTab from "./QuizTab";
+import BroadcastDialog from "./BroadcastDialog";
 import LatestHomeworkCard from "./LatestHomeworkCard";
 import useLatestHomework from "./useLatestHomework";
 import GroupSectionTabs from "./GroupSectionTabs";
@@ -108,14 +113,13 @@ import AdjustCoinsDialog from "../Coins/AdjustCoinsDialog";
 import TelegramStatusBadges from "../../ui/TelegramStatusBadges";
 import PaymentDialog from "../Students/PaymentDialog";
 import ReceiptPromptDialog from "../Students/ReceiptPromptDialog";
-import ExportExcelButton from "../../ui/ExportExcelButton";
-import GroupQrCardsButton from "./GroupQrCardsButton";
 import HiddenFinancePanel from "../../components/HiddenFinancePanel";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
 import { isTodayLessonDay } from "../../utils/schedule";
 import { maskMoney } from "../../utils/moneyFormat";
 import { dateLocale } from "../../utils/locale";
+import { downloadGroupQrCardsPdf } from "../Students/qrCard.util";
 
 // Guruh holati — rang bilan ham farqlanadi (faqat matn emas).
 const STATUS_CHIP_COLOR = { pending: "orange", active: "emerald", finished: "slate" };
@@ -203,6 +207,8 @@ function GroupDetail({ groupId, live = false }) {
   const showPlans = isTeacher && can("lesson:view") && hasFeature("lesson.planning");
   // "Oxirgi vazifa" kartasi — guruh so'rovi bilan bir vaqtda yuklanadi.
   const canHomework = can("attendance:view") && hasFeature("homework.manage");
+  // "Testlar" tabi — API_CONTRACT_quiz.md §"Tarif feature flag" (`quiz.manage` bitta flag yetarli).
+  const canQuiz = can("attendance:view") && hasFeature("quiz.manage");
   const latestHomework = useLatestHomework(id, canHomework);
 
   const [group, setGroup] = useState(null);
@@ -258,6 +264,7 @@ function GroupDetail({ groupId, live = false }) {
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [enrollKey, setEnrollKey] = useState(0);
   const [importOpen, setImportOpen] = useState(false);
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
   // Oxirgi import batch — ingichka eslatma qatori uchun (API_CONTRACT_import_undo.md §1-band).
   const [importBatch, setImportBatch] = useState(null);
   const [undoBatchOpen, setUndoBatchOpen] = useState(false);
@@ -317,6 +324,12 @@ function GroupDetail({ groupId, live = false }) {
   const currentMonth = currentMonthTashkent();
   const monthNames = t("common.monthNames", { returnObjects: true });
   const [monthParam, setMonthParam] = useQueryState("month", currentMonth);
+  // "Oylik davomat" tabidagi "Barchasi keldi" tugmasi matritsa ichidagi
+  // state (selectedDate/bulkTargets/...) ga bog'liq, shuning uchun bu
+  // state yuqoriga ko'tarilmaydi — o'rniga shared toolbar qatorida bo'sh
+  // slot DOM node beriladi, `MonthlyAttendance` o'z tugmasini shu nodega
+  // `createPortal` bilan chiqaradi.
+  const [attendanceActionsSlot, setAttendanceActionsSlot] = useState(null);
   const monthFilterOn = !!group?.activatedAt;
   const monthMin = monthFilterOn
     ? students
@@ -327,7 +340,9 @@ function GroupDetail({ groupId, live = false }) {
     : currentMonth;
   const selectedMonth = monthFilterOn ? clampMonth(monthParam, monthMin, currentMonth) : currentMonth;
   const isPastMonth = selectedMonth !== currentMonth;
-  // Baholar/Oylik davomat tablari o'zgarmaydi — ularda reyting doim joriy oy.
+  // "Oylik davomat" tabi endi SHU `selectedMonth`ni ishlatadi (oy filtri
+  // global — qaysi tabda o'zgartirilsa, hammasiga tarqaladi). Baholar/Uyga
+  // vazifa tablari hamon o'zgarmagan — ularda reyting doim joriy oy.
   const summaryMonth =
     hasGeneralTab && studentTab === "general" && selectedMonth !== currentMonth ? selectedMonth : undefined;
   const studentsSummary = useStudentsSummary(id, isSortableTab(studentTab), summaryMonth);
@@ -973,18 +988,6 @@ function GroupDetail({ groupId, live = false }) {
           },
         ]
       : []),
-    ...(canIssueCertificates
-      ? [
-          {
-            key: "certificate",
-            icon: HiAcademicCap,
-            label: t("certificate.issueToGroup"),
-            color: "violet",
-            variant: "outlined",
-            onClick: () => setCertificateOpen(true),
-          },
-        ]
-      : []),
     ...(canManageGroup && group.status === "pending" && !isIndividual
       ? [
           {
@@ -1039,6 +1042,8 @@ function GroupDetail({ groupId, live = false }) {
   // (masalan tarif tugab `lesson.planning` o'chsa). Tanlangan tab ro'yxatdan
   // yo'qolsa, uning kontenti "yetim" bo'lib qolmasligi uchun birinchi mavjud
   // tabga qaytiladi.
+  const canAddStudents = group.status !== "finished" && can("student:create") && !isIndividual;
+  const canGradeToday = canWriteStudy && can("attendance:create") && group.status === "active" && !!todayLesson;
   const studentTabs = [
     ...(hasGeneralTab || simpleView
       ? [{ key: "general", label: t("group.tabStudentsSection") }]
@@ -1053,6 +1058,12 @@ function GroupDetail({ groupId, live = false }) {
     ...(can("lesson:view") && hasFeature("lesson.planning")
       ? [{ key: "plan", label: t("syllabus.tab") }]
       : []),
+    ...(canQuiz ? [{ key: "quiz", label: t("quiz.tab") }] : []),
+    // Exceldan import va Sertifikat berish — avval alohida tugma/menyu bandi
+    // edi, endi tab qatorida (bosilganda mos dialog ochiladi, activeTab
+    // o'zgarmaydi — pastdagi `handleTabChange` shu ikkisini ushlab qoladi).
+    ...(canAddStudents ? [{ key: "import", label: t("import.buttonLabel") }] : []),
+    ...(canIssueCertificates ? [{ key: "certificate", label: t("certificate.issueToGroup") }] : []),
     // Statistika (grafiklar/kalendar) — avval alohida yuqori bo'lim edi,
     // endi shu yagona tab qatorining oxirgisi.
     { key: "stats", label: t("group.tabStatistics") },
@@ -1060,24 +1071,36 @@ function GroupDetail({ groupId, live = false }) {
   const activeTab = studentTabs.some((tab) => tab.key === studentTab)
     ? studentTab
     : studentTabs[0]?.key;
+  // "import" va "certificate" — haqiqiy kontent emas, bosilganda dialog
+  // ochiladi; joriy ko'rinish (activeTab) o'zgarmay qoladi.
+  const handleTabChange = (key) => {
+    if (key === "import") {
+      setImportOpen(true);
+      return;
+    }
+    if (key === "certificate") {
+      setCertificateOpen(true);
+      return;
+    }
+    setStudentTab(key);
+  };
 
-  const canAddStudents = group.status !== "finished" && can("student:create") && !isIndividual;
-  const canGradeToday = canWriteStudy && can("attendance:create") && group.status === "active" && !!todayLesson;
   const VIEW_ICONS = {
     general: HiUsers,
     monthly: HiTableCells,
     grades: HiStar,
     homework: HiClipboardDocumentList,
     plan: HiBookOpen,
+    quiz: HiQuestionMarkCircle,
+    import: HiArrowUpTray,
+    certificate: HiAcademicCap,
     stats: HiChartBarSquare,
   };
   // simpleView: ekranda faqat "Faollashtirish" + "O'quvchi qo'shish";
-  // "Tahrirlash", Statistika va import — "⋮" ichida, xavfli amallar oxirida.
-  // Davomat/Baholar/Vazifa/Reja — sarlavha ostidagi tab qatorida.
+  // "Tahrirlash" — "⋮" ichida, xavfli amallar oxirida. Davomat/Baholar/
+  // Vazifa/Reja/Statistika/Import/Sertifikat — sarlavha ostidagi tab qatorida.
   const hasHomeworkTab = studentTabs.some((tab) => tab.key === "homework");
-  const sectionTabs = studentTabs
-    .filter((tab) => tab.key !== "stats" || activeTab === "stats")
-    .map((tab) => ({ ...tab, icon: VIEW_ICONS[tab.key] }));
+  const sectionTabs = studentTabs.map((tab) => ({ ...tab, icon: VIEW_ICONS[tab.key] }));
   const shownPrimary = simpleView
     ? [
         ...primaryActions.filter((a) => a.key === "activate"),
@@ -1094,6 +1117,14 @@ function GroupDetail({ groupId, live = false }) {
                   setEnrollOpen(true);
                 },
               },
+              {
+                key: "broadcast",
+                icon: HiMegaphone,
+                label: t("group.broadcast.button"),
+                color: "blue",
+                variant: "outlined",
+                onClick: () => setBroadcastOpen(true),
+              },
             ]
           : []),
       ]
@@ -1101,21 +1132,82 @@ function GroupDetail({ groupId, live = false }) {
   const shownMenu = simpleView
     ? [
         ...topActions.filter((a) => a.key === "edit"),
-        ...studentTabs
-          .filter((tab) => tab.key === "stats")
-          .map((tab) => ({
-            key: `view-${tab.key}`,
-            icon: VIEW_ICONS[tab.key],
-            label: tab.label,
-            onClick: () => setStudentTab(tab.key),
-          })),
-        ...(canAddStudents
-          ? [{ key: "import", icon: HiArrowUpTray, label: t("import.buttonLabel"), onClick: () => setImportOpen(true) }]
-          : []),
         ...topActions.filter((a) => !["edit", "activate"].includes(a.key) && !a.risky),
         ...topActions.filter((a) => a.risky),
       ]
     : menuActions;
+
+  // QR kartalar va Excelga export — avval sarlavha qatorida alohida ikonka
+  // tugma edi, endi "⋮" menyusi ichida (statistika/import/sertifikat kabi
+  // tab bo'lmaydi — ikkisi ham to'g'ridan-to'g'ri yuklab olish amali).
+  const canDownloadQrCards = hasFeature("attendance.qr") && can("attendance:view");
+  const canDownloadExcel = !isTeacher;
+  const downloadQrCards = async () => {
+    try {
+      const res = await api.get(`/attendance/qr/group/${id}`);
+      const { ok, data, msg } = res.data;
+      if (!ok) throw new Error(msg);
+      if (!data.students.length) throw new Error("attendance.qrGroupEmpty");
+      const cards = data.students.map((s) => ({
+        fullName: s.fullName,
+        qrToken: s.qrToken,
+        centerName: data.center.name,
+        centerLogo: data.center.logo,
+        groups: [data.group.name],
+      }));
+      await downloadGroupQrCardsPdf(cards, data.group.name, t);
+      successMsg("attendance.qrGroupDownloaded");
+    } catch (error) {
+      errorMsg(error.message);
+    }
+  };
+  const downloadExcelExport = async () => {
+    try {
+      const res = await api.get(`/groups/${id}/export`, { responseType: "blob" });
+      const isJsonError = res.data?.type === "application/json";
+      if (isJsonError) {
+        const text = await res.data.text();
+        const parsed = JSON.parse(text);
+        throw new Error(parsed.msg || "common.exportError");
+      }
+      const disposition = res.headers["content-disposition"] || "";
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      const filename = match ? decodeURIComponent(match[1]) : "export.xlsx";
+      const url = URL.createObjectURL(res.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      successMsg("common.exportSuccess");
+    } catch (error) {
+      errorMsg(error.message || "common.exportError");
+    }
+  };
+  const downloadMenuItems = [
+    ...(canDownloadQrCards
+      ? [
+          {
+            key: "qrCards",
+            icon: HiQrCode,
+            label: t("attendance.qrGroupCards"),
+            onClick: downloadQrCards,
+          },
+        ]
+      : []),
+    ...(canDownloadExcel
+      ? [
+          {
+            key: "exportExcel",
+            icon: HiTableCells,
+            label: t("common.exportExcel"),
+            onClick: downloadExcelExport,
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div className="flex flex-col w-full h-full gap-4">
@@ -1128,12 +1220,12 @@ function GroupDetail({ groupId, live = false }) {
           </IconButton>
         )}
 
-        {/* Ekranda faqat asosiy amal (Tahrirlash / Faollashtirish) + tezkor
-            yuklab olish ikonkalari; qolganlari (Sertifikat, Yakunlash,
-            Arxivlash) bitta "⋮" menyuda, xavfli amallar eng pastda.
-            Ko'rsatish/yashirish KONTEYNER div'da — Button/IconButton ning
-            `inline-flex` bazasi `hidden` ni bosib ketadi. QR/Excel o'z
-            yuklash holati bilan ishlaydi, shuning uchun menyuga olinmadi. */}
+        {/* Ekranda faqat asosiy amal (Tahrirlash / Faollashtirish + O'quvchi
+            qo'shish); qolgan hammasi (Sertifikat/Import/Statistika — tab
+            qatorida; QR kartalar/Excelga export/Yakunlash/Arxivlash) bitta
+            "⋮" menyuda, xavfli amallar eng pastda. Ko'rsatish/yashirish
+            KONTEYNER div'da — Button/IconButton ning `inline-flex` bazasi
+            `hidden` ni bosib ketadi. */}
         <div className="flex items-center gap-2">
           {shownPrimary.map((action) => (
             <div key={action.key} className="contents">
@@ -1160,18 +1252,25 @@ function GroupDetail({ groupId, live = false }) {
               </div>
             </div>
           ))}
-          <GroupQrCardsButton groupId={id} variant="icon" />
-          {!isTeacher && <ExportExcelButton endpoint={`/groups/${id}/export`} variant="icon" />}
-          {shownMenu.length > 0 && (
+          {(shownMenu.length > 0 || downloadMenuItems.length > 0) && (
             <DropMenu
-              items={shownMenu.map((action) => ({
-                label: action.label,
-                icon: action.icon,
-                iconClass: action.risky
-                  ? RISKY_ICON_CLASS[action.color]
-                  : "bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400",
-                onClick: action.onClick,
-              }))}
+              items={[
+                ...downloadMenuItems.map((action) => ({
+                  label: action.label,
+                  icon: action.icon,
+                  iconClass: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
+                  onClick: action.onClick,
+                })),
+                ...shownMenu.map((action, index) => ({
+                  label: action.label,
+                  icon: action.icon,
+                  iconClass: action.risky
+                    ? RISKY_ICON_CLASS[action.color]
+                    : "bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400",
+                  onClick: action.onClick,
+                  divider: index === 0 && downloadMenuItems.length > 0,
+                })),
+              ]}
             />
           )}
         </div>
@@ -1293,26 +1392,7 @@ function GroupDetail({ groupId, live = false }) {
           dastur va statistika (avval ikki qavat edi: O'quvchilar|Statistika
           + ichki tablar). */}
 
-      {simpleView ? (
-        <GroupSectionTabs tabs={sectionTabs} active={activeTab} onChange={setStudentTab} />
-      ) : (
-      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-night-800 max-w-full overflow-x-auto self-start shrink-0">
-        {studentTabs.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setStudentTab(tab.key)}
-            className={`px-3 h-8 shrink-0 whitespace-nowrap rounded-lg text-[13px] font-semibold cursor-pointer transition-colors duration-150 ${
-              activeTab === tab.key
-                ? "bg-white dark:bg-night-900 text-slate-900 dark:text-slate-100 shadow-sm dark:shadow-none"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-      )}
+      <GroupSectionTabs tabs={sectionTabs} active={activeTab} onChange={handleTabChange} />
 
       {activeTab === "stats" && (
         <>
@@ -1354,7 +1434,7 @@ function GroupDetail({ groupId, live = false }) {
         {isSortableTab(activeTab) && (
         <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-slate-100 dark:border-night-700">
             <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-              {activeTab === "general" && monthFilterOn && !isTeacher && (
+              {((activeTab === "general" && !isTeacher) || activeTab === "monthly") && monthFilterOn && (
                 <>
                   <MonthNav
                     month={selectedMonth}
@@ -1387,6 +1467,15 @@ function GroupDetail({ groupId, live = false }) {
                 options={SORT_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
               />
             </div>
+            {/* "Barchasi keldi" tugmasi shu yerga `createPortal` orqali
+                chiqadi (pastdagi `<MonthlyAttendance actionsSlot=…>`).
+                Faqat md+ (desktop matritsa ko'rinishi) — mobilda
+                `MonthlyAttendance` o'zining alohida tezkor tugmasini
+                ko'rsatadi, shuning uchun bu yerda `hidden` qoldiriladi
+                (aks holda ikkita bir xil tugma chiqib qolardi). */}
+            {activeTab === "monthly" && (
+              <div ref={setAttendanceActionsSlot} className="hidden md:flex md:ml-auto" />
+            )}
             {activeTab === "general" && group.status !== "finished" && can("student:create") && !isIndividual && !simpleView && (
               <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto sm:ml-auto">
                 <div className="max-sm:flex-1 max-sm:min-w-[140px]">
@@ -1417,6 +1506,16 @@ function GroupDetail({ groupId, live = false }) {
                   >
                     <HiPlus className="text-base shrink-0" />
                     {t("student.create")}
+                  </Button>
+                </div>
+                <div className="max-sm:flex-1 max-sm:min-w-[140px]">
+                  <Button
+                    variant="outlined"
+                    className="gap-1.5 w-full sm:w-auto max-sm:px-3"
+                    onClick={() => setBroadcastOpen(true)}
+                  >
+                    <HiMegaphone className="text-base shrink-0" />
+                    {t("group.broadcast.button")}
                   </Button>
                 </div>
               </div>
@@ -1484,11 +1583,19 @@ function GroupDetail({ groupId, live = false }) {
             canWrite={canWriteSyllabus && can("lesson:update")}
             canImport={canWriteSyllabus && can("lesson:create")}
           />
+        ) : activeTab === "quiz" ? (
+          <QuizTab
+            groupId={id}
+            subjectId={group.subject}
+            canWrite={can("attendance:create") && group.status === "active"}
+          />
         ) : activeTab === "monthly" ? (
           <MonthlyAttendance
             groupId={id}
             students={sortedStudents}
             ranks={ranks}
+            month={selectedMonth}
+            actionsSlot={attendanceActionsSlot}
             canMark={can("attendance:create") && group.status === "active"}
             minDate={isTeacher ? yesterdayString() : ""}
             onOpenStudent={isTeacher && hasFeature(BADGE_FEATURE) ? (s) => navigate(`/students/${s._id}`) : undefined}
@@ -1977,6 +2084,12 @@ function GroupDetail({ groupId, live = false }) {
           fetchStudents();
           fetchImportBatch();
         }}
+      />
+
+      <BroadcastDialog
+        open={broadcastOpen}
+        onClose={() => setBroadcastOpen(false)}
+        groupId={group._id}
       />
 
       {editTargetView && (

@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { HiExclamationTriangle, HiPlus, HiRectangleStack } from "react-icons/hi2";
+import { HiExclamationTriangle, HiPlus, HiQuestionMarkCircle, HiRectangleStack } from "react-icons/hi2";
 import Button from "../../ui/Button";
 import PlanCard from "./PlanCard";
 import PlanCardSkeleton from "./PlanCardSkeleton";
 import PlanFormDialog from "./PlanFormDialog";
+import QuizTemplatesTab from "./QuizTemplatesTab";
+import GroupSectionTabs from "../Groups/GroupSectionTabs";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { api } from "../../utils/fetching";
+import useFeature from "../../hooks/useFeature";
 
 const SKELETON_COUNT = 6;
 
@@ -19,6 +22,11 @@ const SKELETON_COUNT = 6;
 function MyPlans() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const hasFeature = useFeature();
+  // "Testlar" tabi faqat tarif `quiz.manage` flagini ochganda ko'rinadi
+  // (GroupDetail.jsx `canQuiz` bilan bir xil naqsh).
+  const canQuizTemplates = hasFeature("quiz.manage");
+  const [activeTab, setActiveTab] = useState("plans"); // plans | quiz
 
   const [plans, setPlans] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -131,50 +139,63 @@ function MyPlans() {
     );
   };
 
+  const tabs = [
+    { key: "plans", label: t("teachingPlan.tab"), icon: HiRectangleStack },
+    canQuizTemplates && { key: "quiz", label: t("quiz.template.tab"), icon: HiQuestionMarkCircle },
+  ].filter(Boolean);
+
   return (
     <div className="flex flex-col w-full h-full gap-4">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-sm dark:shadow-none shadow-slate-900/[0.02]">
-        {/* Fan filtri — chiplar, ko'p bo'lsa keyingi qatorga o'tadi. */}
-        <div className="flex items-center gap-1.5 min-w-0 flex-1 flex-wrap">
-          {subjects.length > 0 &&
-            chips.map((s) => {
-              const active = subject === s._id;
-              return (
-                <button
-                  key={s._id || "all"}
-                  type="button"
-                  onClick={() => setSubject(s._id)}
-                  className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap cursor-pointer transition-colors ${
-                    active
-                      ? "bg-slate-900 text-white"
-                      : "bg-slate-100 dark:bg-night-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-night-700"
-                  }`}
-                >
-                  {s.name}
-                </button>
-              );
-            })}
-        </div>
+      {canQuizTemplates && <GroupSectionTabs tabs={tabs} active={activeTab} onChange={setActiveTab} />}
 
-        {/* Mobilda alohida qatorda — chiplarni kesib qo'ymasligi uchun. */}
-        <div className="sm:ml-auto shrink-0">
-          <Button onClick={openCreate} className="gap-1.5 w-full sm:w-auto">
-            <HiPlus className="text-base" />
-            {t("teachingPlan.new")}
-          </Button>
-        </div>
-      </div>
+      {activeTab === "plans" ? (
+        <>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-sm dark:shadow-none shadow-slate-900/[0.02]">
+            {/* Fan filtri — chiplar, ko'p bo'lsa keyingi qatorga o'tadi. */}
+            <div className="flex items-center gap-1.5 min-w-0 flex-1 flex-wrap">
+              {subjects.length > 0 &&
+                chips.map((s) => {
+                  const active = subject === s._id;
+                  return (
+                    <button
+                      key={s._id || "all"}
+                      type="button"
+                      onClick={() => setSubject(s._id)}
+                      className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap cursor-pointer transition-colors ${
+                        active
+                          ? "bg-slate-900 text-white"
+                          : "bg-slate-100 dark:bg-night-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-night-700"
+                      }`}
+                    >
+                      {s.name}
+                    </button>
+                  );
+                })}
+            </div>
 
-      {renderBody()}
+            {/* Mobilda alohida qatorda — chiplarni kesib qo'ymasligi uchun. */}
+            <div className="sm:ml-auto shrink-0">
+              <Button onClick={openCreate} className="gap-1.5 w-full sm:w-auto">
+                <HiPlus className="text-base" />
+                {t("teachingPlan.new")}
+              </Button>
+            </div>
+          </div>
 
-      <PlanFormDialog
-        key={dialogKey}
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        subjects={subjects}
-        defaultSubject={subject}
-        onSaved={(plan) => plan?._id && navigate(`/my-plans/${plan._id}`)}
-      />
+          {renderBody()}
+
+          <PlanFormDialog
+            key={dialogKey}
+            open={createOpen}
+            onClose={() => setCreateOpen(false)}
+            subjects={subjects}
+            defaultSubject={subject}
+            onSaved={(plan) => plan?._id && navigate(`/my-plans/${plan._id}`)}
+          />
+        </>
+      ) : (
+        <QuizTemplatesTab subjects={subjects} subject={subject} />
+      )}
     </div>
   );
 }

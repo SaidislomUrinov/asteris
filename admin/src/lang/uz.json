@@ -282,6 +282,7 @@
       "room": "Xona",
       "lesson": "Dars",
       "homework": "Uy vazifasi",
+      "quiz": "Test",
       "certificate": "Sertifikat",
       "receipt": "Chek",
       "finance": "Moliya",
@@ -355,6 +356,10 @@
       "homework_manage": {
         "label": "Uy vazifasi",
         "description": "O'quvchilarga uy vazifasi berish va uni tekshirish imkonini beradi."
+      },
+      "quiz_manage": {
+        "label": "Test",
+        "description": "Guruhga test yuborish, natijalarni ko'rish va baholash imkonini beradi."
       },
       "certificate_manage": {
         "label": "Sertifikat",

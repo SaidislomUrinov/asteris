@@ -39,7 +39,8 @@ const phoneSuffix = (raw) => {
 // `entries` — ixtiyoriy, [{ _id, label, price, cycles? }] — tahrirlanadigan FAOL
 // guruh-yozuvlari. Berilmasa (yoki bo'sh bo'lsa) summa bo'limi ko'rsatilmaydi.
 // `cycles` — entry.priceCycles (API_CONTRACT_past_cycle_price.md): o'tgan
-// oylar summasini FAQAT shu oy uchun o'zgartirish (`{ price, cycleStart }`).
+// oylar summasini o'zgartirish (`{ price, cycleStart }`) — tanlangan oydan
+// boshlab keyingi barcha oylarga amal qiladi.
 // `joinedAt`/`groupStatus`/`activatedAt` — ixtiyoriy: berilsa va guruh faol
 // bo'lsa "O'qishni boshlagan sana" maydoni chiqadi
 // (API_CONTRACT_group_month_filter_and_start_date.md §B.3/§B.5).
@@ -127,20 +128,24 @@ function StudentEditDialog({ open, onClose, student, entries = [], onSaved }) {
       const { ok, data, msg } = res.data;
       if (!ok) throw new Error(msg);
 
-      for (const en of changedPrices) {
-        const priceRes = await api.patch(`/students/${student._id}/groups/${en._id}`, {
-          price: Number(prices[en._id]),
-        });
-        if (!priceRes.data.ok) throw new Error(priceRes.data.msg);
-      }
-
-      // O'tgan oylar — har biri faqat o'z sikliga ta'sir qiladi.
-      for (const c of changedCycles) {
+      // O'tgan oy narxi shu oydan boshlab KEYINGI barcha oylarga tarqaladi
+      // (API_CONTRACT_past_cycle_price.md) — shuning uchun avval o'tgan oylar
+      // eskisidan yangisiga qarab, eng oxirida joriy summa yuboriladi; aks
+      // holda keyingi so'rov oldingisini bekor qilib yuborardi.
+      const orderedCycles = [...changedCycles].sort((a, b) => a.cycleStart - b.cycleStart);
+      for (const c of orderedCycles) {
         const cycleRes = await api.patch(`/students/${student._id}/groups/${c.entryId}`, {
           price: c.price,
           cycleStart: c.cycleStart,
         });
         if (!cycleRes.data.ok) throw new Error(cycleRes.data.msg);
+      }
+
+      for (const en of changedPrices) {
+        const priceRes = await api.patch(`/students/${student._id}/groups/${en._id}`, {
+          price: Number(prices[en._id]),
+        });
+        if (!priceRes.data.ok) throw new Error(priceRes.data.msg);
       }
 
       // O'qishni boshlagan sana — kreditlar va qarz serverda qayta hisoblanadi.

@@ -263,7 +263,7 @@ module.exports = {
     $set.updatedAt = getNow();
     if (adminId) $set.updatedBy = adminId;
 
-    const doc = await SystemSetting.findOneAndUpdate({ key: "global" }, { $set }, { new: true, upsert: true });
+    const doc = await SystemSetting.findOneAndUpdate({ key: "global" }, { $set }, { returnDocument: "after", upsert: true });
 
     await invalidate();
     // SMTP o'zgargan bo'lishi mumkin — keshlangan transport bekor qilinadi.

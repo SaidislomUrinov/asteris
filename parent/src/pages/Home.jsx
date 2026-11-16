@@ -8,6 +8,8 @@ import { TodayCard } from "../components/TodayCard";
 import { ChildCard } from "../components/ChildCard";
 import { RecentNotifications } from "../components/RecentNotifications";
 import { CoinBalanceCard } from "../components/CoinBalanceCard";
+import { ActiveQuizSection } from "../components/ActiveQuizSection";
+import { QuizHistorySection } from "../components/QuizHistorySection";
 import { ListSkeleton, Skeleton } from "../components/Skeleton";
 import { EmptyState, ErrorState } from "../components/States";
 import { useAuth } from "../contexts/auth";
@@ -65,6 +67,9 @@ export const Home = () => {
       ) : (
         <>
           <TodayCard lessons={today} />
+
+          <ActiveQuizSection />
+          <QuizHistorySection />
 
           <SectionLabel>{t("home.children")}</SectionLabel>
           <div className="space-y-2.5">

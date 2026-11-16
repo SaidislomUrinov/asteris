@@ -67,6 +67,7 @@ const schema = new Schema({
 
       "lesson.planning", // Dars rejalashtirish
       "homework.manage", // Uy vazifalarini boshqarish
+      "quiz.manage", // Test (Quiz) yaratish va yuborish
 
       "certificate.manage", // Sertifikat yaratish va berish
 

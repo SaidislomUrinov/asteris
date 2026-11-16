@@ -31,9 +31,13 @@ const getTariff = () => {
 let groupSeq = 0;
 let phoneSeq = 1000000;
 
+// Brend slug'i — hodim kirishi (`/staff-auth/signin`) mijozni shu orqali topadi.
+const slugOf = (phone) => `t${String(phone).replace(/\D/g, "")}`;
+
 const seedClient = async ({ phone, password = "secret-pass" }) => {
   const tariff = await getTariff();
-  const client = await Client.create({ name: `Client ${phone}`, phone, password: await getHash(password) });
+  const slug = slugOf(phone);
+  const client = await Client.create({ name: `Client ${phone}`, phone, slug, password: await getHash(password) });
   const now = getNow();
   const sub = await Subscription.create({
     client: client._id,
@@ -46,7 +50,7 @@ const seedClient = async ({ phone, password = "secret-pass" }) => {
   });
   client.subscription = sub._id;
   await client.save();
-  return { client, phone, password };
+  return { client, phone, password, slug };
 };
 
 const seedCenter = async (client, name) => {
@@ -80,6 +84,7 @@ const seedGroup = async (client, { center, subject, room }, schedule = {}) =>
 
 const seedStudent = async (client, group, fullName) =>
   Student.create({
+    client: client._id,
     phone: `+99890${++phoneSeq}`,
     fullName,
     groups: [
@@ -104,7 +109,7 @@ const seedStaff = async (client, center, { login, password = "staff-pass", role 
     role,
     permissions,
   });
-  return { staff, login, password };
+  return { staff, login, password, slug: client.slug };
 };
 
 module.exports = { seedClient, seedCenter, seedGroup, seedStudent, seedStaff };

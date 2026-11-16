@@ -142,6 +142,17 @@ module.exports = {
     }
   },
 
+  broadcast: async (req, res, next) => {
+    try {
+      const text = typeof req.body.text === "string" ? req.body.text.trim() : "";
+      if (!text) return res.status(400).send({ ok: false, msg: "group.broadcast.emptyText" });
+      const data = await groupService.broadcast(req.client._id, req.params.id, text);
+      return res.send({ ok: true, data, msg: "group.broadcast.sent" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   reschedule: async (req, res, next) => {
     try {
       const data = await groupService.reschedule(req.client._id, req.params.id, req.body, req.staff);

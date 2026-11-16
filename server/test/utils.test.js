@@ -186,17 +186,41 @@ describe("gradeScore.util", () => {
 });
 
 describe("subscriptionPricing.util", () => {
-  test("muddat chegirmalari", () => {
-    assert.equal(pricing.calcAmount(100000, 1), 100000);
-    assert.equal(pricing.calcAmount(100000, 3), 285000);
-    assert.equal(pricing.calcAmount(100000, 6), 558000);
-    assert.equal(pricing.calcAmount(100000, 9), 810000);
-    assert.equal(pricing.calcAmount(100000, 12), 1056000);
+  const table = pricing.DEFAULT_DURATION_DISCOUNTS;
+
+  test("muddat chegirmalari (default jadval)", () => {
+    assert.equal(pricing.calcAmount(100000, 1, table), 100000);
+    assert.equal(pricing.calcAmount(100000, 3, table), 285000);
+    assert.equal(pricing.calcAmount(100000, 6, table), 558000);
+    assert.equal(pricing.calcAmount(100000, 9, table), 810000);
+    assert.equal(pricing.calcAmount(100000, 12, table), 1056000);
   });
 
-  test("isValidDuration — faqat jadvaldagi muddatlar", () => {
-    for (const m of [1, 3, 6, 9, 12]) assert.equal(pricing.isValidDuration(m), true);
-    for (const m of [0, 2, 24, -1]) assert.equal(pricing.isValidDuration(m), false);
+  test("jadvalda yo'q muddat → null", () => {
+    for (const m of [0, 2, 24, -1]) assert.equal(pricing.calcAmount(100000, m, table), null);
+  });
+
+  test("discountsOf — sozlama bo'lmasa default, bo'lsa saralangan jadval", () => {
+    assert.deepEqual(pricing.discountsOf(null), table);
+    assert.deepEqual(pricing.discountsOf({ subscription: { durationDiscounts: [] } }), table);
+    assert.deepEqual(
+      pricing.discountsOf({ subscription: { durationDiscounts: [{ months: 6, percent: 20 }, { months: 1 }] } }),
+      [{ months: 1, percent: 0 }, { months: 6, percent: 20 }],
+    );
+  });
+
+  test("normalizeDiscounts — validatsiya", () => {
+    assert.deepEqual(
+      pricing.normalizeDiscounts([{ months: 3, percent: 5.04 }, { months: 1, percent: 0 }]),
+      [{ months: 1, percent: 0 }, { months: 3, percent: 5 }],
+    );
+    assert.throws(() => pricing.normalizeDiscounts([]), /tariff\.discountsEmpty/);
+    assert.throws(() => pricing.normalizeDiscounts([{ months: 0, percent: 5 }]), /tariff\.discountsInvalid/);
+    assert.throws(() => pricing.normalizeDiscounts([{ months: 1, percent: 95 }]), /tariff\.discountsInvalid/);
+    assert.throws(
+      () => pricing.normalizeDiscounts([{ months: 1, percent: 0 }, { months: 1, percent: 5 }]),
+      /tariff\.discountsDuplicate/,
+    );
   });
 });
 

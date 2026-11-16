@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
-import { HiCheck, HiChevronLeft, HiChevronRight, HiExclamationCircle, HiQuestionMarkCircle, HiXMark } from "react-icons/hi2";
+import { HiCheck, HiExclamationCircle, HiXMark } from "react-icons/hi2";
 import StudentPhotoAvatar from "../../ui/StudentPhotoAvatar";
 import RowNumber from "../../ui/RowNumber";
 import RankMedal from "../../ui/RankMedal";
@@ -12,11 +12,6 @@ import MatrixSkeleton from "./MatrixSkeleton";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { api } from "../../utils/fetching";
 import { errorMsg, successMsg } from "../../utils/alert";
-
-const MONTH_KEYS = [
-  "yanvar", "fevral", "mart", "aprel", "may", "iyun",
-  "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr",
-];
 
 // Izohlar qatori va tanlash menyusi uchun ranglar. Katakning o'zi
 // `AttendanceCheckbox` da chiziladi — ikonlar ham o'sha yerda.
@@ -38,12 +33,6 @@ const STATUS_TONE = {
   unmarked: { icon: null, cls: "bg-slate-100 dark:bg-night-800 text-slate-500 dark:text-slate-400 ring-slate-200 dark:ring-night-700" },
 };
 
-const monthOf = (str) => Number(str.slice(5, 7)) - 1;
-const yearOf = (str) => Number(str.slice(0, 4));
-const shiftMonth = (str, delta) => {
-  const d = new Date(yearOf(str), monthOf(str) + delta, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-};
 const currentMonth = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -67,6 +56,13 @@ const currentMonth = () => {
  * @param {string} [props.minDate] - shu sanadan oldingi kunlar belgilanmaydi
  *   (o'qituvchi faqat bugun/kecha uchun belgilay oladi — server ham shuni
  *   majburlaydi, bu UI tomonidagi aks-sadosi)
+ * @param {string} [props.month] - `GroupDetail`dagi global `selectedMonth`
+ *   (boshqa tablar bilan bir xil, URL `?month=` orqali). Komponent endi
+ *   o'z ichida alohida oy saqlamaydi, oy navigatsiyasi `GroupDetail`dagi
+ *   umumiy `<MonthNav>` orqali (`onChange={setMonthParam}`) boshqariladi.
+ * @param {HTMLElement|null} [props.actionsSlot] - "Barchasi keldi" tugmasi
+ *   shu DOM nodega `createPortal` bilan chiqadi (shared toolbar qatoridagi
+ *   slot, `GroupDetail.jsx`)
  *
  * Davomat belgilanganda matritsa QAYTA YUKLANMAYDI — o'zgargan katak
  * (va o'sha o'quvchining foizi) socket eventi asosida joyida yangilanadi.
@@ -91,9 +87,24 @@ function StudentName({ student, onOpen, className }) {
  */
 // `onPhotoUpdated(studentId, photo)` — avatar orqali rasm o'zgarganda (barcha
 // rollar; o'qituvchida "Umumiy" tab yo'q, rasm qo'yish shu yerdan).
-function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "", onOpenStudent, onPhotoUpdated }) {
+function MonthlyAttendance({
+  groupId,
+  students,
+  ranks = {},
+  canMark,
+  minDate = "",
+  month: monthProp,
+  actionsSlot = null,
+  onOpenStudent,
+  onPhotoUpdated,
+}) {
   const { t } = useTranslation();
-  const [month, setMonth] = useState(currentMonth);
+  // Oy tanlovi endi `GroupDetail` orqali global (URL'dagi `?month=`) —
+  // Davomat o'z ichida alohida oy saqlamaydi, boshqa tablar bilan bir xil
+  // `selectedMonth`ni ishlatadi (foydalanuvchi bitta tabda oyni o'zgartirsa
+  // — hammasida o'zgaradi). Prop berilmasa (masalan eski chaqiruv qoldiqsiz
+  // sinovlarda) joriy oyga tushadi.
+  const month = monthProp || currentMonth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [picker, setPicker] = useState(null); // { studentId, date, x, y }
@@ -164,9 +175,6 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
     const pill = el.querySelector(`[data-date="${selectedDate}"]`);
     if (pill) pill.scrollIntoView({ block: "nearest", inline: "center" });
   }, [selectedDate, data?.month]);
-
-  const isCurrent = month === currentMonth();
-  const label = `${t(`common.monthNames.${monthOf(month)}`, MONTH_KEYS[monthOf(month)])} ${yearOf(month)}`;
 
   const selectedDay = useMemo(
     () => data?.days?.find((d) => d.date === selectedDate) || null,
@@ -294,53 +302,33 @@ function MonthlyAttendance({ groupId, students, ranks = {}, canMark, minDate = "
     // `flex-1` — ota konteynerdagi barqaror maydonni to'ldiradi, shuning
     // uchun yuklanishdan jadvalga o'tishda blok balandligi sakramaydi.
     <div className="flex flex-col flex-1 gap-3">
-      {/* Oy navigatsiyasi */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            title={t("group.monthlyPrevMonth")}
-            onClick={() => setMonth((m) => shiftMonth(m, -1))}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-night-800 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer transition-colors"
-          >
-            <HiChevronLeft />
-          </button>
-          <span className="min-w-32 text-center text-sm font-semibold text-slate-800 dark:text-slate-100 capitalize">
-            {label}
-          </span>
-          <button
-            type="button"
-            title={t("group.monthlyNextMonth")}
-            disabled={isCurrent}
-            onClick={() => setMonth((m) => shiftMonth(m, 1))}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 enabled:hover:bg-slate-100 dark:enabled:hover:bg-night-800 enabled:hover:text-slate-700 dark:enabled:hover:text-slate-300 enabled:cursor-pointer disabled:opacity-30 transition-colors"
-          >
-            <HiChevronRight />
-          </button>
-        </div>
-
-        {/* Katta ekranda izohlar sarlavha qatorida; mobilda mutlaqo
-            boshqa UX (pastda) ishlatiladi, shuning uchun bu yerda
-            umuman ko'rsatilmaydi. */}
-        <div className="hidden md:flex items-center gap-3">
-          <Legend t={t} className="flex" />
-          {/* Mobilda mavjud "tanlangan kun uchun hammasini kelgan qilish"
-              tezkor amali — PC matritsasida ustun sarlavhasini bosib kun
-              tanlanadi (pastda), shu yerda esa amal tugmasi turadi. Bir xil
-              `bulkConfirm` Dialog ikkala UX uchun ham umumiy. */}
-          {canMark && selectedDate && !selectedLocked && (
-            <Button
-              variant="outlined"
-              color="emerald"
-              className="!px-3 !h-8 !min-h-0 !text-[12px]"
-              onClick={() => setBulkConfirm(true)}
-              disabled={!bulkTargets.length}
-            >
-              {t("group.mobileMarkAllPresent")} — {selectedDate}
-            </Button>
-          )}
-        </div>
+      {/* Oy navigatsiyasi endi bu yerda yo'q — `GroupDetail`dagi umumiy
+          toolbar qatoridagi `<MonthNav>` orqali boshqariladi (shared
+          `selectedMonth`, boshqa tablar bilan bir xil). Izohlar (Legend)
+          katta ekranda alohida qatorda, mobilda pastda ko'rsatiladi. */}
+      <div className="hidden md:flex items-center">
+        <Legend t={t} className="flex" />
       </div>
+
+      {/* "Barchasi keldi" tugmasi — GroupDetail shared toolbar qatoridagi
+          slot nodega portal orqali chiqadi (o'qituvchi/qabulxonachi uchun
+          bitta joy, A-Z filtr yonida). `actionsSlot` berilmasa (masalan
+          slot hali DOM'ga ulanmagan birinchi render) hech narsa chiqmaydi. */}
+      {actionsSlot &&
+        canMark &&
+        selectedDate &&
+        !selectedLocked &&
+        createPortal(
+          <Button
+            variant="outlined"
+            color="emerald"
+            onClick={() => setBulkConfirm(true)}
+            disabled={!bulkTargets.length}
+          >
+            {t("group.markAllPresent")} — {selectedDate}
+          </Button>,
+          actionsSlot,
+        )}
 
       {loading ? (
         <MatrixSkeleton rows={students.length || 6} rowHeight={52} />

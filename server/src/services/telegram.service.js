@@ -4,7 +4,7 @@ const keyConfig = require("../configs/key.config");
 const Client = require("../models/Client");
 const Staff = require("../models/Staff");
 const { getBotUsername } = require("../bot");
-const { sendToChat } = require("../bot/notify");
+const { sendToChat, sendRichToChat } = require("../bot/notify");
 const { t } = require("../bot/i18n");
 const { getNow } = require("../utils/date.util");
 
@@ -99,5 +99,15 @@ module.exports = {
     if (!chatId) return { ok: false, skipped: true };
     const lang = doc?.telegram?.lang || "uz";
     return sendToChat(chatId, buildText(lang));
+  },
+
+  // `sendIfLinked`ning rich (InputRichMessage, haqiqiy heading/list bloklari
+  // bilan) varianti — dars jadvali/hisobot kabi strukturaviy xabarlar uchun.
+  sendRichIfLinked: async (kind, id, buildRich) => {
+    const doc = await Model(kind).findOne({ _id: id }).select("telegram");
+    const chatId = doc?.telegram?.chatId;
+    if (!chatId) return { ok: false, skipped: true };
+    const lang = doc?.telegram?.lang || "uz";
+    return sendRichToChat(chatId, buildRich(lang));
   },
 };

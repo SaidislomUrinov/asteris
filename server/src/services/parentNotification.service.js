@@ -23,7 +23,8 @@ const BillingSetting = require("../models/BillingSetting");
 const Notification = require("../models/Notification");
 const Homework = require("../models/Homework");
 const notificationService = require("./notification.service");
-const { sendToChat, sendDocumentToChat, parentWebAppMarkup } = require("../bot/notify");
+const { sendToChat, sendRichToChat, sendDocumentToChat, parentWebAppMarkup } = require("../bot/notify");
+const { richTable } = require("../bot/format");
 const { buildPaymentReceiptPdf, receiptFileName } = require("../utils/receiptPdf.util");
 const Student = require("../models/Student");
 const redis = require("../configs/redis.config");
@@ -61,6 +62,9 @@ const TYPE_ROLES = {
   // (API_CONTRACT_wecoin.md §5).
   coin: ["parent", "student"],
   shop: ["student"],
+  // Test (Quiz) — faqat o'quvchi roliga (API_CONTRACT_quiz.md §6).
+  quizSent: ["student"],
+  quizResult: ["student"],
 };
 const attTimers = new Map();
 
@@ -296,6 +300,24 @@ const buildCoinText = (lang, { student, ctx, month, amount, balance, role }) => 
   ].join("\n");
 };
 
+// TEST (QUIZ) — yuborilganda (faqat o'quvchiga) va natija tayyor bo'lganda.
+const buildQuizSentText = (lang, { ctx, quizTitle, startTime, questionCount, durationMin }) =>
+  [
+    `<b>${t(lang, "pnQuizSentTitle")}</b>`,
+    header(ctx),
+    "",
+    ...(quizTitle ? [`<b>${escapeHtml(quizTitle)}</b>`] : []),
+    fillVars(t(lang, "pnQuizSentBody"), { time: startTime, count: questionCount, min: durationMin }),
+  ].join("\n");
+
+const buildQuizResultText = (lang, { ctx, correctCount, total, score }) =>
+  [
+    `<b>${t(lang, "pnQuizResultTitle")}</b>`,
+    header(ctx),
+    "",
+    fillVars(t(lang, "pnQuizResultBody"), { correct: correctCount, total, score }),
+  ].join("\n");
+
 const buildShopText = (lang, { ctx, order }) =>
   [
     `<b>${t(lang, order.status === "refunded" ? "snShopRefunded" : "snShopDelivered")}</b>`,
@@ -314,6 +336,8 @@ const BUILDERS = {
   homeworkMissed: buildHomeworkMissedText,
   lessonReminder: buildLessonReminderText,
   badge: buildBadgeText,
+  quizSent: buildQuizSentText,
+  quizResult: buildQuizResultText,
 };
 
 // WebApp ichida ochiladigan sahifa (parent/ ilovasi shu yo'llarni tushunadi).
@@ -327,6 +351,9 @@ const APP_PATH = {
   homeworkMissed: ({ student, entry }) => `/child/${student._id}/group/${entry._id}/homework`,
   lessonReminder: ({ student, entry }) => `/child/${student._id}/group/${entry._id}/homework`,
   badge: ({ student, entry }) => `/child/${student._id}/group/${entry._id}/badges`,
+  // API_CONTRACT_quiz.md §6 — WebApp'ning o'ziga xos `/quiz/:entryId/:quizId` yo'li.
+  quizSent: ({ entry, quizId }) => `/quiz/${entry._id}/${quizId}`,
+  quizResult: ({ entry, quizId }) => `/quiz/${entry._id}/${quizId}`,
 };
 
 // Ota-ona botni bloklagan (403) — keyingi xabarlar urinilmaydi, /start tozalaydi.
@@ -402,7 +429,8 @@ const notify = async (type, { student, entry, dedupSuffix, data = {}, ...rest })
     });
     if (!created) continue; // allaqachon yuborilgan
 
-    const reply_markup = await parentWebAppMarkup(t(lang, "parentOpenApp"), APP_PATH[type]?.({ student, entry }) || "");
+    const buttonLabel = type === "quizSent" ? t(lang, "pnQuizStartButton") : t(lang, "parentOpenApp");
+    const reply_markup = await parentWebAppMarkup(buttonLabel, APP_PATH[type]?.({ student, entry, ...rest }) || "");
     const extra = reply_markup ? { reply_markup } : {};
 
     // To'lov: matn PDF chekka caption bo'lib bitta xabarda boradi. Caption
@@ -465,6 +493,34 @@ const buildDebtDigestText = (lang, items) => {
   return [`<b>${t(lang, "pnDebtTitle")}</b>`, "", blocks.join("\n\n"), "", `${t(lang, "pnDebtTotal")}: <b>${fmtSum(total, lang)}</b>`].join("\n");
 };
 
+// Xuddi shu ma'lumot — Telegram uchun haqiqiy jadval (tr/td) bloki, `text`
+// esa Notification hujjati/in-app ko'rinish uchun o'zgarishsiz qoladi.
+const buildDebtDigestRich = (lang, items) => {
+  const byGroup = new Map();
+  for (const it of items) {
+    const k = `${it.centerName} · ${it.groupLabel}`;
+    if (!byGroup.has(k)) byGroup.set(k, []);
+    byGroup.get(k).push(it);
+  }
+  const blocks = [{ type: "heading", size: 3, text: t(lang, "pnDebtTitle") }];
+  for (const [title, rows] of byGroup) {
+    blocks.push(
+      { type: "paragraph", text: { type: "bold", text: title } },
+      richTable(
+        [t(lang, "pnDebtStudentCol"), t(lang, "pnSom"), t(lang, "pnDebtDue")],
+        rows.map((it) => [
+          it.studentName,
+          `${fmtSum(it.debt, lang)}${(it.months || []).length ? ` (${it.months.map((m) => fmtMonth(m, lang)).join(", ")})` : ""}`,
+          it.dueDate ? fmtDate(it.dueDate) : "—",
+        ]),
+      ),
+    );
+  }
+  const total = items.reduce((sum, it) => sum + (it.debt || 0), 0);
+  blocks.push({ type: "paragraph", text: { type: "bold", text: `${t(lang, "pnDebtTotal")}: ${fmtSum(total, lang)}` } });
+  return { blocks };
+};
+
 const onDebtDigest = async ({ parent, items, date }) => {
   if (!parent || parent.telegram?.blockedAt || parent.mute?.debt) return null;
 
@@ -510,7 +566,11 @@ const onDebtDigest = async ({ parent, items, date }) => {
   if (!created) return null; // bugun allaqachon yuborilgan
 
   const reply_markup = await parentWebAppMarkup(t(lang, "parentOpenApp"), "/payments");
-  const res = await sendToChat(parent.telegram.chatId, text, reply_markup ? { reply_markup } : {});
+  const res = await sendRichToChat(
+    parent.telegram.chatId,
+    buildDebtDigestRich(lang, allowed),
+    reply_markup ? { reply_markup } : {},
+  );
   await markBlockedIfNeeded(parent, res);
   return created;
 };
@@ -636,6 +696,47 @@ const onLessonReminder = async ({ groupId, date, topic = null }) => {
       data: { date },
     });
   }
+};
+
+// TEST (QUIZ) — docs/API_CONTRACT_quiz.md §6. Yuborilgan zahoti guruhdagi
+// barcha o'quvchilarga (`Quiz.create()` fire-and-forget chaqiradi).
+const onQuizSent = async ({ groupId, quizId }) => {
+  const quiz = await require("../models/Quiz").findById(quizId).select("title startAt totalTimeSec questions").lean();
+  if (!quiz) return;
+  const info = {
+    quizTitle: quiz.title || "",
+    startTime: moment.unix(quiz.startAt).tz("Asia/Tashkent").format("HH:mm"),
+    questionCount: quiz.questions.length,
+    durationMin: Math.round(quiz.totalTimeSec / 60),
+  };
+  for (const { student, entry } of await activeMembersWithStudentLink(groupId)) {
+    await notify("quizSent", {
+      student,
+      entry,
+      quizId,
+      ...info,
+      dedupSuffix: String(quizId),
+      data: { quizId: String(quizId) },
+    });
+  }
+};
+
+// Bitta o'quvchi natijasi — job (jobs/quiz.job.js) test "finished" bo'lganda
+// har attempt uchun alohida chaqiradi, `notifiedAt` bilan idempotent.
+const onQuizResult = async ({ groupId, quizId, studentId, correctCount, total, score }) => {
+  const student = await Student.findOne({ _id: studentId, isDeleted: false });
+  const entry = student?.groups?.find((e) => String(e.group) === String(groupId));
+  if (!student || !entry) return;
+  await notify("quizResult", {
+    student,
+    entry,
+    quizId,
+    correctCount,
+    total,
+    score,
+    dedupSuffix: String(quizId),
+    data: { quizId: String(quizId), correctCount, total, score },
+  });
 };
 
 const safe = (fn) => async (...args) => {
@@ -773,6 +874,9 @@ module.exports = {
   onHomework: safe(onHomework),
   onHomeworkMissed: safe(onHomeworkMissed),
   onLessonReminder: safe(onLessonReminder),
+  // Test (Quiz) — docs/API_CONTRACT_quiz.md §6.
+  onQuizSent: safe(onQuizSent),
+  onQuizResult: safe(onQuizResult),
   centerAllows,
 
   // Testlar/skriptlar uchun.

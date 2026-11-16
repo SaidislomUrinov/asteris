@@ -1,4 +1,5 @@
 const studentService = require("../services/student.service");
+const studentMessageService = require("../services/studentMessage.service");
 const { buildActor } = require("../utils/audit.util");
 const teacherView = require("../utils/teacherView.util");
 const { sendExcel, THEME } = require("../utils/excel.util");
@@ -229,6 +230,38 @@ module.exports = {
         data: teacherView.isTeacher(req) ? teacherView.stripStudent(data) : data,
         msg: "student.updated",
       });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // POST /students/:id/message/telegram — body { templateId?, text? }
+  // (API_CONTRACT_profile_test_and_student_notify.md §2). Doira
+  // `requireStudentContact` da (student.routes.js, `student:contact`).
+  sendTelegramMessage: async (req, res, next) => {
+    try {
+      const data = await studentMessageService.sendStudentMessage(
+        req.client._id,
+        req.centerScope || null,
+        req.params.id,
+        { channel: "telegram", templateId: req.body?.templateId, text: req.body?.text },
+      );
+      return res.send({ ok: true, data, msg: "student.message.sent" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // POST /students/:id/message/sms — body { templateId?, text? }
+  sendSmsMessage: async (req, res, next) => {
+    try {
+      const data = await studentMessageService.sendStudentMessage(
+        req.client._id,
+        req.centerScope || null,
+        req.params.id,
+        { channel: "sms", templateId: req.body?.templateId, text: req.body?.text },
+      );
+      return res.send({ ok: true, data, msg: "student.message.sent" });
     } catch (error) {
       next(error);
     }

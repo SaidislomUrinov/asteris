@@ -8,6 +8,8 @@ import { TodayCard } from "../components/TodayCard";
 import { StudentGroupCard } from "../components/StudentGroupCard";
 import { RecentNotifications } from "../components/RecentNotifications";
 import { CoinBalanceCard } from "../components/CoinBalanceCard";
+import { ActiveQuizSection } from "../components/ActiveQuizSection";
+import { QuizHistorySection } from "../components/QuizHistorySection";
 import { ListSkeleton, Skeleton } from "../components/Skeleton";
 import { EmptyState, ErrorState } from "../components/States";
 import { useAuth } from "../contexts/auth";
@@ -76,6 +78,9 @@ export const StudentHome = () => {
       ) : (
         <>
           <TodayCard lessons={today} showStudent={false} tab="homework" />
+
+          <ActiveQuizSection />
+          <QuizHistorySection />
 
           <CoinBalanceCard />
 

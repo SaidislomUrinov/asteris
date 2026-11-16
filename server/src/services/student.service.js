@@ -2237,20 +2237,24 @@ module.exports = {
     let oldPrice;
     let auditMeta = { groupId: String(entry.group) };
     if (cycleStart !== null && cycleStart !== undefined) {
-      // O'tgan sikl: shu sikl boshidan yangi narx, keyingi sikl boshidan esa
-      // o'sha paytgacha amalda bo'lgan narx qaytadi — keyingi oylar va
-      // joriy narx (`entry.price`) o'zgarmaydi. Sikl ro'yxati computeBilling
-      // bilan bir xil manbadan (joriy va kelajak sikllar qabul qilinmaydi).
+      // O'tgan sikl: shu sikl boshidan yangi narx — shu oy VA undan keyingi
+      // barcha oylarga (joriy va kelajakdagi, shu jumladan `entry.price`
+      // asoslangan hisob-kitoblar) 100% amal qiladi. Faqat shu cycleStart'dan
+      // OLDINGI oylar o'zgarmaydi. Sikl ro'yxati computeBilling bilan bir xil
+      // manbadan (joriy va kelajak sikllar qabul qilinmaydi — faqat o'tgan,
+      // yopilgan sikllardan birini tanlash mumkin).
       const { priceCycles = [] } = computeBilling(entry, group, billingSetting?.cycleMode || "anchor");
       const cycle = priceCycles.find((c) => c.cycleStart === cycleStart && !c.isCurrent);
       if (!cycle) throw new Error("student.invalidCycle");
-      const nextPrice = priceAt(entry.priceHistory, cycle.to, entry.price);
       oldPrice = cycle.price;
       entry.priceHistory = [
-        ...entry.priceHistory.filter((h) => h.from < cycle.cycleStart || h.from > cycle.to),
+        ...entry.priceHistory.filter((h) => h.from < cycle.cycleStart),
         { price, from: cycle.cycleStart },
-        { price: nextPrice, from: cycle.to },
       ].sort((a, b) => a.from - b.from);
+      // Narx joriy siklgacha tarqalgani uchun `entry.price` ham shu bo'lishi
+      // shart — aks holda qarz yangi narxda hisoblanib, tahrir oynasi, ota-ona
+      // WebApp'i va SMS eski narxni ko'rsatib qolardi.
+      entry.price = price;
       auditMeta = { ...auditMeta, cycleStart: cycle.cycleStart, month: cycle.month };
     } else {
       const now = getNow();

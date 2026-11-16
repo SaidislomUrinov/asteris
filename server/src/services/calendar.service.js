@@ -92,7 +92,7 @@ module.exports = {
   // orqali YANGI yaratilgan GroupHoliday'lar `syncedGroups`ga yoziladi —
   // guruh darajasida foydalanuvchi qo'lda belgilagan holiday'larga tegilmaydi.
   mark: async (clientId, centerId, createdBy, body) => {
-    const center = await assertCenterOwnership(clientId, centerId);
+    await assertCenterOwnership(clientId, centerId);
     const dates = Array.isArray(body?.dates) ? body.dates : [];
     if (!dates.length) throw new Error("calendar.datesRequired");
     for (const d of dates) {
@@ -131,7 +131,7 @@ module.exports = {
           $set: { client: clientId, note, createdBy },
           $addToSet: { syncedGroups: { $each: syncedGroups } },
         },
-        { new: true, upsert: true, setDefaultsOnInsert: true },
+        { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
       );
       marked.push(date);
     }

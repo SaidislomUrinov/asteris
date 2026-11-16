@@ -54,3 +54,17 @@ export const buyProduct = (studentId, centerId, productId) =>
 export const likeProduct = (studentId, centerId, productId) =>
   request("post", `/parent/coins/${studentId}/${centerId}/shop/${productId}/like`);
 export const getCoinHistory = (studentId, centerId) => request("get", `/parent/coins/${studentId}/${centerId}/history`);
+
+// Test (Quiz) — docs/API_CONTRACT_quiz.md "Endpoints — Parent/Student WebApp".
+// `entryId` — Student.groups[] a'zolik context (parentAuth shu orqali tenant
+// izolyatsiyasini qo'llaydi).
+export const getQuizState = (entryId, quizId) => request("get", `/parent-quiz/${entryId}/${quizId}/state`);
+export const startQuiz = (entryId, quizId) => request("post", `/parent-quiz/${entryId}/${quizId}/start`);
+export const answerQuiz = (entryId, quizId, questionId, optionId) =>
+  request("put", `/parent-quiz/${entryId}/${quizId}/answer`, { questionId, optionId });
+export const finishQuiz = (entryId, quizId) => request("post", `/parent-quiz/${entryId}/${quizId}/finish`);
+export const getQuizResult = (entryId, quizId) => request("get", `/parent-quiz/${entryId}/${quizId}/result`);
+// Rol almashganda yo'qolib qolmasligi uchun — tugallanmagan urinishlar
+// ro'yxati (docs/API_CONTRACT_profile_test_and_student_notify.md §1).
+export const getActiveQuizzes = () => request("get", "/parent-quiz/active");
+export const getQuizHistory = () => request("get", "/parent-quiz/history");

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { HiOutlineUser, HiOutlineCheckCircle, HiOutlineStar, HiOutlineBanknotes } from "react-icons/hi2";
@@ -6,6 +7,8 @@ import { Avatar, Card, SectionLabel, Pill } from "../components/Card";
 import { GroupCard } from "../components/GroupCard";
 import { TodayCard } from "../components/TodayCard";
 import { StatRow } from "../components/StatRow";
+import { ActiveQuizSection } from "../components/ActiveQuizSection";
+import { QuizHistorySection } from "../components/QuizHistorySection";
 import { ListSkeleton, Skeleton } from "../components/Skeleton";
 import { EmptyState, ErrorState } from "../components/States";
 import { useChildren } from "../contexts/children";
@@ -19,6 +22,10 @@ export const Child = () => {
   const navigate = useNavigate();
   const { loading, error, reload, findChild } = useChildren();
   const child = findChild(sid);
+  const entryIds = useMemo(
+    () => new Set((child?.centers || []).flatMap((c) => (c.groups || []).map((g) => g.entryId))),
+    [child],
+  );
 
   if (loading)
     return (
@@ -66,6 +73,9 @@ export const Child = () => {
       </Card>
 
       <TodayCard lessons={today} showStudent={false} />
+
+      <ActiveQuizSection entryIds={entryIds} />
+      <QuizHistorySection entryIds={entryIds} />
 
       {centers.map((c) => {
         const active = (c.groups || []).filter((g) => g.status === "active");

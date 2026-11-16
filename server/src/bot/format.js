@@ -1,5 +1,3 @@
-const { escapeHtml } = require("./escapeHtml");
-
 // Telegram Bot API HTML rejimida <ul>/<li> kabi list tegi YO'Q (rasmiy
 // hujjatda tasdiqlangan) — ro'yxatlar har doim qo'lda "• " + qator bilan
 // quriladi. Uzunligidan qat'iy nazar yig'ilmaydi (expandable emas) — hamma
@@ -38,4 +36,30 @@ const blockList = (items) => {
  */
 const keyValue = (rows) => rows.map(([key, value]) => `${key}: <b>${value}</b>`).join("\n");
 
-module.exports = { bulletList, blockList, keyValue };
+// `InputRichMessage` uchun haqiqiy jadval bloki (`<table>/<tr>/<td>`) —
+// Telegram'ning yangi Bot API 10.2 (sendRichMessage) orqali chiziq/katak
+// bilan haqiqiy jadval endi mavjud, shuning uchun eski "• "/vertikal blok
+// workaroundi kerak emas. Matn RichText (oddiy string) — HTML escape shart emas.
+const tableCell = (text, { header = false, align = "left" } = {}) => ({
+  text,
+  align,
+  valign: "middle",
+  ...(header ? { is_header: true } : {}),
+});
+
+/**
+ * @param {string[]|null} headers - `null` bo'lsa sarlavha qatorsiz (key-value jadval)
+ * @param {string[][]} rows
+ * @returns {{type: "table", is_bordered: true, is_striped: true, cells: object[][]}}
+ */
+const richTable = (headers, rows) => ({
+  type: "table",
+  is_bordered: true,
+  is_striped: true,
+  cells: [
+    ...(headers ? [headers.map((h) => tableCell(h, { header: true }))] : []),
+    ...rows.map((r) => r.map((c) => tableCell(c))),
+  ],
+});
+
+module.exports = { bulletList, blockList, keyValue, richTable };

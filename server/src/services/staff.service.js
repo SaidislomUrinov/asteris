@@ -566,7 +566,7 @@ module.exports = {
     const staff = await Staff.findOneAndUpdate(
       { _id: staffId, isDeleted: false },
       { $set: { introSeen: true } },
-      { new: true },
+      { returnDocument: "after" },
     );
     if (!staff) throw new Error("auth.notFound");
 

@@ -169,7 +169,7 @@ const unblock = async (chatId) => {
   const parent = await Parent.findOneAndUpdate(
     { "telegram.chatId": String(chatId), "telegram.blockedAt": { $ne: null } },
     { $set: { "telegram.blockedAt": null } },
-    { new: true, projection: { phone: 1 } },
+    { returnDocument: "after", projection: { phone: 1 } },
   ).lean();
   // O'quvchi ro'yxatlaridagi "Ulangan" belgisi (API_CONTRACT_student_contact_telegram.md §4).
   if (parent) void emitParentTelegramChanged([parent.phone]);
@@ -217,7 +217,7 @@ const setLang = async (chatId, lang) => {
   return await Parent.findOneAndUpdate(
     { "telegram.chatId": String(chatId) },
     { $set: { "telegram.lang": lang } },
-    { new: true },
+    { returnDocument: "after" },
   );
 };
 

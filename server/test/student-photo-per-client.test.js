@@ -137,29 +137,42 @@ describe("rasm client darajasida", () => {
     assert.equal(photoFor(await reload(s._id), ctx.B.client._id), photo);
   });
 
-  test("existingStudentId bilan qo'shishda latestPhoto nusxasi", async () => {
+  // O'quvchi mijoz darajasida (API_CONTRACT_student_per_client.md): lookup va
+  // `existingStudentId` faqat SHU mijoz hujjatlarini ko'radi.
+  test("existingStudentId — faqat o'z mijozi ichida, rasm saqlanadi", async () => {
     const s = await seedStudent(ctx.A.client, ctx.gA, "Jasur");
     const { photo } = await studentService.setPhoto(ctx.A.client._id, s._id, await makeFile("#888"));
 
-    const lookup = await studentService.lookupByPhone(s.phone, ctx.B.client._id);
-    const shared = lookup.find((x) => String(x._id) === String(s._id));
-    assert.equal(shared.shared, true);
-    assert.equal(shared.photo, photo);
+    // Boshqa mijoz bu hujjatni na ko'radi, na o'z guruhiga biriktira oladi.
+    assert.deepEqual(await studentService.lookupByPhone(s.phone, ctx.B.client._id), []);
+    await assert.rejects(
+      studentService.create(ctx.B.client._id, {
+        phone: s.phone,
+        centerId: ctx.B1.center._id,
+        groupId: ctx.gB._id,
+        existingStudentId: s._id,
+      }),
+      /student\.notFound/,
+    );
 
-    const dto = await studentService.create(ctx.B.client._id, {
+    const own = (await studentService.lookupByPhone(s.phone, ctx.A.client._id)).find(
+      (x) => String(x._id) === String(s._id),
+    );
+    assert.equal(own.photo, photo);
+
+    // O'z mijozi ichida ikkinchi guruhga qo'shish — hujjat va rasm o'sha.
+    const gA2 = await seedGroup(ctx.A.client, ctx.A1);
+    const dto = await studentService.create(ctx.A.client._id, {
       phone: s.phone,
-      centerId: ctx.B1.center._id,
-      groupId: ctx.gB._id,
+      centerId: ctx.A1.center._id,
+      groupId: gA2._id,
       existingStudentId: s._id,
     });
+    assert.equal(String(dto._id), String(s._id));
     assert.equal(dto.photo, photo);
     const doc = await reload(s._id);
-    assert.equal(photoFor(doc, ctx.B.client._id), photo);
-    assert.equal(photoFor(doc, ctx.A.client._id), photo);
-    assert.equal(doc.photos.length, 2);
-
-    // A o'chirsa — B nusxasi tufayli fayl qoladi.
-    await studentService.removePhoto(ctx.A.client._id, s._id);
+    assert.equal(doc.groups.length, 2);
+    assert.equal(doc.photos.length, 1);
     assert.equal(fileExists(photo), true);
   });
 

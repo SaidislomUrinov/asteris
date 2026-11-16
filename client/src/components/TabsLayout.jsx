@@ -28,7 +28,7 @@ export default function TabsLayout({ tabs }) {
               to={tab.to}
               className={`shrink-0 px-3 h-8 inline-flex items-center rounded-lg text-[13px] font-semibold transition-colors duration-150 ${
                 tab.to === activeTo
-                  ? "bg-white dark:bg-night-900 text-slate-900 dark:text-slate-100 shadow-sm dark:shadow-none"
+                  ? "bg-white dark:bg-night-900 text-slate-900 dark:text-slate-100"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >

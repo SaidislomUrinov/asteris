@@ -27,6 +27,7 @@ export const TARIFF_FEATURE_KEYS = [
   "room.control",
   "lesson.planning",
   "homework.manage",
+  "quiz.manage",
   "certificate.manage",
   "receipt.manage",
   "finance.expense",

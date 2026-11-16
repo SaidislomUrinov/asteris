@@ -577,7 +577,7 @@ module.exports = {
     const setting = await AttendanceSetting.findOneAndUpdate(
       { center: centerId },
       { $set: { client: clientId, ...patch } },
-      { new: true, upsert: true, setDefaultsOnInsert: true },
+      { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
     );
     await redisUtil.del(keyConfig.attendanceSetting(centerId));
     return settingDTO(setting);

@@ -113,7 +113,7 @@ const replaceModules = async (clientId, group, modules) => {
         isDeleted: false,
       },
     },
-    { new: true, upsert: true, setDefaultsOnInsert: true },
+    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
   );
 
   emit(`client:${clientId}`, "syllabus:changed", { groupId: String(group._id) });

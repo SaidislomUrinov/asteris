@@ -101,6 +101,11 @@ const CALLER_ROUTES_CENTER = new Set([
   // (Owner `center:` xonasida emas, socket.config.js).
   "homework:updated",
   "homework:results",
+  // Test (Quiz) moduli — servis/job `toCenter` bilan yuboradi (API_CONTRACT_quiz.md).
+  "quiz:sent",
+  "quiz:started",
+  "quiz:finished",
+  "quiz:attempt_updated",
   "coin:settings",
   "coin:distributed",
   "coin:adjusted",

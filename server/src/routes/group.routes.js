@@ -127,6 +127,11 @@ router.patch(
   requireGroupScheduleAccess,
   groupController.reschedule,
 );
+router.post(
+  "/:id/broadcast",
+  requireTenantPermission("group:update"),
+  groupController.broadcast,
+);
 router.patch(
   "/:id/finish",
   blockAssistantGroupUpdate,
