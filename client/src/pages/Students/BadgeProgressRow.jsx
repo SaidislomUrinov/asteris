@@ -132,6 +132,11 @@ function BadgeProgressRow({ type, progress }) {
   const { t } = useTranslation();
   const d = describe(type, progress, t);
   const hasBar = d.max > 0 && d.value !== undefined;
+  // Bar HAR DOIM chiziladi (ma'lumot yo'q / hali boshlanmagan nishonda ham):
+  // shunda qatorlar bir xil balandlikda, holat esa rangdan bilinadi —
+  // bajarilgan (yashil) · jarayonda (ko'k) · buzilgan (qizil) · boshlanmagan (shtrixli).
+  const idle = !d.done && !d.broken && (!hasBar || !(d.value > 0));
+  const barColor = d.done ? "emerald" : d.broken ? "red" : "blue";
   // Holat matni: qisqasi ("7/9") nom yonida, uzuni (sabab, "Hozircha bajarilmoqda")
   // nom tagida o'raladi — nom kesilib ketmasin.
   const status = d.done ? t(d.final ? "badge.completed" : "badge.onTrack") : d.text;
@@ -139,8 +144,15 @@ function BadgeProgressRow({ type, progress }) {
   const tone = d.done ? "text-emerald-600 dark:text-emerald-400" : d.broken ? "text-red-500 dark:text-red-400" : "text-slate-400 dark:text-slate-500";
 
   return (
-    <div className="flex items-start gap-2.5 min-w-0" title={t(badgeDescKey(type))}>
-      <BadgeIcon type={type} size={28} earned={!!d.done} animated={false} />
+    <div
+      className={`flex items-start gap-2.5 min-w-0 p-2.5 rounded-xl border ${
+        d.done
+          ? "bg-emerald-50/60 dark:bg-emerald-500/10 border-emerald-200/70 dark:border-emerald-500/25"
+          : "bg-white dark:bg-night-900 border-slate-200/80 dark:border-night-700"
+      }`}
+      title={t(badgeDescKey(type))}
+    >
+      <BadgeIcon type={type} size={30} earned={!!d.done} animated={false} />
       <div className="flex flex-col gap-1 min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2 min-w-0">
           <span className="text-xs font-semibold leading-snug text-slate-700 dark:text-slate-300 break-words min-w-0">
@@ -148,7 +160,7 @@ function BadgeProgressRow({ type, progress }) {
           </span>
           {inline && <span className={`text-[11px] font-semibold shrink-0 tabular-nums ${tone}`}>{status}</span>}
         </div>
-        {hasBar && <ProgressBar value={d.value} max={d.max} color={d.done ? "emerald" : d.broken ? "slate" : "blue"} />}
+        <ProgressBar value={hasBar ? d.value : 0} max={hasBar ? d.max : 1} color={barColor} idle={idle} />
         {status && !inline && <span className={`text-[11px] font-medium leading-snug ${tone}`}>{status}</span>}
         {d.sub && <span className="text-[11px] leading-snug text-slate-400 dark:text-slate-500">{d.sub}</span>}
       </div>

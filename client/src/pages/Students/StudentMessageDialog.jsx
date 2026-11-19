@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HiPaperAirplane } from "react-icons/hi2";
+import { HiBuildingOffice2, HiPaperAirplane, HiUser } from "react-icons/hi2";
 import Dialog from "../../ui/Dialog";
 import Button from "../../ui/Button";
 import Select from "../../ui/Select";
@@ -23,6 +23,13 @@ function StudentMessageDialog({ open, onClose, studentId, channel }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [cooldown, setCooldown] = useState(0); // qolgan soniya (faqat telegram)
+  const [recipients, setRecipients] = useState([]); // faqat telegram: [{role, staffId?, name?, linked}]
+  const [recipient, setRecipient] = useState(null); // {role, staffId?}
+  // Tanlangan shablonning shu o'quvchi uchun to'ldirilgan ko'rinishi:
+  // { text, studentName, centerName } — server yuboriladigan matn bilan bir xil render qiladi.
+  const [preview, setPreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const previewSeq = useRef(0);
   const loadedRef = useRef(false);
 
   useEffect(() => {
@@ -36,7 +43,22 @@ function StudentMessageDialog({ open, onClose, studentId, channel }) {
         // shablonlar ikkinchi darajali — erkin matn bilan ham yuborish mumkin
       }
     })();
-  }, [open]);
+    if (channel === "telegram") {
+      (async () => {
+        try {
+          const res = await api.get(`/students/${studentId}/message/recipients`);
+          if (res.data.ok) {
+            const options = res.data.data || [];
+            setRecipients(options);
+            const firstLinked = options.find((o) => o.linked);
+            if (firstLinked) setRecipient({ role: firstLinked.role, staffId: firstLinked.staffId || null });
+          }
+        } catch {
+          // ro'yxat yuklanmasa ham eski xatti-harakat (parent+student) ishlaydi
+        }
+      })();
+    }
+  }, [open, channel, studentId]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -44,10 +66,36 @@ function StudentMessageDialog({ open, onClose, studentId, channel }) {
     return () => clearInterval(id);
   }, [cooldown]);
 
+  const pickTemplate = async (id) => {
+    setTemplateId(id);
+    setPreview(null);
+    if (!id) return;
+    const seq = ++previewSeq.current;
+    setPreviewLoading(true);
+    try {
+      const res = await api.post(`/students/${studentId}/message/preview`, { templateId: id });
+      if (seq === previewSeq.current && res.data.ok) setPreview(res.data.data);
+    } catch (error) {
+      if (seq === previewSeq.current) errorMsg(error.message);
+    } finally {
+      if (seq === previewSeq.current) setPreviewLoading(false);
+    }
+  };
+
+  const resetPreview = () => {
+    previewSeq.current += 1;
+    setPreview(null);
+    setPreviewLoading(false);
+  };
+
   const close = () => {
     if (sending) return;
+    resetPreview();
     setTemplateId("");
     setText("");
+    loadedRef.current = false;
+    setRecipients([]);
+    setRecipient(null);
     onClose();
   };
 
@@ -59,6 +107,7 @@ function StudentMessageDialog({ open, onClose, studentId, channel }) {
       errorMsg(t("student.message.emptyText"));
       return;
     }
+    if (channel === "telegram" && recipient) body.recipient = recipient.role;
     setSending(true);
     try {
       const res = await api.post(`/students/${studentId}/message/${channel}`, body);
@@ -74,8 +123,12 @@ function StudentMessageDialog({ open, onClose, studentId, channel }) {
       }
       successMsg(msg);
       if (channel === "telegram") setCooldown(20);
+      resetPreview();
       setTemplateId("");
       setText("");
+      loadedRef.current = false;
+      setRecipients([]);
+      setRecipient(null);
       onClose();
     } catch (error) {
       errorMsg(error.message);
@@ -97,7 +150,12 @@ function StudentMessageDialog({ open, onClose, studentId, channel }) {
           </Button>
           <Button
             loading={sending}
-            disabled={cooldown > 0 || (!templateId && !text.trim())}
+            disabled={
+              cooldown > 0 ||
+              (!templateId && !text.trim()) ||
+              (!!templateId && !preview) ||
+              (channel === "telegram" && recipients.length > 0 && !recipient)
+            }
             onClick={submit}
             className="gap-1.5"
           >
@@ -109,17 +167,69 @@ function StudentMessageDialog({ open, onClose, studentId, channel }) {
       }
     >
       <div className="flex flex-col gap-3">
+        {channel === "telegram" && recipients.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {recipients.map((opt, i) => {
+              const key = `${opt.role}:${opt.staffId || i}`;
+              const selected = recipient && recipient.role === opt.role && (recipient.staffId || null) === (opt.staffId || null);
+              const label = opt.name || t(`student.message.recipient.${opt.role}`);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  disabled={!opt.linked}
+                  onClick={() => setRecipient({ role: opt.role, staffId: opt.staffId || null })}
+                  className={`px-3 py-1.5 rounded-xl text-sm font-medium duration-200 ${
+                    selected
+                      ? "bg-blue-500 text-white"
+                      : opt.linked
+                        ? "bg-slate-100 dark:bg-night-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-night-700"
+                        : "bg-slate-50 dark:bg-night-900 text-slate-300 dark:text-slate-600 cursor-not-allowed"
+                  }`}
+                >
+                  {label}
+                  {!opt.linked && <span className="ml-1 text-[11px]">({t("student.message.recipient.notLinked")})</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <Select
           variant="slate"
           placeholder={t("sms.template")}
           value={templateId}
-          onChange={setTemplateId}
+          onChange={pickTemplate}
           options={templates.map((x) => ({ value: x._id, label: x.title }))}
         />
         {template ? (
-          <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-slate-50 dark:bg-night-800">
+          <div className="flex flex-col gap-2.5 p-3.5 rounded-2xl bg-slate-50 dark:bg-night-800">
             <Chip value={t(`sms.topics.${template.topic}`)} color={TOPIC_COLOR[template.topic]} className="self-start" />
-            <p className="text-sm text-slate-600 dark:text-slate-300">{template.text}</p>
+            {previewLoading || !preview ? (
+              <div className="flex flex-col gap-2 animate-pulse" aria-busy="true">
+                <div className="h-4 w-2/3 rounded bg-slate-200 dark:bg-night-700" />
+                <div className="h-3.5 w-full rounded bg-slate-200 dark:bg-night-700" />
+                <div className="h-3.5 w-4/5 rounded bg-slate-200 dark:bg-night-700" />
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <span className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 min-w-0">
+                    <HiUser className="shrink-0 text-base text-slate-400 dark:text-slate-500" />
+                    <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">{t("student.message.previewStudent")}</span>
+                    <span className="font-semibold truncate">{preview.studentName || "—"}</span>
+                  </span>
+                  <span className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 min-w-0">
+                    <HiBuildingOffice2 className="shrink-0 text-base text-slate-400 dark:text-slate-500" />
+                    <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">{t("student.message.previewCenter")}</span>
+                    <span className="font-semibold truncate">{preview.centerName || "—"}</span>
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1 pt-2.5 border-t border-slate-200/70 dark:border-night-700">
+                  <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">{t("student.message.previewText")}</span>
+                  <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200 whitespace-pre-wrap wrap-break-word">{preview.text}</p>
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <div className="flex flex-col gap-1.5">

@@ -40,7 +40,6 @@ import StudentEditDialog from "./StudentEditDialog";
 import StudentMessageDialog from "./StudentMessageDialog";
 import PaymentDialog from "./PaymentDialog";
 import DebtBreakdownDialog from "./DebtBreakdownDialog";
-import OpeningDebtsDialog from "./OpeningDebtsDialog";
 import MovePaymentMonthDialog from "./MovePaymentMonthDialog";
 import ReceiptPromptDialog from "./ReceiptPromptDialog";
 import AttendanceCalendar from "./AttendanceCalendar";
@@ -109,12 +108,10 @@ function StudentDetail() {
   // va faqat o'zi o'qigan oylar kesimi (`GET /grades/summary/:studentId`).
   const [gradeSummary, setGradeSummary] = useState([]);
   const [receipt, setReceipt] = useState(null);
-  const [leaveTarget, setLeaveTarget] = useState(null);
   // Arxivlash — API_CONTRACT_archive.md §1: arxiv birligi o'quvchi HUJJATI
   // emas, uning bitta guruhdagi a'zoligi.
   const [archiveTarget, setArchiveTarget] = useState(null);
   const [archiving, setArchiving] = useState(false);
-  const [leaving, setLeaving] = useState(false);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [paymentsTarget, setPaymentsTarget] = useState(null); // entry — "To'lovlarni ko'rish" modali
@@ -125,8 +122,6 @@ function StudentDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const editOpenView = useClosingValue(editOpen);
   // entry — "Boshlang'ich qarz" modali (API_CONTRACT_opening_debts.md §3.2)
-  const [openingTarget, setOpeningTarget] = useState(null);
-  const openingTargetView = useClosingValue(openingTarget);
   // { groupEntryId, payment } — "Oyni o'zgartirish" (API_CONTRACT_payment_move_month.md)
   const [moveTarget, setMoveTarget] = useState(null);
   const moveTargetView = useClosingValue(moveTarget);
@@ -202,6 +197,38 @@ function StudentDetail() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Sahifani "Loading" ga almashtirmasdan yangilaydi — ochiq modal (qarzdorlik
+  // ro'yxati) tahrirdan keyin yopilib ketmasligi uchun.
+  const refreshStudent = useCallback(async () => {
+    try {
+      const res = await api.get(`/students/${id}`);
+      if (res.data.ok) setStudent(res.data.data);
+    } catch (error) {
+      errorMsg(error.message);
+    }
+  }, [id]);
+
+  // Ko'chirishdan oldingi qarzlar to'liq ro'yxati almashtiriladi (PUT .../opening);
+  // avans (openingBalance) o'zgarishsiz yuboriladi.
+  const saveOpening = async (entry, openingDebts) => {
+    const res = await api.put(`/students/${id}/groups/${entry._id}/opening`, {
+      openingDebts,
+      openingBalance: entry.openingBalance > 0 ? entry.openingBalance : 0,
+    });
+    if (!res.data.ok) throw new Error(res.data.msg);
+    successMsg(res.data.msg || "student.openingDebtsSaved");
+    await refreshStudent();
+  };
+
+  const editCyclePrice = async (entry, item, price) => {
+    const body = { price };
+    if (!item.isCurrent) body.cycleStart = item.cycleStart;
+    const res = await api.patch(`/students/${id}/groups/${entry._id}`, body);
+    if (!res.data.ok) throw new Error(res.data.msg);
+    successMsg(res.data.msg);
+    await refreshStudent();
+  };
 
   const fetchLookups = useCallback(async () => {
     try {
@@ -328,23 +355,6 @@ function StudentDetail() {
     setStudent((prev) => (prev ? { ...prev, photo } : prev));
   }, [id]);
 
-  const confirmLeave = async () => {
-    if (!leaveTarget) return;
-    try {
-      setLeaving(true);
-      const res = await api.patch(`/students/${id}/groups/${leaveTarget._id}/leave`);
-      const { ok, msg } = res.data;
-      if (!ok) throw new Error(msg);
-      successMsg(msg);
-      setLeaveTarget(null);
-      fetchStudent();
-    } catch (error) {
-      errorMsg(error.message);
-    } finally {
-      setLeaving(false);
-    }
-  };
-
   const confirmArchive = async () => {
     if (!archiveTarget) return;
     try {
@@ -398,6 +408,10 @@ function StudentDetail() {
   if (!student) return null;
 
   const activeGroups = student.groups.filter((g) => g.status === "active");
+  // Modal ochiq paytida narx tahrirlansa — yangilangan yozuv ko'rsatiladi.
+  const liveBreakdownEntry = breakdownTargetView
+    ? student.groups.find((g) => g._id === breakdownTargetView._id) || breakdownTargetView
+    : null;
   const totalDebt = activeGroups.reduce((sum, g) => sum + (g.debt || 0), 0);
   // Dialog ochiq turganda ham (masalan to'lov bekor qilinganda) ro'yxat
   // yangi ma'lumot bilan yangilanib tursin deb entry'ni har renderda
@@ -572,15 +586,7 @@ function StudentDetail() {
                         talab qiladi (O'qituvchi bu sahifani ocha olmaydi). */}
                     {(() => {
                       const menuItems = [
-                        ...(entry.status === "active" && can("student:update")
-                          ? [{
-                              label: t("student.openingDebtMenu"),
-                              icon: HiOutlineClipboardDocumentList,
-                              iconClass: "bg-slate-50 dark:bg-night-800 text-slate-600 dark:text-slate-300",
-                              onClick: () => setOpeningTarget(entry),
-                            }]
-                          : []),
-                        // "O'qituvchi ulushi" — faqat oddiy guruhdagi faol a'zolik.
+                                        // "O'qituvchi ulushi" — faqat oddiy guruhdagi faol a'zolik.
                         ...(entry.status === "active" &&
                         canEditEntryPercent &&
                         groupMap[entry.group]?.kind !== "individual"
@@ -602,15 +608,7 @@ function StudentDetail() {
                               onClick: () => setArchiveTarget(entry),
                             }]
                           : []),
-                        ...(entry.status === "active" && can("student:update")
-                          ? [{
-                              label: t("student.leaveGroup"),
-                              icon: HiUserMinus,
-                              iconClass: "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400",
-                              onClick: () => setLeaveTarget(entry),
-                            }]
-                          : []),
-                      ];
+                                      ];
                       if (!menuItems.length) return null;
                       return (
                         <span className="relative inline-flex">
@@ -682,7 +680,8 @@ function StudentDetail() {
                             : t("student.noDebt")}
                         </span>
                       </div>
-                      {hasDebt && entry.debtBreakdown?.length > 0 && (
+                      {((hasDebt && entry.debtBreakdown?.length > 0) ||
+                        (entry.status === "active" && can("student:update"))) && (
                         <Button
                           color="red"
                           variant="outlined"
@@ -740,8 +739,16 @@ function StudentDetail() {
         <DebtBreakdownDialog
           open={!!breakdownTarget}
           onClose={() => setBreakdownTarget(null)}
-          breakdown={breakdownTargetView.debtBreakdown}
-          onPayMonth={(item) => payMonth(breakdownTargetView, item)}
+          breakdown={liveBreakdownEntry.debtBreakdown}
+          priceCycles={liveBreakdownEntry.priceCycles}
+          openingDebts={liveBreakdownEntry.openingDebts}
+          onSaveOpening={
+            can("student:update") && liveBreakdownEntry.status === "active"
+              ? (list) => saveOpening(liveBreakdownEntry, list)
+              : undefined
+          }
+          onEditPrice={can("student:update") ? (item, price) => editCyclePrice(liveBreakdownEntry, item, price) : undefined}
+          onPayMonth={(item) => payMonth(liveBreakdownEntry, item)}
         />
       )}
 
@@ -777,18 +784,6 @@ function StudentDetail() {
               paymentId,
             })
           }
-        />
-      )}
-
-      {openingTargetView && (
-        <OpeningDebtsDialog
-          key={openingTargetView._id}
-          open={!!openingTarget}
-          studentId={id}
-          entry={openingTargetView}
-          title={`${t("student.openingDebtAction")} — ${groupLabel(openingTargetView.group)}`}
-          onClose={() => setOpeningTarget(null)}
-          onSaved={fetchStudent}
         />
       )}
 
@@ -955,24 +950,6 @@ function StudentDetail() {
         ) : (
           <AttendanceCalendar records={attendanceHistory} />
         )}
-      </Dialog>
-
-      <Dialog
-        open={!!leaveTarget}
-        onClose={() => setLeaveTarget(null)}
-        title={t("student.leaveGroup")}
-        actions={
-          <>
-            <Button color="black" variant="text" onClick={() => setLeaveTarget(null)}>
-              {t("common.cancel")}
-            </Button>
-            <Button color="red" loading={leaving} onClick={confirmLeave}>
-              {t("student.leaveGroup")}
-            </Button>
-          </>
-        }
-      >
-        <p>{t("student.leaveGroupConfirm", { name: student.fullName })}</p>
       </Dialog>
 
       <Dialog

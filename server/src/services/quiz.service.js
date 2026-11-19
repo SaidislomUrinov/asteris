@@ -8,6 +8,7 @@ const Grade = require("../models/Grade");
 const emit = require("../utils/emitter.util");
 const { getNow } = require("../utils/date.util");
 const parentNotification = require("./parentNotification.service");
+const { photoFor } = require("../utils/studentPhoto.util");
 
 // TEST (QUIZ) moduli — docs/API_CONTRACT_quiz.md. Staff/teacher tomon.
 
@@ -149,9 +150,9 @@ const listDTO = (quiz) => ({
 const detailDTO = async (quiz) => {
   const studentIds = quiz.attempts.map((a) => a.student);
   const students = studentIds.length
-    ? await Student.find({ _id: { $in: studentIds } }).select("fullName photo").lean()
+    ? await Student.find({ _id: { $in: studentIds } }).select("fullName photos").lean()
     : [];
-  const nameOf = new Map(students.map((s) => [String(s._id), s.fullName]));
+  const studentOf = new Map(students.map((s) => [String(s._id), s]));
   return {
     _id: String(quiz._id),
     title: quiz.title,
@@ -165,7 +166,11 @@ const detailDTO = async (quiz) => {
       correctOptionId: q.correctOptionId,
     })),
     attempts: quiz.attempts.map((a) => ({
-      student: { _id: String(a.student), fullName: nameOf.get(String(a.student)) || "" },
+      student: {
+        _id: String(a.student),
+        fullName: studentOf.get(String(a.student))?.fullName || "",
+        photo: photoFor(studentOf.get(String(a.student)), quiz.client),
+      },
       startedAt: a.startedAt,
       finishedAt: a.finishedAt,
       correctCount: a.correctCount,

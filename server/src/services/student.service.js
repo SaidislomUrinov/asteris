@@ -734,6 +734,8 @@ const computeBilling = (entry, group, cycleMode = "anchor") => {
   const cycleRows = cycles.map((c) => ({
     kind: "cycle",
     month: c.month,
+    cycleStart: c.cycleStart, // narxni tahrirlash uchun (priceCycles bilan moslash)
+    isCurrent: c.isCurrent,
     from: c.billedFrom, // to'lanadigan oraliq — bir oyda ikki qator bo'lsa ajratish uchun
     to: c.cycleEnd,
     due: c.fullDue,
@@ -2500,36 +2502,6 @@ module.exports = {
     return await DTO(student, clientId);
   },
 
-  leaveGroup: async (clientId, id, groupEntryId, actor = null) => {
-    const student = await Student.findOne({ _id: id, isDeleted: false });
-    if (!student) throw new Error("student.notFound");
-
-    const entry = findClientGroupEntry(student, clientId, groupEntryId);
-    if (!entry) throw new Error("student.groupEntryNotFound");
-    if (entry.status === "left") throw new Error("student.alreadyLeft");
-
-    entry.status = "left";
-    entry.leftAt = getNow();
-    await student.save();
-
-    emit(`client:${clientId}`, "student:leftGroup", {
-      studentId: String(id),
-      groupEntryId: String(groupEntryId),
-      groupId: String(entry.group),
-      center: String(entry.center),
-    });
-    void audit.log({
-      actor,
-      client: clientId,
-      center: entry.center,
-      action: "student:leftGroup",
-      entity: { type: "student", id: student._id, label: student.fullName },
-      meta: { groupId: String(entry.group) },
-    });
-
-    return await DTO(student, clientId);
-  },
-
   // Guruhdan guruhga o'tkazish (API_CONTRACT_student_transfer.md §3). Bitta
   // `save()` — yangi a'zolik va eski a'zolikni yopish atomar (avval frontend
   // ikki alohida so'rov yuborardi va birinchisi doim `fillTheRows` bilan
@@ -2578,6 +2550,27 @@ module.exports = {
     const credits = await joinCreditsOf(group, newSetting.cycleMode);
 
     const now = getNow();
+
+    // Bir xil narx + eski guruhda joriy davr uchun qarz yo'q (`debts` bo'sh —
+    // settleEntry allaqachon bugungacha to'langanini tasdiqlagan) → yangi
+    // guruhdagi joriy davr ham to'langan deb hisoblanadi: o'quvchi shu oy
+    // uchun ikki marta to'lamasin (o'sha narxga ikkinchi guruh uchun qayta
+    // undirilmaydi). Amalga oshirish: yangi a'zolikning joriy sikli uchun
+    // kerakli to'liq summa (`fullDue`) avans sifatida qo'shiladi — mavjud
+    // `openingBalance` havzasi orqali, yangi maydon kerak emas.
+    let finalSurplus = surplus;
+    if (entry.price === finalPrice && debts.length === 0) {
+      const tempEntry = {
+        price: finalPrice,
+        priceHistory: [{ price: finalPrice, from: 0 }],
+        credits,
+        joinedAt: now,
+        archivedPeriods: [],
+      };
+      const newCycles = buildCycles(tempEntry, group, newSetting.cycleMode, now);
+      const currentCycle = newCycles.find((c) => c.isCurrent) || newCycles[newCycles.length - 1];
+      finalSurplus = Math.max(surplus, currentCycle?.fullDue || 0);
+    }
     student.groups.push({
       group: group._id,
       center: center._id,
@@ -2588,7 +2581,7 @@ module.exports = {
       status: "active",
       credits,
       openingDebts: debts,
-      openingBalance: surplus,
+      openingBalance: finalSurplus,
       transferredFrom: [
         ...(entry.transferredFrom || []).map((s) => ({
           group: s.group,
@@ -2651,7 +2644,7 @@ module.exports = {
       meta: {
         fromGroup: String(entry.group),
         toGroup: String(group._id),
-        carriedAdvance: surplus,
+        carriedAdvance: finalSurplus,
         carriedDebt: debts.reduce((sum, d) => sum + d.amount, 0),
       },
     });

@@ -36,6 +36,7 @@ import useCan from "../../hooks/useCan";
 import MoneyCard from "../../components/dashboard/MoneyCard";
 import StatCard from "../../components/dashboard/StatCard";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
+import SectionLabel from "../../ui/SectionLabel";
 import HiddenFinancePanel from "../../components/HiddenFinancePanel";
 import useHideFinance from "../../hooks/useHideFinance";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
@@ -338,6 +339,7 @@ function Dashboard() {
           asl piksel DOM'da qolib, ba'zi holatda o'qilishi mumkin edi).
           Resepshin oldida odam o'tirgani yoki noutbuk HDMI orqali
           proyektorga ulanganida shu tugma bilan darhol yashiriladi. */}
+      <SectionLabel>{t("dashboard.sectionFinance")}</SectionLabel>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <MoneyCard
           icon={<HiBanknotes />}
@@ -382,6 +384,7 @@ function Dashboard() {
       </div>
 
       {/* Ixcham hisoblagichlar */}
+      <SectionLabel className="mt-1">{t("dashboard.sectionStats")}</SectionLabel>
       <div className="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3">
         <StatCard
           icon={<HiUsers />}
@@ -431,6 +434,7 @@ function Dashboard() {
           kartochka (masalan kassirlar ro'yxati) uzayganda grid qatori
           o'sib, donut ham keraksiz cho'zilib ketardi — ro'yxat endi
           kartochka ichida scroll bo'ladi. */}
+      <SectionLabel className="mt-1">{t("dashboard.sectionAnalytics")}</SectionLabel>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch lg:h-88">
         <div className="lg:col-span-1 min-h-0">
           {hideFinance ? (
@@ -480,22 +484,26 @@ function Dashboard() {
       </div>
 
       {canLeads && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch lg:h-88">
-          <div className="lg:col-span-1 min-h-0">
-            {leadStats ? <LeadDonut stats={leadStats} /> : <PanelSkeleton variant="donut" rows={4} />}
+        <>
+          <SectionLabel className="mt-1">{t("dashboard.sectionLeads")}</SectionLabel>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch lg:h-88">
+            <div className="lg:col-span-1 min-h-0">
+              {leadStats ? <LeadDonut stats={leadStats} /> : <PanelSkeleton variant="donut" rows={4} />}
+            </div>
+            <div className="lg:col-span-2 min-h-0">
+              {leadStats ? (
+                <LeadsBySubject rows={leadStats.bySubject || []} subjectNames={subjectNames} />
+              ) : (
+                <PanelSkeleton variant="list" rows={4} />
+              )}
+            </div>
           </div>
-          <div className="lg:col-span-2 min-h-0">
-            {leadStats ? (
-              <LeadsBySubject rows={leadStats.bySubject || []} subjectNames={subjectNames} />
-            ) : (
-              <PanelSkeleton variant="list" rows={4} />
-            )}
-          </div>
-        </div>
+        </>
       )}
 
       {/* Oxirgi to'lovlar (avvalgi filial sahifasidan) — Owner'da bugungi
           darslar yonida, hodimda (darslar yuqorida) yolg'iz. */}
+      <SectionLabel className="mt-1">{t(isOwner ? "dashboard.sectionRecent" : "dashboard.sectionActivity")}</SectionLabel>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch lg:h-72">
         <div className={`min-h-0 ${isOwner ? "lg:col-span-1" : "lg:col-span-3"}`}>
           {/* Ismlar ko'rinadi, summalar ko'z tugmasi bilan "****" bo'ladi. */}

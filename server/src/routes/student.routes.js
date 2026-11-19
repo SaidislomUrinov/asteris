@@ -109,6 +109,16 @@ const requireStudentContact = studentScopeGuard({
   },
 });
 
+// POST /:id/message/sms — bulk `/sms/send` bilan bir xil ruxsat qatoriga
+// `sms:send` ham qo'shiladi, shunda faqat SMS huquqi berilgan Reception ham
+// (student:contact'siz) bitta o'quvchiga SMS yubora oladi.
+const requireStudentSms = studentScopeGuard({
+  permissions: {
+    teaching: ["all", "student:contact", "sms:send"],
+    other: ["all", "student:update", "student:contact", "sms:send"],
+  },
+});
+
 // PUT/DELETE /:id/photo (API_CONTRACT_student_photo.md §3) — har qanday hodim
 // roli, alohida permission kerak emas; doira tekshiruvi kontakt bilan bir xil.
 const requireStudentPhoto = studentScopeGuard();
@@ -226,8 +236,16 @@ router.patch("/:id/contact", requireStudentContact, studentController.updateCont
 // Profildan Telegram/SMS xabar (API_CONTRACT_profile_test_and_student_notify.md §2)
 // — kontakt bilan bir xil doira/ruxsat (`student:contact`), yangi permission
 // qo'shilmagan.
+router.get("/:id/message/recipients", requireStudentContact, studentController.getMessageRecipients);
+router.post("/:id/message/preview", requireStudentSms, studentController.previewMessage);
 router.post("/:id/message/telegram", requireStudentContact, studentController.sendTelegramMessage);
-router.post("/:id/message/sms", requireStudentContact, studentController.sendSmsMessage);
+router.post(
+  "/:id/message/sms",
+  requireStudentSms,
+  requireActiveSubscription,
+  requireTariffFeature("sms.notification"),
+  studentController.sendSmsMessage,
+);
 // O'quvchi rasmi — `photo` maydoni, multipart (API_CONTRACT_student_photo.md §3).
 // `/:id/photo` bilan to'qnashadigan boshqa PUT/DELETE marshrut yo'q.
 router.put("/:id/photo", requireStudentPhoto, studentController.setPhoto);
@@ -263,15 +281,6 @@ router.patch(
   blockTeachingRoles,
   requireTenantPermission("group:update"),
   studentController.updateTeacherPercent,
-);
-// O'quvchini guruhdan chiqarish — Resepshin/Boshliq ishi. O'qituvchi va
-// yordamchi o'qituvchi uchun ROL darajasida yopiq (ruxsat ro'yxati ham
-// `student:update` ni ularga bermaydi, bu ikkinchi qatlam).
-router.patch(
-  "/:id/groups/:groupEntryId/leave",
-  blockTeachingRoles,
-  requireTenantPermission("student:update"),
-  studentController.leaveGroup,
 );
 // Guruhdan guruhga o'tkazish — bitta atomar amal
 // (API_CONTRACT_student_transfer.md §3). `leave` bilan bir xil himoya +

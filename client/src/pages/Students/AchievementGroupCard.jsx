@@ -14,6 +14,21 @@ const MEDAL_TONE = {
 };
 
 const LABEL = "text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500";
+const PANEL = "flex flex-col gap-2.5 p-3.5 rounded-xl bg-slate-50 dark:bg-night-800 min-w-0";
+
+// Panel sarlavhasi: yorliq + soni (bo'sh bo'lsa son ko'rsatilmaydi).
+function PanelHead({ label, count }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className={LABEL}>{label}</span>
+      {count > 0 && (
+        <span className="px-1.5 rounded-md bg-white dark:bg-night-900 text-[11px] font-semibold text-slate-500 dark:text-slate-400 tabular-nums">
+          {count}
+        </span>
+      )}
+    </div>
+  );
+}
 
 /**
  * O'quvchi yutuqlari — bitta guruh kartasi. Faol guruhda joriy oy progressi
@@ -101,43 +116,28 @@ function AchievementGroupCard({ group: g, monthNames, currentMonthName }) {
         </span>
       </header>
 
-      {active ? (
-        <>
-          <div className="flex flex-col gap-2">
-            <span className={LABEL}>{t("badge.earned")}</span>
-            {earnedList || <p className="text-sm text-slate-400 dark:text-slate-500">{t("badge.noneEarned")}</p>}
-          </div>
-          <div className="flex flex-col gap-2">
-            <span className={LABEL}>{t("badge.medals")}</span>
-            {medalList || <p className="text-sm text-slate-400 dark:text-slate-500">{t("badge.noMedals")}</p>}
-          </div>
-        </>
-      ) : (
-        // Nofaol karta ixcham: faqat borlari, ikkalasi bo'lsa sm+ da yonma-yon.
-        <div className={`grid grid-cols-1 gap-4 ${earnedList && medalList ? "sm:grid-cols-2" : ""}`}>
-          {earnedList && (
-            <div className="flex flex-col gap-2 min-w-0">
-              <span className={LABEL}>{t("badge.earned")}</span>
-              {earnedList}
+      {/* Olingan nishonlar va medallar — ikki alohida panel; nofaol kartada faqat borlari. */}
+      {(active || earnedList || medalList) && (
+        <div className={`grid grid-cols-1 gap-3 ${(active || (earnedList && medalList)) ? "sm:grid-cols-2" : ""}`}>
+          {(active || earnedList) && (
+            <div className={PANEL}>
+              <PanelHead label={t("badge.earned")} count={earned.length} />
+              {earnedList || <p className="text-sm text-slate-400 dark:text-slate-500">{t("badge.noneEarned")}</p>}
             </div>
           )}
-          {medalList && (
-            <div
-              className={`flex flex-col gap-2 min-w-0 ${
-                earnedList ? "pt-3 border-t sm:pt-0 sm:border-t-0 sm:pl-4 sm:border-l border-slate-200/70 dark:border-night-700/70" : ""
-              }`}
-            >
-              <span className={LABEL}>{t("badge.medals")}</span>
-              {medalList}
+          {(active || medalList) && (
+            <div className={PANEL}>
+              <PanelHead label={t("badge.medals")} count={medals.length} />
+              {medalList || <p className="text-sm text-slate-400 dark:text-slate-500">{t("badge.noMedals")}</p>}
             </div>
           )}
         </div>
       )}
 
       {active && (
-        <div className="flex flex-col gap-2.5 pt-3 border-t border-slate-100 dark:border-night-700">
+        <div className="flex flex-col gap-2.5">
           <span className={LABEL}>{t("badge.progressTitle", { month: currentMonthName })}</span>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {BADGE_TYPES.map((type) => (
               <BadgeProgressRow key={type} type={type} progress={g.progress?.[type]} />
             ))}

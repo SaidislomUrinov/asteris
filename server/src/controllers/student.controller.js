@@ -244,9 +244,39 @@ module.exports = {
         req.client._id,
         req.centerScope || null,
         req.params.id,
-        { channel: "telegram", templateId: req.body?.templateId, text: req.body?.text },
+        {
+          channel: "telegram",
+          templateId: req.body?.templateId,
+          text: req.body?.text,
+          recipient: req.body?.recipient || null,
+        },
       );
       return res.send({ ok: true, data, msg: "student.message.sent" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // GET /students/:id/message/recipients — Telegram uchun rol tanlovi ro'yxati.
+  getMessageRecipients: async (req, res, next) => {
+    try {
+      const data = await studentMessageService.getRecipientOptions(req.client._id, req.centerScope || null, req.params.id);
+      return res.send({ ok: true, data });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // POST /students/:id/message/preview — body { templateId } → to'ldirilgan matn
+  previewMessage: async (req, res, next) => {
+    try {
+      const data = await studentMessageService.previewMessage(
+        req.client._id,
+        req.centerScope || null,
+        req.params.id,
+        { templateId: req.body?.templateId },
+      );
+      return res.send({ ok: true, data });
     } catch (error) {
       next(error);
     }
@@ -347,15 +377,6 @@ module.exports = {
         buildActor(req),
       );
       return res.send({ ok: true, data, msg: "archive.archived" });
-    } catch (error) {
-      next(error);
-    }
-  },
-
-  leaveGroup: async (req, res, next) => {
-    try {
-      const data = await studentService.leaveGroup(req.client._id, req.params.id, req.params.groupEntryId, buildActor(req));
-      return res.send({ ok: true, data, msg: "student.left" });
     } catch (error) {
       next(error);
     }

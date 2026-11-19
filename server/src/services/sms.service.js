@@ -136,7 +136,10 @@ const buildRecipients = async (clientId, center, tpl, opts) => {
   const { studentService } = { studentService: require("./student.service") };
   const audience = opts.audience === "students" ? "students" : "parents";
   const usesDebt = /\{debt\}/.test(tpl.text);
-  const debtOnly = !!opts.debtOnly || usesDebt;
+  // `previewAll` — bitta o'quvchiga matnni ko'rsatish/Telegram uchun render: qarz/davomat
+  // filtrlari va telefon talabi qo'llanmaydi (faqat o'zgaruvchilar to'ldiriladi).
+  const previewAll = !!opts.previewAll;
+  const debtOnly = !previewAll && (!!opts.debtOnly || usesDebt);
   const month = /^\d{4}-\d{2}$/.test(opts.month || "") ? opts.month : currentMonthString();
   const groupIds = (Array.isArray(opts.groupIds) ? opts.groupIds : [])
     .filter((id) => Types.ObjectId.isValid(id))
@@ -164,7 +167,7 @@ const buildRecipients = async (clientId, center, tpl, opts) => {
   const cycleMode = cycle?.cycleMode || "anchor";
 
   // "Darsga kelmadi" mavzusi: faqat tanlangan kuni davomatda `absent` bo'lganlar.
-  const isAbsentTopic = tpl.topic === "absent";
+  const isAbsentTopic = tpl.topic === "absent" && !previewAll;
   const absentDate = /^\d{4}-\d{2}-\d{2}$/.test(opts.date || "") ? opts.date : todayString();
   const dateText = absentDate.split("-").reverse().join(".");
   let absentSet = null;
@@ -208,7 +211,7 @@ const buildRecipients = async (clientId, center, tpl, opts) => {
 
       const rawPhone = audience === "parents" ? s.parentPhone : s.phone;
       const phone = getsms.toGatewayPhone(normalizePhone(rawPhone));
-      if (!phone) {
+      if (!phone && !previewAll) {
         skipped += 1;
         items.push({ id: recipientId, studentId: s._id, name: s.fullName, phone: normalizePhone(rawPhone) || "", text: "", skip: true });
         continue;
@@ -488,6 +491,22 @@ module.exports = {
   // AYNAN O'ZI orqali, lekin faqat BITTA o'quvchiga cheklab yuboradi
   // (`buildRecipients`'ga `studentIds` filtri orqali). Xato kodlari (sms.*)
   // `send()` bilan bir xil.
+  // Shablonni BITTA o'quvchi uchun to'ldirilgan holda qaytaradi (markaz, ism,
+  // guruh, narx, qarz, oy, sana) — dialog "ko'rib chiqish"i va Telegram yuborish
+  // SHU funksiyadan foydalanadi. Faol a'zolik topilmasa `null`.
+  renderForStudent: async (clientId, centerId, studentId, templateId) => {
+    const center = await requireCenter(clientId, centerId);
+    const tpl = await getTemplate(templateId);
+    const r = await buildRecipients(clientId, center, tpl, {
+      audience: "students",
+      studentIds: [String(studentId)],
+      previewAll: true,
+    });
+    const item = r.items[0];
+    if (!item) return null;
+    return { text: item.text, segments: item.segments, centerName: center.name, studentName: item.name };
+  },
+
   sendToStudent: async (clientId, centerId, studentId, body, actor = null) => {
     const student = await Student.findOne({
       _id: studentId,

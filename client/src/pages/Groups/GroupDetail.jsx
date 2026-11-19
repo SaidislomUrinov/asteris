@@ -53,8 +53,6 @@ import RankChip from "../../ui/RankChip";
 import RankMedal from "../../ui/RankMedal";
 import MonthNav from "../../ui/MonthNav";
 import useQueryState from "../../hooks/useQueryState";
-import MiniBadges from "../../ui/MiniBadges";
-import useGroupBadges from "../../hooks/useGroupBadges";
 import Loading from "../../ui/Loading";
 import ProgressBar from "../../ui/ProgressBar";
 import { InfoMeta } from "../../ui/InfoCard";
@@ -272,8 +270,6 @@ function GroupDetail({ groupId, live = false }) {
   const [payTarget, setPayTarget] = useState(null);
   const payTargetView = useClosingValue(payTarget);
   const [receipt, setReceipt] = useState(null);
-  const [leaveTarget, setLeaveTarget] = useState(null);
-  const [leaving, setLeaving] = useState(false);
   const [transferTarget, setTransferTarget] = useState(null);
   const transferTargetView = useClosingValue(transferTarget);
   // "O'qituvchi ulushi" dialogi (docs/API_CONTRACT_entry_teacher_percent.md §4).
@@ -347,7 +343,6 @@ function GroupDetail({ groupId, live = false }) {
     hasGeneralTab && studentTab === "general" && selectedMonth !== currentMonth ? selectedMonth : undefined;
   const studentsSummary = useStudentsSummary(id, isSortableTab(studentTab), summaryMonth);
   // O'tgan oy nishonlari — ism yonidagi mini ikonkalar (API_CONTRACT_badges_monthly_rank.md §D.3).
-  const groupBadges = useGroupBadges(id);
   const todayGrades = useTodayGrades(id, showGradeCol);
   const [gradeOpenId, setGradeOpenId] = useState(null);
   const [excuseReason, setExcuseReason] = useState("");
@@ -490,23 +485,6 @@ function GroupDetail({ groupId, live = false }) {
     const timer = setTimeout(fetchAttendance, 0);
     return () => clearTimeout(timer);
   }, [fetchAttendance]);
-
-  const confirmLeave = async () => {
-    if (!leaveTarget) return;
-    try {
-      setLeaving(true);
-      const res = await api.patch(`/students/${leaveTarget.student._id}/groups/${leaveTarget.entry._id}/leave`);
-      const { ok, msg } = res.data;
-      if (!ok) throw new Error(msg);
-      successMsg(msg);
-      setLeaveTarget(null);
-      fetchStudents();
-    } catch (error) {
-      errorMsg(error.message);
-    } finally {
-      setLeaving(false);
-    }
-  };
 
   const confirmFinish = async () => {
     try {
@@ -1430,7 +1408,7 @@ function GroupDetail({ groupId, live = false }) {
       )}
 
       {activeTab !== "stats" && (
-      <div className="flex flex-col gap-3 p-4 rounded-xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900">
+      <div className="flex flex-col gap-3 p-4 rounded-2xl border border-slate-200/80 dark:border-night-700/80 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
         {isSortableTab(activeTab) && (
         <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-slate-100 dark:border-night-700">
             <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
@@ -1732,10 +1710,9 @@ function GroupDetail({ groupId, live = false }) {
                         {!isTeacher && entry.teacherPercent != null && (
                           <ShareChip percent={entry.teacherPercent} />
                         )}
-                        {/* Telefonda medal va yutuq belgilari yashirin — o'rin pastki qatorda. */}
+                        {/* Telefonda medal yashirin — o'rin pastki qatorda. */}
                         <span className="contents max-sm:hidden">
                           <RankMedal position={ranks[s._id]} size={21} />
-                          <MiniBadges types={groupBadges.items[s._id]} month={groupBadges.month} />
                         </span>
                       </span>
                       <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 min-w-0">
@@ -2032,16 +2009,6 @@ function GroupDetail({ groupId, live = false }) {
                               },
                             ]
                           : []),
-                        ...(entry.status === "active" && can("student:update")
-                          ? [
-                              {
-                                label: t("student.leaveGroup"),
-                                icon: HiUserMinus,
-                                iconClass: "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400",
-                                onClick: () => setLeaveTarget({ student: s, entry }),
-                              },
-                            ]
-                          : []),
                         // Arxivlash — "o'chirish" o'rniga. Faqat SHU guruhdagi
                         // a'zolik arxivga o'tadi (API_CONTRACT_archive.md §1).
                         ...(can("student:delete") && !isTeacher
@@ -2292,24 +2259,6 @@ function GroupDetail({ groupId, live = false }) {
             onChange={(e) => setExcuseReason(e.target.value)}
           />
         </div>
-      </Dialog>
-
-      <Dialog
-        open={!!leaveTarget}
-        onClose={() => setLeaveTarget(null)}
-        title={t("student.leaveGroup")}
-        actions={
-          <>
-            <Button color="black" variant="text" onClick={() => setLeaveTarget(null)}>
-              {t("common.cancel")}
-            </Button>
-            <Button color="red" loading={leaving} onClick={confirmLeave}>
-              {t("student.leaveGroup")}
-            </Button>
-          </>
-        }
-      >
-        <p>{t("student.leaveGroupConfirm", { name: leaveTarget?.student?.fullName })}</p>
       </Dialog>
 
       <Dialog

@@ -168,8 +168,8 @@ function StudentBadges({ studentId, onLoaded, showTitle = true }) {
         </div>
       ) : (
         <div className="flex flex-col gap-5">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 rounded-2xl border border-slate-200 dark:border-night-700 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
-            <div className="flex items-center gap-3 min-w-0">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-3 min-w-0 px-4 py-3 rounded-2xl border border-slate-200/80 dark:border-night-700/80 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
               <div className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 bg-blue-50 dark:bg-blue-500/15 text-blue-500">
                 <HiSparkles className="text-xl" />
               </div>
@@ -178,8 +178,7 @@ function StudentBadges({ studentId, onLoaded, showTitle = true }) {
                 <span className="text-xs text-slate-500 dark:text-slate-400">{t("badge.totalBadges")}</span>
               </div>
             </div>
-            <div className="hidden sm:block w-px self-stretch bg-slate-200 dark:bg-night-700" />
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-3 min-w-0 px-4 py-3 rounded-2xl border border-slate-200/80 dark:border-night-700/80 bg-white dark:bg-night-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
               <div className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 bg-amber-50 dark:bg-amber-500/15 text-amber-500">
                 <HiTrophy className="text-xl" />
               </div>
